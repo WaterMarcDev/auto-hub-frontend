@@ -280,18 +280,18 @@ const CarIntake = () => {
         ];
       case 2: // CarImages - all required image fields
         return [
-          // "carImage1",
-          // "carImage2",
-          // "carImage3",
-          // "carImage4",
-          // "carImage5",
-          // "carImage6",
-          // "carImage7",
-          // "carImage8",
-          // "carEngineImage",
-          // "carBootImage",
-          // "belowVehicleImage",
-          // "fullVehicleImage",
+          "carImage1",
+          "carImage2",
+          "carImage3",
+          "carImage4",
+          "carImage5",
+          "carImage6",
+          "carImage7",
+          "carImage8",
+          "carEngineImage",
+          "carBootImage",
+          "belowVehicleImage",
+          "fullVehicleImage",
         ];
       case 3: // CarDiagnosis - no required fields (optional step)
         return [];
