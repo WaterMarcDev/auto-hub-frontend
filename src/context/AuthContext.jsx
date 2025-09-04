@@ -1,4 +1,10 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 import { authAPI } from "../utils/api";
 
 export const AuthContext = createContext();
@@ -7,13 +13,15 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const isCheckingAuthRef = useRef(false);
 
-  // Check if user is authenticated on app load
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
+  const checkAuthStatus = useCallback(async () => {
+    // Prevent multiple simultaneous auth checks
+    if (isCheckingAuthRef.current) {
+      return;
+    }
 
-  const checkAuthStatus = async () => {
+    isCheckingAuthRef.current = true;
     try {
       const response = await authAPI.getProfile();
       setUser(response.data.user);
@@ -24,8 +32,23 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
     } finally {
       setLoading(false);
+      isCheckingAuthRef.current = false;
     }
-  };
+  }, []);
+
+  // Check if user is authenticated on app load
+  useEffect(() => {
+    // Don't check auth status if we're on an auth page
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath.startsWith("/auth-");
+
+    if (!isAuthPage) {
+      checkAuthStatus();
+    } else {
+      // On auth pages, just set loading to false without checking
+      setLoading(false);
+    }
+  }, [checkAuthStatus]);
 
   const login = async (email, password) => {
     try {

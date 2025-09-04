@@ -37,8 +37,11 @@ api.interceptors.response.use(
 
     // Handle authentication errors
     if (error.response?.status === 401) {
-      // Redirect to login if not authenticated
-      window.location.href = "/auth-login";
+      // Don't redirect on auth profile endpoint - let the component handle it
+      if (!error.config?.url?.includes("/auth/profile")) {
+        // Redirect to login if not authenticated for other endpoints
+        window.location.href = "/auth-login";
+      }
     }
 
     return Promise.reject(error);
