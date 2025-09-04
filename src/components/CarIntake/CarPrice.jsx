@@ -26,25 +26,34 @@ const CarPrice = ({
 }) => {
   // Calculate actual price whenever weight or rate changes
   React.useEffect(() => {
-    const weight = parseFloat(formData.carWeight) || 0;
+    const weight = parseFloat(formData.weight) || 0;
     const rate = parseFloat(formData.rate) || 0;
     const actualPrice = (weight * rate * 0.01).toFixed(2); // rate is in cents, so divide by 100
 
     if (weight > 0 && rate > 0) {
       updateFormData({ actualPrice });
     }
-  }, [formData.carWeight, formData.rate, updateFormData]);
+  }, [formData.carWeight, formData.rate]); // Removed updateFormData from dependencies
 
   return (
     <div>
+      <style jsx>{`
+        .weight-input .ant-input-number-input::placeholder {
+          color: #9ca3af !important;
+          opacity: 0.7 !important;
+        }
+      `}</style>
       <>
         <Row gutter={24}>
           <Col span={12}>
-            <Form.Item label={<Text style={{ color: "white" }}>Weight</Text>}>
+            <Form.Item
+              name="weight"
+              label={<Text style={{ color: "white" }}>Weight</Text>}
+              rules={[{ required: true, message: "Weight is required" }]}
+            >
               <InputNumber
                 placeholder="Enter Car Weight in pounds"
-                value={formData.carWeight}
-                onChange={(value) => updateFormData({ carWeight: value })}
+                className="weight-input"
                 style={{
                   width: "100%",
                   backgroundColor: "#4b5563",
@@ -57,11 +66,13 @@ const CarPrice = ({
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label={<Text style={{ color: "white" }}>Rate</Text>}>
+            <Form.Item
+              name="rate"
+              label={<Text style={{ color: "white" }}>Rate</Text>}
+              rules={[{ required: true, message: "Rate is required" }]}
+            >
               <Select
                 placeholder="Select Rate"
-                value={formData.rate}
-                onChange={(value) => updateFormData({ rate: value })}
                 style={{ width: "100%" }}
                 dropdownStyle={{ backgroundColor: "#374151" }}
               >
@@ -89,7 +100,7 @@ const CarPrice = ({
               }
             >
               <Input
-                value={formData.actualPrice || "0"}
+                value={`$${formData.actualPrice || "0"}`}
                 readOnly
                 style={{
                   backgroundColor: "#374151",
@@ -102,11 +113,11 @@ const CarPrice = ({
           </Col>
           <Col span={12}>
             <Form.Item
+              name="ourPrice"
               label={<Text style={{ color: "white" }}>Our Price</Text>}
+              rules={[{ required: true, message: "Our Price is required" }]}
             >
               <InputNumber
-                value={formData.ourPrice || 0}
-                onChange={(value) => updateFormData({ ourPrice: value })}
                 style={{
                   width: "100%",
                   backgroundColor: "#4b5563",
@@ -127,11 +138,13 @@ const CarPrice = ({
         <Row gutter={24}>
           <Col span={12}>
             <Form.Item
+              name="customerPrice"
               label={<Text style={{ color: "white" }}>Customer Price</Text>}
+              rules={[
+                { required: true, message: "Customer Price is required" },
+              ]}
             >
               <InputNumber
-                value={formData.customerPrice || 0}
-                onChange={(value) => updateFormData({ customerPrice: value })}
                 style={{
                   width: "100%",
                   backgroundColor: "#4b5563",
@@ -149,12 +162,12 @@ const CarPrice = ({
           </Col>
           <Col span={12}>
             <Form.Item
+              name="negotiateTo"
               label={<Text style={{ color: "white" }}>Negotiate To</Text>}
+              rules={[{ required: true, message: "Negotiate To is required" }]}
             >
               <Select
                 placeholder="Select Negotiate Type"
-                value={formData.negotiateTo}
-                onChange={(value) => updateFormData({ negotiateTo: value })}
                 style={{ width: "100%" }}
                 dropdownStyle={{ backgroundColor: "#374151" }}
               >
@@ -177,11 +190,11 @@ const CarPrice = ({
         <Row gutter={24}>
           <Col span={12}>
             <Form.Item
+              name="finalPrice"
               label={<Text style={{ color: "white" }}>Final Price</Text>}
+              rules={[{ required: true, message: "Final Price is required" }]}
             >
               <InputNumber
-                value={formData.finalPrice || 0}
-                onChange={(value) => updateFormData({ finalPrice: value })}
                 style={{
                   width: "100%",
                   backgroundColor: "#4b5563",

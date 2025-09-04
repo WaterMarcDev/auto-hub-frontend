@@ -95,6 +95,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           value={getPartData(record.key, "unit") || 1}
           onChange={(value) => updatePartData(record.key, "unit", value)}
           min={1}
+          disabled={!getPartData(record.key, "selected")}
           style={{
             width: "100%",
             backgroundColor: "#4b5563",
@@ -115,6 +116,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           placeholder="Select Quality"
           value={getPartData(record.key, "quality")}
           onChange={(value) => updatePartData(record.key, "quality", value)}
+          disabled={!getPartData(record.key, "selected")}
           style={{ width: "100%" }}
           dropdownStyle={{ backgroundColor: "#374151" }}
         >
@@ -138,6 +140,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           placeholder={`Enter ${record.name} Weight`}
           value={getPartData(record.key, "weight")}
           onChange={(e) => updatePartData(record.key, "weight", e.target.value)}
+          disabled={!getPartData(record.key, "selected")}
           style={{
             backgroundColor: "#4b5563",
             borderColor: "#6b7280",
@@ -162,6 +165,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           onChange={(e) =>
             updatePartData(record.key, "dimensions", e.target.value)
           }
+          disabled={!getPartData(record.key, "selected")}
           style={{
             backgroundColor: "#4b5563",
             borderColor: "#6b7280",

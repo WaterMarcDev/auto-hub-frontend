@@ -17,14 +17,7 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const Payment = ({
-  formData,
-  updateFormData,
-  nextStep,
-  prevStep,
-  errors = {},
-  touched = {},
-}) => {
+const Payment = ({ formData, nextStep, prevStep }) => {
   return (
     <div>
       <Row gutter={24} style={{ marginBottom: "24px" }}>
@@ -201,12 +194,14 @@ const Payment = ({
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
+                name="paidTo"
                 label={<Text style={{ color: "white" }}>Paid To</Text>}
+                rules={[
+                  { required: true, message: "Payment Method is required" },
+                ]}
               >
                 <Select
                   placeholder="Please Select Payment Method"
-                  value={formData.paidTo}
-                  onChange={(value) => updateFormData({ paidTo: value })}
                   style={{ width: "100%" }}
                   dropdownStyle={{ backgroundColor: "#374151" }}
                 >
@@ -217,11 +212,15 @@ const Payment = ({
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label={<Text style={{ color: "white" }}>Amount</Text>}>
+              <Form.Item
+                name="paymentAmount"
+                label={<Text style={{ color: "white" }}>Amount</Text>}
+                rules={[
+                  { required: true, message: "Payment Amount is required" },
+                ]}
+              >
                 <InputNumber
                   placeholder="Payment Amount"
-                  value={formData.paymentAmount}
-                  onChange={(value) => updateFormData({ paymentAmount: value })}
                   style={{
                     width: "100%",
                     backgroundColor: "#4b5563",
@@ -242,15 +241,12 @@ const Payment = ({
           <Row>
             <Col span={24}>
               <Form.Item
+                name="paymentDescription"
                 label={<Text style={{ color: "white" }}>Description</Text>}
               >
                 <TextArea
                   rows={4}
                   placeholder="Enter payment description"
-                  value={formData.paymentDescription}
-                  onChange={(e) =>
-                    updateFormData({ paymentDescription: e.target.value })
-                  }
                   style={{
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",

@@ -15,14 +15,7 @@ import { ArrowRightOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const CarDetails = ({
-  formData,
-  updateFormData,
-  nextStep,
-  form,
-  validationRules,
-  vinData,
-}) => {
+const CarDetails = ({ formData, updateFormData, nextStep, vinData }) => {
   // Check if field should be disabled (populated by VIN data)
   const isVinField = (fieldName) => {
     const vinFields = [
@@ -46,7 +39,7 @@ const CarDetails = ({
           <Form.Item
             name="vin"
             label={<Text style={{ color: "white" }}>Enter VIN No.</Text>}
-            // rules={validationRules.vin}
+            rules={[{ required: true, message: "VIN Number is required" }]}
           >
             <Input
               placeholder="Enter VIN No."
@@ -64,7 +57,7 @@ const CarDetails = ({
           <Form.Item
             name="year"
             label={<Text style={{ color: "white" }}>Year</Text>}
-            // rules={validationRules.year}
+            rules={[{ required: true, message: "Year is required" }]}
           >
             <InputNumber
               placeholder="Please Enter Car Manufacturing Year"
@@ -82,13 +75,12 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
             name="make"
             label={<Text style={{ color: "white" }}>Make</Text>}
-            // rules={validationRules.make}
+            rules={[{ required: true, message: "Make is required" }]}
           >
             <Input
               placeholder="Please Enter Car Make"
@@ -106,7 +98,7 @@ const CarDetails = ({
           <Form.Item
             name="model"
             label={<Text style={{ color: "white" }}>Model</Text>}
-            // rules={validationRules.model}
+            rules={[{ required: true, message: "Model is required" }]}
           >
             <Input
               placeholder="Please Enter Car Model"
@@ -121,13 +113,12 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
             name="trim"
             label={<Text style={{ color: "white" }}>Trim</Text>}
-            // rules={validationRules.trim}
+            rules={[{ required: true, message: "Trim is required" }]}
           >
             <Input
               placeholder="Please Enter Car Trim"
@@ -145,7 +136,7 @@ const CarDetails = ({
           <Form.Item
             name="color"
             label={<Text style={{ color: "white" }}>Color</Text>}
-            // rules={validationRules.color}
+            rules={[{ required: true, message: "Color is required" }]}
           >
             <Input
               placeholder="Please Enter Car Color"
@@ -158,14 +149,15 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Body Class</Text>}>
+          <Form.Item
+            name="bodyClass"
+            label={<Text style={{ color: "white" }}>Body Class</Text>}
+            rules={[{ required: true, message: "Body Class is required" }]}
+          >
             <Input
               placeholder="Please Enter Body Class"
-              value={formData.bodyClass}
-              onChange={(e) => updateFormData({ bodyClass: e.target.value })}
               disabled={isVinField("bodyClass")}
               style={{
                 backgroundColor: "#4b5563",
@@ -178,12 +170,12 @@ const CarDetails = ({
         </Col>
         <Col span={12}>
           <Form.Item
+            name="chassisNo"
             label={<Text style={{ color: "white" }}>Chassis No.</Text>}
+            rules={[{ required: true, message: "Chassis No. is required" }]}
           >
             <Input
               placeholder="Please Enter Chassis No."
-              value={formData.chassisNo}
-              onChange={(e) => updateFormData({ chassisNo: e.target.value })}
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -193,14 +185,15 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Engine No.</Text>}>
+          <Form.Item
+            name="engineNo"
+            label={<Text style={{ color: "white" }}>Engine No.</Text>}
+            rules={[{ required: true, message: "Engine No. is required" }]}
+          >
             <Input
               placeholder="Please Enter Engine No."
-              value={formData.engineNo}
-              onChange={(e) => updateFormData({ engineNo: e.target.value })}
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -211,14 +204,12 @@ const CarDetails = ({
         </Col>
         <Col span={12}>
           <Form.Item
+            name="engineVariant"
             label={<Text style={{ color: "white" }}>Engine Variant</Text>}
+            rules={[{ required: true, message: "Engine Variant is required" }]}
           >
             <Input
               placeholder="Please Enter Engine Variant"
-              value={formData.engineVariant}
-              onChange={(e) =>
-                updateFormData({ engineVariant: e.target.value })
-              }
               disabled={isVinField("engineVariant")}
               style={{
                 backgroundColor: "#4b5563",
@@ -230,13 +221,14 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Drive</Text>}>
+          <Form.Item
+            name="drive"
+            label={<Text style={{ color: "white" }}>Drive</Text>}
+            rules={[{ required: true, message: "Drive is required" }]}
+          >
             <Radio.Group
-              value={formData.drive}
-              onChange={(e) => updateFormData({ drive: e.target.value })}
               disabled={isVinField("drive")}
               style={{ width: "100%" }}
             >
@@ -267,11 +259,11 @@ const CarDetails = ({
         </Col>
         <Col span={12}>
           <Form.Item
+            name="transmission"
             label={<Text style={{ color: "white" }}>Transmission</Text>}
+            rules={[{ required: true, message: "Transmission is required" }]}
           >
             <Radio.Group
-              value={formData.transmission}
-              onChange={(e) => updateFormData({ transmission: e.target.value })}
               disabled={isVinField("transmission")}
               style={{ width: "100%" }}
             >
@@ -291,16 +283,15 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Where</Text>}>
+          <Form.Item
+            name="scrapYardName"
+            label={<Text style={{ color: "white" }}>Where</Text>}
+            rules={[{ required: true, message: "Scrap Yard Name is required" }]}
+          >
             <Input
               placeholder="Please Enter Scrap Yard Name"
-              value={formData.scrapYardName}
-              onChange={(e) =>
-                updateFormData({ scrapYardName: e.target.value })
-              }
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -310,13 +301,13 @@ const CarDetails = ({
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Location</Text>}>
+          <Form.Item
+            name="scrapYardLocation"
+            label={<Text style={{ color: "white" }}>Location</Text>}
+            rules={[{ required: true, message: "Location is required" }]}
+          >
             <Input
               placeholder="Please Enter Scrap Yard Location"
-              value={formData.scrapYardLocation}
-              onChange={(e) =>
-                updateFormData({ scrapYardLocation: e.target.value })
-              }
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -326,14 +317,15 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Fuel Type</Text>}>
+          <Form.Item
+            name="fuelType"
+            label={<Text style={{ color: "white" }}>Fuel Type</Text>}
+            rules={[{ required: true, message: "Fuel Type is required" }]}
+          >
             <Input
               placeholder="Please Enter Fuel Type"
-              value={formData.fuelType}
-              onChange={(e) => updateFormData({ fuelType: e.target.value })}
               disabled={isVinField("fuelType")}
               style={{
                 backgroundColor: "#4b5563",
@@ -345,24 +337,30 @@ const CarDetails = ({
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Keys</Text>}>
-            <Switch
-              checked={formData.hasKeys}
-              onChange={(checked) => updateFormData({ hasKeys: checked })}
-              checkedChildren="Yes"
-              unCheckedChildren="No"
-            />
+          <Form.Item
+            name="hasKeys"
+            label={<Text style={{ color: "white" }}>Keys</Text>}
+            rules={[
+              {
+                required: true,
+                message: "Please specify if keys are available",
+              },
+            ]}
+            valuePropName="checked"
+          >
+            <Switch checkedChildren="Yes" unCheckedChildren="No" />
           </Form.Item>
         </Col>
       </Row>
-
       <Row gutter={24}>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Weight</Text>}>
+          <Form.Item
+            name="weight"
+            label={<Text style={{ color: "white" }}>Weight</Text>}
+            rules={[{ required: true, message: "Weight is required" }]}
+          >
             <Input
               placeholder="Enter Car Weight"
-              value={formData.weight}
-              onChange={(e) => updateFormData({ weight: e.target.value })}
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -372,11 +370,13 @@ const CarDetails = ({
           </Form.Item>
         </Col>
         <Col span={12}>
-          <Form.Item label={<Text style={{ color: "white" }}>Dimensions</Text>}>
+          <Form.Item
+            name="dimensions"
+            label={<Text style={{ color: "white" }}>Dimensions</Text>}
+            rules={[{ required: true, message: "Dimensions are required" }]}
+          >
             <Input
               placeholder="Enter Car Dimensions"
-              value={formData.dimensions}
-              onChange={(e) => updateFormData({ dimensions: e.target.value })}
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -386,17 +386,15 @@ const CarDetails = ({
           </Form.Item>
         </Col>
       </Row>
-
       <Row>
         <Col span={24}>
           <Form.Item
+            name="description"
             label={<Text style={{ color: "white" }}>Description</Text>}
           >
             <TextArea
               rows={4}
               placeholder="Enter description"
-              value={formData.description}
-              onChange={(e) => updateFormData({ description: e.target.value })}
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -405,8 +403,7 @@ const CarDetails = ({
             />
           </Form.Item>
         </Col>
-      </Row>
-
+      </Row>{" "}
       <Form.Item style={{ marginTop: "20px" }}>
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button

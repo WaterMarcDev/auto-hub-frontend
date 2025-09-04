@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { carIntakeAPI, vinAPI } from "../utils/api";
 import {
   Form,
@@ -68,7 +68,6 @@ const CarIntake = () => {
     diagnosis: {},
 
     // Step 4: Car Price - matching original template
-    carWeight: "",
     rate: "6",
     actualPrice: "0",
     ourPrice: "0",
@@ -103,6 +102,11 @@ const CarIntake = () => {
     form.setFieldsValue(updates);
   };
 
+  // Sync form with formData on mount and when formData changes
+  useEffect(() => {
+    form.setFieldsValue(formData);
+  }, [form, formData]);
+
   // Ant Design validation rules
   const getValidationRules = () => ({
     // Step 1: Car Details
@@ -135,11 +139,12 @@ const CarIntake = () => {
     ],
     color: [{ required: true, message: "Color is required" }],
 
-    // Step 4: Price
-    carWeight: [
-      { required: true, message: "Car Weight is required" },
+    // Weight field (used in both Step 1 and Step 4)
+    weight: [
+      { required: true, message: "Weight is required" },
       { type: "number", min: 1, message: "Weight must be greater than 0" },
     ],
+
     rate: [{ required: true, message: "Rate is required" }],
     finalPrice: [
       { required: true, message: "Final Price is required" },
@@ -252,13 +257,65 @@ const CarIntake = () => {
   // Get step field names for validation
   const getStepFields = (step) => {
     switch (step) {
-      case 1:
-        return ["vin", "year", "make", "model", "trim", "color"];
-      case 4:
-        return ["carWeight", "rate", "finalPrice"];
-      case 5:
-        return ["firstName", "lastName", "mobileNo", "dlDocument"];
-      case 6:
+      case 1: // CarDetails - all required fields
+        return [
+          "vin",
+          "year",
+          "make",
+          "model",
+          "trim",
+          "color",
+          "bodyClass",
+          "chassisNo",
+          "engineNo",
+          "engineVariant",
+          "drive",
+          "transmission",
+          "scrapYardName",
+          "scrapYardLocation",
+          "fuelType",
+          "hasKeys",
+          "weight",
+          "dimensions",
+        ];
+      case 2: // CarImages - all required image fields
+        return [
+          // "carImage1",
+          // "carImage2",
+          // "carImage3",
+          // "carImage4",
+          // "carImage5",
+          // "carImage6",
+          // "carImage7",
+          // "carImage8",
+          // "carEngineImage",
+          // "carBootImage",
+          // "belowVehicleImage",
+          // "fullVehicleImage",
+        ];
+      case 3: // CarDiagnosis - no required fields (optional step)
+        return [];
+      case 4: // CarPrice - all required fields
+        return [
+          "weight",
+          "rate",
+          "ourPrice",
+          "customerPrice",
+          "negotiateTo",
+          "finalPrice",
+        ];
+      case 5: // UserKYCAndCarDoc - all required fields
+        return [
+          "firstName",
+          "lastName",
+          "mobileNo",
+          "email",
+          "dlDocument",
+          "carRC",
+          "sellingDate",
+          "pickUpType",
+        ];
+      case 6: // Payment - all required fields
         return ["paidTo", "paymentAmount"];
       default:
         return [];
@@ -309,7 +366,6 @@ const CarIntake = () => {
       partsDescription: "",
 
       // Step 4: Car Price
-      carWeight: "",
       rate: "",
       actualPrice: "",
       ourPrice: "",
@@ -350,6 +406,8 @@ const CarIntake = () => {
       }
     } catch (errorInfo) {
       console.log("Validation failed:", errorInfo);
+      // Force form to show validation errors by scrolling to first error
+      form.scrollToField(errorInfo.errorFields[0].name);
       // Ant Design will automatically show the validation errors
     }
   };
@@ -448,7 +506,6 @@ const CarIntake = () => {
         scrapYardLocation: formData.scrapYardLocation,
         fuelType: formData.fuelType,
         keys: formData.hasKeys,
-        weight: parseFloat(formData.weight) || 0,
         dimensions: formData.dimensions,
         description: formData.description,
 
@@ -461,7 +518,7 @@ const CarIntake = () => {
         partsDescription: formData.partsDescription || "",
 
         // Price information
-        weightInPounds: parseFloat(formData.carWeight) || 0,
+        weightInPounds: parseFloat(formData.weight) || 0,
         ratePerPound: parseFloat(formData.rate) || 6,
         actualPrice: parseFloat(formData.actualPrice) || 0,
         ourPrice: parseFloat(formData.ourPrice) || 0,
@@ -887,6 +944,13 @@ const CarIntake = () => {
                         initialValues={formData}
                         onValuesChange={(changedValues) => {
                           updateFormData(changedValues);
+                        }}
+                        onFinish={(values) => {
+                          console.log("Form values on submit:", values);
+                          nextStep();
+                        }}
+                        onFinishFailed={(errorInfo) => {
+                          console.log("Form validation failed:", errorInfo);
                         }}
                       >
                         {renderStepContent()}

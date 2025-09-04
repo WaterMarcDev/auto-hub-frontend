@@ -12,21 +12,13 @@ import {
   Select,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
-import dayjs from "dayjs";
 import CameraUpload from "../CameraUpload";
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const UserKYCAndCarDoc = ({
-  formData,
-  updateFormData,
-  nextStep,
-  prevStep,
-  form,
-  validationRules,
-}) => {
+const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
   const handleImageUpload = (field, uploadResult) => {
     // Update form data with uploaded image information
     updateFormData({
@@ -40,8 +32,19 @@ const UserKYCAndCarDoc = ({
     });
   };
 
-  const renderDocumentUploadField = (field, label, description) => (
-    <Form.Item label={<Text style={{ color: "white" }}>{label}</Text>}>
+  const renderDocumentUploadField = (
+    field,
+    label,
+    description,
+    required = true
+  ) => (
+    <Form.Item
+      name={field}
+      label={<Text style={{ color: "white" }}>{label}</Text>}
+      rules={
+        required ? [{ required: true, message: `${label} is required` }] : []
+      }
+    >
       <div
         style={{
           backgroundColor: "#374151",
@@ -97,14 +100,12 @@ const UserKYCAndCarDoc = ({
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
+                name="firstName"
                 label={<Text style={{ color: "white" }}>First Name</Text>}
+                rules={[{ required: true, message: "First Name is required" }]}
               >
                 <Input
                   placeholder="Enter First Name"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    updateFormData({ firstName: e.target.value })
-                  }
                   style={{
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",
@@ -115,12 +116,12 @@ const UserKYCAndCarDoc = ({
             </Col>
             <Col span={12}>
               <Form.Item
+                name="lastName"
                 label={<Text style={{ color: "white" }}>Last Name</Text>}
+                rules={[{ required: true, message: "Last Name is required" }]}
               >
                 <Input
                   placeholder="Enter Last Name"
-                  value={formData.lastName}
-                  onChange={(e) => updateFormData({ lastName: e.target.value })}
                   style={{
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",
@@ -134,12 +135,12 @@ const UserKYCAndCarDoc = ({
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
+                name="mobileNo"
                 label={<Text style={{ color: "white" }}>Mobile No.</Text>}
+                rules={[{ required: true, message: "Mobile No. is required" }]}
               >
                 <Input
                   placeholder="Enter Mobile No"
-                  value={formData.mobileNo}
-                  onChange={(e) => updateFormData({ mobileNo: e.target.value })}
                   style={{
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",
@@ -149,12 +150,14 @@ const UserKYCAndCarDoc = ({
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label={<Text style={{ color: "white" }}>Email</Text>}>
+              <Form.Item
+                name="email"
+                label={<Text style={{ color: "white" }}>Email</Text>}
+                rules={[{ required: true, message: "Email is required" }]}
+              >
                 <Input
                   type="email"
                   placeholder="Enter a valid e-mail"
-                  value={formData.email}
-                  onChange={(e) => updateFormData({ email: e.target.value })}
                   style={{
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",
@@ -185,17 +188,14 @@ const UserKYCAndCarDoc = ({
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
+                name="sellingDate"
                 label={<Text style={{ color: "white" }}>Date of Selling</Text>}
+                rules={[
+                  { required: true, message: "Date of Selling is required" },
+                ]}
               >
                 <DatePicker
-                  showTime
-                  placeholder="Select date and time"
-                  value={
-                    formData.sellingDate ? dayjs(formData.sellingDate) : null
-                  }
-                  onChange={(date, dateString) =>
-                    updateFormData({ sellingDate: dateString })
-                  }
+                  placeholder="Select date"
                   style={{
                     width: "100%",
                     backgroundColor: "#4b5563",
@@ -206,12 +206,14 @@ const UserKYCAndCarDoc = ({
             </Col>
             <Col span={12}>
               <Form.Item
+                name="pickUpType"
                 label={<Text style={{ color: "white" }}>Pick Up Type</Text>}
+                rules={[
+                  { required: true, message: "Pick Up Type is required" },
+                ]}
               >
                 <Select
                   placeholder="Select Pick Up Type"
-                  value={formData.pickUpType}
-                  onChange={(value) => updateFormData({ pickUpType: value })}
                   style={{ width: "100%" }}
                   dropdownStyle={{ backgroundColor: "#374151" }}
                 >
@@ -225,15 +227,12 @@ const UserKYCAndCarDoc = ({
           <Row>
             <Col span={24}>
               <Form.Item
+                name="kycDescription"
                 label={<Text style={{ color: "white" }}>Description</Text>}
               >
                 <TextArea
                   rows={4}
                   placeholder="Enter KYC description"
-                  value={formData.kycDescription}
-                  onChange={(e) =>
-                    updateFormData({ kycDescription: e.target.value })
-                  }
                   style={{
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",

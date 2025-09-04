@@ -20,8 +20,19 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
     });
   };
 
-  const renderCameraUploadField = (field, label, description) => (
-    <Form.Item label={<Text style={{ color: "white" }}>{label}</Text>}>
+  const renderCameraUploadField = (
+    field,
+    label,
+    description,
+    required = true
+  ) => (
+    <Form.Item
+      name={field}
+      label={<Text style={{ color: "white" }}>{label}</Text>}
+      rules={
+        required ? [{ required: true, message: `${label} is required` }] : []
+      }
+    >
       <div
         style={{
           backgroundColor: "#374151",
@@ -181,15 +192,12 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
         <Row>
           <Col span={24}>
             <Form.Item
+              name="imageDescription"
               label={<Text style={{ color: "white" }}>Description</Text>}
             >
               <TextArea
                 rows={4}
                 placeholder="Enter image description"
-                value={formData.imageDescription}
-                onChange={(e) =>
-                  updateFormData({ imageDescription: e.target.value })
-                }
                 style={{
                   backgroundColor: "#4b5563",
                   borderColor: "#6b7280",
