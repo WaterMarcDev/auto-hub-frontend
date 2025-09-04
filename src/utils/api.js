@@ -94,5 +94,32 @@ export const vinAPI = {
   getDetails: (vinNumber) => api.get(`/vin/${vinNumber}`),
 };
 
+// Upload API functions
+export const uploadAPI = {
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    return api.post("/upload/image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+  uploadMultiple: (files) => {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    return api.post("/upload/multiple", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+  deleteImage: (filename) => api.delete(`/upload/${filename}`),
+};
+
 // Export the configured axios instance as default
 export default api;

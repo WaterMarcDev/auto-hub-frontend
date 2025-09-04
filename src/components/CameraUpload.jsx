@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { uploadAPI } from "../utils/api";
 
 const CameraUpload = ({
   onImageCapture,
@@ -103,9 +104,9 @@ const CameraUpload = ({
       return;
     }
 
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      setError("File size must be less than 10MB");
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("File size must be less than 5MB");
       return;
     }
 
@@ -115,21 +116,8 @@ const CameraUpload = ({
     if (autoUpload) {
       setUploading(true);
       try {
-        const formData = new FormData();
-        formData.append("image", file);
-
-        const response = await fetch("/api/upload/image", {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Upload failed");
-        }
-
-        const result = await response.json();
+        const response = await uploadAPI.uploadImage(file);
+        const result = response.data;
 
         if (onImageUpload) {
           onImageUpload(result);
@@ -143,7 +131,9 @@ const CameraUpload = ({
         return;
       } catch (err) {
         console.error("Auto-upload error:", err);
-        setError(err.message || "Failed to upload image");
+        setError(
+          err.response?.data?.error || err.message || "Failed to upload image"
+        );
         setUploading(false);
         // Fall through to normal preview behavior on error
       }
@@ -193,28 +183,12 @@ const CameraUpload = ({
     setError("");
 
     try {
-      const uploadPromises = images.map(async (imageData) => {
-        const formData = new FormData();
-        formData.append("image", imageData.file);
-
-        const response = await fetch("/api/upload/image", {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Upload failed");
-        }
-
-        return await response.json();
-      });
-
-      const results = await Promise.all(uploadPromises);
+      const files = images.map((img) => img.file);
+      const response = await uploadAPI.uploadMultiple(files);
+      const results = response.data;
 
       if (onImageUpload) {
-        onImageUpload(multiple ? results : results[0]);
+        onImageUpload(multiple ? results.files : results.files[0]);
       }
 
       // Clear images after successful upload
@@ -222,7 +196,9 @@ const CameraUpload = ({
       setImages([]);
     } catch (err) {
       console.error("Upload error:", err);
-      setError(err.message || "Failed to upload images");
+      setError(
+        err.response?.data?.error || err.message || "Failed to upload images"
+      );
     } finally {
       setUploading(false);
     }
