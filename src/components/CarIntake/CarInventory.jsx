@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Form,
   Input,
@@ -10,12 +10,15 @@ import {
   Space,
   Card,
   Result,
+  Modal,
+  Spin,
 } from "antd";
 import {
   CheckCircleOutlined,
   PrinterOutlined,
   PlusOutlined,
   DollarOutlined,
+  ArrowLeftOutlined,
 } from "@ant-design/icons";
 
 const { TextArea } = Input;
@@ -23,6 +26,17 @@ const { Text, Title } = Typography;
 const { Option } = Select;
 
 const CarInventory = ({ formData, prevStep, handleSubmit }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: "", message: "" });
+
+  const showModal = (title, message) => {
+    setModalContent({ title, message });
+    setModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+  };
   return (
     <div>
       <Result
@@ -266,6 +280,7 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           <Button
             size="large"
             onClick={prevStep}
+            icon={<ArrowLeftOutlined />}
             style={{
               backgroundColor: "#6b7280",
               borderColor: "#6b7280",
@@ -288,6 +303,12 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           <Button
             size="large"
             icon={<PlusOutlined />}
+            onClick={() =>
+              showModal(
+                "Car Parts Inventory",
+                "Car Parts are being added to the inventory"
+              )
+            }
             style={{
               backgroundColor: "#3b82f6",
               borderColor: "#3b82f6",
@@ -300,6 +321,9 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           <Button
             size="large"
             icon={<PlusOutlined />}
+            onClick={() =>
+              showModal("Car Inventory", "Car is being added to the inventory")
+            }
             style={{
               backgroundColor: "#3b82f6",
               borderColor: "#3b82f6",
@@ -312,6 +336,12 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           <Button
             size="large"
             icon={<PrinterOutlined />}
+            onClick={() =>
+              showModal(
+                "Print Receipt",
+                "Receipt is being generated and printed"
+              )
+            }
             style={{
               backgroundColor: "#8b5cf6",
               borderColor: "#8b5cf6",
@@ -324,6 +354,12 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           <Button
             size="large"
             icon={<PrinterOutlined />}
+            onClick={() =>
+              showModal(
+                "Print Document",
+                "Document is being generated and printed"
+              )
+            }
             style={{
               backgroundColor: "#8b5cf6",
               borderColor: "#8b5cf6",
@@ -336,6 +372,12 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           <Button
             size="large"
             icon={<PrinterOutlined />}
+            onClick={() =>
+              showModal(
+                "Print Seller Copy",
+                "Seller copy is being generated and printed"
+              )
+            }
             style={{
               backgroundColor: "#8b5cf6",
               borderColor: "#8b5cf6",
@@ -346,6 +388,40 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           </Button>
         </Space>
       </div>
+
+      <Modal
+        title={<span style={{ color: "#f9fafb" }}>{modalContent.title}</span>}
+        open={modalVisible}
+        onOk={handleModalClose}
+        onCancel={handleModalClose}
+        centered
+        styles={{
+          content: {
+            backgroundColor: "#374151",
+            color: "white",
+          },
+          header: {
+            backgroundColor: "#374151",
+            borderBottom: "1px solid #6b7280",
+            color: "#f9fafb",
+          },
+          body: {
+            backgroundColor: "#374151",
+          },
+        }}
+        footer={[
+          <Button key="ok" type="primary" onClick={handleModalClose}>
+            OK
+          </Button>,
+        ]}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Spin />
+          <p style={{ color: "#d1d5db", marginBottom: 0 }}>
+            {modalContent.message}
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };

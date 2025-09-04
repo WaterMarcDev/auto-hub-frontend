@@ -17,7 +17,12 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const Payment = ({ formData, nextStep, prevStep }) => {
+const Payment = ({ formData, prevStep, handleInventorySubmit }) => {
+  const handleInventoryClick = async () => {
+    // Use the new handleInventorySubmit function that submits to backend and goes to inventory step
+    await handleInventorySubmit();
+  };
+
   return (
     <div>
       <Row gutter={24} style={{ marginBottom: "24px" }}>
@@ -281,7 +286,7 @@ const Payment = ({ formData, nextStep, prevStep }) => {
         <Button
           type="primary"
           size="large"
-          onClick={nextStep}
+          onClick={handleInventoryClick}
           icon={<ArrowRightOutlined />}
           iconPosition="end"
         >

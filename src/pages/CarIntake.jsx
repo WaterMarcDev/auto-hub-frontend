@@ -575,6 +575,155 @@ const CarIntake = () => {
     }
   };
 
+  const handleInventorySubmit = async () => {
+    try {
+      // Final validation before submission using Ant Design
+      const requiredStepFields = [
+        ...getStepFields(1),
+        ...getStepFields(4),
+        ...getStepFields(5),
+        ...getStepFields(6),
+      ];
+
+      await form.validateFields(requiredStepFields);
+
+      // Prepare car images URLs
+      const carImages = {};
+      const imageFields = [
+        "carImage1",
+        "carImage2",
+        "carImage3",
+        "carImage4",
+        "carImage5",
+        "carImage6",
+        "carImage7",
+        "carImage8",
+        "carEngineImage",
+        "carBootImage",
+        "belowVehicleImage",
+        "fullVehicleImage",
+      ];
+
+      const imageMapping = {
+        carImage1: "image1",
+        carImage2: "image2",
+        carImage3: "image3",
+        carImage4: "image4",
+        carImage5: "image5",
+        carImage6: "image6",
+        carImage7: "image7",
+        carImage8: "image8",
+        carEngineImage: "engineImage",
+        carBootImage: "bootImage",
+        belowVehicleImage: "belowVehicleImage",
+        fullVehicleImage: "fullVehicleImage",
+      };
+
+      imageFields.forEach((field) => {
+        const fieldData = formData[field];
+        if (fieldData && fieldData.uploaded && fieldData.url) {
+          const mappedKey = imageMapping[field];
+          carImages[mappedKey] = fieldData.url;
+        }
+      });
+
+      // Prepare documents URLs
+      const documents = {};
+      if (
+        formData.dlDocument &&
+        formData.dlDocument.uploaded &&
+        formData.dlDocument.url
+      ) {
+        documents.driversLicense = formData.dlDocument.url;
+      }
+      if (formData.carRC && formData.carRC.uploaded && formData.carRC.url) {
+        documents.carRegistration = formData.carRC.url;
+      }
+
+      // Create JSON payload instead of FormData
+      const submitData = {
+        // Car basic info
+        vin: formData.vin,
+        year: parseInt(formData.year) || 0,
+        make: formData.make,
+        model: formData.model,
+        trim: formData.trim,
+        color: formData.color,
+        bodyClass: formData.bodyClass,
+        chassisNo: formData.chassisNo,
+        engineNo: formData.engineNo,
+        engineVariant: formData.engineVariant,
+        drive: formData.drive,
+        transmission: formData.transmission,
+        scrapYardName: formData.scrapYardName,
+        scrapYardLocation: formData.scrapYardLocation,
+        fuelType: formData.fuelType,
+        keys: formData.hasKeys,
+        dimensions: formData.dimensions,
+        description: formData.description,
+
+        // Images
+        carImages: carImages,
+        imageDescription: formData.imageDescription,
+
+        // Parts diagnosis
+        parts: formData.diagnosis || {},
+        partsDescription: formData.partsDescription || "",
+
+        // Price information
+        weightInPounds: parseFloat(formData.weight) || 0,
+        ratePerPound: parseFloat(formData.rate) || 6,
+        actualPrice: parseFloat(formData.actualPrice) || 0,
+        ourPrice: parseFloat(formData.ourPrice) || 0,
+        customerPrice: parseFloat(formData.customerPrice) || 0,
+        negotiateTo: formData.negotiateTo,
+        finalPrice: parseFloat(formData.finalPrice) || 0,
+        priceDescription: formData.priceDescription,
+
+        // Seller data
+        sellerData: {
+          firstName: formData.firstName || "",
+          lastName: formData.lastName || "",
+          email: formData.email || "",
+          mobileNo: formData.mobileNo || "",
+          description: formData.kycDescription || "",
+        },
+
+        // Documents
+        documents: documents,
+
+        // Required backend fields
+        sellingDate:
+          formData.sellingDate || new Date().toISOString().split("T")[0],
+        pickupType: formData.pickUpType === "0" ? "You Pull" : "We Pull",
+        paymentMethod: formData.paidTo || "Cash",
+        paidAmount: parseFloat(formData.paymentAmount) || 0,
+        kycDescription: formData.kycDescription,
+      };
+
+      console.log("Submitting car intake data:", submitData);
+
+      const response = await carIntakeAPI.createWithJSON(submitData);
+
+      console.log("Response data:", response.data);
+
+      if (response.status === 201) {
+        message.success("Car intake created successfully!");
+        showAlert("success", "Car intake created successfully!");
+        console.log("Car intake created:", response.data);
+
+        // Navigate to inventory step instead of clearing form
+        setCurrentStep(7);
+      } else {
+        throw new Error(response.data.error || "Failed to create car intake");
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+      message.error(`Error submitting form: ${error.message}`);
+      showAlert("danger", `Error submitting form: ${error.message}`);
+    }
+  };
+
   const renderStepContent = () => {
     const validationRules = getValidationRules();
 
@@ -641,6 +790,7 @@ const CarIntake = () => {
             prevStep={prevStep}
             form={form}
             validationRules={validationRules}
+            handleInventorySubmit={handleInventorySubmit}
           />
         );
       case 7:
