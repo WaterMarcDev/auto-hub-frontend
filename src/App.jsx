@@ -1,0 +1,216 @@
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Layout from "./components/layout/Layout";
+import Dashboard from "./pages/Dashboard";
+import AddCarMake from "./pages/AddCarMake";
+import AddCarModel from "./pages/AddCarModel";
+import CarIntake from "./pages/CarIntake";
+import CarIntakeList from "./pages/CarIntakeList";
+import Login from "./pages/Login";
+
+// Import CSS files
+import "./App.css";
+import "./dark-theme.css";
+
+// Create placeholder components for other routes
+const PlaceholderPage = ({ title }) => (
+  <div className="page-title-box">
+    <div className="container-fluid">
+      <div className="row align-items-center">
+        <div className="col-sm-6">
+          <div className="page-title">
+            <h4>{title}</h4>
+            <ol className="breadcrumb m-0">
+              <li className="breadcrumb-item">
+                <a href="javascript: void(0);">Scrap Yard</a>
+              </li>
+              <li className="breadcrumb-item active">{title}</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-12">
+        <div className="card">
+          <div className="card-body">
+            <h4 className="card-title">{title}</h4>
+            <p>This page is under development.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Auth placeholder component (standalone without layout)
+const AuthPlaceholderPage = ({ title }) => {
+  React.useEffect(() => {
+    // Fix body styles for auth page
+    document.body.style.display = "block";
+    document.body.style.placeItems = "initial";
+    document.body.style.minHeight = "100vh";
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+
+    // Also fix the root element
+    const rootElement = document.getElementById("root");
+    rootElement.style.display = "block";
+    rootElement.style.placeItems = "initial";
+    rootElement.style.minHeight = "100vh";
+    rootElement.style.width = "100%";
+  }, []);
+
+  return (
+    <div className="authentication-bg bg-primary">
+      <div className="home-center">
+        <div className="home-desc-center">
+          <div className="container">
+            <div className="home-btn">
+              <Link to="/" className="text-white router-link-active">
+                <i className="fas fa-home h2"></i>
+              </Link>
+            </div>
+            <div className="row justify-content-center">
+              <div className="col-md-8 col-lg-6 col-xl-5">
+                <div className="card">
+                  <div className="card-body">
+                    <div className="px-2 py-3">
+                      <div className="text-center">
+                        <Link to="/">
+                          <img
+                            src="assets/images/logo-dark.png"
+                            height="45"
+                            alt="logo"
+                          />
+                        </Link>
+                        <h5 className="text-primary mb-2 mt-4">{title}</h5>
+                        <p className="text-muted">
+                          This page is under development.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 text-center text-white">
+                  <p>
+                    <Link to="/auth-login" className="fw-bold text-white">
+                      ← Back to Login
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Authentication Routes (without main layout) */}
+          <Route path="/auth-login" element={<Login />} />
+          <Route
+            path="/auth-register"
+            element={<AuthPlaceholderPage title="Register" />}
+          />
+          <Route
+            path="/auth-recoverpw"
+            element={<AuthPlaceholderPage title="Recover Password" />}
+          />
+          <Route
+            path="/auth-lock-screen"
+            element={<AuthPlaceholderPage title="Lock Screen" />}
+          />
+
+          {/* Main App Routes (with layout and authentication) */}
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<CarIntake />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/add-car-make" element={<AddCarMake />} />
+                    <Route path="/add-car-model" element={<AddCarModel />} />
+                    <Route
+                      path="/add-car-trim"
+                      element={<PlaceholderPage title="Add Car Trim" />}
+                    />
+                    <Route
+                      path="/add-inventory-parts"
+                      element={<PlaceholderPage title="Add Inventory Parts" />}
+                    />
+                    <Route
+                      path="/add-junk-elements"
+                      element={<PlaceholderPage title="Add Scrap Elements" />}
+                    />
+                    <Route path="/car-intake" element={<CarIntake />} />
+                    <Route
+                      path="/car-intake-list"
+                      element={<CarIntakeList />}
+                    />
+                    <Route
+                      path="/add-inventory"
+                      element={<PlaceholderPage title="Add Inventory" />}
+                    />
+                    <Route
+                      path="/inventory-lists"
+                      element={<PlaceholderPage title="Inventory Lists" />}
+                    />
+                    <Route
+                      path="/print-tag"
+                      element={<PlaceholderPage title="Print Tag" />}
+                    />
+                    <Route
+                      path="/junk-car"
+                      element={<PlaceholderPage title="Add Junk Car" />}
+                    />
+                    <Route
+                      path="/junk-car-lists"
+                      element={<PlaceholderPage title="Junk Car Lists" />}
+                    />
+                    <Route
+                      path="/scrap-car"
+                      element={<PlaceholderPage title="Scrap Car" />}
+                    />
+                    <Route
+                      path="/scrap-car-lists"
+                      element={<PlaceholderPage title="Scrap Car Lists" />}
+                    />
+                    <Route
+                      path="/add-new-seller"
+                      element={<PlaceholderPage title="Add New Seller" />}
+                    />
+                    <Route
+                      path="/seller-lists"
+                      element={<PlaceholderPage title="Seller Lists" />}
+                    />
+                    <Route
+                      path="/payment-lists"
+                      element={<PlaceholderPage title="Payment Lists" />}
+                    />
+                    <Route
+                      path="/print-receipt"
+                      element={<PlaceholderPage title="Print Receipt" />}
+                    />
+                  </Routes>
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
