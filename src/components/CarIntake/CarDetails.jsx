@@ -15,7 +15,7 @@ import { ArrowRightOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const CarDetails = ({ formData, updateFormData, nextStep, vinData }) => {
+const CarDetails = ({ nextStep, vinData }) => {
   // Check if field should be disabled (populated by VIN data)
   const isVinField = (fieldName) => {
     const vinFields = [

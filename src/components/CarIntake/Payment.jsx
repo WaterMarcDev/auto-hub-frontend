@@ -218,10 +218,10 @@ const Payment = ({ formData, prevStep, handleInventorySubmit }) => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name="paymentAmount"
+                name="finalPrice"
                 label={<Text style={{ color: "white" }}>Amount</Text>}
                 rules={[
-                  { required: true, message: "Payment Amount is required" },
+                  { required: true, message: "Final Price is required" },
                 ]}
               >
                 <InputNumber

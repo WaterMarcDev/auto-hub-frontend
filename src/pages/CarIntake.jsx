@@ -316,7 +316,7 @@ const CarIntake = () => {
           "pickUpType",
         ];
       case 6: // Payment - all required fields
-        return ["paidTo", "paymentAmount"];
+        return ["paidTo", "finalPrice"];
       default:
         return [];
     }
@@ -387,7 +387,6 @@ const CarIntake = () => {
 
       // Step 6: Payment
       paidTo: "",
-      paymentAmount: "",
       paymentDescription: "",
     });
     form.resetFields();
@@ -544,7 +543,6 @@ const CarIntake = () => {
           formData.sellingDate || new Date().toISOString().split("T")[0],
         pickupType: formData.pickUpType === "0" ? "You Pull" : "We Pull",
         paymentMethod: formData.paidTo || "Cash",
-        paidAmount: parseFloat(formData.paymentAmount) || 0,
         kycDescription: formData.kycDescription,
       };
 
@@ -697,7 +695,6 @@ const CarIntake = () => {
           formData.sellingDate || new Date().toISOString().split("T")[0],
         pickupType: formData.pickUpType === "0" ? "You Pull" : "We Pull",
         paymentMethod: formData.paidTo || "Cash",
-        paidAmount: parseFloat(formData.paymentAmount) || 0,
         kycDescription: formData.kycDescription,
       };
 

@@ -153,7 +153,10 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
               <Form.Item
                 name="email"
                 label={<Text style={{ color: "white" }}>Email</Text>}
-                rules={[{ required: true, message: "Email is required" }]}
+                rules={[
+                  { required: true, message: "Email is required" },
+                  { type: "email", message: "Please enter a valid email address" },
+                ]}
               >
                 <Input
                   type="email"
