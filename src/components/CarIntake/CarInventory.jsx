@@ -62,7 +62,7 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
                 Car Details
               </Title>
             }
-            style={{ backgroundColor: "#374151", borderColor: "#6b7280" }}
+            style={{ backgroundColor: "#1F293D", borderColor: "#6b7280" }}
             headStyle={{
               backgroundColor: "#374151",
               borderBottom: "1px solid #6b7280",
@@ -390,25 +390,11 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
       </div>
 
       <Modal
-        title={<span style={{ color: "#f9fafb" }}>{modalContent.title}</span>}
+        title={<span>{modalContent.title}</span>}
         open={modalVisible}
         onOk={handleModalClose}
         onCancel={handleModalClose}
         centered
-        styles={{
-          content: {
-            backgroundColor: "#374151",
-            color: "white",
-          },
-          header: {
-            backgroundColor: "#374151",
-            borderBottom: "1px solid #6b7280",
-            color: "#f9fafb",
-          },
-          body: {
-            backgroundColor: "#374151",
-          },
-        }}
         footer={[
           <Button key="ok" type="primary" onClick={handleModalClose}>
             OK

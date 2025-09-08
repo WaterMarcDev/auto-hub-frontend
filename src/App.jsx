@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 // Import CSS files
 import "./App.css";
 import "./dark-theme.css";
+import { ConfigProvider, theme } from "antd";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -112,104 +113,127 @@ const AuthPlaceholderPage = ({ title }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Authentication Routes (without main layout) */}
-          <Route path="/auth-login" element={<Login />} />
-          <Route
-            path="/auth-register"
-            element={<AuthPlaceholderPage title="Register" />}
-          />
-          <Route
-            path="/auth-recoverpw"
-            element={<AuthPlaceholderPage title="Recover Password" />}
-          />
-          <Route
-            path="/auth-lock-screen"
-            element={<AuthPlaceholderPage title="Lock Screen" />}
-          />
+    <ConfigProvider
+      theme={{
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorBgContainer: "#1F293D",
+          colorBgLayout: "#1F293D",
+          colorBgElevated: "#1F293D",
+        },
+        components: {
+          Modal: {
+            contentBg: "#1F293D",
+            headerBg: "#1F293D",
+            algorithm: true,
+          },
+          Card: {
+            algorithm: true,
+          },
+        },
+      }}
+    >
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Authentication Routes (without main layout) */}
+            <Route path="/auth-login" element={<Login />} />
+            <Route
+              path="/auth-register"
+              element={<AuthPlaceholderPage title="Register" />}
+            />
+            <Route
+              path="/auth-recoverpw"
+              element={<AuthPlaceholderPage title="Recover Password" />}
+            />
+            <Route
+              path="/auth-lock-screen"
+              element={<AuthPlaceholderPage title="Lock Screen" />}
+            />
 
-          {/* Main App Routes (with layout and authentication) */}
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<CarIntake />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/add-car-make" element={<AddCarMake />} />
-                    <Route path="/add-car-model" element={<AddCarModel />} />
-                    <Route
-                      path="/add-car-trim"
-                      element={<PlaceholderPage title="Add Car Trim" />}
-                    />
-                    <Route
-                      path="/add-inventory-parts"
-                      element={<PlaceholderPage title="Add Inventory Parts" />}
-                    />
-                    <Route
-                      path="/add-junk-elements"
-                      element={<PlaceholderPage title="Add Scrap Elements" />}
-                    />
-                    <Route path="/car-intake" element={<CarIntake />} />
-                    <Route
-                      path="/car-intake-list"
-                      element={<CarIntakeList />}
-                    />
-                    <Route
-                      path="/add-inventory"
-                      element={<PlaceholderPage title="Add Inventory" />}
-                    />
-                    <Route
-                      path="/inventory-lists"
-                      element={<PlaceholderPage title="Inventory Lists" />}
-                    />
-                    <Route
-                      path="/print-tag"
-                      element={<PlaceholderPage title="Print Tag" />}
-                    />
-                    <Route
-                      path="/junk-car"
-                      element={<PlaceholderPage title="Add Junk Car" />}
-                    />
-                    <Route
-                      path="/junk-car-lists"
-                      element={<PlaceholderPage title="Junk Car Lists" />}
-                    />
-                    <Route
-                      path="/scrap-car"
-                      element={<PlaceholderPage title="Scrap Car" />}
-                    />
-                    <Route
-                      path="/scrap-car-lists"
-                      element={<PlaceholderPage title="Scrap Car Lists" />}
-                    />
-                    <Route
-                      path="/add-new-seller"
-                      element={<PlaceholderPage title="Add New Seller" />}
-                    />
-                    <Route
-                      path="/seller-lists"
-                      element={<PlaceholderPage title="Seller Lists" />}
-                    />
-                    <Route
-                      path="/payment-lists"
-                      element={<PlaceholderPage title="Payment Lists" />}
-                    />
-                    <Route
-                      path="/print-receipt"
-                      element={<PlaceholderPage title="Print Receipt" />}
-                    />
-                  </Routes>
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Main App Routes (with layout and authentication) */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<CarIntake />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/add-car-make" element={<AddCarMake />} />
+                      <Route path="/add-car-model" element={<AddCarModel />} />
+                      <Route
+                        path="/add-car-trim"
+                        element={<PlaceholderPage title="Add Car Trim" />}
+                      />
+                      <Route
+                        path="/add-inventory-parts"
+                        element={
+                          <PlaceholderPage title="Add Inventory Parts" />
+                        }
+                      />
+                      <Route
+                        path="/add-junk-elements"
+                        element={<PlaceholderPage title="Add Scrap Elements" />}
+                      />
+                      <Route path="/car-intake" element={<CarIntake />} />
+                      <Route
+                        path="/car-intake-list"
+                        element={<CarIntakeList />}
+                      />
+                      <Route
+                        path="/add-inventory"
+                        element={<PlaceholderPage title="Add Inventory" />}
+                      />
+                      <Route
+                        path="/inventory-lists"
+                        element={<PlaceholderPage title="Inventory Lists" />}
+                      />
+                      <Route
+                        path="/print-tag"
+                        element={<PlaceholderPage title="Print Tag" />}
+                      />
+                      <Route
+                        path="/junk-car"
+                        element={<PlaceholderPage title="Add Junk Car" />}
+                      />
+                      <Route
+                        path="/junk-car-lists"
+                        element={<PlaceholderPage title="Junk Car Lists" />}
+                      />
+                      <Route
+                        path="/scrap-car"
+                        element={<PlaceholderPage title="Scrap Car" />}
+                      />
+                      <Route
+                        path="/scrap-car-lists"
+                        element={<PlaceholderPage title="Scrap Car Lists" />}
+                      />
+                      <Route
+                        path="/add-new-seller"
+                        element={<PlaceholderPage title="Add New Seller" />}
+                      />
+                      <Route
+                        path="/seller-lists"
+                        element={<PlaceholderPage title="Seller Lists" />}
+                      />
+                      <Route
+                        path="/payment-lists"
+                        element={<PlaceholderPage title="Payment Lists" />}
+                      />
+                      <Route
+                        path="/print-receipt"
+                        element={<PlaceholderPage title="Print Receipt" />}
+                      />
+                    </Routes>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ConfigProvider>
   );
 }
 

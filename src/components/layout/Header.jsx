@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 
 const Header = ({ onMenuToggle }) => {
   const { user, logout } = useAuth();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -30,70 +40,19 @@ const Header = ({ onMenuToggle }) => {
               </span>
             </a>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm px-3 font-size-24 header-item waves-effect"
-            id="vertical-menu-btn"
-            onClick={onMenuToggle}
-          >
-            <i className="mdi mdi-menu"></i>
-          </button>
-          <div className="topbar-social-icon me-3 d-none d-md-block">
-            <ul className="list-inline title-tooltip m-0">
-              <li className="list-inline-item">
-                <a
-                  href="#"
-                  data-bs-toggle="tooltip"
-                  data-placement="top"
-                  title="Email"
-                >
-                  <i className="mdi mdi-email-outline"></i>
-                </a>
-              </li>
-              <li className="list-inline-item">
-                <a
-                  href="#"
-                  data-bs-toggle="tooltip"
-                  data-placement="top"
-                  title="Chat"
-                >
-                  <i className="mdi mdi-tooltip-outline"></i>
-                </a>
-              </li>
-              <li className="list-inline-item">
-                <a
-                  href="#"
-                  data-bs-toggle="tooltip"
-                  data-placement="top"
-                  title="Calendar"
-                >
-                  <i className="mdi mdi-calendar"></i>
-                </a>
-              </li>
-              <li className="list-inline-item">
-                <a
-                  href="#"
-                  data-bs-toggle="tooltip"
-                  data-placement="top"
-                  title="Printer"
-                >
-                  <i className="mdi mdi-printer"></i>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="d-flex">
-          <div className="dropdown d-none d-lg-inline-block ms-1">
+          {isMobile && (
             <button
               type="button"
-              className="btn header-item noti-icon waves-effect"
-              data-toggle="fullscreen"
+              className="btn btn-sm px-3 font-size-24 header-item waves-effect"
+              id="vertical-menu-btn"
+              onClick={onMenuToggle}
             >
-              <i className="mdi mdi-fullscreen"></i>
+              <i className="mdi mdi-menu"></i>
             </button>
-          </div>
-          <div className="dropdown d-inline-block">
+          )}
+        </div>
+        <div className="d-flex">
+          {/* <div className="dropdown d-inline-block">
             <button
               type="button"
               className="btn header-item noti-icon waves-effect"
@@ -154,7 +113,7 @@ const Header = ({ onMenuToggle }) => {
                 </a>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <div className="dropdown d-inline-block">
             <button
@@ -180,19 +139,7 @@ const Header = ({ onMenuToggle }) => {
                 <i className="mdi mdi-account-circle-outline font-size-16 align-middle me-1"></i>{" "}
                 Profile
               </a>
-              <a className="dropdown-item" href="#">
-                <i className="mdi mdi-wallet-outline font-size-16 align-middle me-1"></i>{" "}
-                My Wallet
-              </a>
-              <a className="dropdown-item d-block" href="#">
-                <span className="badge badge-success float-end">11</span>
-                <i className="mdi mdi-cog-outline font-size-16 align-middle me-1"></i>{" "}
-                Settings
-              </a>
-              <a className="dropdown-item" href="#">
-                <i className="mdi mdi-lock-open-outline font-size-16 align-middle me-1"></i>{" "}
-                Lock screen
-              </a>
+
               <div className="dropdown-divider"></div>
               <button
                 className="dropdown-item text-danger"
@@ -208,14 +155,6 @@ const Header = ({ onMenuToggle }) => {
                 Logout
               </button>
             </div>
-          </div>
-          <div className="dropdown d-inline-block">
-            <button
-              type="button"
-              className="btn header-item noti-icon right-bar-toggle waves-effect"
-            >
-              <i className="mdi mdi-cog-outline font-size-20"></i>
-            </button>
           </div>
         </div>
       </div>

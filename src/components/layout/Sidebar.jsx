@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 const Sidebar = ({ isOpen }) => {
   const location = useLocation();
+  const { user } = useAuth();
   const [openDropdowns, setOpenDropdowns] = useState({});
 
   // Functions used for Car Intake menu
@@ -79,8 +81,15 @@ const Sidebar = ({ isOpen }) => {
               <span className="avatar-online bg-success"></span>
             </div>
             <div className="user-info">
-              <h5 className="mt-3 font-size-16 text-white">James Raphael</h5>
-              <span className="font-size-13 text-white-50">Administrator</span>
+              <h5 className="mt-3 font-size-16 text-white">
+                {user ? `${user.first_name} ${user.last_name}` : "User"}
+              </h5>
+              <span className="font-size-13 text-white-50">
+                {user?.role
+                  ? user.role.charAt(0).toUpperCase() +
+                    user.role.slice(1).toLowerCase()
+                  : "User"}
+              </span>
             </div>
           </div>
         </div>

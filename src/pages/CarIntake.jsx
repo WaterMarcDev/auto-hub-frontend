@@ -10,6 +10,7 @@ import {
   Button,
   Spin,
   Space,
+  Typography,
 } from "antd";
 import CarDetails from "../components/CarIntake/CarDetails";
 import CarImages from "../components/CarIntake/CarImages";
@@ -814,42 +815,6 @@ const CarIntake = () => {
 
   return (
     <>
-      <style>
-        {`
-          .ant-input::placeholder,
-          .ant-input-affix-wrapper input::placeholder,
-          .ant-select-selector .ant-select-selection-placeholder {
-            color: #d1d5db !important;
-            opacity: 0.8;
-          }
-          
-          .ant-input::-webkit-input-placeholder {
-            color: #d1d5db !important;
-            opacity: 0.8;
-          }
-          
-          .ant-input::-moz-placeholder {
-            color: #d1d5db !important;
-            opacity: 0.8;
-          }
-          
-          .ant-input:-ms-input-placeholder {
-            color: #d1d5db !important;
-            opacity: 0.8;
-          }
-          
-          .ant-input:-moz-placeholder {
-            color: #d1d5db !important;
-            opacity: 0.8;
-          }
-          
-          .ant-form-item .ant-input::placeholder,
-          .ant-form-item .ant-input-affix-wrapper input::placeholder {
-            color: #d1d5db !important;
-            opacity: 0.8;
-          }
-        `}
-      </style>
       <Modal
         title="Enter VIN Number"
         open={isVinModalVisible}
@@ -858,20 +823,6 @@ const CarIntake = () => {
         maskClosable={false}
         closable={false}
         centered
-        styles={{
-          content: {
-            backgroundColor: "#374151",
-            color: "white",
-          },
-          header: {
-            backgroundColor: "#374151",
-            borderBottom: "1px solid #6b7280",
-            color: "white",
-          },
-          body: {
-            backgroundColor: "#374151",
-          },
-        }}
         footer={[
           <Button
             key="submit"
@@ -922,8 +873,8 @@ const CarIntake = () => {
                 disabled={isLoadingVin}
                 style={{
                   textTransform: "uppercase",
-                  backgroundColor: "#4b5563",
-                  borderColor: "#6b7280",
+                  backgroundColor: "#1F293D",
+                  borderColor: "#1F293D",
                   color: "white",
                 }}
                 onChange={(e) => {
@@ -976,138 +927,92 @@ const CarIntake = () => {
 
       <div className="container-fluid">
         <div className="page-content-wrapper">
-          <div className="row">
-            <div className="col-12">
-              <Card
-                title="Add New Car to Scrap Yard"
-                style={{
-                  backgroundColor: "#374151",
-                  borderColor: "#6b7280",
-                }}
-                headStyle={{
-                  backgroundColor: "#374151",
-                  borderBottom: "1px solid #6b7280",
-                  color: "white",
-                }}
-                bodyStyle={{ backgroundColor: "#374151" }}
-              >
-                <div id="progrss-wizard" className="twitter-bs-wizard">
-                  <ul className="twitter-bs-wizard-nav nav-justified">
-                    <li className="nav-item">
-                      <div
-                        className={`nav-link ${
-                          currentStep === 1 ? "active" : ""
-                        }`}
-                      >
-                        <span className="step-number">01. Car Details</span>
-                      </div>
-                    </li>
-                    <li className="nav-item">
-                      <div
-                        className={`nav-link ${
-                          currentStep === 2 ? "active" : ""
-                        }`}
-                      >
-                        <span className="step-number">02. Car Images</span>
-                      </div>
-                    </li>
-                    <li className="nav-item">
-                      <div
-                        className={`nav-link ${
-                          currentStep === 3 ? "active" : ""
-                        }`}
-                      >
-                        <span className="step-number">03. Car Diagnosis</span>
-                      </div>
-                    </li>
-                    <li className="nav-item">
-                      <div
-                        className={`nav-link ${
-                          currentStep === 4 ? "active" : ""
-                        }`}
-                      >
-                        <span className="step-number">04. Car Price</span>
-                      </div>
-                    </li>
-                    <li className="nav-item">
-                      <div
-                        className={`nav-link ${
-                          currentStep === 5 ? "active" : ""
-                        }`}
-                      >
-                        <span className="step-number">
-                          05. User KYC & Car Doc
-                        </span>
-                      </div>
-                    </li>
-                    <li className="nav-item">
-                      <div
-                        className={`nav-link ${
-                          currentStep === 6 ? "active" : ""
-                        }`}
-                      >
-                        <span className="step-number">06. Payment</span>
-                      </div>
-                    </li>
-                    <li className="nav-item">
-                      <a
-                        className={`nav-link ${
-                          currentStep === 7 ? "active" : ""
-                        }`}
-                      >
-                        <span className="step-number">
-                          07. Car & Parts Inventory
-                        </span>
-                      </a>
-                    </li>
-                  </ul>
-                  <div id="bar" className="progress mt-4">
-                    <div
-                      className="progress-bar bg-success progress-bar-striped progress-bar-animated"
-                      style={{ width: `${(currentStep / 7) * 100}%` }}
-                    ></div>
-                  </div>
+          <Card title="Add New Car to Scrap Yard">
+            <div id="progrss-wizard" className="twitter-bs-wizard">
+              <ul className="twitter-bs-wizard-nav nav-justified">
+                <li className="nav-item">
                   <div
-                    className="tab-content twitter-bs-wizard-tab-content custom-tab-content"
-                    style={{
-                      background: "#374151",
-                      backgroundColor: "#374151",
-                      border: "none",
-                      borderColor: "transparent",
+                    className={`nav-link ${currentStep === 1 ? "active" : ""}`}
+                  >
+                    <span className="step-number">01. Car Details</span>
+                  </div>
+                </li>
+                <li className="nav-item">
+                  <div
+                    className={`nav-link ${currentStep === 2 ? "active" : ""}`}
+                  >
+                    <span className="step-number">02. Car Images</span>
+                  </div>
+                </li>
+                <li className="nav-item">
+                  <div
+                    className={`nav-link ${currentStep === 3 ? "active" : ""}`}
+                  >
+                    <span className="step-number">03. Car Diagnosis</span>
+                  </div>
+                </li>
+                <li className="nav-item">
+                  <div
+                    className={`nav-link ${currentStep === 4 ? "active" : ""}`}
+                  >
+                    <span className="step-number">04. Car Price</span>
+                  </div>
+                </li>
+                <li className="nav-item">
+                  <div
+                    className={`nav-link ${currentStep === 5 ? "active" : ""}`}
+                  >
+                    <span className="step-number">05. User KYC & Car Doc</span>
+                  </div>
+                </li>
+                <li className="nav-item">
+                  <div
+                    className={`nav-link ${currentStep === 6 ? "active" : ""}`}
+                  >
+                    <span className="step-number">06. Payment</span>
+                  </div>
+                </li>
+                <li className="nav-item">
+                  <a
+                    className={`nav-link ${currentStep === 7 ? "active" : ""}`}
+                  >
+                    <span className="step-number">
+                      07. Car & Parts Inventory
+                    </span>
+                  </a>
+                </li>
+              </ul>
+              <div id="bar" className="progress mt-4">
+                <div
+                  className="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                  style={{
+                    width: `${(currentStep / 7) * 100}%`,
+                  }}
+                ></div>
+              </div>
+              <div className="tab-content twitter-bs-wizard-tab-content custom-tab-content">
+                <div className="tab-pane active custom-tab-pane">
+                  <Form
+                    form={form}
+                    layout="vertical"
+                    initialValues={formData}
+                    onValuesChange={(changedValues) => {
+                      updateFormData(changedValues);
+                    }}
+                    onFinish={(values) => {
+                      console.log("Form values on submit:", values);
+                      nextStep();
+                    }}
+                    onFinishFailed={(errorInfo) => {
+                      console.log("Form validation failed:", errorInfo);
                     }}
                   >
-                    <div
-                      className="tab-pane active custom-tab-pane"
-                      style={{
-                        background: "#374151",
-                        backgroundColor: "#374151",
-                        border: "none",
-                        borderColor: "transparent",
-                      }}
-                    >
-                      <Form
-                        form={form}
-                        layout="vertical"
-                        initialValues={formData}
-                        onValuesChange={(changedValues) => {
-                          updateFormData(changedValues);
-                        }}
-                        onFinish={(values) => {
-                          console.log("Form values on submit:", values);
-                          nextStep();
-                        }}
-                        onFinishFailed={(errorInfo) => {
-                          console.log("Form validation failed:", errorInfo);
-                        }}
-                      >
-                        {renderStepContent()}
-                      </Form>
-                    </div>
-                  </div>
+                    {renderStepContent()}
+                  </Form>
                 </div>
-              </Card>
+              </div>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </>

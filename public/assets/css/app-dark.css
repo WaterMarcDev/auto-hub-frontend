@@ -7,7 +7,7 @@ File: Main Css File
 */
 
 body {
-  background-color: #212529 !important;
+  background-color: #141a2e !important;
 }
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
@@ -63,7 +63,6 @@ body {
 
 .page-content-wrapper {
   margin-top: -90px;
-  background-color: #212529 !important;
 }
 
 .page-title-box {
@@ -229,7 +228,7 @@ body {
 }
 
 body[data-topbar="dark"] #page-topbar {
-  background-color: #141b2d;
+  background-color: #1f293d;
 }
 
 body[data-topbar="dark"] .navbar-header .dropdown.show .header-item {
@@ -344,12 +343,12 @@ body[data-layout="horizontal"] .page-content {
   margin-left: 240px;
   /* margin-bottom: 0; */
   width: calc(100% - 240px);
-  border-top: 1px solid #1f293f;
+  border-top: 1px solid #1f293d;
   color: #d6dae5;
   height: 60px;
   -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  background-color: #1f293f;
+  background-color: #1f293d;
 }
 
 @media (max-width: 992px) {
