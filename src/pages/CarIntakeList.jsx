@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { message, Table, Tag, Button, Space } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { message, Table, Tag, Button, Space, Card, Typography } from "antd";
+import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { CarIntakeService } from "../services/apiService";
 import { useNavigate } from "react-router-dom";
 
@@ -23,7 +23,7 @@ const CarIntakeList = () => {
       dataIndex: "vin",
       key: "vin",
       fixed: "left",
-      width: 120,
+      width: 200,
       render: (text) => text || "N/A",
     },
     {
@@ -127,22 +127,15 @@ const CarIntakeList = () => {
       ),
     },
     {
-      title: "Image Updated",
-      dataIndex: "imageUpdated",
-      key: "imageUpdated",
-      width: 120,
+      title: "Image uploaded",
+      dataIndex: "imageUploaded",
+      key: "imageUploaded",
+      width: 180,
       render: (imageUpdated) => (
         <Tag color={imageUpdated ? "blue" : "red"}>
           {imageUpdated ? "Yes" : "No"}
         </Tag>
       ),
-    },
-    {
-      title: "Image Updated By",
-      dataIndex: "imageUpdatedBy",
-      key: "imageUpdatedBy",
-      width: 140,
-      render: (text) => <Tag color="cyan">{text || "N/A"}</Tag>,
     },
     {
       title: "Car Diagnosed By",
@@ -169,7 +162,7 @@ const CarIntakeList = () => {
       title: "Email",
       dataIndex: ["seller", "email"],
       key: "email",
-      width: 150,
+      width: 250,
       render: (text) => text || "N/A",
     },
     {
@@ -183,7 +176,7 @@ const CarIntakeList = () => {
       title: "Paid In",
       dataIndex: "paymentMethod",
       key: "paymentMethod",
-      width: 100,
+      width: 120,
       render: (method) => <Tag color="green">{method || "Cash"}</Tag>,
     },
     {
@@ -241,7 +234,6 @@ const CarIntakeList = () => {
     {
       title: "Action",
       key: "action",
-      fixed: "right",
       width: 120,
       render: (text, record) => (
         <Space>
@@ -382,40 +374,33 @@ const CarIntakeList = () => {
       {/* Page Content */}
       <div className="container-fluid">
         <div className="page-content-wrapper">
-          <div
-            className="card"
-            style={{ backgroundColor: "#1f2937", border: "1px solid #374151" }}
+          <Card
+            title={<span>Car Intake Lists</span>}
+            extra={
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/car-intake")}>
+                Add New Car
+              </Button>
+            }
           >
-            <div className="card-body">
-              <h4 className="header-title" style={{ color: "#f9fafb" }}>
-                Car Intake Lists
-              </h4>
-
-              <Table
-                columns={columns}
-                dataSource={carIntakes}
-                loading={loading}
-                rowKey={(record) => record._id || record.vin}
-                scroll={{
-                  x: 2500, // Horizontal scroll for many columns
-                  y: 600, // Vertical scroll height
-                }}
-                pagination={{
-                  pageSize: 10,
-                  showSizeChanger: true,
-                  showQuickJumper: true,
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} items`,
-                }}
-                size="small"
-                bordered
-                style={{
-                  backgroundColor: "#1f2937",
-                }}
-                className="dark-table"
-              />
-            </div>
-          </div>
+            <Table
+              columns={columns}
+              dataSource={carIntakes}
+              loading={loading}
+              rowKey={(record) => record._id || record.vin}
+              scroll={{
+                x: 2500, // Horizontal scroll for many columns
+                y: 600, // Vertical scroll height
+              }}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showQuickJumper: true,
+              }}
+              size="small"
+              bordered
+              className="dark-table"
+            />
+          </Card>
         </div>
       </div>
     </div>

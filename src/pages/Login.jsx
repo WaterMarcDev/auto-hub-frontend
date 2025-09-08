@@ -18,7 +18,7 @@ const Login = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/car-intake");
+      navigate("/car-intake-list");
     }
   }, [isAuthenticated, navigate]);
 
@@ -87,7 +87,7 @@ const Login = () => {
 
       if (result.success) {
         // Redirect to car intake page
-        navigate("/car-intake");
+        navigate("/car-intake-list");
       } else {
         setError(result.error);
       }

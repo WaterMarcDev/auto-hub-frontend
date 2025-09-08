@@ -4,6 +4,7 @@
 }
 .ant-card-body {
   background-color: #1f293d !important;
+  border: none !important;
 }
 
 /* Override Ant Design styles for non-form/table components */
