@@ -22,48 +22,6 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Fix body styles for auth page
-  useEffect(() => {
-    // Save original body styles
-    const originalBodyStyle = {
-      display: document.body.style.display,
-      placeItems: document.body.style.placeItems,
-      minHeight: document.body.style.minHeight,
-    };
-
-    // Apply auth page styles
-    document.body.style.display = "block";
-    document.body.style.placeItems = "initial";
-    document.body.style.minHeight = "100vh";
-    document.body.style.margin = "0";
-    document.body.style.padding = "0";
-
-    // Also fix the root element
-    const rootElement = document.getElementById("root");
-    const originalRootStyle = {
-      display: rootElement.style.display,
-      placeItems: rootElement.style.placeItems,
-      minHeight: rootElement.style.minHeight,
-    };
-
-    rootElement.style.display = "block";
-    rootElement.style.placeItems = "initial";
-    rootElement.style.minHeight = "100vh";
-    rootElement.style.width = "100%";
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.display = originalBodyStyle.display || "";
-      document.body.style.placeItems = originalBodyStyle.placeItems || "";
-      document.body.style.minHeight = originalBodyStyle.minHeight || "";
-
-      rootElement.style.display = originalRootStyle.display || "";
-      rootElement.style.placeItems = originalRootStyle.placeItems || "";
-      rootElement.style.minHeight = originalRootStyle.minHeight || "";
-      rootElement.style.width = "";
-    };
-  }, []);
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -174,7 +132,10 @@ const Login = () => {
                         <div className="mb-3">
                           <label
                             htmlFor="email"
-                            style={{ color: "#495057", fontWeight: "500" }}
+                            // style={{
+                            //   color: "black !important",
+                            //   fontWeight: "500",
+                            // }}
                           >
                             Email
                           </label>

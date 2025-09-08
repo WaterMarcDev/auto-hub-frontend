@@ -183,60 +183,6 @@
   height: 10px;
 }
 
-/* .form-control,
-.form-select,
-input,
-textarea,
-select {
-  background-color: #374151 !important;
-  background: #374151 !important;
-  border: 1px solid #4a5568 !important;
-  color: #d6dae5 !important;
-}
-
-.form-control:focus,
-.form-select:focus {
-  background-color: #374151 !important;
-  border-color: #2b6cb0 !important;
-  box-shadow: 0 0 0 0.2rem rgba(43, 108, 176, 0.25) !important;
-  color: #d6dae5 !important;
-} */
-
-/* Fix radio buttons and checkboxes for dark theme */
-.form-check-input {
-  background-color: #374151 !important;
-  border-color: #4a5568 !important;
-  width: 1.25em !important;
-  height: 1.25em !important;
-}
-
-.form-check-input:checked {
-  background-color: #2b6cb0 !important;
-  border-color: #2b6cb0 !important;
-  box-shadow: 0 0 0 0.1rem rgba(43, 108, 176, 0.25) !important;
-}
-
-.form-check-input:focus {
-  border-color: #2b6cb0 !important;
-  outline: 0 !important;
-  box-shadow: 0 0 0 0.2rem rgba(43, 108, 176, 0.25) !important;
-}
-
-.form-check-input[type="radio"]:checked {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e") !important;
-}
-
-.form-check-input[type="checkbox"]:checked {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e") !important;
-}
-
-/* Fix labels and text for dark theme */
-.form-label,
-.form-text,
-label {
-  color: #d6dae5 !important;
-}
-
 /* Fix breadcrumb for dark theme */
 .breadcrumb {
   background-color: transparent !important;
