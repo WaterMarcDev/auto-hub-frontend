@@ -86,7 +86,7 @@ const CarIntakeList = () => {
       title: "Fuel Type",
       dataIndex: "fuelType",
       key: "fuelType",
-      width: 100,
+      width: 250,
       render: (text) => text || "N/A",
     },
     {
@@ -377,7 +377,11 @@ const CarIntakeList = () => {
           <Card
             title={<span>Car Intake Lists</span>}
             extra={
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/car-intake")}>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate("/car-intake")}
+              >
                 Add New Car
               </Button>
             }
