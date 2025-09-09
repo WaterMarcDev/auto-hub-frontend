@@ -8,6 +8,8 @@ import {
   Card,
   Typography,
   Modal,
+  Popover,
+  Checkbox,
 } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { CarIntakeService, UploadService } from "../services/apiService";
@@ -21,8 +23,8 @@ const CarIntakeList = () => {
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
 
-  // Define table columns
-  const columns = [
+  // Define table columns (allColumns) — these will be filtered by user selection
+  const allColumns = [
     {
       title: "Sr. No.",
       key: "srNo",
@@ -313,6 +315,36 @@ const CarIntakeList = () => {
     },
   ];
 
+  // Helper to derive a stable key for a column
+  const getColKey = (col) =>
+    col.key
+      ? String(col.key)
+      : Array.isArray(col.dataIndex)
+      ? String(col.dataIndex[0])
+      : String(col.dataIndex || "");
+
+  // State: which columns are currently visible (by key)
+  const [visibleColumns, setVisibleColumns] = React.useState(
+    allColumns.map((c) => getColKey(c))
+  );
+
+  const toggleColumn = (key, checked) => {
+    setVisibleColumns((prev) => {
+      if (checked) return Array.from(new Set([...prev, key]));
+      return prev.filter((k) => k !== key);
+    });
+  };
+
+  const selectAllColumns = (checked) => {
+    if (checked) setVisibleColumns(allColumns.map((c) => getColKey(c)));
+    else setVisibleColumns([]);
+  };
+
+  // Compute displayed columns maintaining original order
+  const displayedColumns = allColumns.filter((c) =>
+    visibleColumns.includes(getColKey(c))
+  );
+
   // Fetch car intakes data
   const fetchCarIntakes = async () => {
     setLoading(true);
@@ -433,17 +465,63 @@ const CarIntakeList = () => {
           <Card
             title={<span>Car Intake Lists</span>}
             extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => navigate("/car-intake")}
-              >
-                Add New Car
-              </Button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Popover
+                  placement="bottomRight"
+                  content={() => (
+                    <div style={{ maxWidth: 320 }}>
+                      <div style={{ marginBottom: 8, fontWeight: 600 }}>
+                        Columns
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                        <Button
+                          size="small"
+                          onClick={() => selectAllColumns(true)}
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => selectAllColumns(false)}
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                      <div style={{ maxHeight: 300, overflow: "auto" }}>
+                        {allColumns.map((col) => {
+                          const key = getColKey(col);
+                          return (
+                            <div key={key} style={{ marginBottom: 6 }}>
+                              <Checkbox
+                                checked={visibleColumns.includes(key)}
+                                onChange={(e) =>
+                                  toggleColumn(key, e.target.checked)
+                                }
+                              >
+                                {col.title}
+                              </Checkbox>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                >
+                  <Button>Columns</Button>
+                </Popover>
+
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => navigate("/car-intake")}
+                >
+                  Add New Car
+                </Button>
+              </div>
             }
           >
             <Table
-              columns={columns}
+              columns={displayedColumns}
               dataSource={carIntakes}
               loading={loading}
               rowKey={(record) => record._id || record.vin}
