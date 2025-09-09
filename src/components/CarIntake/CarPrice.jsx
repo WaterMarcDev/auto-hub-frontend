@@ -16,14 +16,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const CarPrice = ({
-  formData,
-  updateFormData,
-  nextStep,
-  prevStep,
-  errors = {},
-  touched = {},
-}) => {
+const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
   // Calculate actual price whenever weight or rate changes
   React.useEffect(() => {
     const weight = parseFloat(formData.weight) || 0;
@@ -31,9 +24,57 @@ const CarPrice = ({
     const actualPrice = (weight * rate * 0.01).toFixed(2); // rate is in cents, so divide by 100
 
     if (weight > 0 && rate > 0) {
-      updateFormData({ actualPrice });
+      // only update if different to avoid update loops
+      if (String(formData.actualPrice) !== String(actualPrice)) {
+        updateFormData({ actualPrice });
+      }
     }
-  }, [formData.carWeight, formData.rate]); // Removed updateFormData from dependencies
+  }, [formData.weight, formData.rate, formData.actualPrice, updateFormData]);
+
+  // Calculate final price based on negotiation selection
+  React.useEffect(() => {
+    const negotiate = formData.negotiateTo;
+
+    const parseIfPresent = (v) => {
+      if (v === undefined || v === null || v === "") return null;
+      const n = parseFloat(v);
+      return Number.isNaN(n) ? 0 : n;
+    };
+
+    const cust = parseIfPresent(formData.customerPrice);
+    const our = parseIfPresent(formData.ourPrice);
+
+    // Our price numeric (treat empty as 0 for percentage calculations)
+    const ourNumeric = our !== null ? our : 0;
+
+    let final = ourNumeric;
+
+    if (!negotiate || negotiate === "0") {
+      final = ourNumeric; // no change from ourPrice
+    } else if (negotiate === "In Between") {
+      // Average between ourPrice and customerPrice if both present
+      if (our !== null && cust !== null) final = (our + cust) / 2;
+      else final = ourNumeric;
+    } else {
+      const pct = parseFloat(negotiate);
+      if (!isNaN(pct)) {
+        final = ourNumeric * (1 + pct / 100);
+      }
+    }
+
+    // round to 2 decimals
+    const finalPrice = Number((final || 0).toFixed(2));
+    if (Number(formData.finalPrice) !== Number(finalPrice)) {
+      updateFormData({ finalPrice });
+    }
+  }, [
+    formData.negotiateTo,
+    formData.customerPrice,
+    formData.ourPrice,
+    formData.actualPrice,
+    formData.finalPrice,
+    updateFormData,
+  ]);
 
   return (
     <div>

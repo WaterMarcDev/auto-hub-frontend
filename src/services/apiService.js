@@ -271,6 +271,22 @@ class UploadService {
 
   // Get image URL
   static getImageUrl(filename) {
+    if (!filename) return "";
+    // If it's already a full URL, return as-is
+    try {
+      new URL(filename);
+      return filename; // full URL
+    } catch {
+      // Not a full URL
+    }
+
+    // If it already contains /uploads/ return absolute path
+    if (filename.includes("/uploads/")) {
+      const base = API_BASE_URL.replace("/api", "");
+      return `${base}${filename.startsWith("/") ? filename : "/" + filename}`;
+    }
+
+    // Otherwise treat as a filename
     return `${API_BASE_URL.replace("/api", "")}/uploads/${filename}`;
   }
 }

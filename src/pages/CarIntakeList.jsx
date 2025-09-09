@@ -24,7 +24,14 @@ const CarIntakeList = () => {
       key: "vin",
       fixed: "left",
       width: 200,
-      render: (text) => text || "N/A",
+      render: (text, record) => (
+        <Button
+          type="link"
+          onClick={() => navigate(`/car-intake/${record._id}`)}
+        >
+          {text || "N/A"}
+        </Button>
+      ),
     },
     {
       title: "Make",
@@ -93,28 +100,28 @@ const CarIntakeList = () => {
       title: "Chassis No.",
       dataIndex: "chassisNo",
       key: "chassisNo",
-      width: 150,
+      width: 180,
       render: (text) => text || "N/A",
     },
     {
       title: "Engine No.",
       dataIndex: "engineNo",
       key: "engineNo",
-      width: 150,
+      width: 180,
       render: (text) => text || "N/A",
     },
     {
-      title: "Where",
-      dataIndex: ["location", "where"],
-      key: "where",
+      title: "Scrap Yard",
+      dataIndex: ["scrapYardName"],
+      key: "scrapYardName",
       width: 120,
       render: (text) => text || "N/A",
     },
     {
-      title: "Location",
-      dataIndex: ["location", "city"],
-      key: "location",
-      width: 120,
+      title: "Scrap Yard Location",
+      dataIndex: ["scrapYardLocation"],
+      key: "scrapYardLocation",
+      width: 180,
       render: (text) => text || "N/A",
     },
     {
@@ -125,24 +132,6 @@ const CarIntakeList = () => {
       render: (hasKeys) => (
         <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
       ),
-    },
-    {
-      title: "Image uploaded",
-      dataIndex: "imageUploaded",
-      key: "imageUploaded",
-      width: 180,
-      render: (imageUpdated) => (
-        <Tag color={imageUpdated ? "blue" : "red"}>
-          {imageUpdated ? "Yes" : "No"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Car Diagnosed By",
-      dataIndex: "carDiagnosedBy",
-      key: "carDiagnosedBy",
-      width: 140,
-      render: (text) => <Tag color="green">{text || "N/A"}</Tag>,
     },
     {
       title: "Seller Name",
@@ -234,9 +223,16 @@ const CarIntakeList = () => {
     {
       title: "Action",
       key: "action",
-      width: 120,
+      width: 160,
       render: (text, record) => (
         <Space>
+          <Button
+            type="default"
+            size="small"
+            onClick={() => navigate(`/car-intake/${record._id}`)}
+          >
+            View
+          </Button>
           <Button
             type="primary"
             size="small"

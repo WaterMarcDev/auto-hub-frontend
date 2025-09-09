@@ -69,9 +69,20 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       render: (_, record) => (
         <Switch
           checked={getPartData(record.key, "selected") || false}
-          onChange={(checked) =>
-            updatePartData(record.key, "selected", checked)
-          }
+          onChange={(checked) => {
+            // update selected flag
+            updatePartData(record.key, "selected", checked);
+            // if toggled off, ensure unit is 0
+            if (!checked) {
+              updatePartData(record.key, "unit", 0);
+            } else {
+              // if toggled on and no unit is present, set a sensible default of 1
+              const curUnit = getPartData(record.key, "unit");
+              if (curUnit === "" || curUnit === undefined || curUnit === null) {
+                updatePartData(record.key, "unit", 1);
+              }
+            }
+          }}
           size="small"
         />
       ),
@@ -92,9 +103,9 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       width: 100,
       render: (_, record) => (
         <InputNumber
-          value={getPartData(record.key, "unit") || 1}
+          value={getPartData(record.key, "unit") || 0}
           onChange={(value) => updatePartData(record.key, "unit", value)}
-          min={1}
+          min={0}
           disabled={!getPartData(record.key, "selected")}
           style={{
             width: "100%",

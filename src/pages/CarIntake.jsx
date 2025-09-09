@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { carIntakeAPI, vinAPI } from "../utils/api";
 import {
   Form,
@@ -96,12 +96,15 @@ const CarIntake = () => {
     inventoryItems: [],
   });
 
-  const updateFormData = (updates) => {
-    setFormData((prev) => ({ ...prev, ...updates }));
+  const updateFormData = useCallback(
+    (updates) => {
+      setFormData((prev) => ({ ...prev, ...updates }));
 
-    // Update Ant Design form values
-    form.setFieldsValue(updates);
-  };
+      // Update Ant Design form values
+      form.setFieldsValue(updates);
+    },
+    [form]
+  );
 
   // Sync form with formData on mount and when formData changes
   useEffect(() => {

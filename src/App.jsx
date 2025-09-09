@@ -8,6 +8,7 @@ import AddCarMake from "./pages/AddCarMake";
 import AddCarModel from "./pages/AddCarModel";
 import CarIntake from "./pages/CarIntake";
 import CarIntakeList from "./pages/CarIntakeList";
+import CarIntakeDetails from "./pages/CarIntakeDetails";
 import Login from "./pages/Login";
 
 // Import CSS files
@@ -180,6 +181,10 @@ function App() {
                       <Route
                         path="/car-intake-list"
                         element={<CarIntakeList />}
+                      />
+                      <Route
+                        path="/car-intake/:id"
+                        element={<CarIntakeDetails />}
                       />
                       <Route
                         path="/add-inventory"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Header = ({ onMenuToggle }) => {
   const { user, logout } = useAuth();
@@ -17,13 +18,24 @@ const Header = ({ onMenuToggle }) => {
   const handleLogout = async () => {
     await logout();
   };
+  const navigate = useNavigate();
+
+  const goToCarIntake = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    navigate("/car-intake-list");
+  };
+
   return (
     <header id="page-topbar">
       <div className="navbar-header">
         <div className="d-flex">
           {/* LOGO */}
           <div className="navbar-brand-box">
-            <a href="/" className="logo logo-dark">
+            <a
+              href="/car-intake-list"
+              onClick={goToCarIntake}
+              className="logo logo-dark"
+            >
               <span className="logo-sm">
                 <img src="/assets/images/logo-sm.png" alt="" height="45" />
               </span>
@@ -31,7 +43,11 @@ const Header = ({ onMenuToggle }) => {
                 <img src="/assets/images/logo-dark.png" alt="" height="40" />
               </span>
             </a>
-            <a href="/" className="logo logo-light">
+            <a
+              href="/car-intake-list"
+              onClick={goToCarIntake}
+              className="logo logo-light"
+            >
               <span className="logo-sm">
                 <img src="/assets/images/logo-sm.png" alt="" height="45" />
               </span>
