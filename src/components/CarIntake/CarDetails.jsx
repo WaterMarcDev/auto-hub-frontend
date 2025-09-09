@@ -15,7 +15,7 @@ import { ArrowRightOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const CarDetails = ({ nextStep, vinData }) => {
+const CarDetails = ({ nextStep, vinData, form }) => {
   // Check if field should be disabled (populated by VIN data)
   const isVinField = (fieldName) => {
     const vinFields = [
@@ -346,9 +346,15 @@ const CarDetails = ({ nextStep, vinData }) => {
                 message: "Please specify if keys are available",
               },
             ]}
-            valuePropName="checked"
           >
-            <Switch checkedChildren="Yes" unCheckedChildren="No" />
+            <Switch
+              checkedChildren="Yes"
+              unCheckedChildren="No"
+              checked={form ? form.getFieldValue("hasKeys") : undefined}
+              onChange={(checked) => {
+                if (form) form.setFieldsValue({ hasKeys: checked });
+              }}
+            />
           </Form.Item>
         </Col>
       </Row>

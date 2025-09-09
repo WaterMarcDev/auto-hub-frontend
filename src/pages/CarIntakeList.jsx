@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { message, Table, Tag, Button, Space, Card, Typography } from "antd";
+import {
+  message,
+  Table,
+  Tag,
+  Button,
+  Space,
+  Card,
+  Typography,
+  Modal,
+} from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { CarIntakeService } from "../services/apiService";
+import { CarIntakeService, UploadService } from "../services/apiService";
 import { useNavigate } from "react-router-dom";
 
 const CarIntakeList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
   const navigate = useNavigate();
+  const [docModalVisible, setDocModalVisible] = useState(false);
+  const [docModalUrl, setDocModalUrl] = useState(null);
+  const [docModalIsPdf, setDocModalIsPdf] = useState(false);
 
   // Define table columns
   const columns = [
@@ -126,40 +138,88 @@ const CarIntakeList = () => {
     },
     {
       title: "Keys",
-      dataIndex: "hasKeys",
-      key: "hasKeys",
+      key: "keys",
       width: 80,
-      render: (hasKeys) => (
-        <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
-      ),
+      render: (_, record) => {
+        const hasKeys =
+          record.keys !== undefined
+            ? record.keys
+            : record.hasKeys !== undefined
+            ? record.hasKeys
+            : false;
+        return (
+          <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
+        );
+      },
     },
     {
-      title: "Seller Name",
-      dataIndex: ["seller", "name"],
+      title: "Seller",
+      dataIndex: "seller",
       key: "sellerName",
-      width: 120,
-      render: (text) => text || "N/A",
+      width: 200,
+      render: (seller) => {
+        if (!seller) return "N/A";
+        const name = `${seller.firstName || ""} ${
+          seller.lastName || ""
+        }`.trim();
+
+        return (
+          <div>
+            <div style={{ fontWeight: 600 }}>{name || "N/A"}</div>
+          </div>
+        );
+      },
     },
-    {
-      title: "Mobile",
-      dataIndex: ["seller", "phone"],
-      key: "mobile",
-      width: 120,
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Email",
-      dataIndex: ["seller", "email"],
-      key: "email",
-      width: 250,
-      render: (text) => text || "N/A",
-    },
+    // email is displayed together with seller info above; keep a compact column for finalPrice next
     {
       title: "Final Price",
       dataIndex: "finalPrice",
       key: "finalPrice",
       width: 100,
       render: (price) => `$${price || "0"}`,
+    },
+    {
+      title: "Documents",
+      key: "documents",
+      width: 160,
+      render: (_, record) => {
+        const docs = record.documents || {};
+        const dl = docs.driversLicense || docs.drivers_license || null;
+        const rc = docs.carRegistration || docs.car_registration || null;
+
+        const openDoc = (url) => {
+          if (!url) return;
+          const lower = url.toLowerCase();
+          const isPdf = lower.endsWith(".pdf");
+          setDocModalIsPdf(isPdf);
+          setDocModalUrl(url);
+          setDocModalVisible(true);
+        };
+
+        return (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {dl ? (
+              <Tag
+                color="blue"
+                style={{ cursor: "pointer" }}
+                onClick={() => openDoc(UploadService.getImageUrl(dl))}
+              >
+                DL
+              </Tag>
+            ) : null}
+            {rc ? (
+              <Tag
+                color="green"
+                style={{ cursor: "pointer" }}
+                onClick={() => openDoc(UploadService.getImageUrl(rc))}
+              >
+                RC
+              </Tag>
+            ) : null}
+            {!dl && !rc ? <Tag color="red">None</Tag> : null}
+          </div>
+        );
+      },
     },
     {
       title: "Paid In",
@@ -400,6 +460,32 @@ const CarIntakeList = () => {
               bordered
               className="dark-table"
             />
+            <Modal
+              open={docModalVisible}
+              title="Document Preview"
+              footer={null}
+              onCancel={() => setDocModalVisible(false)}
+              width={800}
+              centered
+            >
+              {docModalUrl ? (
+                docModalIsPdf ? (
+                  <iframe
+                    src={docModalUrl}
+                    title="PDF Preview"
+                    style={{ width: "100%", height: "600px", border: "none" }}
+                  />
+                ) : (
+                  <img
+                    src={docModalUrl}
+                    alt="Document Preview"
+                    style={{ maxWidth: "100%", maxHeight: "80vh" }}
+                  />
+                )
+              ) : (
+                <div>No document to preview</div>
+              )}
+            </Modal>
           </Card>
         </div>
       </div>

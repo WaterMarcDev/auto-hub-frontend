@@ -137,10 +137,18 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
               <Form.Item
                 name="mobileNo"
                 label={<Text style={{ color: "white" }}>Mobile No.</Text>}
-                rules={[{ required: true, message: "Mobile No. is required" }]}
+                rules={[
+                  { required: true, message: "Mobile No. is required" },
+                  {
+                    pattern:
+                      /^\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/, // US formats
+                    message:
+                      "Enter a valid US phone number (e.g. +1 555-555-5555)",
+                  },
+                ]}
               >
                 <Input
-                  placeholder="Enter Mobile No"
+                  placeholder="e.g. +1 555-555-5555"
                   style={{
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",
@@ -155,7 +163,10 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
                 label={<Text style={{ color: "white" }}>Email</Text>}
                 rules={[
                   { required: true, message: "Email is required" },
-                  { type: "email", message: "Please enter a valid email address" },
+                  {
+                    type: "email",
+                    message: "Please enter a valid email address",
+                  },
                 ]}
               >
                 <Input

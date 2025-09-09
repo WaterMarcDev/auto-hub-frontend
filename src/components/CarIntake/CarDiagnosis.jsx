@@ -45,19 +45,31 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
     const currentDiagnosis = formData.diagnosis || {};
     const currentPart = currentDiagnosis[partKey] || {};
 
+    // Coerce unit values to a valid number (default 0) to avoid undefined/null
+    let newValue = value;
+    if (field === "unit") {
+      if (newValue === "" || newValue === undefined || newValue === null) {
+        newValue = 0;
+      } else {
+        // ensure numeric
+        newValue = Number(newValue) || 0;
+      }
+    }
+
     updateFormData({
       diagnosis: {
         ...currentDiagnosis,
         [partKey]: {
           ...currentPart,
-          [field]: value,
+          [field]: newValue,
         },
       },
     });
   };
 
   const getPartData = (partKey, field) => {
-    return formData.diagnosis?.[partKey]?.[field] || "";
+    // return raw value (could be boolean, number, string, or undefined)
+    return formData.diagnosis?.[partKey]?.[field];
   };
 
   const columns = [
@@ -66,26 +78,48 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       dataIndex: "selected",
       key: "selected",
       width: 80,
-      render: (_, record) => (
-        <Switch
-          checked={getPartData(record.key, "selected") || false}
-          onChange={(checked) => {
-            // update selected flag
-            updatePartData(record.key, "selected", checked);
-            // if toggled off, ensure unit is 0
-            if (!checked) {
-              updatePartData(record.key, "unit", 0);
-            } else {
-              // if toggled on and no unit is present, set a sensible default of 1
+      render: (_, record) => {
+        const selected = !!getPartData(record.key, "selected");
+        return (
+          <Switch
+            checked={selected}
+            onChange={(checked) => {
+              // compute new unit in one go to avoid state race where
+              // two consecutive updates overwrite each other
               const curUnit = getPartData(record.key, "unit");
-              if (curUnit === "" || curUnit === undefined || curUnit === null) {
-                updatePartData(record.key, "unit", 1);
+              let newUnit;
+              if (!checked) {
+                newUnit = 0;
+              } else {
+                if (
+                  curUnit === "" ||
+                  curUnit === undefined ||
+                  curUnit === null
+                ) {
+                  newUnit = 1;
+                } else {
+                  newUnit = Number(curUnit) || 1;
+                }
               }
-            }
-          }}
-          size="small"
-        />
-      ),
+
+              const currentDiagnosis = formData.diagnosis || {};
+              const currentPart = currentDiagnosis[record.key] || {};
+
+              updateFormData({
+                diagnosis: {
+                  ...currentDiagnosis,
+                  [record.key]: {
+                    ...currentPart,
+                    selected: checked,
+                    unit: newUnit,
+                  },
+                },
+              });
+            }}
+            size="small"
+          />
+        );
+      },
     },
     {
       title: (
@@ -103,7 +137,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       width: 100,
       render: (_, record) => (
         <InputNumber
-          value={getPartData(record.key, "unit") || 0}
+          value={getPartData(record.key, "unit") ?? 0}
           onChange={(value) => updatePartData(record.key, "unit", value)}
           min={0}
           disabled={!getPartData(record.key, "selected")}
@@ -125,7 +159,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       render: (_, record) => (
         <Select
           placeholder="Select Quality"
-          value={getPartData(record.key, "quality")}
+          value={getPartData(record.key, "quality") || undefined}
           onChange={(value) => updatePartData(record.key, "quality", value)}
           disabled={!getPartData(record.key, "selected")}
           style={{ width: "100%" }}

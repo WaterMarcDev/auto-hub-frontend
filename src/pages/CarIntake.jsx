@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import dayjs from "dayjs";
 import { carIntakeAPI, vinAPI } from "../utils/api";
 import {
   Form,
@@ -42,8 +43,8 @@ const CarIntake = () => {
     engineVariant: "",
     drive: "",
     transmission: "",
-    scrapYardName: "",
-    scrapYardLocation: "",
+    scrapYardName: "RTX",
+    scrapYardLocation: "New Jersey",
     fuelType: "",
     hasKeys: false,
     weight: "",
@@ -85,6 +86,7 @@ const CarIntake = () => {
     idDocument: null,
     carTitle: null,
     registration: null,
+    sellingDate: dayjs(),
 
     // Step 6: Payment
     paymentMethod: "",
@@ -328,7 +330,7 @@ const CarIntake = () => {
 
   // Clear form function
   const clearForm = () => {
-    setFormData({
+    const initial = {
       // Step 1: Car Details - matching original template
       vin: "",
       year: "",
@@ -342,8 +344,8 @@ const CarIntake = () => {
       engineVariant: "",
       drive: "",
       transmission: "",
-      scrapYardName: "",
-      scrapYardLocation: "",
+      scrapYardName: "RTX",
+      scrapYardLocation: "New Jersey",
       fuelType: "",
       hasKeys: false,
       weight: "",
@@ -385,15 +387,17 @@ const CarIntake = () => {
       mobileNo: "",
       dlDocument: null,
       carRC: null,
-      sellingDate: "",
+      sellingDate: dayjs(),
       pickUpType: "0",
       kycDescription: "",
 
       // Step 6: Payment
       paidTo: "",
       paymentDescription: "",
-    });
-    form.resetFields();
+    };
+
+    setFormData(initial);
+    form.setFieldsValue(initial);
     setCurrentStep(1);
   };
 
@@ -544,7 +548,9 @@ const CarIntake = () => {
 
         // Required backend fields
         sellingDate:
-          formData.sellingDate || new Date().toISOString().split("T")[0],
+          formData.sellingDate && formData.sellingDate.format
+            ? formData.sellingDate.format("YYYY-MM-DD")
+            : formData.sellingDate || new Date().toISOString().split("T")[0],
         pickupType: formData.pickUpType === "0" ? "You Pull" : "We Pull",
         paymentMethod: formData.paidTo || "Cash",
         kycDescription: formData.kycDescription,
