@@ -279,8 +279,16 @@ class UploadService {
     } catch {
       // Not a full URL
     }
+    // Normalize base: only strip trailing '/api' if present
+    const base = API_BASE_URL.replace(/\/api\/?$/, "");
+
+    // If filename already includes a leading 'api/' (e.g. 'api/uploads/...') or '/api/uploads/...', strip that leading api segment
+    if (/^\/?api\//i.test(filename)) {
+      const cleaned = filename.replace(/^\/?api\//i, "");
+      return `${base}/${cleaned}`.replace(/([^:]?)\/\/+/, "$1/");
+    }
+
     // Normalize uploads path: accept '/uploads/xyz' or 'uploads/xyz'
-    const base = API_BASE_URL.replace("/api", "");
     if (/^\/?uploads\//.test(filename)) {
       return `${base}${filename.startsWith("/") ? filename : "/" + filename}`;
     }
