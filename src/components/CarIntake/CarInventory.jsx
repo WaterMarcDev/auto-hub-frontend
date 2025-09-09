@@ -27,15 +27,28 @@ const { Option } = Select;
 
 const CarInventory = ({ formData, prevStep, handleSubmit }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalContent, setModalContent] = useState({ title: "", message: "" });
+  const [modalContent, setModalContent] = useState({
+    title: "",
+    message: "",
+    status: "",
+  });
 
   const showModal = (title, message) => {
-    setModalContent({ title, message });
+    // open modal in pending state, then switch to success
+    setModalContent({ title, message, status: "pending" });
     setModalVisible(true);
+    setTimeout(() => {
+      setModalContent({
+        title: `${title} - Success`,
+        message: `${title} completed successfully`,
+        status: "success",
+      });
+    }, 900);
   };
 
   const handleModalClose = () => {
     setModalVisible(false);
+    setModalContent({ title: "", message: "", status: "" });
   };
   return (
     <div>
@@ -291,16 +304,6 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           </Button>
 
           <Button
-            type="primary"
-            size="large"
-            onClick={handleSubmit}
-            icon={<DollarOutlined />}
-            style={{ backgroundColor: "#059669", borderColor: "#059669" }}
-          >
-            Pay Now
-          </Button>
-
-          <Button
             size="large"
             icon={<PlusOutlined />}
             onClick={() =>
@@ -395,18 +398,30 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
         onOk={handleModalClose}
         onCancel={handleModalClose}
         centered
-        footer={[
-          <Button key="ok" type="primary" onClick={handleModalClose}>
-            OK
-          </Button>,
-        ]}
+        footer={
+          modalContent?.status === "success"
+            ? [
+                <Button key="ok" type="primary" onClick={handleModalClose}>
+                  OK
+                </Button>,
+              ]
+            : null
+        }
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Spin />
-          <p style={{ color: "#d1d5db", marginBottom: 0 }}>
-            {modalContent.message}
-          </p>
-        </div>
+        {modalContent?.status === "pending" ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <Spin />
+            <p style={{ color: "#d1d5db", marginBottom: 0 }}>
+              {modalContent.message}
+            </p>
+          </div>
+        ) : (
+          <div>
+            <p style={{ color: "#10b981", marginBottom: 8 }}>
+              {modalContent.message}
+            </p>
+          </div>
+        )}
       </Modal>
     </div>
   );

@@ -18,7 +18,6 @@ import {
   CheckCircleOutlined,
   PrinterOutlined,
   PlusOutlined,
-  DollarOutlined,
 } from "@ant-design/icons";
 import { CarIntakeService, UploadService } from "../services/apiService";
 
@@ -32,8 +31,18 @@ const CarIntakeDetails = () => {
   const [modalContent, setModalContent] = useState({ title: "", message: "" });
 
   const showModal = (title, message) => {
-    setModalContent({ title, message });
+    // Open modal in pending state
+    setModalContent({ title, message, status: "pending" });
     setModalVisible(true);
+
+    // Simulate completion: update modal content to success but do not close automatically
+    setTimeout(() => {
+      setModalContent({
+        title: `${title} - Success`,
+        message: `${title} completed successfully`,
+        status: "success",
+      });
+    }, 900);
   };
 
   const handleModalClose = () => {
@@ -404,24 +413,6 @@ const CarIntakeDetails = () => {
               <Space wrap size="middle">
                 <Button
                   size="large"
-                  onClick={() =>
-                    showModal(
-                      "Pay Now",
-                      "Processing payment for this car intake"
-                    )
-                  }
-                  icon={<DollarOutlined />}
-                  style={{
-                    backgroundColor: "#059669",
-                    borderColor: "#059669",
-                    color: "white",
-                  }}
-                >
-                  Pay Now
-                </Button>
-
-                <Button
-                  size="large"
                   icon={<PlusOutlined />}
                   onClick={() =>
                     showModal(
@@ -525,24 +516,37 @@ const CarIntakeDetails = () => {
 };
 
 // Modal to show action progress
-const ActionModal = ({ visible, content, onClose }) => (
-  <Modal
-    title={<span>{content.title}</span>}
-    open={visible}
-    onOk={onClose}
-    onCancel={onClose}
-    centered
-    footer={[
-      <Button key="ok" type="primary" onClick={onClose}>
-        OK
-      </Button>,
-    ]}
-  >
-    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-      <Spin />
-      <p style={{ color: "#374151", marginBottom: 0 }}>{content.message}</p>
-    </div>
-  </Modal>
-);
+const ActionModal = ({ visible, content, onClose }) => {
+  const status = content?.status || "pending";
+  return (
+    <Modal
+      title={<span>{content.title}</span>}
+      open={visible}
+      onOk={onClose}
+      onCancel={onClose}
+      centered
+      footer={
+        status === "success"
+          ? [
+              <Button key="ok" type="primary" onClick={onClose}>
+                OK
+              </Button>,
+            ]
+          : null
+      }
+    >
+      {status === "pending" ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Spin />
+          <p style={{ color: "#374151", marginBottom: 0 }}>{content.message}</p>
+        </div>
+      ) : (
+        <div>
+          <p style={{ color: "#10b981", marginBottom: 8 }}>{content.message}</p>
+        </div>
+      )}
+    </Modal>
+  );
+};
 
 export default CarIntakeDetails;

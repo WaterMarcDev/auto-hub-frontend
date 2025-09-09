@@ -220,9 +220,7 @@ const Payment = ({ formData, prevStep, handleInventorySubmit }) => {
               <Form.Item
                 name="finalPrice"
                 label={<Text style={{ color: "white" }}>Amount</Text>}
-                rules={[
-                  { required: true, message: "Final Price is required" },
-                ]}
+                rules={[{ required: true, message: "Final Price is required" }]}
               >
                 <InputNumber
                   placeholder="Payment Amount"
@@ -290,7 +288,7 @@ const Payment = ({ formData, prevStep, handleInventorySubmit }) => {
           icon={<ArrowRightOutlined />}
           iconPosition="end"
         >
-          Inventory
+          Pay Now
         </Button>
       </div>
     </div>
