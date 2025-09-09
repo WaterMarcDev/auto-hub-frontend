@@ -43,7 +43,7 @@ const Layout = ({ children }) => {
       <div className="main-content">
         <div className="page-content">
           <div className="content">{children}</div>
-          {/* <Footer /> */}
+          <Footer />
         </div>
       </div>
 
