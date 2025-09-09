@@ -23,6 +23,18 @@ const CarIntakeList = () => {
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
 
+  // Ensure modal preview container is above fixed header/sidebar
+  const getPreviewContainer = () => {
+    let el = document.getElementById("image-preview-root");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "image-preview-root";
+      el.style.zIndex = "2000";
+      document.body.appendChild(el);
+    }
+    return el;
+  };
+
   // Define table columns (allColumns) — these will be filtered by user selection
   const allColumns = [
     {
@@ -545,19 +557,21 @@ const CarIntakeList = () => {
               onCancel={() => setDocModalVisible(false)}
               width={800}
               centered
+              getContainer={getPreviewContainer}
+              bodyStyle={{ maxHeight: "80vh", overflow: "auto" }}
             >
               {docModalUrl ? (
                 docModalIsPdf ? (
                   <iframe
                     src={docModalUrl}
                     title="PDF Preview"
-                    style={{ width: "100%", height: "600px", border: "none" }}
+                    style={{ width: "100%", height: "70vh", border: "none" }}
                   />
                 ) : (
                   <img
                     src={docModalUrl}
                     alt="Document Preview"
-                    style={{ maxWidth: "100%", maxHeight: "80vh" }}
+                    style={{ maxWidth: "100%", maxHeight: "70vh" }}
                   />
                 )
               ) : (

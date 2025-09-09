@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Form,
   Input,
@@ -40,6 +40,22 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
     { key: "windowSwitches", name: "Window Switches", id: "KeyWindowSwitches" },
     { key: "radioHeadunit", name: "Radio Head unit", id: "KeyRadio" },
   ];
+
+  // Ensure all parts have default diagnosis entries (selected: true, unit: 1)
+  useEffect(() => {
+    const currentDiagnosis = formData.diagnosis || {};
+    // Find parts that are missing in the current diagnosis
+    const missing = partsList.filter((p) => !currentDiagnosis[p.key]);
+    if (missing.length > 0) {
+      const updated = { ...currentDiagnosis };
+      missing.forEach((p) => {
+        updated[p.key] = { selected: true, unit: 1 };
+      });
+      updateFormData({ diagnosis: updated });
+    }
+    // Only run on mount / when partsList reference changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const updatePartData = (partKey, field, value) => {
     const currentDiagnosis = formData.diagnosis || {};
