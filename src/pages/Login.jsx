@@ -18,7 +18,7 @@ const Login = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/car-intake-list");
+      navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
 
@@ -44,8 +44,8 @@ const Login = () => {
       const result = await login(formData.email, formData.password);
 
       if (result.success) {
-        // Redirect to car intake page
-        navigate("/car-intake-list");
+        // Redirect to dashboard
+        navigate("/dashboard");
       } else {
         setError(result.error);
       }

@@ -20,9 +20,9 @@ const Header = ({ onMenuToggle }) => {
   };
   const navigate = useNavigate();
 
-  const goToCarIntake = (e) => {
+  const goToDashboard = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    navigate("/car-intake-list");
+    navigate("/dashboard");
   };
 
   return (
@@ -32,8 +32,8 @@ const Header = ({ onMenuToggle }) => {
           {/* LOGO */}
           <div className="navbar-brand-box">
             <a
-              href="/car-intake-list"
-              onClick={goToCarIntake}
+              href="/dashboard"
+              onClick={goToDashboard}
               className="logo logo-dark"
             >
               <span className="logo-sm">
@@ -44,8 +44,8 @@ const Header = ({ onMenuToggle }) => {
               </span>
             </a>
             <a
-              href="/car-intake-list"
-              onClick={goToCarIntake}
+              href="/dashboard"
+              onClick={goToDashboard}
               className="logo logo-light"
             >
               <span className="logo-sm">
