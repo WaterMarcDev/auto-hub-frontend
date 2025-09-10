@@ -310,6 +310,7 @@ const CarIntakeList = () => {
           <Button
             type="primary"
             size="small"
+            disabled
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
             title="Edit"
