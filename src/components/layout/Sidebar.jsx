@@ -12,6 +12,11 @@ const Sidebar = ({ isOpen }) => {
     return location.pathname === path ? "active" : "";
   };
 
+  // Top-level active helper
+  const isActive = (path) => {
+    return location.pathname === path ? "active" : "";
+  };
+
   const toggleDropdown = (menuKey) => {
     setOpenDropdowns((prev) => ({
       ...prev,
@@ -97,13 +102,12 @@ const Sidebar = ({ isOpen }) => {
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className="menu-title">Menu</li>
-            {/* <li className={isActive("/")}>
-              <Link to="/" className="waves-effect" onClick={handleLinkClick}>
+            <li className={isActive("/dashboard")}>
+              <Link to="/dashboard" className="waves-effect">
                 <i className="dripicons-home"></i>
-                <span className="badge rounded-pill bg-info float-end">3</span>
                 <span>Dashboard</span>
               </Link>
-            </li> */}
+            </li>
 
             {/* <li>
               <a
