@@ -11,9 +11,6 @@ import CarIntakeList from "./pages/CarIntakeList";
 import CarIntakeDetails from "./pages/CarIntakeDetails";
 import Login from "./pages/Login";
 
-// Import CSS files
-import "./App.css";
-import "./dark-theme.css";
 import { ConfigProvider, theme } from "antd";
 
 // Create placeholder components for other routes
