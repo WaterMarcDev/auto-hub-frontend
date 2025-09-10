@@ -238,3 +238,7 @@
 .text-muted {
   color: #b3b7c1 !important;
 }
+
+.carousel-item {
+  margin-left: 0px !important;
+}

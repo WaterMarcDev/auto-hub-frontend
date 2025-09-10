@@ -119,14 +119,14 @@ const partsSlides = [
 ];
 
 const rtxSlides = [
-  "assets/images/AutoHub/Scrap Yard 1.png",
-  "assets/images/AutoHub/Scrap Yard 2.png",
-  "assets/images/AutoHub/Scrap Yard 3.jpeg",
-  "assets/images/AutoHub/Scrap Yard 4.jpeg",
-  "assets/images/AutoHub/Scrap Yard 5.jpeg",
-  "assets/images/AutoHub/Scrap Yard 6.jpeg",
-  "assets/images/AutoHub/Scrap Yard 7.jpeg",
-  "assets/images/AutoHub/Scrap Yard 8.jpeg",
+  "assets/images/AutoHub/Junk Yard 1.png",
+  "assets/images/AutoHub/Junk Yard 2.png",
+  "assets/images/AutoHub/Junk Yard 3.jpeg",
+  "assets/images/AutoHub/Junk Yard 4.jpeg",
+  "assets/images/AutoHub/Junk Yard 5.jpeg",
+  "assets/images/AutoHub/Junk Yard 6.jpeg",
+  "assets/images/AutoHub/Junk Yard 7.jpeg",
+  "assets/images/AutoHub/Junk Yard 8.jpeg",
 ];
 
 const stackChartOptions = {
@@ -698,7 +698,7 @@ const Dashboard = () => {
                             idx === 0 ? " active" : ""
                           }`}
                         >
-                          <div className="row align-items-center mb-5">
+                          <div className="d-flex justify-content-between mb-5">
                             <div className="col-md-4">
                               <img
                                 src={part.img}
