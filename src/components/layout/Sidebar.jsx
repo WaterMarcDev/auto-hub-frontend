@@ -129,10 +129,10 @@ const Sidebar = ({ isOpen }) => {
                 <li className={isSubMenuActive("/add-car-make")}>
                   <Link to="/make">Add Car Make</Link>
                 </li>
-                {/* <li className={isSubMenuActive("/add-car-model")}>
-                  <Link to="/add-car-model">Add Car Model</Link>
+                <li className={isSubMenuActive("/model")}>
+                  <Link to="/model">Add Car Model</Link>
                 </li>
-                <li className={isSubMenuActive("/add-car-trim")}>
+                {/* <li className={isSubMenuActive("/add-car-trim")}>
                   <Link to="/add-car-trim">Add Car Trim</Link>
                 </li>
                 <li className={isSubMenuActive("/add-inventory-parts")}>

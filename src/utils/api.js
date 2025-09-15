@@ -85,6 +85,13 @@ export const makeAPI = {
   update: (id, data) => api.put(`/make/${id}`, data),
 };
 
+export const modelAPI = {
+  getAll: (params = {}) => api.get("/model", { params }),
+  getById: (id) => api.get(`/model/${id}`),
+  create: (data) => api.post("/model", data),
+  update: (id, data) => api.put(`/model/${id}`, data),
+};
+
 // Auth API functions
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),

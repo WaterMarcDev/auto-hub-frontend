@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 
 import { ConfigProvider, theme } from "antd";
 import Make from "./pages/Make";
+import Model from "./pages/Model";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -162,7 +163,7 @@ function App() {
                       <Route path="/" element={<CarIntake />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/make" element={<Make />} />
-                      <Route path="/add-car-model" element={<AddCarModel />} />
+                      <Route path="/model" element={<Model />} />
                       <Route
                         path="/add-car-trim"
                         element={<PlaceholderPage title="Add Car Trim" />}
