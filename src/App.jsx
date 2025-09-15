@@ -12,6 +12,7 @@ import CarIntakeDetails from "./pages/CarIntakeDetails";
 import Login from "./pages/Login";
 
 import { ConfigProvider, theme } from "antd";
+import Make from "./pages/Make";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -118,6 +119,7 @@ function App() {
           colorBgContainer: "#1F293D",
           colorBgLayout: "#1F293D",
           colorBgElevated: "#1F293D",
+          colorPrimaryActive: "#525BE5",
         },
         components: {
           Modal: {
@@ -128,6 +130,7 @@ function App() {
           Card: {
             algorithm: true,
           },
+          // Button: { algorithm: true, colorPrimary: "#525BE5" },
         },
       }}
     >
@@ -158,7 +161,7 @@ function App() {
                     <Routes>
                       <Route path="/" element={<CarIntake />} />
                       <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/add-car-make" element={<AddCarMake />} />
+                      <Route path="/make" element={<Make />} />
                       <Route path="/add-car-model" element={<AddCarModel />} />
                       <Route
                         path="/add-car-trim"

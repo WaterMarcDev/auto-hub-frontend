@@ -78,6 +78,13 @@ export const carIntakeAPI = {
   getStats: (params = {}) => api.get("/car-intake/stats", { params }),
 };
 
+export const makeAPI = {
+  getAll: (params = {}) => api.get("/make", { params }),
+  getById: (id) => api.get(`/make/${id}`),
+  create: (data) => api.post("/make", data),
+  update: (id, data) => api.put(`/make/${id}`, data),
+};
+
 // Auth API functions
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),

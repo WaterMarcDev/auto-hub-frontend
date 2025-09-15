@@ -109,7 +109,7 @@ const Sidebar = ({ isOpen }) => {
               </Link>
             </li>
 
-            {/* <li>
+            <li>
               <a
                 href="#"
                 className="has-arrow waves-effect"
@@ -127,32 +127,22 @@ const Sidebar = ({ isOpen }) => {
                 style={{ display: isDropdownOpen("master") ? "block" : "none" }}
               >
                 <li className={isSubMenuActive("/add-car-make")}>
-                  <Link to="/add-car-make" onClick={handleLinkClick}>
-                    Add Car Make
-                  </Link>
+                  <Link to="/make">Add Car Make</Link>
                 </li>
-                <li className={isSubMenuActive("/add-car-model")}>
-                  <Link to="/add-car-model" onClick={handleLinkClick}>
-                    Add Car Model
-                  </Link>
+                {/* <li className={isSubMenuActive("/add-car-model")}>
+                  <Link to="/add-car-model">Add Car Model</Link>
                 </li>
                 <li className={isSubMenuActive("/add-car-trim")}>
-                  <Link to="/add-car-trim" onClick={handleLinkClick}>
-                    Add Car Trim
-                  </Link>
+                  <Link to="/add-car-trim">Add Car Trim</Link>
                 </li>
                 <li className={isSubMenuActive("/add-inventory-parts")}>
-                  <Link to="/add-inventory-parts" onClick={handleLinkClick}>
-                    Add Inventory Parts
-                  </Link>
+                  <Link to="/add-inventory-parts">Add Inventory Parts</Link>
                 </li>
                 <li className={isSubMenuActive("/add-junk-elements")}>
-                  <Link to="/add-junk-elements" onClick={handleLinkClick}>
-                    Add Scrap Elements
-                  </Link>
-                </li>
+                  <Link to="/add-junk-elements">Add Scrap Elements</Link>
+                </li> */}
               </ul>
-            </li> */}
+            </li>
 
             <li>
               <a
