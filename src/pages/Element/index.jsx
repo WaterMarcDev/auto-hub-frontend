@@ -1,35 +1,44 @@
 import React from "react";
-import { trimAPI } from "../../utils/api";
-import { Button, Card, Checkbox, notification, Popover, Table } from "antd";
+import { elementAPI } from "../../utils/api";
+import {
+  notification,
+  Button,
+  Card,
+  Table,
+  Space,
+  Popover,
+  Checkbox,
+} from "antd";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { PlusOutlined } from "@ant-design/icons";
-import TrimForm from "./TrimForm";
+import ElementForm from "./ElementForm";
 
-const Trim = () => {
-  const [trims, setTrims] = React.useState([]);
+const Element = () => {
+  const [elements, setElements] = React.useState([]);
   const [pagination, setPagination] = React.useState({
     page: 1,
     limit: 10,
     total: 0,
   });
   const [open, setOpen] = React.useState(false);
-  const [selectedTrim, setSelectedTrim] = React.useState(null);
+  const [selectedElement, setSelectedElement] = React.useState(null);
   const [success, setSuccess] = React.useState(null);
   const [error, setError] = React.useState(null);
 
   const [notificationApi, contextHolder] = notification.useNotification();
 
   React.useEffect(() => {
-    const getTrims = async () => {
-      const { data } = await trimAPI.getAll({
+    const getElements = async () => {
+      const { data } = await elementAPI.getAll({
         page: pagination.page,
         limit: pagination.limit,
       });
-      setTrims(data.trims);
+      setElements(data.elements);
       setPagination(data.pagination);
     };
-    getTrims();
+
+    getElements();
   }, [success, pagination.page, pagination.limit]);
 
   React.useEffect(() => {
@@ -60,38 +69,47 @@ const Trim = () => {
       key: "srNo",
       render: (text, record, index) => index + 1,
     },
-    { title: "Car Make Name", key: "carMake", dataIndex: ["make", "name"] },
-    { title: "Car Model Name", key: "carModel", dataIndex: ["model", "name"] },
     {
-      title: "Trim Name",
-      key: "name",
+      title: "Element Name",
       dataIndex: "name",
+      key: "name",
     },
     {
       title: "Short Name",
-      key: "shortName",
       dataIndex: "shortName",
+      key: "shortName",
+    },
+    {
+      title: "Weight",
+      dataIndex: "weight",
+      key: "weight",
+    },
+    {
+      title: "Dimensions",
+      dataIndex: "dimensions",
+      key: "dimensions",
     },
     {
       title: "Description",
-      key: "description",
       dataIndex: "description",
+      key: "description",
     },
     {
       title: "Actions",
       key: "actions",
       render: (text, record) => (
-        <div style={{ display: "flex", gap: 8 }}>
+        <Space size="middle">
           <Button
             type="link"
+            size="small"
             onClick={() => {
-              setSelectedTrim(record);
+              setSelectedElement(record);
               setOpen(true);
             }}
           >
             Edit
           </Button>
-        </div>
+        </Space>
       ),
     },
   ];
@@ -126,22 +144,22 @@ const Trim = () => {
   return (
     <React.Fragment>
       {contextHolder}
-      <TrimForm
+      <ElementForm
         open={open}
         setOpen={setOpen}
-        trim={selectedTrim}
-        setTrim={setSelectedTrim}
+        element={selectedElement}
+        setElement={setSelectedElement}
         setSuccess={setSuccess}
         setError={setError}
       />
       <TitleBox
-        title="Add Car Trim"
-        routes={["Scrap Yard", "Master"]}
-        current="Add Car Trim"
+        title="Add Scrap Elements"
+        routes={["Scrap yard", "Master"]}
+        current="Add Scrap Elements"
       />
       <PageContentWrapper>
         <Card
-          title="Car Trim"
+          title="Scrap Elements"
           extra={
             <div style={{ display: "flex", gap: 8 }}>
               <Popover
@@ -191,22 +209,22 @@ const Trim = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => {
-                  setSelectedTrim(null);
+                  setSelectedElement(null);
                   setOpen(true);
                 }}
               >
-                Add Car Trim
+                Add New
               </Button>
             </div>
           }
         >
           <Table
             columns={displayedColumns}
-            dataSource={trims}
+            dataSource={elements}
             rowKey="_id"
-            scroll={{ y: 200 }}
             size="small"
             bordered
+            scroll={{ y: 200 }}
             pagination={{
               current: pagination.page,
               pageSize: pagination.limit,
@@ -214,11 +232,10 @@ const Trim = () => {
               showSizeChanger: true,
               pageSizeOptions: ["10", "20", "50", "100"],
               onChange: (page, limit) => {
-                setPagination((prev) => ({
-                  ...prev,
+                setPagination({
                   page,
                   limit,
-                }));
+                });
               },
             }}
           />
@@ -228,4 +245,4 @@ const Trim = () => {
   );
 };
 
-export default Trim;
+export default Element;

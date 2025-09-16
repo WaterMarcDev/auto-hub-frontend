@@ -138,6 +138,9 @@ const Sidebar = ({ isOpen }) => {
                 <li className={isSubMenuActive("/part")}>
                   <Link to="/part">Add Inventory Parts</Link>
                 </li>
+                <li className={isSubMenuActive("/element")}>
+                  <Link to="/element">Add Scrap Elements</Link>
+                </li>
                 {/*<li className={isSubMenuActive("/add-inventory-parts")}>
                   <Link to="/add-inventory-parts">Add Inventory Parts</Link>
                 </li>

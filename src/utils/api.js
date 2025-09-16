@@ -106,6 +106,13 @@ export const partAPI = {
   update: (id, data) => api.put(`/part/${id}`, data),
 };
 
+export const elementAPI = {
+  getAll: (params = {}) => api.get("/element", { params }),
+  getById: (id) => api.get(`/element/${id}`),
+  create: (data) => api.post("/element", data),
+  update: (id, data) => api.put(`/element/${id}`, data),
+};
+
 // Auth API functions
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
