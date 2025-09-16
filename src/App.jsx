@@ -15,6 +15,7 @@ import { ConfigProvider, theme } from "antd";
 import Make from "./pages/Make";
 import Model from "./pages/Model";
 import Trim from "./pages/Trim";
+import Part from "./pages/Part";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -166,6 +167,7 @@ function App() {
                       <Route path="/make" element={<Make />} />
                       <Route path="/model" element={<Model />} />
                       <Route path="/trim" element={<Trim />} />
+                      <Route path="/part" element={<Part />} />
                       <Route
                         path="/add-inventory-parts"
                         element={

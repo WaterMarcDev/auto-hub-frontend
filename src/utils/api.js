@@ -99,6 +99,13 @@ export const trimAPI = {
   update: (id, data) => api.put(`/trim/${id}`, data),
 };
 
+export const partAPI = {
+  getAll: (params = {}) => api.get("/part", { params }),
+  getById: (id) => api.get(`/part/${id}`),
+  create: (data) => api.post("/part", data),
+  update: (id, data) => api.put(`/part/${id}`, data),
+};
+
 // Auth API functions
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
