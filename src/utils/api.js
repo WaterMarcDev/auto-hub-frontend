@@ -92,6 +92,13 @@ export const modelAPI = {
   update: (id, data) => api.put(`/model/${id}`, data),
 };
 
+export const trimAPI = {
+  getAll: (params = {}) => api.get("/trim", { params }),
+  getById: (id) => api.get(`/trim/${id}`),
+  create: (data) => api.post("/trim", data),
+  update: (id, data) => api.put(`/trim/${id}`, data),
+};
+
 // Auth API functions
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),

@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import { ConfigProvider, theme } from "antd";
 import Make from "./pages/Make";
 import Model from "./pages/Model";
+import Trim from "./pages/Trim";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -164,10 +165,7 @@ function App() {
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/make" element={<Make />} />
                       <Route path="/model" element={<Model />} />
-                      <Route
-                        path="/add-car-trim"
-                        element={<PlaceholderPage title="Add Car Trim" />}
-                      />
+                      <Route path="/trim" element={<Trim />} />
                       <Route
                         path="/add-inventory-parts"
                         element={
