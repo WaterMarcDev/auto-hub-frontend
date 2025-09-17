@@ -155,12 +155,8 @@ const CarIntakeList = () => {
       key: "keys",
       width: 80,
       render: (_, record) => {
-        const hasKeys =
-          record.carDetails.keys !== undefined
-            ? record.carDetails.keys
-            : record.carDetails.hasKeys !== undefined
-            ? record.carDetails.hasKeys
-            : false;
+        const cd = record.carDetails || {};
+        const hasKeys = cd.keys ?? cd.hasKeys ?? false;
         return (
           <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
         );
@@ -197,13 +193,13 @@ const CarIntakeList = () => {
       key: "documents",
       width: 160,
       render: (_, record) => {
-        const docs = record.kyc.documents || {};
+        const docs = record?.kyc?.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
         const rc = docs.carRegistration || docs.car_registration || null;
 
         const openDoc = (url) => {
           if (!url) return;
-          const lower = url.toLowerCase();
+          const lower = String(url).toLowerCase();
           const isPdf = lower.endsWith(".pdf");
           setDocModalIsPdf(isPdf);
           setDocModalUrl(url);

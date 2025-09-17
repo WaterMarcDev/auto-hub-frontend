@@ -89,19 +89,21 @@ const CarIntakeDetails = () => {
   };
 
   const renderDocuments = () => {
+    if (!car) return <span>N/A</span>;
     // documents may be stored similar to images: car.documents object, document1..N fields, or documents array
     const collected = [];
-    if (car.kyc.documents && typeof car.kyc.documents === "object") {
-      collected.push(...Object.values(car.kyc.documents));
+    const kycDocs = car?.kyc?.documents;
+    if (kycDocs && typeof kycDocs === "object") {
+      collected.push(...Object.values(kycDocs));
     }
 
-    Object.keys(car)
+    Object.keys(car || {})
       .filter((k) => /^document\d+$/.test(k) || /Document$/.test(k))
       .forEach((k) => {
         if (car[k]) collected.push(car[k]);
       });
 
-    if (Array.isArray(car.documentsArray))
+    if (Array.isArray(car?.documentsArray))
       collected.push(...car.documentsArray);
 
     const docs = [...new Set(collected.filter(Boolean))];
@@ -113,7 +115,7 @@ const CarIntakeDetails = () => {
           // If doc looks like an image, render Image with preview; otherwise render a download link
           const url = uploadAPI.getImageUrl(doc);
           const isImage = /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(
-            url.split("?")[0]
+            String(url).split("?")[0]
           );
           return (
             <Col key={idx}>
@@ -154,6 +156,7 @@ const CarIntakeDetails = () => {
     );
 
   const renderImages = () => {
+    if (!car) return <span>N/A</span>;
     // Collect images from multiple possible shapes:
     // 1) car.carImages as an object { image1: url, ... }
     // 2) top-level image1..imageN fields
@@ -165,7 +168,7 @@ const CarIntakeDetails = () => {
     }
 
     // pick up top-level image1..imageN fields if present
-    Object.keys(car)
+    Object.keys(car || {})
       .filter((k) => /^image\d+$/.test(k))
       .sort(
         (a, b) =>
@@ -189,7 +192,7 @@ const CarIntakeDetails = () => {
             <Image
               width={120}
               src={uploadAPI.getImageUrl(img)}
-              alt={`${car.model || car.make || "car"}-img-${idx}`}
+              alt={`${car?.model || car?.make || "car"}-img-${idx}`}
               preview={{ getContainer: getPreviewContainer }}
             />
           </Col>
@@ -207,8 +210,9 @@ const CarIntakeDetails = () => {
   };
 
   const renderParts = () => {
+    if (!car) return <span>N/A</span>;
     const parts = car.parts || {};
-    const entries = Object.entries(parts);
+    const entries = Object.entries(parts || {});
     if (!entries.length) return <span>N/A</span>;
 
     return (
@@ -237,31 +241,26 @@ const CarIntakeDetails = () => {
                     {formatPartName(key)}
                   </div>
                   <div style={{ color: "#9ca3af", fontSize: 12 }}>
-                    Units: {val.unit ?? 0}
+                    Units: {val?.unit ?? 0}
                   </div>
-                  {val.quality ? (
+                  {val?.quality ? (
                     <div style={{ color: "#9ca3af", fontSize: 12 }}>
                       Quality: {val.quality}
                     </div>
                   ) : null}
-                  {val.weight ? (
+                  {val?.weight ? (
                     <div style={{ color: "#9ca3af", fontSize: 12 }}>
                       Weight: {val.weight}
                     </div>
                   ) : null}
-                  {val.dimensions ? (
+                  {val?.dimensions ? (
                     <div style={{ color: "#9ca3af", fontSize: 12 }}>
                       Dimensions: {val.dimensions}
                     </div>
                   ) : null}
-                  {val.partsUploadedBy ? (
-                    <div style={{ color: "#9ca3af", fontSize: 12 }}>
-                      Uploaded By: {val.partsUploadedBy}
-                    </div>
-                  ) : null}
                 </div>
-                <Tag color={val.selected ? "green" : "default"}>
-                  {val.selected ? "Selected" : "No"}
+                <Tag color={val?.selected ? "green" : "default"}>
+                  {val?.selected ? "Selected" : "No"}
                 </Tag>
               </div>
             </Card>
@@ -328,7 +327,9 @@ const CarIntakeDetails = () => {
       <div className="container-fluid">
         <div className="page-content-wrapper">
           <Card
-            title={`${car.vin || "-"} ${car.carDetails.make ? `• ${car.carDetails.make}` : ""}`}
+            title={`${car?.vin || "-"} ${
+              car?.carDetails?.make ? `• ${car?.carDetails?.make}` : ""
+            }`}
             extra={
               <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
                 Back
@@ -337,87 +338,90 @@ const CarIntakeDetails = () => {
           >
             <Descriptions column={2} bordered>
               <Descriptions.Item label="VIN">
-                {car.vin || "N/A"}
+                {car?.vin || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Intake By">
-                {(car.createdBy &&
+                {(car?.createdBy &&
                   `${
-                    car.createdBy.first_name || car.createdBy.firstName || ""
+                    car?.createdBy?.first_name ||
+                    car?.createdBy?.firstName ||
+                    ""
                   } ${
-                    car.createdBy.last_name || car.createdBy.lastName || ""
+                    car?.createdBy?.last_name || car?.createdBy?.lastName || ""
                   }`.trim()) ||
                   "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Make">
-                {car.carDetails.make || "N/A"}
+                {car?.carDetails?.make || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Model">
-                {car.carDetails.model || "N/A"}
+                {car?.carDetails?.model || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Year">
-                {car.carDetails.year || "N/A"}
+                {car?.carDetails?.year || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Trim">
-                {car.carDetails.trim || "N/A"}
+                {car?.carDetails?.trim || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Color">
-                {car.carDetails.color || "N/A"}
+                {car?.carDetails?.color || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Body Class">
-                {car.carDetails.bodyClass || "N/A"}
+                {car?.carDetails?.bodyClass || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Transmission">
-                {car.carDetails.transmission || "N/A"}
+                {car?.carDetails?.transmission || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Drive">
-                {car.carDetails.drive || "N/A"}
+                {car?.carDetails?.drive || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Fuel Type">
-                {car.carDetails.fuelType || "N/A"}
+                {car?.carDetails?.fuelType || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Chassis No.">
-                {car.carDetails.chassisNo || "N/A"}
+                {car?.carDetails?.chassisNo || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Engine No.">
-                {car.carDetails.engineNo || "N/A"}
+                {car?.carDetails?.engineNo || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Scrap Yard">
-                {car.carDetails.scrapYardName || "N/A"}
+                {car?.carDetails?.scrapYardName || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Scrap Yard Location">
-                {car.carDetails.scrapYardLocation || "N/A"}
+                {car?.carDetails?.scrapYardLocation || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Has Keys">
-                <Tag color={car.carDetails.keys ? "blue" : "red"}>
-                  {car.carDetails.keys ? "Yes" : "No"}
+                <Tag color={car?.carDetails?.keys ? "blue" : "red"}>
+                  {car?.carDetails?.keys ? "Yes" : "No"}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Status">
-                <Tag>{car.status || "intake"}</Tag>
+                <Tag>{car?.status || "intake"}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Final Price">
-                {car.price.finalPrice ? `$${car.price.finalPrice}` : "N/A"}
+                {car?.price?.finalPrice ? `$${car?.price?.finalPrice}` : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Payment Method">
-                {car.payment.paymentMethod || "N/A"}
+                {car?.payment?.paymentMethod || "N/A"}
               </Descriptions.Item>
 
               <Descriptions.Item label="Seller Name">
-                {car.seller
-                  ? `${car.seller.firstName || ""} ${
-                      car.seller.lastName || ""
+                {car?.seller
+                  ? `${car?.seller?.firstName || ""} ${
+                      car?.seller?.lastName || ""
                     }`.trim() || "N/A"
                   : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Seller Phone">
-                {(car.seller && (car.seller.mobileNo || car.seller.phone)) ||
+                {(car?.seller &&
+                  (car?.seller?.mobileNo || car?.seller?.phone)) ||
                   "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Seller Email">
-                {(car.seller && car.seller.email) || "N/A"}
+                {(car?.seller && car?.seller?.email) || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Seller Description" span={2}>
-                {(car.seller && car.seller.description) || "N/A"}
+                {(car?.seller && car?.seller?.description) || "N/A"}
               </Descriptions.Item>
 
               <Descriptions.Item label="Images" span={2}>
