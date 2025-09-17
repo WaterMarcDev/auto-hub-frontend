@@ -19,7 +19,7 @@ import {
   PrinterOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { CarIntakeService, UploadService } from "../services/apiService";
+import { carIntakeAPI, uploadAPI } from "../utils/api";
 
 const CarIntakeDetails = () => {
   const { id } = useParams();
@@ -54,16 +54,19 @@ const CarIntakeDetails = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await CarIntakeService.getCarIntakeById(id);
-        // support both { carIntake: {...}, transaction: {...} } and direct object responses
-        const carData = res.carIntake || res;
+        const res = await carIntakeAPI.getById(id);
+        const payload = res.data || res;
+        const carData = payload.carIntake || payload;
         setCar(carData);
-        // prefer top-level transaction if present, otherwise check response.transaction
-        if (res.transaction) setTransaction(res.transaction);
+        if (payload.transaction) setTransaction(payload.transaction);
         else if (carData.transaction) setTransaction(carData.transaction);
         else setTransaction(null);
       } catch (err) {
-        message.error(err.message || "Failed to fetch car intake");
+        message.error(
+          err.response?.data?.error ||
+            err.message ||
+            "Failed to fetch car intake"
+        );
       } finally {
         setLoading(false);
       }
@@ -88,8 +91,8 @@ const CarIntakeDetails = () => {
   const renderDocuments = () => {
     // documents may be stored similar to images: car.documents object, document1..N fields, or documents array
     const collected = [];
-    if (car.documents && typeof car.documents === "object") {
-      collected.push(...Object.values(car.documents));
+    if (car.kyc.documents && typeof car.kyc.documents === "object") {
+      collected.push(...Object.values(car.kyc.documents));
     }
 
     Object.keys(car)
@@ -108,7 +111,7 @@ const CarIntakeDetails = () => {
       <Row gutter={[12, 12]}>
         {docs.map((doc, idx) => {
           // If doc looks like an image, render Image with preview; otherwise render a download link
-          const url = UploadService.getImageUrl(doc);
+          const url = uploadAPI.getImageUrl(doc);
           const isImage = /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(
             url.split("?")[0]
           );
@@ -157,8 +160,8 @@ const CarIntakeDetails = () => {
     // 3) car.images as an array
     const collected = [];
 
-    if (car.carImages && typeof car.carImages === "object") {
-      collected.push(...Object.values(car.carImages));
+    if (car.imagesStep && typeof car.imagesStep === "object") {
+      collected.push(...Object.values(car.imagesStep));
     }
 
     // pick up top-level image1..imageN fields if present
@@ -185,7 +188,7 @@ const CarIntakeDetails = () => {
           <Col key={idx}>
             <Image
               width={120}
-              src={UploadService.getImageUrl(img)}
+              src={uploadAPI.getImageUrl(img)}
               alt={`${car.model || car.make || "car"}-img-${idx}`}
               preview={{ getContainer: getPreviewContainer }}
             />
@@ -236,6 +239,26 @@ const CarIntakeDetails = () => {
                   <div style={{ color: "#9ca3af", fontSize: 12 }}>
                     Units: {val.unit ?? 0}
                   </div>
+                  {val.quality ? (
+                    <div style={{ color: "#9ca3af", fontSize: 12 }}>
+                      Quality: {val.quality}
+                    </div>
+                  ) : null}
+                  {val.weight ? (
+                    <div style={{ color: "#9ca3af", fontSize: 12 }}>
+                      Weight: {val.weight}
+                    </div>
+                  ) : null}
+                  {val.dimensions ? (
+                    <div style={{ color: "#9ca3af", fontSize: 12 }}>
+                      Dimensions: {val.dimensions}
+                    </div>
+                  ) : null}
+                  {val.partsUploadedBy ? (
+                    <div style={{ color: "#9ca3af", fontSize: 12 }}>
+                      Uploaded By: {val.partsUploadedBy}
+                    </div>
+                  ) : null}
                 </div>
                 <Tag color={val.selected ? "green" : "default"}>
                   {val.selected ? "Selected" : "No"}
@@ -305,7 +328,7 @@ const CarIntakeDetails = () => {
       <div className="container-fluid">
         <div className="page-content-wrapper">
           <Card
-            title={`${car.vin || "-"} ${car.make ? `• ${car.make}` : ""}`}
+            title={`${car.vin || "-"} ${car.carDetails.make ? `• ${car.carDetails.make}` : ""}`}
             extra={
               <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
                 Back
@@ -326,57 +349,57 @@ const CarIntakeDetails = () => {
                   "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Make">
-                {car.make || "N/A"}
+                {car.carDetails.make || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Model">
-                {car.model || "N/A"}
+                {car.carDetails.model || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Year">
-                {car.year || "N/A"}
+                {car.carDetails.year || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Trim">
-                {car.trim || "N/A"}
+                {car.carDetails.trim || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Color">
-                {car.color || "N/A"}
+                {car.carDetails.color || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Body Class">
-                {car.bodyClass || "N/A"}
+                {car.carDetails.bodyClass || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Transmission">
-                {car.transmission || "N/A"}
+                {car.carDetails.transmission || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Drive">
-                {car.drive || "N/A"}
+                {car.carDetails.drive || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Fuel Type">
-                {car.fuelType || "N/A"}
+                {car.carDetails.fuelType || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Chassis No.">
-                {car.chassisNo || "N/A"}
+                {car.carDetails.chassisNo || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Engine No.">
-                {car.engineNo || "N/A"}
+                {car.carDetails.engineNo || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Scrap Yard">
-                {car.scrapYardName || "N/A"}
+                {car.carDetails.scrapYardName || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Scrap Yard Location">
-                {car.scrapYardLocation || "N/A"}
+                {car.carDetails.scrapYardLocation || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Has Keys">
-                <Tag color={car.hasKeys ? "blue" : "red"}>
-                  {car.hasKeys ? "Yes" : "No"}
+                <Tag color={car.carDetails.keys ? "blue" : "red"}>
+                  {car.carDetails.keys ? "Yes" : "No"}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Status">
                 <Tag>{car.status || "intake"}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Final Price">
-                {car.finalPrice ? `$${car.finalPrice}` : "N/A"}
+                {car.price.finalPrice ? `$${car.price.finalPrice}` : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Payment Method">
-                {car.paymentMethod || "N/A"}
+                {car.payment.paymentMethod || "N/A"}
               </Descriptions.Item>
 
               <Descriptions.Item label="Seller Name">

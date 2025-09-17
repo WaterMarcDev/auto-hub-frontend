@@ -154,6 +154,31 @@ export const uploadAPI = {
     });
   },
   deleteImage: (filename) => api.delete(`/upload/${filename}`),
+  // Build a full URL for uploaded files matching legacy behavior
+  getImageUrl: (filename) => {
+    if (!filename) return "";
+    try {
+      new URL(filename);
+      return filename;
+    } catch {
+      // Not a full URL
+    }
+
+    const base = (
+      import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+    ).replace(/\/api\/?$/, "");
+
+    if (/^\/?api\//i.test(filename)) {
+      const cleaned = filename.replace(/^\/?api\//i, "");
+      return `${base}/${cleaned}`.replace(/([^:]?)\/\/+/g, "$1/");
+    }
+
+    if (/^\/?uploads\//.test(filename)) {
+      return `${base}${filename.startsWith("/") ? filename : "/" + filename}`;
+    }
+
+    return `${base}/uploads/${filename}`;
+  },
 };
 
 // Export the configured axios instance as default

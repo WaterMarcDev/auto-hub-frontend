@@ -169,6 +169,7 @@ function App() {
                       <Route path="/model" element={<Model />} />
                       <Route path="/trim" element={<Trim />} />
                       <Route path="/element" element={<Element />} />
+                      <Route path="/part" element={<Part />} />
                       <Route
                         path="/add-inventory-parts"
                         element={

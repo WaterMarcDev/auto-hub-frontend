@@ -12,7 +12,7 @@ import {
   Checkbox,
 } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { CarIntakeService, UploadService } from "../services/apiService";
+import { carIntakeAPI, uploadAPI } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 
 const CarIntakeList = () => {
@@ -61,91 +61,91 @@ const CarIntakeList = () => {
     },
     {
       title: "Make",
-      dataIndex: "make",
+      dataIndex: ["carDetails", "make"],
       key: "make",
       width: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Year",
-      dataIndex: "year",
+      dataIndex: ["carDetails", "year"],
       key: "year",
       width: 80,
       render: (text) => text || "N/A",
     },
     {
       title: "Model",
-      dataIndex: "model",
+      dataIndex: ["carDetails", "model"],
       key: "model",
       width: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Trim",
-      dataIndex: "trim",
+      dataIndex: ["carDetails", "trim"],
       key: "trim",
       width: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Color",
-      dataIndex: "color",
+      dataIndex: ["carDetails", "color"],
       key: "color",
       width: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Body Class",
-      dataIndex: "bodyClass",
+      dataIndex: ["carDetails", "bodyClass"],
       key: "bodyClass",
       width: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Transmission",
-      dataIndex: "transmission",
+      dataIndex: ["carDetails", "transmission"],
       key: "transmission",
       width: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Drive",
-      dataIndex: "drive",
+      dataIndex: ["carDetails", "drive"],
       key: "drive",
       width: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Fuel Type",
-      dataIndex: "fuelType",
+      dataIndex: ["carDetails", "fuelType"],
       key: "fuelType",
       width: 250,
       render: (text) => text || "N/A",
     },
     {
       title: "Chassis No.",
-      dataIndex: "chassisNo",
+      dataIndex: ["carDetails", "chassisNo"],
       key: "chassisNo",
       width: 180,
       render: (text) => text || "N/A",
     },
     {
       title: "Engine No.",
-      dataIndex: "engineNo",
+      dataIndex: ["carDetails", "engineNo"],
       key: "engineNo",
       width: 180,
       render: (text) => text || "N/A",
     },
     {
       title: "Scrap Yard",
-      dataIndex: ["scrapYardName"],
+      dataIndex: ["carDetails", "scrapYardName"],
       key: "scrapYardName",
       width: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Scrap Yard Location",
-      dataIndex: ["scrapYardLocation"],
+      dataIndex: ["carDetails", "scrapYardLocation"],
       key: "scrapYardLocation",
       width: 180,
       render: (text) => text || "N/A",
@@ -156,10 +156,10 @@ const CarIntakeList = () => {
       width: 80,
       render: (_, record) => {
         const hasKeys =
-          record.keys !== undefined
-            ? record.keys
-            : record.hasKeys !== undefined
-            ? record.hasKeys
+          record.carDetails.keys !== undefined
+            ? record.carDetails.keys
+            : record.carDetails.hasKeys !== undefined
+            ? record.carDetails.hasKeys
             : false;
         return (
           <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
@@ -187,7 +187,7 @@ const CarIntakeList = () => {
     // email is displayed together with seller info above; keep a compact column for finalPrice next
     {
       title: "Final Price",
-      dataIndex: "finalPrice",
+      dataIndex: ["price", "finalPrice"],
       key: "finalPrice",
       width: 100,
       render: (price) => `$${price || "0"}`,
@@ -197,7 +197,7 @@ const CarIntakeList = () => {
       key: "documents",
       width: 160,
       render: (_, record) => {
-        const docs = record.documents || {};
+        const docs = record.kyc.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
         const rc = docs.carRegistration || docs.car_registration || null;
 
@@ -216,7 +216,7 @@ const CarIntakeList = () => {
               <Tag
                 color="blue"
                 style={{ cursor: "pointer" }}
-                onClick={() => openDoc(UploadService.getImageUrl(dl))}
+                onClick={() => openDoc(uploadAPI.getImageUrl(dl))}
               >
                 DL
               </Tag>
@@ -225,7 +225,7 @@ const CarIntakeList = () => {
               <Tag
                 color="green"
                 style={{ cursor: "pointer" }}
-                onClick={() => openDoc(UploadService.getImageUrl(rc))}
+                onClick={() => openDoc(uploadAPI.getImageUrl(rc))}
               >
                 RC
               </Tag>
@@ -237,7 +237,7 @@ const CarIntakeList = () => {
     },
     {
       title: "Paid In",
-      dataIndex: "paymentMethod",
+      dataIndex: ["payment", "paymentMethod"],
       key: "paymentMethod",
       width: 120,
       render: (method) => <Tag color="green">{method || "Cash"}</Tag>,
@@ -362,13 +362,15 @@ const CarIntakeList = () => {
   const fetchCarIntakes = async () => {
     setLoading(true);
     try {
-      const response = await CarIntakeService.getCarIntakes({
-        page: 1,
-        limit: 100,
-      });
-      setCarIntakes(response.carIntakes);
+      const res = await carIntakeAPI.getAll({ page: 1, limit: 100 });
+      const data = res.data || res;
+      setCarIntakes(data.carIntakes || data);
     } catch (error) {
-      message.error(`Failed to fetch car intakes: ${error.message}`);
+      message.error(
+        `Failed to fetch car intakes: ${
+          error.response?.data?.error || error.message
+        }`
+      );
     } finally {
       setLoading(false);
     }

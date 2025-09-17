@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import { carIntakeAPI, vinAPI } from "../utils/api";
 import {
@@ -23,6 +23,7 @@ import CarInventory from "../components/CarIntake/CarInventory";
 
 const CarIntake = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [serverId, setServerId] = useState(null);
   const [alert, setAlert] = useState({ show: false, type: "", message: "" });
   const [form] = Form.useForm();
   const [vinModalForm] = Form.useForm();
@@ -112,6 +113,310 @@ const CarIntake = () => {
   useEffect(() => {
     form.setFieldsValue(formData);
   }, [form, formData]);
+
+  // Debounce helper
+  const debounce = (fn, wait = 800) => {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  };
+
+  // Save a single step to backend. If no serverId, create draft on first save.
+  const saveStep = useCallback(
+    async (step, stepData) => {
+      try {
+        if (!serverId && step === 1) {
+          // create with JSON using step1 data + vin
+          const payload = {
+            vin: stepData.vin,
+            year: stepData.year,
+            make: stepData.make,
+            model: stepData.model,
+            trim: stepData.trim,
+            color: stepData.color,
+            bodyClass: stepData.bodyClass,
+            chassisNo: stepData.chassisNo,
+            engineNo: stepData.engineNo,
+            engineVariant: stepData.engineVariant,
+            drive: stepData.drive,
+            transmission: stepData.transmission,
+            scrapYardName: stepData.scrapYardName,
+            scrapYardLocation: stepData.scrapYardLocation,
+            fuelType: stepData.fuelType,
+            keys: stepData.hasKeys,
+            weightInPounds: parseFloat(stepData.weight) || undefined,
+            dimensions: stepData.dimensions,
+            description: stepData.description,
+          };
+
+          const res = await carIntakeAPI.createWithJSON(payload);
+          if (res?.data?.carIntake?._id) {
+            setServerId(res.data.carIntake._id);
+          }
+        } else if (serverId) {
+          // map step to update payload
+          let payload = {};
+          if (step === 1) {
+            payload = {
+              year: stepData.year,
+              make: stepData.make,
+              model: stepData.model,
+              trim: stepData.trim,
+              color: stepData.color,
+              bodyClass: stepData.bodyClass,
+              chassisNo: stepData.chassisNo,
+              engineNo: stepData.engineNo,
+              engineVariant: stepData.engineVariant,
+              drive: stepData.drive,
+              transmission: stepData.transmission,
+              scrapYardName: stepData.scrapYardName,
+              scrapYardLocation: stepData.scrapYardLocation,
+              fuelType: stepData.fuelType,
+              keys: stepData.hasKeys,
+              weight: stepData.weight,
+              dimensions: stepData.dimensions,
+              description: stepData.description,
+            };
+          } else if (step === 2) {
+            payload = { carImages: stepData.carImages || stepData };
+          } else if (step === 3) {
+            payload = { parts: stepData.diagnosis || stepData };
+          } else if (step === 4) {
+            payload = {
+              weightInPounds: parseFloat(stepData.weight) || undefined,
+              ratePerPound: parseFloat(stepData.rate) || undefined,
+              actualPrice: parseFloat(stepData.actualPrice) || undefined,
+              ourPrice: parseFloat(stepData.ourPrice) || undefined,
+              customerPrice: parseFloat(stepData.customerPrice) || undefined,
+              negotiateTo: stepData.negotiateTo,
+              finalPrice: parseFloat(stepData.finalPrice) || undefined,
+              priceDescription: stepData.priceDescription,
+            };
+          } else if (step === 5) {
+            payload = {
+              sellerData: {
+                firstName: stepData.firstName,
+                lastName: stepData.lastName,
+                email: stepData.email,
+                mobileNo: stepData.mobileNo,
+                description: stepData.kycDescription,
+              },
+              documents: stepData.documents || {},
+              sellingDate: stepData.sellingDate,
+              pickupType: stepData.pickUpType,
+              kycDescription: stepData.kycDescription,
+            };
+          } else if (step === 6) {
+            payload = {
+              paymentMethod: stepData.paidTo || stepData.paymentMethod,
+              paidAmount: stepData.paymentAmount || stepData.paidAmount,
+              paymentDescription: stepData.paymentDescription,
+            };
+          }
+
+          if (Object.keys(payload).length) {
+            await carIntakeAPI.update(serverId, payload);
+          }
+        }
+      } catch (error) {
+        console.error("Auto-save step error:", error);
+      }
+    },
+    [serverId]
+  );
+
+  // Keep a stable debounced save function in a ref so it isn't recreated
+  const debouncedSaveRef = useRef(null);
+  useEffect(() => {
+    debouncedSaveRef.current = debounce((s, d) => saveStep(s, d), 800);
+    return () => {
+      debouncedSaveRef.current = null;
+    };
+  }, [saveStep]);
+
+  // Persist mapping of VIN -> draft serverId in localStorage
+  const DRAFT_KEY = "carIntakeDrafts";
+
+  const saveDraftMapping = (vin, id) => {
+    if (!vin || !id) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY) || "{}";
+      const map = JSON.parse(raw);
+      map[vin] = id;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(map));
+    } catch (e) {
+      console.warn("Failed to save draft mapping:", e);
+    }
+  };
+
+  const removeDraftMapping = (vin) => {
+    if (!vin) return;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY) || "{}";
+      const map = JSON.parse(raw);
+      delete map[vin];
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(map));
+    } catch (e) {
+      console.warn("Failed to remove draft mapping:", e);
+    }
+  };
+
+  // Helper to populate form state from a CarIntake document
+  const populateFormFromCar = useCallback(
+    (car) => {
+      if (!car) return;
+      const populated = {};
+      if (car.carDetails) {
+        populated.year = car.carDetails.year || formData.year;
+        populated.make = car.carDetails.make || formData.make;
+        populated.model = car.carDetails.model || formData.model;
+        populated.trim = car.carDetails.trim || formData.trim;
+        populated.color = car.carDetails.color || formData.color;
+        populated.bodyClass = car.carDetails.bodyClass || formData.bodyClass;
+        populated.chassisNo = car.carDetails.chassisNo || formData.chassisNo;
+        populated.engineNo = car.carDetails.engineNo || formData.engineNo;
+        populated.engineVariant =
+          car.carDetails.engineVariant || formData.engineVariant;
+        populated.drive = car.carDetails.drive || formData.drive;
+        populated.transmission =
+          car.carDetails.transmission || formData.transmission;
+        populated.scrapYardName =
+          car.carDetails.scrapYardName || formData.scrapYardName;
+        populated.scrapYardLocation =
+          car.carDetails.scrapYardLocation || formData.scrapYardLocation;
+        populated.fuelType = car.carDetails.fuelType || formData.fuelType;
+        populated.hasKeys = car.carDetails.keys ?? formData.hasKeys;
+        populated.weight = car.carDetails.weight || formData.weight;
+        populated.dimensions = car.carDetails.dimensions || formData.dimensions;
+        populated.description =
+          car.carDetails.description || formData.description;
+      }
+      if (car.imagesStep) {
+        const imgs = car.imagesStep;
+        populated.carImage1 = imgs.image1
+          ? { url: imgs.image1, uploaded: true }
+          : formData.carImage1;
+        populated.carImage2 = imgs.image2
+          ? { url: imgs.image2, uploaded: true }
+          : formData.carImage2;
+        populated.carImage3 = imgs.image3
+          ? { url: imgs.image3, uploaded: true }
+          : formData.carImage3;
+        populated.carImage4 = imgs.image4
+          ? { url: imgs.image4, uploaded: true }
+          : formData.carImage4;
+        populated.carImage5 = imgs.image5
+          ? { url: imgs.image5, uploaded: true }
+          : formData.carImage5;
+        populated.carImage6 = imgs.image6
+          ? { url: imgs.image6, uploaded: true }
+          : formData.carImage6;
+        populated.carImage7 = imgs.image7
+          ? { url: imgs.image7, uploaded: true }
+          : formData.carImage7;
+        populated.carImage8 = imgs.image8
+          ? { url: imgs.image8, uploaded: true }
+          : formData.carImage8;
+        populated.carEngineImage = imgs.engineImage
+          ? { url: imgs.engineImage, uploaded: true }
+          : formData.carEngineImage;
+        populated.carBootImage = imgs.bootImage
+          ? { url: imgs.bootImage, uploaded: true }
+          : formData.carBootImage;
+        populated.belowVehicleImage = imgs.belowVehicleImage
+          ? { url: imgs.belowVehicleImage, uploaded: true }
+          : formData.belowVehicleImage;
+        populated.fullVehicleImage = imgs.fullVehicleImage
+          ? { url: imgs.fullVehicleImage, uploaded: true }
+          : formData.fullVehicleImage;
+        populated.imageDescription =
+          imgs.imageDescription || formData.imageDescription;
+      }
+      if (car.parts) {
+        populated.diagnosis = car.parts || formData.diagnosis;
+      }
+      if (car.price) {
+        populated.weight =
+          car.price.weightInPounds ?? populated.weight ?? formData.weight;
+        populated.rate = car.price.ratePerPound ?? formData.rate;
+        populated.actualPrice = car.price.actualPrice ?? formData.actualPrice;
+        populated.ourPrice = car.price.ourPrice ?? formData.ourPrice;
+        populated.customerPrice =
+          car.price.customerPrice ?? formData.customerPrice;
+        populated.negotiateTo = car.price.negotiateTo ?? formData.negotiateTo;
+        populated.finalPrice = car.price.finalPrice ?? formData.finalPrice;
+        populated.priceDescription =
+          car.price.priceDescription ?? formData.priceDescription;
+      }
+      if (car.kyc) {
+        populated.sellingDate = car.kyc.sellingDate || formData.sellingDate;
+        populated.pickUpType = car.kyc.pickupType || formData.pickUpType;
+        populated.documents = car.kyc.documents || formData.documents;
+      }
+      if (car.payment) {
+        populated.paidTo = car.payment.paymentMethod || formData.paidTo;
+        populated.paymentAmount =
+          car.payment.paidAmount || formData.paymentAmount;
+        populated.paymentDescription =
+          car.payment.paymentDescription || formData.paymentDescription;
+      }
+      if (car.seller) {
+        populated.firstName = car.seller.firstName || formData.firstName;
+        populated.lastName = car.seller.lastName || formData.lastName;
+        populated.email = car.seller.email || formData.email;
+        populated.mobileNo = car.seller.mobileNo || formData.mobileNo;
+      }
+      setFormData((prev) => ({ ...prev, ...populated }));
+      form.setFieldsValue(populated);
+    },
+    [form, formData]
+  );
+
+  // Load draft if mapping exists for current VIN
+  useEffect(() => {
+    const tryLoad = async () => {
+      const vin = formData.vin;
+      if (!vin) return;
+      if (serverId) return; // already loaded
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY) || "{}";
+        const map = JSON.parse(raw);
+        const id = map[vin];
+        if (id) {
+          // fetch draft and populate form only after successful fetch
+          try {
+            const res = await carIntakeAPI.getById(id);
+            const payload = res.data || res;
+            const car = payload.carIntake || payload;
+            if (car) {
+              // set server id only after fetch success
+              setServerId(id);
+              saveDraftMapping(vin, id);
+              populateFormFromCar(car);
+            } else {
+              // remove stale mapping
+              removeDraftMapping(vin);
+            }
+          } catch (e) {
+            // If not found, remove stale mapping
+            if (e?.response?.status === 404) removeDraftMapping(vin);
+            console.warn("Failed to load draft:", e);
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load draft:", e);
+      }
+    };
+
+    tryLoad();
+  }, [formData.vin, populateFormFromCar, serverId]);
+
+  // Whenever serverId is set and we have VIN, persist mapping
+  useEffect(() => {
+    if (serverId && formData.vin) saveDraftMapping(formData.vin, serverId);
+  }, [serverId, formData.vin]);
 
   // Ant Design validation rules
   const getValidationRules = () => ({
@@ -408,6 +713,14 @@ const CarIntake = () => {
     try {
       await form.validateFields(stepFields);
 
+      // Force immediate save when moving to next step
+      try {
+        await saveStep(currentStep, formData);
+      } catch (e) {
+        // ignore save errors while moving forward
+        console.error("Step save error on nextStep:", e);
+      }
+
       if (currentStep < 7) {
         setCurrentStep(currentStep + 1);
       }
@@ -560,17 +873,22 @@ const CarIntake = () => {
       console.log("Submitting to backend...");
       console.log("Submit data:", submitData);
 
-      const response = await carIntakeAPI.createWithJSON(submitData);
+      let response;
+      if (serverId) {
+        response = await carIntakeAPI.update(serverId, submitData);
+      } else {
+        response = await carIntakeAPI.createWithJSON(submitData);
+      }
       console.log("Response status:", response.status);
       console.log("Response data:", response.data);
 
-      if (response.status === 201) {
+      if (response.status === 201 || response.status === 200) {
         message.success("Car intake created successfully!");
         showAlert("success", "Car intake created successfully!");
         console.log("Car intake created:", response.data);
-
         // Clear form and go back to step 1
         setTimeout(() => {
+          removeDraftMapping(formData.vin);
           clearForm();
         }, 2000); // Wait 2 seconds to let user see the success message
       } else {
@@ -710,17 +1028,23 @@ const CarIntake = () => {
 
       console.log("Submitting car intake data:", submitData);
 
-      const response = await carIntakeAPI.createWithJSON(submitData);
+      let response;
+      if (serverId) {
+        response = await carIntakeAPI.update(serverId, submitData);
+      } else {
+        response = await carIntakeAPI.createWithJSON(submitData);
+      }
 
       console.log("Response data:", response.data);
 
-      if (response.status === 201) {
+      if (response.status === 201 || response.status === 200) {
         message.success("Car intake created successfully!");
         showAlert("success", "Car intake created successfully!");
         console.log("Car intake created:", response.data);
-
         // Navigate to inventory step instead of clearing form
         setCurrentStep(7);
+        // If final create/update succeeded, clear draft mapping so it isn't reloaded
+        removeDraftMapping(formData.vin);
       } else {
         throw new Error(response.data.error || "Failed to create car intake");
       }
@@ -1005,8 +1329,99 @@ const CarIntake = () => {
                     form={form}
                     layout="vertical"
                     initialValues={formData}
-                    onValuesChange={(changedValues) => {
+                    onValuesChange={(changedValues, allValues) => {
                       updateFormData(changedValues);
+                      // Prepare step-specific snapshot to save
+                      const snapshot = { ...formData, ...allValues };
+                      // Map snapshot fields per currentStep
+                      let stepPayload = {};
+                      switch (currentStep) {
+                        case 1:
+                          stepPayload = {
+                            vin: snapshot.vin,
+                            year: snapshot.year,
+                            make: snapshot.make,
+                            model: snapshot.model,
+                            trim: snapshot.trim,
+                            color: snapshot.color,
+                            bodyClass: snapshot.bodyClass,
+                            chassisNo: snapshot.chassisNo,
+                            engineNo: snapshot.engineNo,
+                            engineVariant: snapshot.engineVariant,
+                            drive: snapshot.drive,
+                            transmission: snapshot.transmission,
+                            scrapYardName: snapshot.scrapYardName,
+                            scrapYardLocation: snapshot.scrapYardLocation,
+                            fuelType: snapshot.fuelType,
+                            hasKeys: snapshot.hasKeys,
+                            weight: snapshot.weight,
+                            dimensions: snapshot.dimensions,
+                            description: snapshot.description,
+                          };
+                          break;
+                        case 2:
+                          // Map camera upload fields to backend carImages keys
+                          stepPayload = {
+                            carImages: snapshot.carImages || {
+                              image1: snapshot.carImage1?.url,
+                              image2: snapshot.carImage2?.url,
+                              image3: snapshot.carImage3?.url,
+                              image4: snapshot.carImage4?.url,
+                              image5: snapshot.carImage5?.url,
+                              image6: snapshot.carImage6?.url,
+                              image7: snapshot.carImage7?.url,
+                              image8: snapshot.carImage8?.url,
+                              engineImage: snapshot.carEngineImage?.url,
+                              bootImage: snapshot.carBootImage?.url,
+                              belowVehicleImage:
+                                snapshot.belowVehicleImage?.url,
+                              fullVehicleImage: snapshot.fullVehicleImage?.url,
+                            },
+                          };
+                          break;
+                        case 3:
+                          stepPayload = { diagnosis: snapshot.diagnosis };
+                          break;
+                        case 4:
+                          stepPayload = {
+                            weight: snapshot.weight,
+                            rate: snapshot.rate,
+                            actualPrice: snapshot.actualPrice,
+                            ourPrice: snapshot.ourPrice,
+                            customerPrice: snapshot.customerPrice,
+                            negotiateTo: snapshot.negotiateTo,
+                            finalPrice: snapshot.finalPrice,
+                            priceDescription: snapshot.priceDescription,
+                          };
+                          break;
+                        case 5:
+                          stepPayload = {
+                            firstName: snapshot.firstName,
+                            lastName: snapshot.lastName,
+                            email: snapshot.email,
+                            mobileNo: snapshot.mobileNo,
+                            documents: snapshot.documents || {
+                              driversLicense: snapshot.dlDocument?.url,
+                              carRegistration: snapshot.carRC?.url,
+                            },
+                            sellingDate: snapshot.sellingDate,
+                            pickUpType: snapshot.pickUpType,
+                            kycDescription: snapshot.kycDescription,
+                          };
+                          break;
+                        case 6:
+                          stepPayload = {
+                            paymentMethod: snapshot.paidTo,
+                            paymentAmount: snapshot.paymentAmount,
+                            paymentDescription: snapshot.paymentDescription,
+                          };
+                          break;
+                        default:
+                          stepPayload = {};
+                      }
+
+                      debouncedSaveRef.current &&
+                        debouncedSaveRef.current(currentStep, stepPayload);
                     }}
                     onFinish={(values) => {
                       console.log("Form values on submit:", values);
