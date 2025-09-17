@@ -1,5 +1,11 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  Navigate,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/layout/Layout";
@@ -163,7 +169,14 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Routes>
-                      <Route path="/" element={<CarIntake />} />
+                      <Route
+                        path="/"
+                        element={
+                          <React.Fragment>
+                            <Navigate to="/dashboard" replace />
+                          </React.Fragment>
+                        }
+                      />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/make" element={<Make />} />
                       <Route path="/model" element={<Model />} />

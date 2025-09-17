@@ -13,6 +13,7 @@ import {
   Table,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { partAPI } from "../../utils/api";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -25,7 +26,6 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
     let mounted = true;
     (async () => {
       try {
-        const { partAPI } = await import("../../utils/api");
         const res = await partAPI.getAll({ limit: 1000 });
         const apiParts = res?.data?.parts || res?.data || [];
         if (mounted && Array.isArray(apiParts) && apiParts.length) {
