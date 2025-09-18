@@ -1,12 +1,22 @@
 import { Col, Form, Input, Modal, Row } from "antd";
 import React from "react";
 import { partAPI } from "../../utils/api";
+import FileUpload from "../../components/FileUpload";
 
 const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
   const [form] = Form.useForm();
 
   const onFinish = async (values) => {
     try {
+      // Normalize image field: if upload returned an object, extract imageUrl or filename
+      if (values.image) {
+        if (Array.isArray(values.image)) {
+          values.image = values.image.map((i) => i.imageUrl || i.filename || i);
+        } else if (typeof values.image === "object") {
+          values.image =
+            values.image.imageUrl || values.image.filename || values.image;
+        }
+      }
       if (part) {
         await partAPI.update(part._id, values);
       } else {
@@ -91,6 +101,14 @@ const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
           <Col span={12}>
             <Form.Item label="Part Dimensions" name="dimensions">
               <Input placeholder="Enter part dimensions" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="Part Image" name="image">
+              <FileUpload
+                value={form.getFieldValue("image")}
+                onChange={(val) => form.setFieldsValue({ image: val })}
+              />
             </Form.Item>
           </Col>
           <Col span={24}>

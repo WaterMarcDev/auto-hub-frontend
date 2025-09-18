@@ -10,8 +10,6 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
-import AddCarMake from "./pages/AddCarMake";
-import AddCarModel from "./pages/AddCarModel";
 import CarIntake from "./pages/CarIntake";
 import CarIntakeList from "./pages/CarIntakeList";
 import CarIntakeDetails from "./pages/CarIntakeDetails";

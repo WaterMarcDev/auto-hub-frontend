@@ -4,10 +4,13 @@ import { uploadAPI } from "../utils/api";
 const FileUpload = ({
   onFileSelect,
   onFileUpload,
+  // Support Ant Design Form field control
+  value,
+  onChange,
   multiple = false,
   className = "",
   disabled = false,
-  showPreview = true,
+  showPreview = false,
   autoUpload = true,
   accept = "image/*",
 }) => {
@@ -75,6 +78,7 @@ const FileUpload = ({
             uploaded.push(res.data);
           }
           if (onFileUpload) onFileUpload(multiple ? uploaded : uploaded[0]);
+          if (onChange) onChange(multiple ? uploaded : uploaded[0]);
           setUploadSuccess(
             multiple
               ? uploaded.map((u) => u.originalName).join(", ")
@@ -95,13 +99,13 @@ const FileUpload = ({
       }
     }
 
-    // Create preview objects
+    // Create preview/file objects. Only create object URL when showPreview is true
     const previewObjs = validFiles.map((file) => ({
       id: Date.now() + Math.random(),
       file,
       name: file.name,
       size: file.size,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl: showPreview ? URL.createObjectURL(file) : null,
     }));
 
     if (multiple) {
@@ -117,13 +121,24 @@ const FileUpload = ({
         multiple ? previewObjs.map((p) => p.file) : previewObjs[0].file
       );
     }
+
+    // Inform controlled form about selected raw files (before upload)
+    if (onChange) {
+      onChange(multiple ? previewObjs.map((p) => p.file) : previewObjs[0].file);
+    }
   };
 
   const removeFile = (id) => {
     setFiles((prev) => {
       const toRemove = prev.find((p) => p.id === id);
       if (toRemove) URL.revokeObjectURL(toRemove.previewUrl);
-      return prev.filter((p) => p.id !== id);
+      const remaining = prev.filter((p) => p.id !== id);
+      // notify form with remaining raw File objects or null
+      if (onChange) {
+        if (multiple) onChange(remaining.map((p) => p.file).filter(Boolean));
+        else onChange(remaining[0] ? remaining[0].file : null);
+      }
+      return remaining;
     });
   };
 
@@ -141,9 +156,11 @@ const FileUpload = ({
         const res = await uploadAPI.uploadMultiple(rawFiles);
         const results = res.data;
         if (onFileUpload) onFileUpload(results.files || results);
+        if (onChange) onChange(results.files || results);
       } else {
         const res = await uploadAPI.uploadImage(rawFiles[0]);
         if (onFileUpload) onFileUpload(res.data);
+        if (onChange) onChange(res.data);
       }
 
       files.forEach((f) => URL.revokeObjectURL(f.previewUrl));
@@ -165,6 +182,48 @@ const FileUpload = ({
       });
     };
   }, [files]);
+
+  // If component is controlled via `value` (e.g., existing image URL or uploaded object),
+  // show preview(s). Value can be a string (URL), an object with `url`/`path`, or an array.
+  React.useEffect(() => {
+    if (!value) return;
+
+    // avoid overwriting when local files are present
+    if (files.length > 0) return;
+
+    const makePreview = (val) => {
+      if (typeof val === "string") {
+        return {
+          id: Date.now() + Math.random(),
+          file: null,
+          name: val.split("/").pop(),
+          size: 0,
+          previewUrl: val,
+        };
+      }
+      if (val && typeof val === "object") {
+        const url =
+          val.url || val.path || val.previewUrl || val.location || val;
+        return {
+          id: Date.now() + Math.random(),
+          file: null,
+          name: val.originalName || val.name || url.split("/").pop(),
+          size: val.size || 0,
+          previewUrl: url,
+        };
+      }
+      return null;
+    };
+
+    if (Array.isArray(value)) {
+      const previewObjs = value.map((v) => makePreview(v)).filter(Boolean);
+      if (previewObjs.length > 0) setFiles(previewObjs);
+    } else {
+      const p = makePreview(value);
+      if (p) setFiles([p]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes";
@@ -257,43 +316,40 @@ const FileUpload = ({
         </div>
       </div>
 
-      {showPreview && files.length > 0 && (
+      {showPreview && files.length > 0 ? (
         <div className="file-previews">
           <h6>Selected File{files.length > 1 ? "s" : ""}:</h6>
           <div className="row g-3">
             {files.map((f) => (
-              <div key={f.id} className="col-md-6 col-lg-4">
-                <div className="card">
-                  <div className="position-relative">
-                    <img
-                      src={f.previewUrl}
-                      alt={f.name}
-                      className="card-img-top"
-                      style={{ height: "200px", objectFit: "cover" }}
-                    />
+              <div key={f.id} className="col-12">
+                <div className="d-flex align-items-center justify-content-between p-2 border rounded mb-2">
+                  <div>
+                    <div
+                      className="fw-semibold text-truncate"
+                      style={{ maxWidth: "320px" }}
+                    >
+                      {f.name}
+                    </div>
+                    <div className="text-muted" style={{ fontSize: "12px" }}>
+                      {formatFileSize(f.size)}
+                    </div>
+                  </div>
+                  <div>
                     <button
                       type="button"
-                      className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                      className="btn btn-danger btn-sm"
                       onClick={() => removeFile(f.id)}
                       disabled={disabled || uploading}
                     >
                       <i className="fas fa-times"></i>
                     </button>
                   </div>
-                  <div className="card-body p-2">
-                    <small className="text-muted d-block text-truncate">
-                      {f.name}
-                    </small>
-                    <small className="text-muted">
-                      {formatFileSize(f.size)}
-                    </small>
-                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 };

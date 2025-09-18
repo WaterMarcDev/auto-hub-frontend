@@ -1,5 +1,5 @@
 import React from "react";
-import { partAPI } from "../../utils/api";
+import { partAPI, uploadAPI } from "../../utils/api";
 import {
   notification,
   Button,
@@ -8,6 +8,7 @@ import {
   Space,
   Popover,
   Checkbox,
+  Image,
 } from "antd";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
@@ -93,6 +94,31 @@ const Part = () => {
       title: "Part Dimensions",
       dataIndex: "dimensions",
       key: "dimensions",
+    },
+    {
+      title: "Image",
+      dataIndex: "image",
+      key: "image",
+      render: (src) => {
+        if (!src) return <span style={{ color: "#999" }}>No image</span>;
+        const url = uploadAPI.getImageUrl(src);
+        return (
+          <Image
+            src={url}
+            width={40}
+            style={{
+              objectFit: "cover",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            placeholder={
+              <div style={{ width: 50, height: 30, background: "#f0f0f0" }} />
+            }
+          />
+        );
+      },
     },
     {
       title: "Description",
@@ -229,7 +255,7 @@ const Part = () => {
             rowKey="_id"
             size="small"
             bordered
-            scroll={{ y: 200 }}
+            scroll={{ y: 285 }}
             pagination={{
               current: pagination.page,
               pageSize: pagination.limit,
