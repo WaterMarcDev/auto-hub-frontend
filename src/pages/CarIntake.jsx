@@ -1,18 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import dayjs from "dayjs";
 import { carIntakeAPI, vinAPI } from "../utils/api";
-import {
-  Form,
-  message,
-  Alert,
-  Card,
-  Modal,
-  Input,
-  Button,
-  Spin,
-  Space,
-  Typography,
-} from "antd";
+import { Form, message, Alert, Card, Modal, Input, Button, Spin } from "antd";
+import { useNavigate } from "react-router-dom";
 import CarDetails from "../components/CarIntake/CarDetails";
 import CarImages from "../components/CarIntake/CarImages";
 import CarDiagnosis from "../components/CarIntake/CarDiagnosis";
@@ -563,6 +553,18 @@ const CarIntake = () => {
     } catch (errorInfo) {
       console.log("VIN validation failed:", errorInfo);
     }
+  };
+
+  const navigate = useNavigate();
+
+  const handleVinModalClose = () => {
+    // Close the VIN modal and navigate back to the Car Intake list
+    try {
+      setIsVinModalVisible(false);
+    } catch (e) {
+      // ignore
+    }
+    navigate("/car-intake-list");
   };
 
   // Get step field names for validation
@@ -1157,6 +1159,9 @@ const CarIntake = () => {
         closable={false}
         centered
         footer={[
+          <Button key="cancel" onClick={handleVinModalClose} size="large">
+            Cancel
+          </Button>,
           <Button
             key="submit"
             type="primary"
