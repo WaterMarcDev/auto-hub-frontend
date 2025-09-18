@@ -94,6 +94,7 @@ const Part = () => {
       title: "Part Dimensions",
       dataIndex: "dimensions",
       key: "dimensions",
+      width: 150,
     },
     {
       title: "Image",
