@@ -92,6 +92,7 @@ const CarIntake = () => {
 
     // Step 4: Car Price - matching original template
     rate: "6",
+    actualWeight: "0",
     actualPrice: "0",
     ourPrice: "0",
     customerPrice: "0",
@@ -185,8 +186,8 @@ const CarIntake = () => {
             scrapYardLocation: stepData.scrapYardLocation,
             fuelType: stepData.fuelType,
             keys: stepData.hasKeys,
-            weightInPounds: parseFloat(stepData.weight) || undefined,
             dimensions: stepData.dimensions,
+            weight: stepData.weight,
             description: stepData.description,
           };
 
@@ -226,7 +227,7 @@ const CarIntake = () => {
             payload = { parts: stepData.diagnosis || stepData };
           } else if (step === 4) {
             payload = {
-              weightInPounds: parseFloat(stepData.weight) || undefined,
+              actualWeight: parseFloat(stepData.actualWeight) || undefined,
               ratePerPound: parseFloat(stepData.rate) || undefined,
               actualPrice: parseFloat(stepData.actualPrice) || undefined,
               ourPrice: parseFloat(stepData.ourPrice) || undefined,
@@ -424,8 +425,10 @@ const CarIntake = () => {
         populated.diagnosis = car.parts || formData.diagnosis;
       }
       if (car.price) {
-        populated.weight =
-          car.price.weightInPounds ?? populated.weight ?? formData.weight;
+        populated.actualWeight =
+          car.price.actualWeight ??
+          populated.actualWeight ??
+          formData.actualWeight;
         populated.rate = car.price.ratePerPound ?? formData.rate;
         populated.actualPrice = car.price.actualPrice ?? formData.actualPrice;
         populated.ourPrice = car.price.ourPrice ?? formData.ourPrice;
@@ -721,7 +724,6 @@ const CarIntake = () => {
           "fuelType",
           "hasKeys",
           "weight",
-          "dimensions",
         ];
       case 2: // CarImages - all required image fields
         return [
@@ -742,7 +744,7 @@ const CarIntake = () => {
         return [];
       case 4: // CarPrice - all required fields
         return [
-          "weight",
+          "actualWeight",
           "rate",
           "ourPrice",
           "customerPrice",
@@ -812,6 +814,7 @@ const CarIntake = () => {
 
       // Step 4: Car Price
       rate: "",
+      actualWeight: "",
       actualPrice: "",
       ourPrice: "",
       customerPrice: "",
@@ -972,7 +975,7 @@ const CarIntake = () => {
         partsDescription: formData.partsDescription || "",
 
         // Price information
-        weightInPounds: parseFloat(formData.weight) || 0,
+        actualWeight: parseFloat(formData.actualWeight) || 0,
         ratePerPound: parseFloat(formData.rate) || 6,
         actualPrice: parseFloat(formData.actualPrice) || 0,
         ourPrice: parseFloat(formData.ourPrice) || 0,

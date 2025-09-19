@@ -164,7 +164,20 @@ const CarIntakeDetails = () => {
     const collected = [];
 
     if (car.imagesStep && typeof car.imagesStep === "object") {
-      collected.push(...Object.values(car.imagesStep));
+      // Only include values that are strings and look like image paths/URLs.
+      // Some keys (e.g. imagesUploadedBy or descriptions) are objects or non-image strings
+      // and should not be rendered as images.
+      const vals = Object.values(car.imagesStep).filter((v) => {
+        if (!v) return false;
+        if (typeof v === "string") {
+          // consider strings that contain "/uploads/" or image file extensions
+          return /\/(uploads|images)\/|\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(
+            v
+          );
+        }
+        return false;
+      });
+      collected.push(...vals);
     }
 
     // pick up top-level image1..imageN fields if present
@@ -436,98 +449,60 @@ const CarIntakeDetails = () => {
                 {renderParts()}
               </Descriptions.Item>
             </Descriptions>
-            <div style={{ marginTop: 18, textAlign: "center" }}>
-              <Space wrap size="middle">
-                <Button
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={() =>
-                    showModal(
-                      "Car Parts Inventory",
-                      "Car Parts are being added to the inventory"
-                    )
-                  }
-                  style={{
-                    backgroundColor: "#3b82f6",
-                    borderColor: "#3b82f6",
-                    color: "white",
-                  }}
-                >
-                  Car Parts Inventory
-                </Button>
+            <div className="d-flex justify-content-between mt-4">
+              <Button
+                size="large"
+                icon={<PrinterOutlined />}
+                onClick={() =>
+                  showModal(
+                    "Print Receipt",
+                    "Receipt is being generated and printed"
+                  )
+                }
+                style={{
+                  backgroundColor: "#8b5cf6",
+                  borderColor: "#8b5cf6",
+                  color: "white",
+                }}
+              >
+                Print Receipt
+              </Button>
 
-                <Button
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={() =>
-                    showModal(
-                      "Car Inventory",
-                      "Car is being added to the inventory"
-                    )
-                  }
-                  style={{
-                    backgroundColor: "#3b82f6",
-                    borderColor: "#3b82f6",
-                    color: "white",
-                  }}
-                >
-                  Car Inventory
-                </Button>
+              <Button
+                size="large"
+                icon={<PrinterOutlined />}
+                onClick={() =>
+                  showModal(
+                    "Print Document",
+                    "Document is being generated and printed"
+                  )
+                }
+                style={{
+                  backgroundColor: "#8b5cf6",
+                  borderColor: "#8b5cf6",
+                  color: "white",
+                }}
+              >
+                Print Document
+              </Button>
 
-                <Button
-                  size="large"
-                  icon={<PrinterOutlined />}
-                  onClick={() =>
-                    showModal(
-                      "Print Receipt",
-                      "Receipt is being generated and printed"
-                    )
-                  }
-                  style={{
-                    backgroundColor: "#8b5cf6",
-                    borderColor: "#8b5cf6",
-                    color: "white",
-                  }}
-                >
-                  Print Receipt
-                </Button>
-
-                <Button
-                  size="large"
-                  icon={<PrinterOutlined />}
-                  onClick={() =>
-                    showModal(
-                      "Print Document",
-                      "Document is being generated and printed"
-                    )
-                  }
-                  style={{
-                    backgroundColor: "#8b5cf6",
-                    borderColor: "#8b5cf6",
-                    color: "white",
-                  }}
-                >
-                  Print Document
-                </Button>
-
-                <Button
-                  size="large"
-                  icon={<PrinterOutlined />}
-                  onClick={() =>
-                    showModal(
-                      "Print Seller Copy",
-                      "Seller copy is being generated and printed"
-                    )
-                  }
-                  style={{
-                    backgroundColor: "#8b5cf6",
-                    borderColor: "#8b5cf6",
-                    color: "white",
-                  }}
-                >
-                  Print Seller Copy
-                </Button>
-              </Space>
+              <Button
+                size="large"
+                icon={<PrinterOutlined />}
+                onClick={() =>
+                  showModal(
+                    "Print Seller Copy",
+                    "Seller copy is being generated and printed"
+                  )
+                }
+                style={{
+                  backgroundColor: "#8b5cf6",
+                  borderColor: "#8b5cf6",
+                  color: "white",
+                }}
+              >
+                Print Seller Copy
+              </Button>
             </div>
           </Card>
           {renderTransaction()}

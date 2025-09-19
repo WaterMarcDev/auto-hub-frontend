@@ -19,15 +19,15 @@ const CarDetails = ({ nextStep, vinData, form }) => {
   // Check if field should be disabled (populated by VIN data)
   const isVinField = (fieldName) => {
     const vinFields = [
-      "year",
-      "make",
-      "model",
-      "trim",
-      "bodyClass",
-      "drive",
-      "transmission",
-      "fuelType",
-      "engineVariant",
+      // "year",
+      // "make",
+      // "model",
+      // "trim",
+      // "bodyClass",
+      // "drive",
+      // "transmission",
+      // "fuelType",
+      // "engineVariant",
     ];
     return vinFields.includes(fieldName) && vinData;
   };
@@ -378,7 +378,6 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="dimensions"
             label={<Text style={{ color: "white" }}>Dimensions</Text>}
-            rules={[{ required: true, message: "Dimensions are required" }]}
           >
             <Input
               placeholder="Enter Car Dimensions"

@@ -19,7 +19,7 @@ const { Text } = Typography;
 const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
   // Calculate actual price whenever weight or rate changes
   React.useEffect(() => {
-    const weight = parseFloat(formData.weight) || 0;
+    const weight = parseFloat(formData.actualWeight) || 0;
     const rate = parseFloat(formData.rate) || 0;
     const actualPrice = (weight * rate * 0.01).toFixed(2); // rate is in cents, so divide by 100
 
@@ -29,7 +29,12 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
         updateFormData({ actualPrice });
       }
     }
-  }, [formData.weight, formData.rate, formData.actualPrice, updateFormData]);
+  }, [
+    formData.actualWeight,
+    formData.rate,
+    formData.actualPrice,
+    updateFormData,
+  ]);
 
   // Calculate final price based on negotiation selection
   React.useEffect(() => {
@@ -88,7 +93,7 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
         <Row gutter={24}>
           <Col span={12}>
             <Form.Item
-              name="weight"
+              name="actualWeight"
               label={<Text style={{ color: "white" }}>Weight</Text>}
               rules={[{ required: true, message: "Weight is required" }]}
             >
