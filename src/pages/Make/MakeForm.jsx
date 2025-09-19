@@ -4,7 +4,6 @@ import { makeAPI } from "../../utils/api";
 
 const MakeForm = ({ open, setOpen, make, setMake, setSuccess, setError }) => {
   const [form] = Form.useForm();
-  console.log("MakeForm render, make:", make);
 
   const onFinish = async (values) => {
     try {

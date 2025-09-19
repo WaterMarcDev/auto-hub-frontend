@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import dayjs from "dayjs";
 import { carIntakeAPI, vinAPI } from "../utils/api";
 import { Form, message, Alert, Card, Modal, Input, Button, Spin } from "antd";
@@ -11,6 +11,35 @@ import UserKYCAndCarDoc from "../components/CarIntake/UserKYCAndCarDoc";
 import Payment from "../components/CarIntake/Payment";
 import CarInventory from "../components/CarIntake/CarInventory";
 
+// Map UI steps to backend status enum values
+const STEP_STATUS_MAP = {
+  0: "vin-fetched",
+  1: "details-uploaded",
+  2: "images-uploaded",
+  3: "parts-uploaded",
+  4: "price-uploaded",
+  5: "kyc-uploaded",
+  6: "payment-done",
+};
+
+// Map backend status enum -> UI step number
+const STATUS_TO_STEP = {
+  "vin-fetched": 1,
+  "details-uploaded": 2,
+  "images-uploaded": 3,
+  "parts-uploaded": 4,
+  "price-uploaded": 5,
+  "kyc-uploaded": 6,
+  "payment-done": 7,
+  // fallback
+  intake: 1,
+};
+
+const getStepForStatus = (status) => {
+  if (!status) return 1;
+  return STATUS_TO_STEP[status] || 1;
+};
+
 const CarIntake = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [serverId, setServerId] = useState(null);
@@ -20,6 +49,7 @@ const CarIntake = () => {
   const [isVinModalVisible, setIsVinModalVisible] = useState(true);
   const [isLoadingVin, setIsLoadingVin] = useState(false);
   const [vinData, setVinData] = useState(null);
+  const [stepSaveStatus, setStepSaveStatus] = useState({});
   const [formData, setFormData] = useState({
     // Step 1: Car Details - matching original template
     vin: "",
@@ -74,10 +104,10 @@ const CarIntake = () => {
     customerPhone: "",
     customerEmail: "",
     customerAddress: "",
-    idDocument: null,
-    carTitle: null,
-    registration: null,
+    dlDocument: null,
+    carRC: null,
     sellingDate: dayjs(),
+    pickUpType: "You Pull",
 
     // Step 6: Payment
     paymentMethod: "",
@@ -88,6 +118,26 @@ const CarIntake = () => {
     // Step 7: Car & Parts Inventory
     inventoryItems: [],
   });
+
+  // Normalize pickup value from older numeric values to backend enum strings
+  const normalizePickup = (val) => {
+    if (val === undefined || val === null) return undefined;
+    if (typeof val === "string") {
+      const legacyMap = {
+        0: "You Pull",
+        1: "We Pull",
+        2: "Bulk",
+        3: "Location",
+      };
+      if (legacyMap[val]) return legacyMap[val];
+      return val;
+    }
+    if (typeof val === "number") {
+      const numMap = ["You Pull", "We Pull", "Bulk", "Location"];
+      return numMap[val] || String(val);
+    }
+    return String(val);
+  };
 
   const updateFormData = useCallback(
     (updates) => {
@@ -104,19 +154,18 @@ const CarIntake = () => {
     form.setFieldsValue(formData);
   }, [form, formData]);
 
-  // Debounce helper
-  const debounce = (fn, wait = 800) => {
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), wait);
-    };
-  };
-
   // Save a single step to backend. If no serverId, create draft on first save.
   const saveStep = useCallback(
     async (step, stepData) => {
+      console.log(step);
+      const setStatus = (s, status, error) => {
+        setStepSaveStatus((prev) => ({ ...prev, [s]: { status, error } }));
+      };
+
       try {
+        // mark saving
+        setStatus(step, "saving", null);
+        let res;
         if (!serverId && step === 1) {
           // create with JSON using step1 data + vin
           const payload = {
@@ -141,7 +190,9 @@ const CarIntake = () => {
             description: stepData.description,
           };
 
-          const res = await carIntakeAPI.createWithJSON(payload);
+          // include step status so backend can accept/override it
+          if (STEP_STATUS_MAP[step]) payload.status = STEP_STATUS_MAP[step];
+          res = await carIntakeAPI.createWithJSON(payload);
           if (res?.data?.carIntake?._id) {
             setServerId(res.data.carIntake._id);
           }
@@ -185,6 +236,31 @@ const CarIntake = () => {
               priceDescription: stepData.priceDescription,
             };
           } else if (step === 5) {
+            // Ensure sellingDate is serialized (dayjs -> string) for backend
+            let sellingDateValue = stepData.sellingDate;
+            if (sellingDateValue && sellingDateValue.format) {
+              sellingDateValue = sellingDateValue.format("YYYY-MM-DD");
+            }
+            // Collect document URLs from either `stepData.documents` or
+            // individual upload fields (`dlDocument`, `carRC`). This ensures
+            // documents uploaded via the KYC component are included in the
+            // payload when saving step 5.
+            const documents = { ...(stepData.documents || {}) };
+            if (
+              stepData.dlDocument &&
+              stepData.dlDocument.uploaded &&
+              stepData.dlDocument.url
+            ) {
+              documents.driversLicense = stepData.dlDocument.url;
+            }
+            if (
+              stepData.carRC &&
+              stepData.carRC.uploaded &&
+              stepData.carRC.url
+            ) {
+              documents.carRegistration = stepData.carRC.url;
+            }
+
             payload = {
               sellerData: {
                 firstName: stepData.firstName,
@@ -193,38 +269,58 @@ const CarIntake = () => {
                 mobileNo: stepData.mobileNo,
                 description: stepData.kycDescription,
               },
-              documents: stepData.documents || {},
-              sellingDate: stepData.sellingDate,
-              pickupType: stepData.pickUpType,
+              documents: documents,
+              sellingDate: sellingDateValue,
+              pickupType: normalizePickup(stepData.pickUpType),
               kycDescription: stepData.kycDescription,
             };
           } else if (step === 6) {
+            // Payment component uses form fields named `paidTo` and `finalPrice`.
+            // Normalize to backend expected keys: `paymentMethod` and `paidAmount`.
             payload = {
               paymentMethod: stepData.paidTo || stepData.paymentMethod,
-              paidAmount: stepData.paymentAmount || stepData.paidAmount,
+              paidAmount:
+                // prefer numeric finalPrice, fallback to paymentAmount or paidAmount
+                stepData.finalPrice !== undefined && stepData.finalPrice !== ""
+                  ? parseFloat(stepData.finalPrice)
+                  : stepData.paymentAmount !== undefined
+                  ? parseFloat(stepData.paymentAmount)
+                  : stepData.paidAmount,
               paymentDescription: stepData.paymentDescription,
             };
           }
 
           if (Object.keys(payload).length) {
-            await carIntakeAPI.update(serverId, payload);
+            if (STEP_STATUS_MAP[step]) payload.status = STEP_STATUS_MAP[step];
+            res = await carIntakeAPI.update(serverId, payload);
           }
         }
+        // If backend returned a carIntake, prefer its status field
+        const returnedCar = res?.data?.carIntake || res?.carIntake || null;
+        const returnedStatus = returnedCar?.status;
+        if (returnedStatus) {
+          setStatus(step, returnedStatus, null);
+          // navigate UI to step corresponding to backend status
+          try {
+            setCurrentStep(getStepForStatus(returnedStatus));
+          } catch {
+            // ignore
+          }
+        } else {
+          // fallback to generic saved marker
+          setStatus(step, "saved", null);
+        }
+        return true;
       } catch (error) {
         console.error("Auto-save step error:", error);
+        setStatus(step, "error", error?.message || String(error));
+        return false;
       }
     },
-    [serverId]
+    [serverId, setCurrentStep]
   );
 
-  // Keep a stable debounced save function in a ref so it isn't recreated
-  const debouncedSaveRef = useRef(null);
-  useEffect(() => {
-    debouncedSaveRef.current = debounce((s, d) => saveStep(s, d), 800);
-    return () => {
-      debouncedSaveRef.current = null;
-    };
-  }, [saveStep]);
+  // No auto-save debounce used; saves happen only on explicit actions
 
   // Persist mapping of VIN -> draft serverId in localStorage
   const DRAFT_KEY = "carIntakeDrafts";
@@ -341,9 +437,32 @@ const CarIntake = () => {
           car.price.priceDescription ?? formData.priceDescription;
       }
       if (car.kyc) {
-        populated.sellingDate = car.kyc.sellingDate || formData.sellingDate;
-        populated.pickUpType = car.kyc.pickupType || formData.pickUpType;
-        populated.documents = car.kyc.documents || formData.documents;
+        // Ensure sellingDate is a dayjs instance for Antd DatePicker
+        const sd = car.kyc.sellingDate;
+        if (sd) {
+          populated.sellingDate = sd && sd.format ? sd : dayjs(sd);
+        } else {
+          populated.sellingDate = formData.sellingDate;
+        }
+        populated.pickUpType = car.kyc.pickupType ?? formData.pickUpType;
+        // Map backend documents object into individual form fields so the
+        // KYC component shows uploaded status for driver license and RC.
+        const docs = car.kyc.documents || {};
+        populated.documents = docs || formData.documents;
+        if (docs.driversLicense) {
+          populated.dlDocument = {
+            url: docs.driversLicense,
+            uploaded: true,
+            name: docs.driversLicense.split("/").pop(),
+          };
+        }
+        if (docs.carRegistration) {
+          populated.carRC = {
+            url: docs.carRegistration,
+            uploaded: true,
+            name: docs.carRegistration.split("/").pop(),
+          };
+        }
       }
       if (car.payment) {
         populated.paidTo = car.payment.paymentMethod || formData.paidTo;
@@ -385,6 +504,14 @@ const CarIntake = () => {
               setServerId(id);
               saveDraftMapping(vin, id);
               populateFormFromCar(car);
+              // Set UI step according to backend status (if available)
+              try {
+                const backendStatus = car.status;
+                if (backendStatus)
+                  setCurrentStep(getStepForStatus(backendStatus));
+              } catch {
+                // ignore
+              }
             } else {
               // remove stale mapping
               removeDraftMapping(vin);
@@ -500,31 +627,42 @@ const CarIntake = () => {
 
       if (response.data && response.data.success) {
         const vinDetails = response.data.data;
+        const car =
+          response.data.carIntake ||
+          response.data.data?.carIntake ||
+          response.data;
+
         setVinData(vinDetails);
 
-        // Map VIN data to form fields and make them disabled
-        const mappedData = {
-          vin: vinNumber,
-          year: vinDetails.year || "",
-          make: vinDetails.make || "",
-          model: vinDetails.model || "",
-          trim: vinDetails.trim || "",
-          bodyClass: vinDetails.body_type || "",
-          drive: vinDetails.drivetrain || "",
-          transmission: vinDetails.transmission || "",
-          fuelType: vinDetails.fuel_type || "",
-          engineVariant: vinDetails.engine || "",
-        };
-
-        // Update form data
-        updateFormData(mappedData);
+        // Do NOT map VIN data into the form on frontend anymore.
+        // If a backend CarIntake exists, populate from it and set serverId.
+        if (
+          car &&
+          (car.carDetails ||
+            car.imagesStep ||
+            car.parts ||
+            car.price ||
+            car.kyc ||
+            car.seller)
+        ) {
+          if (car._id) {
+            setServerId(car._id);
+            try {
+              saveDraftMapping(vinNumber, car._id);
+            } catch (e) {
+              console.warn("Failed to persist draft mapping from VIN fetch", e);
+            }
+          }
+          populateFormFromCar(car);
+          setCurrentStep(getStepForStatus(car.status));
+        }
 
         message.success("VIN details fetched successfully!");
         return true;
-      } else {
-        message.error("Failed to fetch VIN details");
-        return false;
       }
+
+      message.error("Failed to fetch VIN details");
+      return false;
     } catch (error) {
       console.error("VIN fetch error:", error);
       message.error(
@@ -542,28 +680,23 @@ const CarIntake = () => {
     try {
       const values = await vinModalForm.validateFields();
       const { vin } = values;
-
-      // Fetch VIN details
       const success = await fetchVinDetails(vin);
 
       if (success) {
+        // Bind VIN into form so it appears in the VIN field
+        updateFormData({ vin });
+        form.setFieldsValue({ vin });
         setIsVinModalVisible(false);
         message.success("VIN number set and details loaded successfully!");
       }
     } catch (errorInfo) {
-      console.log("VIN validation failed:", errorInfo);
+      console.warn("VIN validation failed:", errorInfo);
     }
   };
 
   const navigate = useNavigate();
-
   const handleVinModalClose = () => {
-    // Close the VIN modal and navigate back to the Car Intake list
-    try {
-      setIsVinModalVisible(false);
-    } catch (e) {
-      // ignore
-    }
+    setIsVinModalVisible(false);
     navigate("/car-intake-list");
   };
 
@@ -580,7 +713,6 @@ const CarIntake = () => {
           "color",
           "bodyClass",
           "chassisNo",
-          "engineNo",
           "engineVariant",
           "drive",
           "transmission",
@@ -695,7 +827,7 @@ const CarIntake = () => {
       dlDocument: null,
       carRC: null,
       sellingDate: dayjs(),
-      pickUpType: "0",
+      pickUpType: "You Pull",
       kycDescription: "",
 
       // Step 6: Payment
@@ -727,7 +859,7 @@ const CarIntake = () => {
         setCurrentStep(currentStep + 1);
       }
     } catch (errorInfo) {
-      console.log("Validation failed:", errorInfo);
+      console.warn("Validation failed:", errorInfo);
       // Force form to show validation errors by scrolling to first error
       form.scrollToField(errorInfo.errorFields[0].name);
       // Ant Design will automatically show the validation errors
@@ -866,14 +998,27 @@ const CarIntake = () => {
           formData.sellingDate && formData.sellingDate.format
             ? formData.sellingDate.format("YYYY-MM-DD")
             : formData.sellingDate || new Date().toISOString().split("T")[0],
-        pickupType: formData.pickUpType === "0" ? "You Pull" : "We Pull",
+        pickupType: normalizePickup(formData.pickUpType),
         paymentMethod: formData.paidTo || "Cash",
         kycDescription: formData.kycDescription,
       };
 
-      // Submit to backend API using JSON
-      console.log("Submitting to backend...");
-      console.log("Submit data:", submitData);
+      // Include payment data explicitly for the inventory submit flow
+      submitData.paymentMethod = formData.paidTo || submitData.paymentMethod;
+      submitData.paidAmount =
+        formData.finalPrice !== undefined && formData.finalPrice !== ""
+          ? parseFloat(formData.finalPrice)
+          : formData.paymentAmount !== undefined
+          ? parseFloat(formData.paymentAmount)
+          : formData.paidAmount;
+
+      // Ensure backend receives status indicating payment step completed
+      if (STEP_STATUS_MAP[6]) submitData.status = STEP_STATUS_MAP[6];
+
+      // Attach status for payment step so backend transitions workflow
+      if (STEP_STATUS_MAP[6]) {
+        submitData.status = STEP_STATUS_MAP[6];
+      }
 
       let response;
       if (serverId) {
@@ -881,172 +1026,15 @@ const CarIntake = () => {
       } else {
         response = await carIntakeAPI.createWithJSON(submitData);
       }
-      console.log("Response status:", response.status);
-      console.log("Response data:", response.data);
 
       if (response.status === 201 || response.status === 200) {
         message.success("Car intake created successfully!");
         showAlert("success", "Car intake created successfully!");
-        console.log("Car intake created:", response.data);
         // Clear form and go back to step 1
         setTimeout(() => {
           removeDraftMapping(formData.vin);
           clearForm();
         }, 2000); // Wait 2 seconds to let user see the success message
-      } else {
-        throw new Error(response.data.error || "Failed to create car intake");
-      }
-    } catch (error) {
-      console.error("Submit error:", error);
-      message.error(`Error submitting form: ${error.message}`);
-      showAlert("danger", `Error submitting form: ${error.message}`);
-    }
-  };
-
-  const handleInventorySubmit = async () => {
-    try {
-      // Final validation before submission using Ant Design
-      const requiredStepFields = [
-        ...getStepFields(1),
-        ...getStepFields(4),
-        ...getStepFields(5),
-        ...getStepFields(6),
-      ];
-
-      await form.validateFields(requiredStepFields);
-
-      // Prepare car images URLs
-      const carImages = {};
-      const imageFields = [
-        "carImage1",
-        "carImage2",
-        "carImage3",
-        "carImage4",
-        "carImage5",
-        "carImage6",
-        "carImage7",
-        "carImage8",
-        "carEngineImage",
-        "carBootImage",
-        "belowVehicleImage",
-        "fullVehicleImage",
-      ];
-
-      const imageMapping = {
-        carImage1: "image1",
-        carImage2: "image2",
-        carImage3: "image3",
-        carImage4: "image4",
-        carImage5: "image5",
-        carImage6: "image6",
-        carImage7: "image7",
-        carImage8: "image8",
-        carEngineImage: "engineImage",
-        carBootImage: "bootImage",
-        belowVehicleImage: "belowVehicleImage",
-        fullVehicleImage: "fullVehicleImage",
-      };
-
-      imageFields.forEach((field) => {
-        const fieldData = formData[field];
-        if (fieldData && fieldData.uploaded && fieldData.url) {
-          const mappedKey = imageMapping[field];
-          carImages[mappedKey] = fieldData.url;
-        }
-      });
-
-      // Prepare documents URLs
-      const documents = {};
-      if (
-        formData.dlDocument &&
-        formData.dlDocument.uploaded &&
-        formData.dlDocument.url
-      ) {
-        documents.driversLicense = formData.dlDocument.url;
-      }
-      if (formData.carRC && formData.carRC.uploaded && formData.carRC.url) {
-        documents.carRegistration = formData.carRC.url;
-      }
-
-      // Create JSON payload instead of FormData
-      const submitData = {
-        // Car basic info
-        vin: formData.vin,
-        year: parseInt(formData.year) || 0,
-        make: formData.make,
-        model: formData.model,
-        trim: formData.trim,
-        color: formData.color,
-        bodyClass: formData.bodyClass,
-        chassisNo: formData.chassisNo,
-        engineNo: formData.engineNo,
-        engineVariant: formData.engineVariant,
-        drive: formData.drive,
-        transmission: formData.transmission,
-        scrapYardName: formData.scrapYardName,
-        scrapYardLocation: formData.scrapYardLocation,
-        fuelType: formData.fuelType,
-        keys: formData.hasKeys,
-        dimensions: formData.dimensions,
-        description: formData.description,
-
-        // Images
-        carImages: carImages,
-        imageDescription: formData.imageDescription,
-
-        // Parts diagnosis
-        parts: formData.diagnosis || {},
-        partsDescription: formData.partsDescription || "",
-
-        // Price information
-        weightInPounds: parseFloat(formData.weight) || 0,
-        ratePerPound: parseFloat(formData.rate) || 6,
-        actualPrice: parseFloat(formData.actualPrice) || 0,
-        ourPrice: parseFloat(formData.ourPrice) || 0,
-        customerPrice: parseFloat(formData.customerPrice) || 0,
-        negotiateTo: formData.negotiateTo,
-        finalPrice: parseFloat(formData.finalPrice) || 0,
-        priceDescription: formData.priceDescription,
-
-        // Seller data
-        sellerData: {
-          firstName: formData.firstName || "",
-          lastName: formData.lastName || "",
-          email: formData.email || "",
-          mobileNo: formData.mobileNo || "",
-          description: formData.kycDescription || "",
-        },
-
-        // Documents
-        documents: documents,
-
-        // Required backend fields
-        sellingDate:
-          formData.sellingDate || new Date().toISOString().split("T")[0],
-        pickupType: formData.pickUpType === "0" ? "You Pull" : "We Pull",
-        paymentMethod: formData.paidTo || "Cash",
-        kycDescription: formData.kycDescription,
-      };
-
-      console.log("Submitting car intake data:", submitData);
-
-      let response;
-      if (serverId) {
-        response = await carIntakeAPI.update(serverId, submitData);
-      } else {
-        response = await carIntakeAPI.createWithJSON(submitData);
-      }
-
-      console.log("Response data:", response.data);
-
-      if (response.status === 201 || response.status === 200) {
-        message.success("Car intake created successfully!");
-        showAlert("success", "Car intake created successfully!");
-        console.log("Car intake created:", response.data);
-        // Navigate to inventory step instead of clearing form
-        setCurrentStep(7);
-        // If final create/update succeeded, clear draft mapping so it isn't reloaded
-        removeDraftMapping(formData.vin);
       } else {
         throw new Error(response.data.error || "Failed to create car intake");
       }
@@ -1123,7 +1111,7 @@ const CarIntake = () => {
             prevStep={prevStep}
             form={form}
             validationRules={validationRules}
-            handleInventorySubmit={handleInventorySubmit}
+            saveStep={saveStep}
           />
         );
       case 7:
@@ -1183,6 +1171,7 @@ const CarIntake = () => {
               </p>
             </div>
           )}
+
           <p style={{ marginBottom: "16px", color: "#d1d5db" }}>
             Please enter the Vehicle Identification Number (VIN) to proceed with
             the car intake process.
@@ -1265,7 +1254,26 @@ const CarIntake = () => {
 
       <div className="container-fluid">
         <div className="page-content-wrapper">
-          <Card title="Add New Car to Scrap Yard">
+          <Card
+            title={
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span>Add New Car to Scrap Yard</span>
+                <span style={{ fontSize: 12, color: "#9CA3AF" }}>
+                  {stepSaveStatus[currentStep]?.status === "saving"
+                    ? `Saving step ${currentStep}...`
+                    : stepSaveStatus[currentStep]?.status
+                    ? `Status: ${stepSaveStatus[currentStep].status}`
+                    : null}
+                </span>
+              </div>
+            }
+          >
             <div id="progrss-wizard" className="twitter-bs-wizard">
               <ul className="twitter-bs-wizard-nav nav-justified">
                 <li className="nav-item">
@@ -1334,106 +1342,17 @@ const CarIntake = () => {
                     form={form}
                     layout="vertical"
                     initialValues={formData}
-                    onValuesChange={(changedValues, allValues) => {
+                    onValuesChange={(changedValues) => {
+                      // Only update local state on input changes.
+                      // Saving to backend happens explicitly on Next/Submit.
                       updateFormData(changedValues);
-                      // Prepare step-specific snapshot to save
-                      const snapshot = { ...formData, ...allValues };
-                      // Map snapshot fields per currentStep
-                      let stepPayload = {};
-                      switch (currentStep) {
-                        case 1:
-                          stepPayload = {
-                            vin: snapshot.vin,
-                            year: snapshot.year,
-                            make: snapshot.make,
-                            model: snapshot.model,
-                            trim: snapshot.trim,
-                            color: snapshot.color,
-                            bodyClass: snapshot.bodyClass,
-                            chassisNo: snapshot.chassisNo,
-                            engineNo: snapshot.engineNo,
-                            engineVariant: snapshot.engineVariant,
-                            drive: snapshot.drive,
-                            transmission: snapshot.transmission,
-                            scrapYardName: snapshot.scrapYardName,
-                            scrapYardLocation: snapshot.scrapYardLocation,
-                            fuelType: snapshot.fuelType,
-                            hasKeys: snapshot.hasKeys,
-                            weight: snapshot.weight,
-                            dimensions: snapshot.dimensions,
-                            description: snapshot.description,
-                          };
-                          break;
-                        case 2:
-                          // Map camera upload fields to backend carImages keys
-                          stepPayload = {
-                            carImages: snapshot.carImages || {
-                              image1: snapshot.carImage1?.url,
-                              image2: snapshot.carImage2?.url,
-                              image3: snapshot.carImage3?.url,
-                              image4: snapshot.carImage4?.url,
-                              image5: snapshot.carImage5?.url,
-                              image6: snapshot.carImage6?.url,
-                              image7: snapshot.carImage7?.url,
-                              image8: snapshot.carImage8?.url,
-                              engineImage: snapshot.carEngineImage?.url,
-                              bootImage: snapshot.carBootImage?.url,
-                              belowVehicleImage:
-                                snapshot.belowVehicleImage?.url,
-                              fullVehicleImage: snapshot.fullVehicleImage?.url,
-                            },
-                          };
-                          break;
-                        case 3:
-                          stepPayload = { diagnosis: snapshot.diagnosis };
-                          break;
-                        case 4:
-                          stepPayload = {
-                            weight: snapshot.weight,
-                            rate: snapshot.rate,
-                            actualPrice: snapshot.actualPrice,
-                            ourPrice: snapshot.ourPrice,
-                            customerPrice: snapshot.customerPrice,
-                            negotiateTo: snapshot.negotiateTo,
-                            finalPrice: snapshot.finalPrice,
-                            priceDescription: snapshot.priceDescription,
-                          };
-                          break;
-                        case 5:
-                          stepPayload = {
-                            firstName: snapshot.firstName,
-                            lastName: snapshot.lastName,
-                            email: snapshot.email,
-                            mobileNo: snapshot.mobileNo,
-                            documents: snapshot.documents || {
-                              driversLicense: snapshot.dlDocument?.url,
-                              carRegistration: snapshot.carRC?.url,
-                            },
-                            sellingDate: snapshot.sellingDate,
-                            pickUpType: snapshot.pickUpType,
-                            kycDescription: snapshot.kycDescription,
-                          };
-                          break;
-                        case 6:
-                          stepPayload = {
-                            paymentMethod: snapshot.paidTo,
-                            paymentAmount: snapshot.paymentAmount,
-                            paymentDescription: snapshot.paymentDescription,
-                          };
-                          break;
-                        default:
-                          stepPayload = {};
-                      }
-
-                      debouncedSaveRef.current &&
-                        debouncedSaveRef.current(currentStep, stepPayload);
                     }}
-                    onFinish={(values) => {
-                      console.log("Form values on submit:", values);
+                    onFinish={() => {
+                      // form submission
                       nextStep();
                     }}
                     onFinishFailed={(errorInfo) => {
-                      console.log("Form validation failed:", errorInfo);
+                      console.warn("Form validation failed:", errorInfo);
                     }}
                   >
                     {renderStepContent()}

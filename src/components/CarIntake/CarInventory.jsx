@@ -25,7 +25,7 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const CarInventory = ({ formData, prevStep, handleSubmit }) => {
+const CarInventory = ({ formData, prevStep }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -288,54 +288,20 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
         </Row>
       </Card>
 
-      <div style={{ textAlign: "center" }}>
-        <Space wrap size="middle">
-          <Button
-            size="large"
-            onClick={prevStep}
-            icon={<ArrowLeftOutlined />}
-            style={{
-              backgroundColor: "#6b7280",
-              borderColor: "#6b7280",
-              color: "white",
-            }}
-          >
-            Payment
-          </Button>
-
-          <Button
-            size="large"
-            icon={<PlusOutlined />}
-            onClick={() =>
-              showModal(
-                "Car Parts Inventory",
-                "Car Parts are being added to the inventory"
-              )
-            }
-            style={{
-              backgroundColor: "#3b82f6",
-              borderColor: "#3b82f6",
-              color: "white",
-            }}
-          >
-            Car Parts Inventory
-          </Button>
-
-          <Button
-            size="large"
-            icon={<PlusOutlined />}
-            onClick={() =>
-              showModal("Car Inventory", "Car is being added to the inventory")
-            }
-            style={{
-              backgroundColor: "#3b82f6",
-              borderColor: "#3b82f6",
-              color: "white",
-            }}
-          >
-            Car Inventory
-          </Button>
-
+      <div className="d-flex justify-content-between">
+        <Button
+          size="large"
+          onClick={prevStep}
+          icon={<ArrowLeftOutlined />}
+          style={{
+            backgroundColor: "#6b7280",
+            borderColor: "#6b7280",
+            color: "white",
+          }}
+        >
+          Payment
+        </Button>
+        <div className="d-flex gap-3">
           <Button
             size="large"
             icon={<PrinterOutlined />}
@@ -389,7 +355,7 @@ const CarInventory = ({ formData, prevStep, handleSubmit }) => {
           >
             Print Seller Copy
           </Button>
-        </Space>
+        </div>
       </div>
 
       <Modal

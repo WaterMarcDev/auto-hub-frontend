@@ -231,8 +231,10 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
                   style={{ width: "100%" }}
                   dropdownStyle={{ backgroundColor: "#374151" }}
                 >
-                  <Option value="0">You Pull</Option>
-                  <Option value="1">We Pull</Option>
+                  <Option value="You Pull">You Pull</Option>
+                  <Option value="We Pull">We Pull</Option>
+                  <Option value="Bulk">Bulk</Option>
+                  <Option value="Location">Location</Option>
                 </Select>
               </Form.Item>
             </Col>

@@ -17,10 +17,20 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const Payment = ({ formData, prevStep, handleInventorySubmit }) => {
+const Payment = ({ formData, prevStep, saveStep, nextStep }) => {
   const handleInventoryClick = async () => {
-    // Use the new handleInventorySubmit function that submits to backend and goes to inventory step
-    await handleInventorySubmit();
+    // Save the payment step via saveStep so the backend receives
+    // the step payload and status. Then move to the next UI step.
+    try {
+      if (typeof saveStep === "function") {
+        await saveStep(6, formData);
+      }
+    } catch (e) {
+      console.error("Failed to save step 6:", e);
+      // continue to next step even if save failed
+    }
+
+    if (typeof nextStep === "function") nextStep();
   };
 
   return (

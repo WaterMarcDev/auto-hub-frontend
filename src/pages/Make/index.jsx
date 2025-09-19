@@ -20,8 +20,6 @@ const Make = () => {
   const [notificationApi, contextHolder] = notification.useNotification();
 
   const getMakes = async () => {
-    console.log("Fetching makes with pagination:", pagination);
-
     const { data } = await makeAPI.getAll({
       page: pagination.page,
       limit: pagination.limit,

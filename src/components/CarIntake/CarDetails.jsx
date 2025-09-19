@@ -190,7 +190,6 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="engineNo"
             label={<Text style={{ color: "white" }}>Engine No.</Text>}
-            rules={[{ required: true, message: "Engine No. is required" }]}
           >
             <Input
               placeholder="Please Enter Engine No."
