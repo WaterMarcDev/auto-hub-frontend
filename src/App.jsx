@@ -23,6 +23,7 @@ import Part from "./pages/Part";
 import Element from "./pages/Element";
 import PartInventoryAdd from "./pages/PartInventory/Add";
 import PartInventoryList from "./pages/PartInventory/List";
+import Dashboard2 from "./pages/Dashboard2";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -177,7 +178,8 @@ function App() {
                           </React.Fragment>
                         }
                       />
-                      <Route path="/dashboard" element={<Dashboard />} />
+                      {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+                      <Route path="/dashboard" element={<Dashboard2 />} />
                       <Route path="/make" element={<Make />} />
                       <Route path="/model" element={<Model />} />
                       <Route path="/trim" element={<Trim />} />
