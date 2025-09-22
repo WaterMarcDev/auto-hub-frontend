@@ -21,6 +21,8 @@ import Model from "./pages/Model";
 import Trim from "./pages/Trim";
 import Part from "./pages/Part";
 import Element from "./pages/Element";
+import PartInventoryAdd from "./pages/PartInventory/Add";
+import PartInventoryList from "./pages/PartInventory/List";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -181,16 +183,6 @@ function App() {
                       <Route path="/trim" element={<Trim />} />
                       <Route path="/element" element={<Element />} />
                       <Route path="/part" element={<Part />} />
-                      <Route
-                        path="/add-inventory-parts"
-                        element={
-                          <PlaceholderPage title="Add Inventory Parts" />
-                        }
-                      />
-                      <Route
-                        path="/add-junk-elements"
-                        element={<PlaceholderPage title="Add Scrap Elements" />}
-                      />
                       <Route path="/car-intake" element={<CarIntake />} />
                       <Route
                         path="/car-intake-list"
@@ -202,47 +194,11 @@ function App() {
                       />
                       <Route
                         path="/add-inventory"
-                        element={<PlaceholderPage title="Add Inventory" />}
+                        element={<PartInventoryAdd />}
                       />
                       <Route
-                        path="/inventory-lists"
-                        element={<PlaceholderPage title="Inventory Lists" />}
-                      />
-                      <Route
-                        path="/print-tag"
-                        element={<PlaceholderPage title="Print Tag" />}
-                      />
-                      <Route
-                        path="/junk-car"
-                        element={<PlaceholderPage title="Add Junk Car" />}
-                      />
-                      <Route
-                        path="/junk-car-lists"
-                        element={<PlaceholderPage title="Junk Car Lists" />}
-                      />
-                      <Route
-                        path="/scrap-car"
-                        element={<PlaceholderPage title="Scrap Car" />}
-                      />
-                      <Route
-                        path="/scrap-car-lists"
-                        element={<PlaceholderPage title="Scrap Car Lists" />}
-                      />
-                      <Route
-                        path="/add-new-seller"
-                        element={<PlaceholderPage title="Add New Seller" />}
-                      />
-                      <Route
-                        path="/seller-lists"
-                        element={<PlaceholderPage title="Seller Lists" />}
-                      />
-                      <Route
-                        path="/payment-lists"
-                        element={<PlaceholderPage title="Payment Lists" />}
-                      />
-                      <Route
-                        path="/print-receipt"
-                        element={<PlaceholderPage title="Print Receipt" />}
+                        path="/inventory-list"
+                        element={<PartInventoryList />}
                       />
                     </Routes>
                   </Layout>

@@ -141,12 +141,6 @@ const Sidebar = ({ isOpen }) => {
                 <li className={isSubMenuActive("/element")}>
                   <Link to="/element">Add Scrap Elements</Link>
                 </li>
-                {/*<li className={isSubMenuActive("/add-inventory-parts")}>
-                  <Link to="/add-inventory-parts">Add Inventory Parts</Link>
-                </li>
-                <li className={isSubMenuActive("/add-junk-elements")}>
-                  <Link to="/add-junk-elements">Add Scrap Elements</Link>
-                </li> */}
               </ul>
             </li>
 
@@ -178,7 +172,7 @@ const Sidebar = ({ isOpen }) => {
               </ul>
             </li>
 
-            {/* <li>
+            <li>
               <a
                 href="#"
                 className="has-arrow waves-effect"
@@ -203,13 +197,10 @@ const Sidebar = ({ isOpen }) => {
                   <Link to="/add-inventory">Add Inventory</Link>
                 </li>
                 <li>
-                  <Link to="/inventory-lists">Inventory Lists</Link>
-                </li>
-                <li>
-                  <Link to="/print-tag">Print Tag</Link>
+                  <Link to="/inventory-list">Inventory Lists</Link>
                 </li>
               </ul>
-            </li> */}
+            </li>
 
             {/* <li>
               <a

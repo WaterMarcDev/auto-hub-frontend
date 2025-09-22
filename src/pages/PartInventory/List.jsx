@@ -6,22 +6,25 @@ import {
   Button,
   Space,
   Card,
-  Typography,
   Modal,
   Popover,
   Checkbox,
 } from "antd";
-import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { carIntakeAPI, uploadAPI } from "../utils/api";
-import { useNavigate } from "react-router-dom";
+import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
 
-const CarIntakeList = () => {
+const PartInventoryList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
-  const navigate = useNavigate();
+
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
+
+  const [viewPartsModalVisible, setViewPartsModalVisible] = useState(false);
+  const [viewPartsLoading, setViewPartsLoading] = useState(false);
+  const [viewPartsData, setViewPartsData] = useState([]);
+  const [printTagModalVisible, setPrintTagModalVisible] = useState(false);
+  const [printTagMessage, setPrintTagMessage] = useState("");
 
   // Ensure modal preview container is above fixed header/sidebar
   const getPreviewContainer = () => {
@@ -41,7 +44,7 @@ const CarIntakeList = () => {
       title: "Sr. No.",
       key: "srNo",
       fixed: "left",
-      width: 70,
+      minWidth: 70,
       render: (text, record, index) => index + 1,
     },
     {
@@ -49,111 +52,103 @@ const CarIntakeList = () => {
       dataIndex: "vin",
       key: "vin",
       fixed: "left",
-      width: 200,
-      render: (text, record) => (
-        <Button
-          type="link"
-          onClick={() => navigate(`/car-intake/${record._id}`)}
-        >
-          {text || "N/A"}
-        </Button>
-      ),
+      minWidth: 200,
     },
     {
       title: "Make",
       dataIndex: ["carDetails", "make"],
       key: "make",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Year",
       dataIndex: ["carDetails", "year"],
       key: "year",
-      width: 80,
+      minWidth: 80,
       render: (text) => text || "N/A",
     },
     {
       title: "Model",
       dataIndex: ["carDetails", "model"],
       key: "model",
-      width: 120,
+      minWidth: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Trim",
       dataIndex: ["carDetails", "trim"],
       key: "trim",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Color",
       dataIndex: ["carDetails", "color"],
       key: "color",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Body Class",
       dataIndex: ["carDetails", "bodyClass"],
       key: "bodyClass",
-      width: 120,
+      minWidth: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Transmission",
       dataIndex: ["carDetails", "transmission"],
       key: "transmission",
-      width: 120,
+      minWidth: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Drive",
       dataIndex: ["carDetails", "drive"],
       key: "drive",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Fuel Type",
       dataIndex: ["carDetails", "fuelType"],
       key: "fuelType",
-      width: 250,
+      minWidth: 150,
       render: (text) => text || "N/A",
     },
     {
       title: "Chassis No.",
       dataIndex: ["carDetails", "chassisNo"],
       key: "chassisNo",
-      width: 180,
+      minWidth: 180,
       render: (text) => text || "N/A",
     },
     {
       title: "Engine No.",
       dataIndex: ["carDetails", "engineNo"],
       key: "engineNo",
-      width: 180,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Scrap Yard",
       dataIndex: ["carDetails", "scrapYardName"],
       key: "scrapYardName",
-      width: 120,
+      minWidth: 120,
       render: (text) => text || "N/A",
     },
     {
       title: "Scrap Yard Location",
       dataIndex: ["carDetails", "scrapYardLocation"],
       key: "scrapYardLocation",
-      width: 180,
+      minWidth: 180,
       render: (text) => text || "N/A",
     },
     {
       title: "Keys",
       key: "keys",
-      width: 80,
+      minWidth: 80,
       render: (_, record) => {
         const cd = record.carDetails || {};
         const hasKeys = cd.keys ?? cd.hasKeys ?? false;
@@ -166,7 +161,7 @@ const CarIntakeList = () => {
       title: "Seller",
       dataIndex: "seller",
       key: "sellerName",
-      width: 200,
+      minWidth: 200,
       render: (seller) => {
         if (!seller) return "N/A";
         const name = `${seller.firstName || ""} ${
@@ -185,13 +180,13 @@ const CarIntakeList = () => {
       title: "Final Price",
       dataIndex: ["price", "finalPrice"],
       key: "finalPrice",
-      width: 100,
+      minWidth: 100,
       render: (price) => `$${price || "0"}`,
     },
     {
       title: "Documents",
       key: "documents",
-      width: 160,
+      minWidth: 160,
       render: (_, record) => {
         const docs = record?.kyc?.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
@@ -235,14 +230,14 @@ const CarIntakeList = () => {
       title: "Paid In",
       dataIndex: ["payment", "paymentMethod"],
       key: "paymentMethod",
-      width: 120,
+      minWidth: 120,
       render: (method) => <Tag color="green">{method || "N/A"}</Tag>,
     },
     {
       title: "Inventory",
       dataIndex: "inventoryAdded",
       key: "inventoryAdded",
-      width: 100,
+      minWidth: 100,
       render: (inventoryAdded) => (
         <Tag color={inventoryAdded ? "green" : "red"}>
           {inventoryAdded ? "Yes" : "No"}
@@ -253,7 +248,7 @@ const CarIntakeList = () => {
       title: "Seller Copy Printed",
       dataIndex: "sellerCopyPrinted",
       key: "sellerCopyPrinted",
-      width: 150,
+      minWidth: 150,
       render: (printed) => (
         <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
       ),
@@ -262,7 +257,7 @@ const CarIntakeList = () => {
       title: "Document Printed",
       dataIndex: "documentPrinted",
       key: "documentPrinted",
-      width: 140,
+      minWidth: 140,
       render: (printed) => (
         <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
       ),
@@ -271,7 +266,7 @@ const CarIntakeList = () => {
       title: "Receipt Printed",
       dataIndex: "receiptPrinted",
       key: "receiptPrinted",
-      width: 130,
+      minWidth: 130,
       render: (printed) => (
         <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
       ),
@@ -280,7 +275,7 @@ const CarIntakeList = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 150,
+      minWidth: 150,
       render: (status) => {
         let color = "default";
         if (status === "completed") color = "green";
@@ -293,32 +288,12 @@ const CarIntakeList = () => {
     {
       title: "Action",
       key: "action",
-      width: 160,
+      minWidth: 160,
       render: (text, record) => (
         <Space>
-          <Button
-            type="default"
-            size="small"
-            onClick={() => navigate(`/car-intake/${record._id}`)}
-          >
-            View
+          <Button type="primary" onClick={() => openViewPartsModal(record)}>
+            View Parts
           </Button>
-          <Button
-            type="primary"
-            size="small"
-            disabled
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-            title="Edit"
-          />
-          <Button
-            type="primary"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-            title="Delete"
-          />
         </Space>
       ),
     },
@@ -358,7 +333,11 @@ const CarIntakeList = () => {
   const fetchCarIntakes = async () => {
     setLoading(true);
     try {
-      const res = await carIntakeAPI.getAll({ page: 1, limit: 100 });
+      const res = await carIntakeAPI.getAll({
+        page: 1,
+        limit: 100,
+        status: "part-added-to-inventory",
+      });
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
     } catch (error) {
@@ -372,19 +351,52 @@ const CarIntakeList = () => {
     }
   };
 
-  // Handle actions
-  const handleEdit = (record) => {
-    navigate(`/car-intake/${record._id}/edit`);
-  };
-
-  const handleDelete = () => {
-    // Simple delete without confirmation for now
-    message.info("Delete functionality will be implemented");
-  };
-
   useEffect(() => {
     fetchCarIntakes();
   }, []);
+
+  // View parts by VIN - open modal and fetch inventory items
+  const fetchViewPartsByVIN = async (vin) => {
+    if (!vin) return;
+    setViewPartsLoading(true);
+    try {
+      const res = await inventoryAPI.getByVIN(vin);
+      const data = res.data || res;
+      setViewPartsData(data.inventoryItems || data);
+      setViewPartsModalVisible(true);
+    } catch (err) {
+      console.error("Failed to fetch inventory by VIN", err);
+      message.error(
+        `Failed to fetch parts for VIN ${vin}: ${
+          err.response?.data?.message || err.message
+        }`
+      );
+      setViewPartsData([]);
+    } finally {
+      setViewPartsLoading(false);
+    }
+  };
+
+  const openViewPartsModal = (record) => {
+    const vin = record?.vin || record?._id || "";
+    if (!vin) {
+      message.error("No VIN available for this record");
+      return;
+    }
+    fetchViewPartsByVIN(vin);
+  };
+
+  // Handle Print Tag action: show a small modal indicating the tag is printing
+  const handlePrintTag = (part) => {
+    const partName = part?.partName || part?.tag || "Part";
+    setPrintTagMessage(`${partName} tag is being printed`);
+    setPrintTagModalVisible(true);
+
+    // Auto-dismiss after 2.5 seconds
+    setTimeout(() => {
+      setPrintTagModalVisible(false);
+    }, 2500);
+  };
 
   return (
     <div>
@@ -520,14 +532,6 @@ const CarIntakeList = () => {
                 >
                   <Button>Columns</Button>
                 </Popover>
-
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => navigate("/car-intake")}
-                >
-                  Add New Car
-                </Button>
               </div>
             }
           >
@@ -536,6 +540,7 @@ const CarIntakeList = () => {
               dataSource={carIntakes}
               loading={loading}
               rowKey={(record) => record._id || record.vin}
+              tableLayout="auto"
               scroll={{
                 x: 2500, // Horizontal scroll for many columns
                 y: 600, // Vertical scroll height
@@ -577,6 +582,100 @@ const CarIntakeList = () => {
                 <div>No document to preview</div>
               )}
             </Modal>
+
+            <Modal
+              open={viewPartsModalVisible}
+              title={`Parts For VIN`}
+              onCancel={() => setViewPartsModalVisible(false)}
+              footer={null}
+              width={1200}
+              centered
+            >
+              {viewPartsLoading ? (
+                <div>Loading...</div>
+              ) : viewPartsData && viewPartsData.length > 0 ? (
+                <Table
+                  dataSource={viewPartsData}
+                  rowKey={(r) => r._id || r.tag || JSON.stringify(r)}
+                  pagination={false}
+                  size="small"
+                  bordered
+                  columns={[
+                    {
+                      title: "Part Name",
+                      dataIndex: "partName",
+                      key: "partName",
+                    },
+                    {
+                      title: "Make",
+                      dataIndex: ["make", "name"],
+                      key: "make",
+                    },
+                    {
+                      title: "Model",
+                      dataIndex: ["model", "name"],
+                      key: "model",
+                    },
+                    {
+                      title: "Trim",
+                      dataIndex: ["trim", "name"],
+                      key: "trim",
+                    },
+
+                    { title: "Unit", dataIndex: "unit", key: "unit" },
+                    { title: "Quality", dataIndex: "quality", key: "quality" },
+                    {
+                      title: "Cleaned",
+                      dataIndex: "cleaned",
+                      key: "cleaned",
+                      render: (c) => (c ? "Yes" : "No"),
+                    },
+                    { title: "Weight", dataIndex: "weight", key: "weight" },
+                    {
+                      title: "Dimensions",
+                      dataIndex: "dimensions",
+                      key: "dimensions",
+                    },
+                    {
+                      title: "Location",
+                      dataIndex: "location",
+                      key: "location",
+                    },
+                    { title: "Tag", dataIndex: "tag", key: "tag" },
+                    {
+                      title: "Action",
+                      key: "action",
+                      render: (_, part) => (
+                        <Space>
+                          <Button
+                            type="link"
+                            onClick={() => handlePrintTag(part)}
+                          >
+                            Print Tag
+                          </Button>
+                        </Space>
+                      ),
+                    },
+                  ]}
+                />
+              ) : (
+                <div>No parts found for this VIN.</div>
+              )}
+            </Modal>
+
+            <Modal
+              open={printTagModalVisible}
+              title={null}
+              footer={null}
+              onCancel={() => setPrintTagModalVisible(false)}
+              centered
+              closable={false}
+              width={360}
+            >
+              <div style={{ padding: 8, textAlign: "center", fontWeight: 600 }}>
+                {printTagMessage || "Tag is being printed"}
+              </div>
+            </Modal>
           </Card>
         </div>
       </div>
@@ -584,4 +683,4 @@ const CarIntakeList = () => {
   );
 };
 
-export default CarIntakeList;
+export default PartInventoryList;

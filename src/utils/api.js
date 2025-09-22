@@ -100,6 +100,11 @@ export const partAPI = {
   update: (id, data) => api.put(`/part/${id}`, data),
 };
 
+export const inventoryAPI = {
+  create: (data) => api.post("/inventory", data),
+  getByVIN: (vin) => api.get(`/inventory/vin/${vin}`),
+};
+
 export const elementAPI = {
   getAll: (params = {}) => api.get("/element", { params }),
   getById: (id) => api.get(`/element/${id}`),
