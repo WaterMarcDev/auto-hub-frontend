@@ -178,7 +178,7 @@ function App() {
                           </React.Fragment>
                         }
                       />
-                      {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+                      <Route path="/main-dashboard" element={<Dashboard />} />
                       <Route path="/dashboard" element={<Dashboard2 />} />
                       <Route path="/make" element={<Make />} />
                       <Route path="/model" element={<Model />} />

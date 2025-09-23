@@ -15,6 +15,7 @@ import OurProcess from "../components/dashboard/OurProcess";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
 import { useNavigate } from "react-router-dom";
+import ComingSoonModal from "../components/ComingSoonModal";
 
 const { TabPane } = Tabs;
 
@@ -40,6 +41,8 @@ const Dashboard2 = () => {
   const [loadingSellers, setLoadingSellers] = useState(false);
 
   const [open, setOpen] = useState(false);
+  const [comingOpen, setComingOpen] = useState(false);
+  const [comingFeature, setComingFeature] = useState("");
 
   const navigate = useNavigate();
 
@@ -214,13 +217,19 @@ const Dashboard2 = () => {
               id: "card-1",
               title: "Check-In",
               color: "#525ce5",
-              onClick: () => message.info("Check-In clicked"),
+              onClick: () => {
+                setComingFeature("Check-In");
+                setComingOpen(true);
+              },
             },
             {
               id: "card-2",
               title: "Check-Out",
               color: "#23c58f",
-              onClick: () => message.info("Check-Out clicked"),
+              onClick: () => {
+                setComingFeature("Check-Out");
+                setComingOpen(true);
+              },
             },
             {
               id: "card-3",
@@ -234,19 +243,25 @@ const Dashboard2 = () => {
               id: "card-4",
               title: "Register User",
               color: "#eeb148",
-              onClick: () => message.info("Register User clicked"),
+              onClick: () => {
+                setComingFeature("Register User");
+                setComingOpen(true);
+              },
             },
             {
               id: "card-5",
               title: "Wavier Form",
               color: "#8b5cf6",
-              onClick: () => message.info("Wavier Form clicked"),
+              onClick: () => {
+                setComingFeature("Waiver Form");
+                setComingOpen(true);
+              },
             },
             {
               id: "card-6",
               title: "Dashboard",
               color: "#ef4444",
-              onClick: () => message.info("Dashboard clicked"),
+              onClick: () => navigate("/main-dashboard"),
             },
             {
               id: "card-7",
@@ -304,13 +319,13 @@ const Dashboard2 = () => {
             <OurProcess />
           </div>
 
-          {/* Earning Goal */}
-          <div className="col-xl-4">
-            <PopularPartsCarousel />
-          </div>
           {/* RTX Recycling */}
           <div className="col-xl-4">
             <RtxRecycling />
+          </div>
+          {/* Earning Goal */}
+          <div className="col-xl-4">
+            <PopularPartsCarousel />
           </div>
         </div>
         <Modal
@@ -481,6 +496,11 @@ const Dashboard2 = () => {
           </Tabs>
         </Modal>
       </PageContentWrapper>
+      <ComingSoonModal
+        open={comingOpen}
+        onClose={() => setComingOpen(false)}
+        featureName={comingFeature}
+      />
     </React.Fragment>
   );
 };

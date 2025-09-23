@@ -1,0 +1,49 @@
+.coming-soon-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cs-body {
+  padding: 24px 28px;
+}
+
+.cs-hero {
+  display: flex;
+  justify-content: center;
+  margin-top: -48px;
+}
+
+.cs-icon {
+  width: 96px;
+  height: 96px;
+  background: linear-gradient(135deg, #6c63ff 0%, #00c2a8 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(12, 30, 60, 0.18);
+  margin-top: 36px;
+}
+
+.cs-title {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.cs-desc {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 8px;
+}
+
+@media (max-width: 520px) {
+  .cs-body {
+    padding: 18px;
+  }
+  .cs-icon {
+    width: 72px;
+    height: 72px;
+  }
+}
