@@ -113,6 +113,11 @@ export const elementAPI = {
   update: (id, data) => api.put(`/element/${id}`, data),
 };
 
+export const scrapElementAPI = {
+  create: (data) => api.post("/scrap-element", data),
+  getByVIN: (vin) => api.get(`/scrap-element/vin/${vin}`),
+};
+
 // Auth API functions
 export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),

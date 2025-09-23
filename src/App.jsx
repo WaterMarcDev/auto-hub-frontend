@@ -24,6 +24,7 @@ import Element from "./pages/Element";
 import PartInventoryAdd from "./pages/PartInventory/Add";
 import PartInventoryList from "./pages/PartInventory/List";
 import Dashboard2 from "./pages/Dashboard2";
+import CarInventoryList from "./pages/CarInventory/List";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -201,6 +202,10 @@ function App() {
                       <Route
                         path="/inventory-list"
                         element={<PartInventoryList />}
+                      />
+                      <Route
+                        path="/car-inventory"
+                        element={<CarInventoryList />}
                       />
                     </Routes>
                   </Layout>

@@ -202,7 +202,7 @@ const Sidebar = ({ isOpen }) => {
               </ul>
             </li>
 
-            {/* <li>
+            <li>
               <a
                 href="#"
                 className="has-arrow waves-effect"
@@ -222,13 +222,10 @@ const Sidebar = ({ isOpen }) => {
                 }}
               >
                 <li>
-                  <Link to="/junk-car">Add New</Link>
-                </li>
-                <li>
-                  <Link to="/junk-car-lists">Car Inventory Lists</Link>
+                  <Link to="/car-inventory">Car Inventory Lists</Link>
                 </li>
               </ul>
-            </li> */}
+            </li>
 
             {/* <li>
               <a
