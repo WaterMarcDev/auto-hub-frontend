@@ -25,6 +25,8 @@ import PartInventoryAdd from "./pages/PartInventory/Add";
 import PartInventoryList from "./pages/PartInventory/List";
 import Dashboard2 from "./pages/Dashboard2";
 import CarInventoryList from "./pages/CarInventory/List";
+import AddScrap from "./pages/Scrap/Add";
+import ScrapList from "./pages/Scrap/List";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -207,6 +209,8 @@ function App() {
                         path="/car-inventory"
                         element={<CarInventoryList />}
                       />
+                      <Route path="/add-scrap" element={<AddScrap />} />
+                      <Route path="/scrap-list" element={<ScrapList />} />
                     </Routes>
                   </Layout>
                 </ProtectedRoute>
