@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import TitleBox from "../components/TitleBox";
 import PageContentWrapper from "../components/PageContentWrapper";
-import { Card, Tabs, Input, Button, Table, Select, Space, message } from "antd";
+import { Tabs, Input, Button, Table, Select, message, Modal } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import {
   carIntakeAPI,
@@ -11,6 +11,10 @@ import {
   inventoryAPI,
 } from "../utils/api";
 import api from "../utils/api";
+import OurProcess from "../components/dashboard/OurProcess";
+import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
+import RtxRecycling from "../components/dashboard/RtxRecycling";
+import { useNavigate } from "react-router-dom";
 
 const { TabPane } = Tabs;
 
@@ -34,6 +38,10 @@ const Dashboard2 = () => {
   const [sellerQuery, setSellerQuery] = useState("");
   const [sellerResults, setSellerResults] = useState([]);
   const [loadingSellers, setLoadingSellers] = useState(false);
+
+  const [open, setOpen] = useState(false);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     // fetch makes on mount
@@ -190,8 +198,128 @@ const Dashboard2 = () => {
     <React.Fragment>
       <TitleBox title="Dashboard" routes={["Scrap Yard"]} current="Dashboard" />
       <PageContentWrapper>
-        <Card>
-          {/* Inline results tables inside tabs */}
+        <div
+          className="mb-4"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: 8,
+            alignItems: "stretch",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
+          {[
+            {
+              id: "card-1",
+              title: "Check-In",
+              color: "#525ce5",
+              onClick: () => message.info("Check-In clicked"),
+            },
+            {
+              id: "card-2",
+              title: "Check-Out",
+              color: "#23c58f",
+              onClick: () => message.info("Check-Out clicked"),
+            },
+            {
+              id: "card-3",
+              title: "VIN Search",
+              color: "#5ba4e5",
+              onClick: () => {
+                navigate("/car-intake");
+              },
+            },
+            {
+              id: "card-4",
+              title: "Register User",
+              color: "#eeb148",
+              onClick: () => message.info("Register User clicked"),
+            },
+            {
+              id: "card-5",
+              title: "Wavier Form",
+              color: "#8b5cf6",
+              onClick: () => message.info("Wavier Form clicked"),
+            },
+            {
+              id: "card-6",
+              title: "Dashboard",
+              color: "#ef4444",
+              onClick: () => message.info("Dashboard clicked"),
+            },
+            {
+              id: "card-7",
+              title: "Search",
+              color: "#10b981",
+              onClick: () => setOpen(true),
+            },
+          ].map((c) => (
+            <div
+              key={c.id}
+              role="button"
+              tabIndex={0}
+              onClick={c.onClick}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: 100,
+                borderRadius: 8,
+                color: "#fff",
+                cursor: "pointer",
+                minWidth: 0,
+                boxSizing: "border-box",
+                backgroundImage: `url('/assets/images/title-img.png')`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundColor: c.color,
+                boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+                userSelect: "none",
+              }}
+            >
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 18, fontWeight: 600 }}>{c.title}</div>
+                {c.id === "card-4" && (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      marginTop: 6,
+                      display: "flex",
+                      gap: 8,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <div>Seller</div>
+                    <div>Buyer</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="row">
+          {/* Our Process */}
+          <div className="col-xl-4">
+            <OurProcess />
+          </div>
+
+          {/* Earning Goal */}
+          <div className="col-xl-4">
+            <PopularPartsCarousel />
+          </div>
+          {/* RTX Recycling */}
+          <div className="col-xl-4">
+            <RtxRecycling />
+          </div>
+        </div>
+        <Modal
+          open={open}
+          onCancel={() => setOpen(false)}
+          width="80%"
+          footer={null}
+          title="Search"
+        >
           <Tabs defaultActiveKey="1">
             <TabPane tab="Search Car" key="1">
               <div
@@ -351,7 +479,7 @@ const Dashboard2 = () => {
               />
             </TabPane>
           </Tabs>
-        </Card>
+        </Modal>
       </PageContentWrapper>
     </React.Fragment>
   );
