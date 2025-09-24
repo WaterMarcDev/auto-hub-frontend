@@ -125,11 +125,11 @@ const PartInventoryList = () => {
       render: (text) => text || "N/A",
     },
     {
-      title: "Engine No.",
-      dataIndex: ["carDetails", "engineNo"],
-      key: "engineNo",
+      title: "Displacement (CC)",
+      dataIndex: ["carDetails", "displacementCC"],
+      key: "displacementCC",
       minWidth: 100,
-      render: (text) => text || "N/A",
+      render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
     },
     {
       title: "Scrap Yard",

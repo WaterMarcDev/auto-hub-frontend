@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import dayjs from "dayjs";
 import { carIntakeAPI, vinAPI } from "../utils/api";
 import { Form, message, Alert, Card, Modal, Input, Button, Spin } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import CarDetails from "../components/CarIntake/CarDetails";
 import CarImages from "../components/CarIntake/CarImages";
 import CarDiagnosis from "../components/CarIntake/CarDiagnosis";
@@ -60,7 +60,7 @@ const CarIntake = () => {
     color: "",
     bodyClass: "",
     chassisNo: "",
-    engineNo: "",
+    displacementCC: "",
     engineVariant: "",
     drive: "",
     transmission: "",
@@ -178,7 +178,7 @@ const CarIntake = () => {
             color: stepData.color,
             bodyClass: stepData.bodyClass,
             chassisNo: stepData.chassisNo,
-            engineNo: stepData.engineNo,
+            displacementCC: stepData.displacementCC || stepData.engineNo,
             engineVariant: stepData.engineVariant,
             drive: stepData.drive,
             transmission: stepData.transmission,
@@ -209,7 +209,7 @@ const CarIntake = () => {
               color: stepData.color,
               bodyClass: stepData.bodyClass,
               chassisNo: stepData.chassisNo,
-              engineNo: stepData.engineNo,
+              displacementCC: stepData.displacementCC || stepData.engineNo,
               engineVariant: stepData.engineVariant,
               drive: stepData.drive,
               transmission: stepData.transmission,
@@ -376,7 +376,11 @@ const CarIntake = () => {
         populated.color = car.carDetails.color || formData.color;
         populated.bodyClass = car.carDetails.bodyClass || formData.bodyClass;
         populated.chassisNo = car.carDetails.chassisNo || formData.chassisNo;
-        populated.engineNo = car.carDetails.engineNo || formData.engineNo;
+        populated.displacementCC =
+          car.carDetails.displacementCC ||
+          car.carDetails.engineNo ||
+          formData.displacementCC ||
+          formData.engineNo;
         populated.engineVariant =
           car.carDetails.engineVariant || formData.engineVariant;
         populated.drive = car.carDetails.drive || formData.drive;
@@ -552,6 +556,38 @@ const CarIntake = () => {
 
     tryLoad();
   }, [formData.vin, populateFormFromCar, serverId]);
+
+  // If route contains an `id`, load that CarIntake for editing using the
+  // same create form. This hides the VIN modal and sets `serverId` so
+  // subsequent saves update the existing record.
+  const params = useParams();
+  useEffect(() => {
+    const tryLoadByRouteId = async () => {
+      const routeId = params?.id;
+      if (!routeId) return;
+      if (serverId) return; // already loaded
+      try {
+        const res = await carIntakeAPI.getById(routeId);
+        const payload = res.data || res;
+        const car = payload.carIntake || payload;
+        if (car) {
+          setServerId(car._id || routeId);
+          setIsVinModalVisible(false);
+          populateFormFromCar(car);
+          try {
+            const backendStatus = car.status;
+            if (backendStatus) setCurrentStep(getStepForStatus(backendStatus));
+          } catch {
+            // ignore
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load car by route id:", e);
+      }
+    };
+
+    tryLoadByRouteId();
+  }, [params?.id, populateFormFromCar, serverId]);
 
   // Whenever serverId is set and we have VIN, persist mapping
   useEffect(() => {
@@ -801,7 +837,7 @@ const CarIntake = () => {
       color: "",
       bodyClass: "",
       chassisNo: "",
-      engineNo: "",
+      displacementCC: "",
       engineVariant: "",
       drive: "",
       transmission: "",
@@ -975,7 +1011,7 @@ const CarIntake = () => {
         color: formData.color,
         bodyClass: formData.bodyClass,
         chassisNo: formData.chassisNo,
-        engineNo: formData.engineNo,
+        displacementCC: formData.displacementCC || formData.engineNo,
         engineVariant: formData.engineVariant,
         drive: formData.drive,
         transmission: formData.transmission,

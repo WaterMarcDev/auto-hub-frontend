@@ -12,6 +12,7 @@ import {
 } from "antd";
 import { carIntakeAPI, uploadAPI } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
+import TitleBox from "../../components/TitleBox";
 
 const ScrapList = () => {
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ const ScrapList = () => {
       render: (text, record) => (
         <Button
           type="link"
-          onClick={() => navigate(`/car-intake/${record._id}`)}
+          onClick={() => navigate(`/car-intake/${record._id}/details`)}
         >
           {text || "N/A"}
         </Button>
@@ -127,11 +128,11 @@ const ScrapList = () => {
       render: (text) => text || "N/A",
     },
     {
-      title: "Engine No.",
-      dataIndex: ["carDetails", "engineNo"],
-      key: "engineNo",
+      title: "Displacement (CC)",
+      dataIndex: ["carDetails", "displacementCC"],
+      key: "displacementCC",
       minWidth: 100,
-      render: (text) => text || "N/A",
+      render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
     },
     {
       title: "Scrap Yard",
@@ -295,7 +296,7 @@ const ScrapList = () => {
           <Button
             type="default"
             size="small"
-            onClick={() => navigate(`/car-intake/${record._id}`)}
+            onClick={() => navigate(`/car-intake/${record._id}/details`)}
           >
             View
           </Button>

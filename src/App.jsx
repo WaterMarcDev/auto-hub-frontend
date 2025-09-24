@@ -195,8 +195,10 @@ function App() {
                         path="/car-intake-list"
                         element={<CarIntakeList />}
                       />
+                      {/* Keep details on a specific details route, and use /car-intake/:id for edit (reuse form) */}
+                      <Route path="/car-intake/:id" element={<CarIntake />} />
                       <Route
-                        path="/car-intake/:id"
+                        path="/car-intake/:id/details"
                         element={<CarIntakeDetails />}
                       />
                       <Route

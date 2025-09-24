@@ -126,11 +126,11 @@ const PartInventoryAdd = () => {
       render: (text) => text || "N/A",
     },
     {
-      title: "Engine No.",
-      dataIndex: ["carDetails", "engineNo"],
-      key: "engineNo",
+      title: "Displacement (CC)",
+      dataIndex: ["carDetails", "displacementCC"],
+      key: "displacementCC",
       minWidth: 100,
-      render: (text) => text || "N/A",
+      render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
     },
     {
       title: "Scrap Yard",
@@ -358,14 +358,14 @@ const PartInventoryAdd = () => {
 
   // Build inventory data for selected parts of a given record
   const openInventoryModal = (record) => {
-    if (!record || !record.parts) {
+    if (!record || !record.partDetails) {
       message.error("No parts found for this record");
       return;
     }
 
     // Determine which keys represent part entries (object with 'selected')
-    const parts = Object.keys(record.parts || {}).filter((k) => {
-      const v = record.parts[k];
+    const parts = Object.keys(record.partDetails.parts || {}).filter((k) => {
+      const v = record.partDetails.parts[k];
       return (
         v &&
         typeof v === "object" &&
@@ -376,7 +376,7 @@ const PartInventoryAdd = () => {
     console.log(record);
     const selectedParts = {};
     parts.forEach((key) => {
-      const p = record.parts[key] || {};
+      const p = record.partDetails.parts[key] || {};
       if (p.selected) {
         selectedParts[key] = {
           extracted: !!p.extracted || false,

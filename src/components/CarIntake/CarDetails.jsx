@@ -188,11 +188,11 @@ const CarDetails = ({ nextStep, vinData, form }) => {
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
-            name="engineNo"
-            label={<Text style={{ color: "white" }}>Engine No.</Text>}
+            name="displacementCC"
+            label={<Text style={{ color: "white" }}>Displacement (CC)</Text>}
           >
             <Input
-              placeholder="Please Enter Engine No."
+              placeholder="Please Enter Displacement (CC)"
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",

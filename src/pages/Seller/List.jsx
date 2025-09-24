@@ -276,7 +276,9 @@ const SellerList = () => {
                 render: (text, record) => (
                   <Button
                     type="link"
-                    onClick={() => navigate(`/car-intake/${record._id}`)}
+                    onClick={() =>
+                      navigate(`/car-intake/${record._id}/details`)
+                    }
                   >
                     {text || "N/A"}
                   </Button>
@@ -353,11 +355,12 @@ const SellerList = () => {
                 render: (text) => text || "N/A",
               },
               {
-                title: "Engine No.",
-                dataIndex: ["carDetails", "engineNo"],
-                key: "engineNo",
+                title: "Displacement (CC)",
+                dataIndex: ["carDetails", "displacementCC"],
+                key: "displacementCC",
                 width: 180,
-                render: (text) => text || "N/A",
+                render: (text, record) =>
+                  text || record?.carDetails?.engineNo || "N/A",
               },
               {
                 title: "Scrap Yard",
@@ -512,7 +515,9 @@ const SellerList = () => {
                     <Button
                       type="default"
                       size="small"
-                      onClick={() => navigate(`/car-intake/${record._id}`)}
+                      onClick={() =>
+                        navigate(`/car-intake/${record._id}/details`)
+                      }
                     >
                       View
                     </Button>

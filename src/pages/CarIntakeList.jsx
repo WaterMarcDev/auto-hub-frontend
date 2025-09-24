@@ -14,6 +14,8 @@ import {
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import TitleBox from "../components/TitleBox";
+import PageContentWrapper from "../components/PageContentWrapper";
 
 const CarIntakeList = () => {
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,7 @@ const CarIntakeList = () => {
       title: "Sr. No.",
       key: "srNo",
       fixed: "left",
-      width: 70,
+      minWidth: 70,
       render: (text, record, index) => index + 1,
     },
     {
@@ -49,11 +51,11 @@ const CarIntakeList = () => {
       dataIndex: "vin",
       key: "vin",
       fixed: "left",
-      width: 200,
+      minWidth: 100,
       render: (text, record) => (
         <Button
           type="link"
-          onClick={() => navigate(`/car-intake/${record._id}`)}
+          onClick={() => navigate(`/car-intake/${record._id}/details`)}
         >
           {text || "N/A"}
         </Button>
@@ -63,97 +65,98 @@ const CarIntakeList = () => {
       title: "Make",
       dataIndex: ["carDetails", "make"],
       key: "make",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Year",
       dataIndex: ["carDetails", "year"],
       key: "year",
-      width: 80,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Model",
       dataIndex: ["carDetails", "model"],
       key: "model",
-      width: 120,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Trim",
       dataIndex: ["carDetails", "trim"],
       key: "trim",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Color",
       dataIndex: ["carDetails", "color"],
       key: "color",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Body Class",
       dataIndex: ["carDetails", "bodyClass"],
       key: "bodyClass",
-      width: 120,
+      minWidth: 100,
+      maxWidth: 250,
       render: (text) => text || "N/A",
     },
     {
       title: "Transmission",
       dataIndex: ["carDetails", "transmission"],
       key: "transmission",
-      width: 120,
+      minWidth: 110,
       render: (text) => text || "N/A",
     },
     {
       title: "Drive",
       dataIndex: ["carDetails", "drive"],
       key: "drive",
-      width: 100,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Fuel Type",
       dataIndex: ["carDetails", "fuelType"],
       key: "fuelType",
-      width: 250,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Chassis No.",
       dataIndex: ["carDetails", "chassisNo"],
       key: "chassisNo",
-      width: 180,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
-      title: "Engine No.",
-      dataIndex: ["carDetails", "engineNo"],
-      key: "engineNo",
-      width: 180,
-      render: (text) => text || "N/A",
+      title: "Displacement (CC)",
+      dataIndex: ["carDetails", "displacementCC"],
+      key: "displacementCC",
+      minWidth: 150,
+      render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
     },
     {
       title: "Scrap Yard",
       dataIndex: ["carDetails", "scrapYardName"],
       key: "scrapYardName",
-      width: 120,
+      minWidth: 100,
       render: (text) => text || "N/A",
     },
     {
       title: "Scrap Yard Location",
       dataIndex: ["carDetails", "scrapYardLocation"],
       key: "scrapYardLocation",
-      width: 180,
+      minWidth: 180,
       render: (text) => text || "N/A",
     },
     {
       title: "Keys",
       key: "keys",
-      width: 80,
+      minWidth: 80,
       render: (_, record) => {
         const cd = record.carDetails || {};
         const hasKeys = cd.keys ?? cd.hasKeys ?? false;
@@ -166,7 +169,7 @@ const CarIntakeList = () => {
       title: "Seller",
       dataIndex: "seller",
       key: "sellerName",
-      width: 200,
+      minWidth: 100,
       render: (seller) => {
         if (!seller) return "N/A";
         const name = `${seller.firstName || ""} ${
@@ -185,13 +188,13 @@ const CarIntakeList = () => {
       title: "Final Price",
       dataIndex: ["price", "finalPrice"],
       key: "finalPrice",
-      width: 100,
+      minWidth: 100,
       render: (price) => `$${price || "0"}`,
     },
     {
       title: "Documents",
       key: "documents",
-      width: 160,
+      minWidth: 100,
       render: (_, record) => {
         const docs = record?.kyc?.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
@@ -235,14 +238,14 @@ const CarIntakeList = () => {
       title: "Paid In",
       dataIndex: ["payment", "paymentMethod"],
       key: "paymentMethod",
-      width: 120,
+      minWidth: 100,
       render: (method) => <Tag color="green">{method || "N/A"}</Tag>,
     },
     {
       title: "Inventory",
       dataIndex: "inventoryAdded",
       key: "inventoryAdded",
-      width: 100,
+      minWidth: 100,
       render: (inventoryAdded) => (
         <Tag color={inventoryAdded ? "green" : "red"}>
           {inventoryAdded ? "Yes" : "No"}
@@ -253,7 +256,7 @@ const CarIntakeList = () => {
       title: "Seller Copy Printed",
       dataIndex: "sellerCopyPrinted",
       key: "sellerCopyPrinted",
-      width: 150,
+      minWidth: 150,
       render: (printed) => (
         <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
       ),
@@ -262,7 +265,7 @@ const CarIntakeList = () => {
       title: "Document Printed",
       dataIndex: "documentPrinted",
       key: "documentPrinted",
-      width: 140,
+      minWidth: 140,
       render: (printed) => (
         <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
       ),
@@ -271,7 +274,7 @@ const CarIntakeList = () => {
       title: "Receipt Printed",
       dataIndex: "receiptPrinted",
       key: "receiptPrinted",
-      width: 130,
+      minWidth: 130,
       render: (printed) => (
         <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
       ),
@@ -280,7 +283,7 @@ const CarIntakeList = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 150,
+      minWidth: 150,
       render: (status) => {
         let color = "default";
         if (status === "completed") color = "green";
@@ -293,22 +296,21 @@ const CarIntakeList = () => {
     {
       title: "Action",
       key: "action",
-      width: 160,
+      minWidth: 160,
       render: (text, record) => (
         <Space>
           <Button
             type="default"
             size="small"
-            onClick={() => navigate(`/car-intake/${record._id}`)}
+            onClick={() => navigate(`/car-intake/${record._id}/details`)}
           >
             View
           </Button>
           <Button
             type="primary"
             size="small"
-            disabled
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+            onClick={() => navigate(`/car-intake/${record._id}`)}
             title="Edit"
           />
           <Button
@@ -373,10 +375,6 @@ const CarIntakeList = () => {
   };
 
   // Handle actions
-  const handleEdit = (record) => {
-    navigate(`/car-intake/${record._id}/edit`);
-  };
-
   const handleDelete = () => {
     // Simple delete without confirmation for now
     message.info("Delete functionality will be implemented");
@@ -388,198 +386,121 @@ const CarIntakeList = () => {
 
   return (
     <div>
-      <style>
-        {`
-          .dark-table .ant-table {
-            background-color: #1f2937 !important;
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-table-thead > tr > th {
-            background-color: #374151 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr > td {
-            background-color: #1f2937 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr:hover > td {
-            background-color: #374151 !important;
-          }
-          
-          .dark-table .ant-table-fixed-left,
-          .dark-table .ant-table-fixed-right {
-            background-color: #1f2937 !important;
-          }
-          
-          .dark-table .ant-pagination {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item {
-            background-color: #374151;
-            border-color: #4b5563;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item a {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item:hover {
-            border-color: #6b7280;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item-active {
-            background-color: #1d4ed8;
-            border-color: #1d4ed8;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-prev,
-          .dark-table .ant-pagination .ant-pagination-next {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-select-selector {
-            background-color: #374151 !important;
-            border-color: #4b5563 !important;
-            color: #f9fafb !important;
-          }
-          
-          .dark-table .ant-select-arrow {
-            color: #f9fafb;
-          }
-        `}
-      </style>
-      {/* Page Title */}
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Car Intake Lists</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Scrap Yard</a>
-            </li>
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Car Intake</a>
-            </li>
-            <li className="breadcrumb-item active">Car Intake Lists</li>
-          </ol>
-        </div>
-      </div>
+      <TitleBox
+        title="Car Intake Lists"
+        routes={["Scrap Yard", "Car Intake"]}
+        current={"Car Intake Lists"}
+      />
 
       {/* Page Content */}
-      <div className="container-fluid">
-        <div className="page-content-wrapper">
-          <Card
-            title={<span>Car Intake Lists</span>}
-            extra={
-              <div style={{ display: "flex", gap: 8 }}>
-                <Popover
-                  placement="bottomRight"
-                  content={() => (
-                    <div style={{ maxWidth: 320 }}>
-                      <div style={{ marginBottom: 8, fontWeight: 600 }}>
-                        Columns
-                      </div>
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <Button
-                          size="small"
-                          onClick={() => selectAllColumns(true)}
-                        >
-                          Select All
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => selectAllColumns(false)}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                      <div style={{ maxHeight: 300, overflow: "auto" }}>
-                        {allColumns.map((col) => {
-                          const key = getColKey(col);
-                          return (
-                            <div key={key} style={{ marginBottom: 6 }}>
-                              <Checkbox
-                                checked={visibleColumns.includes(key)}
-                                onChange={(e) =>
-                                  toggleColumn(key, e.target.checked)
-                                }
-                              >
-                                {col.title}
-                              </Checkbox>
-                            </div>
-                          );
-                        })}
-                      </div>
+      <PageContentWrapper>
+        <Card
+          title={<span>Car Intake Lists</span>}
+          extra={
+            <div style={{ display: "flex", gap: 8 }}>
+              <Popover
+                placement="bottomRight"
+                content={() => (
+                  <div style={{ maxWidth: 320 }}>
+                    <div style={{ marginBottom: 8, fontWeight: 600 }}>
+                      Columns
                     </div>
-                  )}
-                >
-                  <Button>Columns</Button>
-                </Popover>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                      <Button
+                        size="small"
+                        onClick={() => selectAllColumns(true)}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => selectAllColumns(false)}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    <div style={{ maxHeight: 300, overflow: "auto" }}>
+                      {allColumns.map((col) => {
+                        const key = getColKey(col);
+                        return (
+                          <div key={key} style={{ marginBottom: 6 }}>
+                            <Checkbox
+                              checked={visibleColumns.includes(key)}
+                              onChange={(e) =>
+                                toggleColumn(key, e.target.checked)
+                              }
+                            >
+                              {col.title}
+                            </Checkbox>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              >
+                <Button>Columns</Button>
+              </Popover>
 
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => navigate("/car-intake")}
-                >
-                  Add New Car
-                </Button>
-              </div>
-            }
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate("/car-intake")}
+              >
+                Add New Car
+              </Button>
+            </div>
+          }
+        >
+          <Table
+            columns={displayedColumns}
+            dataSource={carIntakes}
+            tableLayout="auto"
+            loading={loading}
+            rowKey={(record) => record._id || record.vin}
+            scroll={{
+              x: 2500, // Horizontal scroll for many columns
+              y: 600, // Vertical scroll height
+            }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+            size="small"
+            bordered
+            className="dark-table"
+          />
+          <Modal
+            open={docModalVisible}
+            title="Document Preview"
+            footer={null}
+            onCancel={() => setDocModalVisible(false)}
+            width={800}
+            centered
+            getContainer={getPreviewContainer}
+            bodyStyle={{ maxHeight: "80vh", overflow: "auto" }}
           >
-            <Table
-              columns={displayedColumns}
-              dataSource={carIntakes}
-              loading={loading}
-              rowKey={(record) => record._id || record.vin}
-              scroll={{
-                x: 2500, // Horizontal scroll for many columns
-                y: 600, // Vertical scroll height
-              }}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-              }}
-              size="small"
-              bordered
-              className="dark-table"
-            />
-            <Modal
-              open={docModalVisible}
-              title="Document Preview"
-              footer={null}
-              onCancel={() => setDocModalVisible(false)}
-              width={800}
-              centered
-              getContainer={getPreviewContainer}
-              bodyStyle={{ maxHeight: "80vh", overflow: "auto" }}
-            >
-              {docModalUrl ? (
-                docModalIsPdf ? (
-                  <iframe
-                    src={docModalUrl}
-                    title="PDF Preview"
-                    style={{ width: "100%", height: "70vh", border: "none" }}
-                  />
-                ) : (
-                  <img
-                    src={docModalUrl}
-                    alt="Document Preview"
-                    style={{ maxWidth: "100%", maxHeight: "70vh" }}
-                  />
-                )
+            {docModalUrl ? (
+              docModalIsPdf ? (
+                <iframe
+                  src={docModalUrl}
+                  title="PDF Preview"
+                  style={{ width: "100%", height: "70vh", border: "none" }}
+                />
               ) : (
-                <div>No document to preview</div>
-              )}
-            </Modal>
-          </Card>
-        </div>
-      </div>
+                <img
+                  src={docModalUrl}
+                  alt="Document Preview"
+                  style={{ maxWidth: "100%", maxHeight: "70vh" }}
+                />
+              )
+            ) : (
+              <div>No document to preview</div>
+            )}
+          </Modal>
+        </Card>
+      </PageContentWrapper>
     </div>
   );
 };

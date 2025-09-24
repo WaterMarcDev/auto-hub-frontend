@@ -243,3 +243,68 @@
 .carousel-item {
   margin-left: 0px !important;
 }
+
+.dark-table .ant-table {
+  background-color: #1f2937 !important;
+  color: #f9fafb;
+}
+
+.dark-table .ant-table-thead > tr > th {
+  background-color: #374151 !important;
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+}
+
+.dark-table .ant-table-tbody > tr > td {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+  border-color: #4b5563 !important;
+  white-space: nowrap;
+}
+
+.dark-table .ant-table-tbody > tr:hover > td {
+  background-color: #374151 !important;
+  white-space: nowrap;
+}
+
+.dark-table .ant-table-fixed-left,
+.dark-table .ant-table-fixed-right {
+  background-color: #1f2937 !important;
+}
+
+.dark-table .ant-pagination {
+  color: #f9fafb;
+}
+
+.dark-table .ant-pagination .ant-pagination-item {
+  background-color: #374151;
+  border-color: #4b5563;
+}
+
+.dark-table .ant-pagination .ant-pagination-item a {
+  color: #f9fafb;
+}
+
+.dark-table .ant-pagination .ant-pagination-item:hover {
+  border-color: #6b7280;
+}
+
+.dark-table .ant-pagination .ant-pagination-item-active {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.dark-table .ant-pagination .ant-pagination-prev,
+.dark-table .ant-pagination .ant-pagination-next {
+  color: #f9fafb;
+}
+
+.dark-table .ant-select-selector {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #f9fafb !important;
+}
+
+.dark-table .ant-select-arrow {
+  color: #f9fafb;
+}

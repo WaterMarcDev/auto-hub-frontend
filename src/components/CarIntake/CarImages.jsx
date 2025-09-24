@@ -79,7 +79,7 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
     <>
       <div style={{ marginBottom: "2rem", textAlign: "center" }}>
         <Image
-          src="assets/images/AutoHubCarReferenceImage.png"
+          src="/assets/images/AutoHubCarReferenceImage.png"
           alt="Car Reference"
           style={{ maxWidth: "100%", borderRadius: "8px" }}
           preview={false}
