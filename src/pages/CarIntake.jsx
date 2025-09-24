@@ -368,6 +368,9 @@ const CarIntake = () => {
     (car) => {
       if (!car) return;
       const populated = {};
+      // Ensure VIN is populated from top-level or carDetails when editing
+      populated.vin =
+        car.vin || (car.carDetails && car.carDetails.vin) || formData.vin;
       if (car.carDetails) {
         populated.year = car.carDetails.year || formData.year;
         populated.make = car.carDetails.make || formData.make;
