@@ -13,6 +13,7 @@ import {
   Input,
 } from "antd";
 import { carIntakeAPI, uploadAPI } from "../../utils/api";
+import TitleBox from "../../components/TitleBox";
 
 const AddScrap = () => {
   const [loading, setLoading] = useState(false);
@@ -440,20 +441,11 @@ const AddScrap = () => {
           }
         `}
       </style>
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Car Inventory Lists</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Scrap Yard</a>
-            </li>
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Car Intake</a>
-            </li>
-            <li className="breadcrumb-item active">Car Inventory Lists</li>
-          </ol>
-        </div>
-      </div>
+      <TitleBox
+        title="Scrap Car"
+        routes={["Scrap Yard", "Scrap a Car"]}
+        current={"Scrap Car"}
+      />
 
       <div className="container-fluid">
         <div className="page-content-wrapper">

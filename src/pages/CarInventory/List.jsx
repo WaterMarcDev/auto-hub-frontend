@@ -18,6 +18,7 @@ import {
   elementAPI,
   scrapElementAPI,
 } from "../../utils/api";
+import TitleBox from "../../components/TitleBox";
 
 const CarInventoryList = () => {
   const [loading, setLoading] = useState(false);
@@ -529,20 +530,12 @@ const CarInventoryList = () => {
           }
         `}
       </style>
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Car Inventory Lists</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Scrap Yard</a>
-            </li>
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Car Intake</a>
-            </li>
-            <li className="breadcrumb-item active">Car Inventory Lists</li>
-          </ol>
-        </div>
-      </div>
+
+      <TitleBox
+        title="Car Inventory Lists"
+        routes={["Scrap Yard", "Car Intake"]}
+        current={"Car Inventory Lists"}
+      />
 
       <div className="container-fluid">
         <div className="page-content-wrapper">

@@ -424,20 +424,11 @@ const ScrapList = () => {
           }
         `}
       </style>
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Scraped Car Lists</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Scrap Yard</a>
-            </li>
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Car Intake</a>
-            </li>
-            <li className="breadcrumb-item active">Scraped Car Lists</li>
-          </ol>
-        </div>
-      </div>
+      <TitleBox
+        title="Scrap Car List"
+        routes={["Scrap Yard", "Scrap a car"]}
+        current={"Scrap Car List"}
+      />
 
       <div className="container-fluid">
         <div className="page-content-wrapper">
