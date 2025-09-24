@@ -15,6 +15,8 @@ import {
   Select,
 } from "antd";
 import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
+import TitleBox from "../../components/TitleBox";
+import PageContentWrapper from "../../components/PageContentWrapper";
 
 const PartInventoryAdd = () => {
   const [loading, setLoading] = useState(false);
@@ -526,467 +528,382 @@ const PartInventoryAdd = () => {
   };
 
   return (
-    <div>
-      <style>
-        {`
-          .dark-table .ant-table {
-            background-color: #1f2937 !important;
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-table-thead > tr > th {
-            background-color: #374151 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr > td {
-            background-color: #1f2937 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr:hover > td {
-            background-color: #374151 !important;
-          }
-          
-          .dark-table .ant-table-fixed-left,
-          .dark-table .ant-table-fixed-right {
-            background-color: #1f2937 !important;
-          }
-          
-          .dark-table .ant-pagination {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item {
-            background-color: #374151;
-            border-color: #4b5563;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item a {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item:hover {
-            border-color: #6b7280;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item-active {
-            background-color: #1d4ed8;
-            border-color: #1d4ed8;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-prev,
-          .dark-table .ant-pagination .ant-pagination-next {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-select-selector {
-            background-color: #374151 !important;
-            border-color: #4b5563 !important;
-            color: #f9fafb !important;
-          }
-          
-          .dark-table .ant-select-arrow {
-            color: #f9fafb;
-          }
-        `}
-      </style>
-      {/* Page Title */}
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Car Intake Lists</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Scrap Yard</a>
-            </li>
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Car Intake</a>
-            </li>
-            <li className="breadcrumb-item active">Car Intake Lists</li>
-          </ol>
-        </div>
-      </div>
-
+    <React.Fragment>
+      <TitleBox
+        title="Add Inventory"
+        routes={["Scrap Yard", "Inventory"]}
+        current={"Add Inventory"}
+      />
       {/* Page Content */}
-      <div className="container-fluid">
-        <div className="page-content-wrapper">
-          <Card
-            title={<span>Car Intake Lists</span>}
-            extra={
-              <div style={{ display: "flex", gap: 8 }}>
-                <Popover
-                  placement="bottomRight"
-                  content={() => (
-                    <div style={{ maxWidth: 320 }}>
-                      <div style={{ marginBottom: 8, fontWeight: 600 }}>
-                        Columns
-                      </div>
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <Button
-                          size="small"
-                          onClick={() => selectAllColumns(true)}
-                        >
-                          Select All
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => selectAllColumns(false)}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                      <div style={{ maxHeight: 300, overflow: "auto" }}>
-                        {allColumns.map((col) => {
-                          const key = getColKey(col);
-                          return (
-                            <div key={key} style={{ marginBottom: 6 }}>
-                              <Checkbox
-                                checked={visibleColumns.includes(key)}
-                                onChange={(e) =>
-                                  toggleColumn(key, e.target.checked)
-                                }
-                              >
-                                {col.title}
-                              </Checkbox>
-                            </div>
-                          );
-                        })}
-                      </div>
+
+      <PageContentWrapper>
+        <Card
+          title={<span>Car Lists</span>}
+          extra={
+            <div style={{ display: "flex", gap: 8 }}>
+              <Popover
+                placement="bottomRight"
+                content={() => (
+                  <div style={{ maxWidth: 320 }}>
+                    <div style={{ marginBottom: 8, fontWeight: 600 }}>
+                      Columns
                     </div>
-                  )}
-                >
-                  <Button>Columns</Button>
-                </Popover>
-              </div>
-            }
+                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                      <Button
+                        size="small"
+                        onClick={() => selectAllColumns(true)}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => selectAllColumns(false)}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    <div style={{ maxHeight: 300, overflow: "auto" }}>
+                      {allColumns.map((col) => {
+                        const key = getColKey(col);
+                        return (
+                          <div key={key} style={{ marginBottom: 6 }}>
+                            <Checkbox
+                              checked={visibleColumns.includes(key)}
+                              onChange={(e) =>
+                                toggleColumn(key, e.target.checked)
+                              }
+                            >
+                              {col.title}
+                            </Checkbox>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              >
+                <Button>Columns</Button>
+              </Popover>
+            </div>
+          }
+        >
+          <Table
+            columns={displayedColumns}
+            dataSource={carIntakes}
+            loading={loading}
+            rowKey={(record) => record._id || record.vin}
+            tableLayout="auto"
+            scroll={{
+              x: 2500, // Horizontal scroll for many columns
+              y: 600, // Vertical scroll height
+            }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+            size="small"
+            bordered
+            className="dark-table"
+          />
+          <Modal
+            open={docModalVisible}
+            title="Document Preview"
+            footer={null}
+            onCancel={() => setDocModalVisible(false)}
+            width={800}
+            centered
+            getContainer={getPreviewContainer}
+            bodyStyle={{ maxHeight: "80vh", overflow: "auto" }}
           >
-            <Table
-              columns={displayedColumns}
-              dataSource={carIntakes}
-              loading={loading}
-              rowKey={(record) => record._id || record.vin}
-              tableLayout="auto"
-              scroll={{
-                x: 2500, // Horizontal scroll for many columns
-                y: 600, // Vertical scroll height
-              }}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-              }}
-              size="small"
-              bordered
-              className="dark-table"
-            />
-            <Modal
-              open={docModalVisible}
-              title="Document Preview"
-              footer={null}
-              onCancel={() => setDocModalVisible(false)}
-              width={800}
-              centered
-              getContainer={getPreviewContainer}
-              bodyStyle={{ maxHeight: "80vh", overflow: "auto" }}
-            >
-              {docModalUrl ? (
-                docModalIsPdf ? (
-                  <iframe
-                    src={docModalUrl}
-                    title="PDF Preview"
-                    style={{ width: "100%", height: "70vh", border: "none" }}
-                  />
-                ) : (
-                  <img
-                    src={docModalUrl}
-                    alt="Document Preview"
-                    style={{ maxWidth: "100%", maxHeight: "70vh" }}
-                  />
-                )
+            {docModalUrl ? (
+              docModalIsPdf ? (
+                <iframe
+                  src={docModalUrl}
+                  title="PDF Preview"
+                  style={{ width: "100%", height: "70vh", border: "none" }}
+                />
               ) : (
-                <div>No document to preview</div>
-              )}
-            </Modal>
-            <Modal
-              open={inventoryModalVisible}
-              title={
-                inventoryRecord
-                  ? `Add To Inventory - ${
-                      inventoryRecord.vin || inventoryRecord._id
-                    }`
-                  : "Add To Inventory"
-              }
-              onCancel={() => setInventoryModalVisible(false)}
-              onOk={submitInventory}
-              width={980}
-              centered
-              bodyStyle={{ maxHeight: "70vh", overflow: "auto" }}
-            >
-              {!inventoryRecord || Object.keys(inventoryParts).length === 0 ? (
-                <div>No selected parts to add to inventory.</div>
-              ) : (
-                (() => {
-                  // build data array from inventoryParts map
-                  const data = Object.keys(inventoryParts).map((k) => ({
-                    key: k,
-                    name: inventoryParts[k].label || k,
-                    extracted: !!inventoryParts[k].extracted,
-                    cleaned: !!inventoryParts[k].cleaned,
-                    placed:
-                      inventoryParts[k].placed ?? inventoryParts[k].unit ?? 0,
-                    unit: inventoryParts[k].unit ?? 0,
-                    dimensions: inventoryParts[k].dimensions || "",
-                    weight: inventoryParts[k].weight || "",
-                  }));
+                <img
+                  src={docModalUrl}
+                  alt="Document Preview"
+                  style={{ maxWidth: "100%", maxHeight: "70vh" }}
+                />
+              )
+            ) : (
+              <div>No document to preview</div>
+            )}
+          </Modal>
+          <Modal
+            open={inventoryModalVisible}
+            title={
+              inventoryRecord
+                ? `Add To Inventory - ${
+                    inventoryRecord.vin || inventoryRecord._id
+                  }`
+                : "Add To Inventory"
+            }
+            onCancel={() => setInventoryModalVisible(false)}
+            onOk={submitInventory}
+            width={980}
+            centered
+            bodyStyle={{ maxHeight: "70vh", overflow: "auto" }}
+          >
+            {!inventoryRecord || Object.keys(inventoryParts).length === 0 ? (
+              <div>No selected parts to add to inventory.</div>
+            ) : (
+              (() => {
+                // build data array from inventoryParts map
+                const data = Object.keys(inventoryParts).map((k) => ({
+                  key: k,
+                  name: inventoryParts[k].label || k,
+                  extracted: !!inventoryParts[k].extracted,
+                  cleaned: !!inventoryParts[k].cleaned,
+                  placed:
+                    inventoryParts[k].placed ?? inventoryParts[k].unit ?? 0,
+                  unit: inventoryParts[k].unit ?? 0,
+                  dimensions: inventoryParts[k].dimensions || "",
+                  weight: inventoryParts[k].weight || "",
+                }));
 
-                  const columns = [
-                    {
-                      title: "Extracted",
-                      dataIndex: "extracted",
-                      key: "extracted",
-                      width: 110,
-                      render: (_, record) => {
-                        const cur = inventoryParts[record.key] || {};
-                        return (
-                          <Switch
-                            checked={!!cur.extracted}
-                            onChange={(v) =>
-                              handleInventoryChange(record.key, "extracted", v)
-                            }
-                            size="small"
-                          />
-                        );
-                      },
+                const columns = [
+                  {
+                    title: "Extracted",
+                    dataIndex: "extracted",
+                    key: "extracted",
+                    width: 110,
+                    render: (_, record) => {
+                      const cur = inventoryParts[record.key] || {};
+                      return (
+                        <Switch
+                          checked={!!cur.extracted}
+                          onChange={(v) =>
+                            handleInventoryChange(record.key, "extracted", v)
+                          }
+                          size="small"
+                        />
+                      );
                     },
-                    {
-                      title: "Cleaned",
-                      dataIndex: "cleaned",
-                      key: "cleaned",
-                      width: 110,
-                      render: (_, record) => {
-                        const cur = inventoryParts[record.key] || {};
-                        return (
-                          <Switch
-                            checked={!!cur.cleaned}
-                            onChange={(v) =>
-                              handleInventoryChange(record.key, "cleaned", v)
-                            }
-                            size="small"
-                          />
-                        );
-                      },
+                  },
+                  {
+                    title: "Cleaned",
+                    dataIndex: "cleaned",
+                    key: "cleaned",
+                    width: 110,
+                    render: (_, record) => {
+                      const cur = inventoryParts[record.key] || {};
+                      return (
+                        <Switch
+                          checked={!!cur.cleaned}
+                          onChange={(v) =>
+                            handleInventoryChange(record.key, "cleaned", v)
+                          }
+                          size="small"
+                        />
+                      );
                     },
-                    {
-                      title: "Part Name",
-                      dataIndex: "name",
-                      key: "name",
-                      width: 200,
-                      render: (text) => {
-                        if (
-                          text === null ||
-                          text === undefined ||
-                          text === ""
-                        ) {
-                          return <span style={{ color: "white" }}>N/A</span>;
-                        }
-                        const s = String(text);
-                        const normalized = s
-                          .replace(/([a-z0-9])([A-Z])/g, "$1 $2") // camelCase -> spaces
-                          .replace(/[_-]+/g, " ") // snake_case or kebab-case -> spaces
-                          .trim();
-                        const proper = normalized
-                          .split(/\s+/)
-                          .map(
-                            (w) =>
-                              w.charAt(0).toUpperCase() +
-                              w.slice(1).toLowerCase()
-                          )
-                          .join(" ");
-                        return <span style={{ color: "white" }}>{proper}</span>;
-                      },
+                  },
+                  {
+                    title: "Part Name",
+                    dataIndex: "name",
+                    key: "name",
+                    width: 200,
+                    render: (text) => {
+                      if (text === null || text === undefined || text === "") {
+                        return <span style={{ color: "white" }}>N/A</span>;
+                      }
+                      const s = String(text);
+                      const normalized = s
+                        .replace(/([a-z0-9])([A-Z])/g, "$1 $2") // camelCase -> spaces
+                        .replace(/[_-]+/g, " ") // snake_case or kebab-case -> spaces
+                        .trim();
+                      const proper = normalized
+                        .split(/\s+/)
+                        .map(
+                          (w) =>
+                            w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+                        )
+                        .join(" ");
+                      return <span style={{ color: "white" }}>{proper}</span>;
                     },
-                    {
-                      title: "Unit",
-                      dataIndex: "unit",
-                      key: "unit",
-                      width: 120,
-                      render: (_, record) => {
-                        const cur = inventoryParts[record.key] || {};
-                        return (
-                          <InputNumber
-                            min={0}
-                            value={cur.unit}
-                            onChange={(v) =>
-                              handleInventoryChange(record.key, "unit", v)
-                            }
-                            style={{ width: "100%" }}
-                          />
-                        );
-                      },
+                  },
+                  {
+                    title: "Unit",
+                    dataIndex: "unit",
+                    key: "unit",
+                    width: 120,
+                    render: (_, record) => {
+                      const cur = inventoryParts[record.key] || {};
+                      return (
+                        <InputNumber
+                          min={0}
+                          value={cur.unit}
+                          onChange={(v) =>
+                            handleInventoryChange(record.key, "unit", v)
+                          }
+                          style={{ width: "100%" }}
+                        />
+                      );
                     },
-                    {
-                      title: "Quality",
-                      dataIndex: "quality",
-                      key: "quality",
-                      width: 160,
-                      render: (_, record) => {
-                        const cur = inventoryParts[record.key] || {};
-                        return (
-                          <Select
-                            value={cur.quality || undefined}
-                            onChange={(v) =>
-                              handleInventoryChange(record.key, "quality", v)
-                            }
-                            placeholder="Select Quality"
-                            style={{ width: "100%" }}
-                            dropdownStyle={{ backgroundColor: "#374151" }}
-                          >
-                            <Select.Option value="Good">Good</Select.Option>
-                            <Select.Option value="Average">
-                              Average
-                            </Select.Option>
-                            <Select.Option value="OK">OK</Select.Option>
-                            <Select.Option value="Broken">Broken</Select.Option>
-                            <Select.Option value="Scratches">
-                              Scratches
-                            </Select.Option>
-                          </Select>
-                        );
-                      },
+                  },
+                  {
+                    title: "Quality",
+                    dataIndex: "quality",
+                    key: "quality",
+                    width: 160,
+                    render: (_, record) => {
+                      const cur = inventoryParts[record.key] || {};
+                      return (
+                        <Select
+                          value={cur.quality || undefined}
+                          onChange={(v) =>
+                            handleInventoryChange(record.key, "quality", v)
+                          }
+                          placeholder="Select Quality"
+                          style={{ width: "100%" }}
+                          dropdownStyle={{ backgroundColor: "#374151" }}
+                        >
+                          <Select.Option value="Good">Good</Select.Option>
+                          <Select.Option value="Average">Average</Select.Option>
+                          <Select.Option value="OK">OK</Select.Option>
+                          <Select.Option value="Broken">Broken</Select.Option>
+                          <Select.Option value="Scratches">
+                            Scratches
+                          </Select.Option>
+                        </Select>
+                      );
                     },
-                    {
-                      title: "Location",
-                      dataIndex: "location",
-                      key: "location",
-                      width: 160,
-                      render: (_, record) => {
-                        const cur = inventoryParts[record.key] || {};
-                        return (
-                          <EditableCell
-                            value={cur.placed}
-                            onCommit={(v) =>
-                              handleInventoryChange(record.key, "placed", v)
-                            }
-                            placeholder="Where placed"
-                            disabled={false}
-                          />
-                        );
-                      },
+                  },
+                  {
+                    title: "Location",
+                    dataIndex: "location",
+                    key: "location",
+                    width: 160,
+                    render: (_, record) => {
+                      const cur = inventoryParts[record.key] || {};
+                      return (
+                        <EditableCell
+                          value={cur.placed}
+                          onCommit={(v) =>
+                            handleInventoryChange(record.key, "placed", v)
+                          }
+                          placeholder="Where placed"
+                          disabled={false}
+                        />
+                      );
                     },
-                    {
-                      title: "Weight",
-                      dataIndex: "weight",
-                      key: "weight",
-                      width: 140,
-                      render: (_, record) => {
-                        const cur = inventoryParts[record.key] || {};
-                        return (
-                          <EditableCell
-                            value={cur.weight}
-                            onCommit={(v) =>
-                              handleInventoryChange(record.key, "weight", v)
-                            }
-                            placeholder={`Enter ${record.name} Weight`}
-                            disabled={false}
-                          />
-                        );
-                      },
+                  },
+                  {
+                    title: "Weight",
+                    dataIndex: "weight",
+                    key: "weight",
+                    width: 140,
+                    render: (_, record) => {
+                      const cur = inventoryParts[record.key] || {};
+                      return (
+                        <EditableCell
+                          value={cur.weight}
+                          onCommit={(v) =>
+                            handleInventoryChange(record.key, "weight", v)
+                          }
+                          placeholder={`Enter ${record.name} Weight`}
+                          disabled={false}
+                        />
+                      );
                     },
-                    {
-                      title: "Dimensions",
-                      dataIndex: "dimensions",
-                      key: "dimensions",
-                      render: (_, record) => {
-                        const cur = inventoryParts[record.key] || {};
-                        return (
-                          <EditableCell
-                            value={cur.dimensions}
-                            onCommit={(v) =>
-                              handleInventoryChange(record.key, "dimensions", v)
-                            }
-                            placeholder={`Enter ${record.name} Dimensions`}
-                            disabled={false}
-                          />
-                        );
-                      },
+                  },
+                  {
+                    title: "Dimensions",
+                    dataIndex: "dimensions",
+                    key: "dimensions",
+                    render: (_, record) => {
+                      const cur = inventoryParts[record.key] || {};
+                      return (
+                        <EditableCell
+                          value={cur.dimensions}
+                          onCommit={(v) =>
+                            handleInventoryChange(record.key, "dimensions", v)
+                          }
+                          placeholder={`Enter ${record.name} Dimensions`}
+                          disabled={false}
+                        />
+                      );
                     },
-                  ];
+                  },
+                ];
 
-                  return (
-                    <div
-                      style={{
-                        backgroundColor: "#374151",
-                        padding: 12,
-                        borderRadius: 8,
+                return (
+                  <div
+                    style={{
+                      backgroundColor: "#374151",
+                      padding: 12,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Table
+                      columns={columns}
+                      dataSource={data}
+                      pagination={false}
+                      size="middle"
+                      rowKey="key"
+                      className="inventory-diagnosis-table"
+                      style={{ border: "1px solid #6b7280" }}
+                      components={{
+                        header: {
+                          cell: (props) => (
+                            <th
+                              {...props}
+                              style={{
+                                backgroundColor: "#374151",
+                                borderColor: "#6b7280",
+                              }}
+                            />
+                          ),
+                        },
+                        body: {
+                          row: (props) => (
+                            <tr
+                              {...props}
+                              style={{ backgroundColor: "#374151" }}
+                            />
+                          ),
+                          cell: (props) => (
+                            <td
+                              {...props}
+                              style={{
+                                backgroundColor: "#374151",
+                                borderColor: "#6b7280",
+                              }}
+                            />
+                          ),
+                        },
                       }}
-                    >
-                      <Table
-                        columns={columns}
-                        dataSource={data}
-                        pagination={false}
-                        size="middle"
-                        rowKey="key"
-                        className="inventory-diagnosis-table"
-                        style={{ border: "1px solid #6b7280" }}
-                        components={{
-                          header: {
-                            cell: (props) => (
-                              <th
-                                {...props}
-                                style={{
-                                  backgroundColor: "#374151",
-                                  borderColor: "#6b7280",
-                                }}
-                              />
-                            ),
-                          },
-                          body: {
-                            row: (props) => (
-                              <tr
-                                {...props}
-                                style={{ backgroundColor: "#374151" }}
-                              />
-                            ),
-                            cell: (props) => (
-                              <td
-                                {...props}
-                                style={{
-                                  backgroundColor: "#374151",
-                                  borderColor: "#6b7280",
-                                }}
-                              />
-                            ),
-                          },
-                        }}
-                      />
-                      <style jsx>{`
-                        .inventory-diagnosis-table .ant-table-thead > tr > th {
-                          background-color: #374151 !important;
-                          border-color: #6b7280 !important;
-                          color: white !important;
-                        }
-                        .inventory-diagnosis-table .ant-table-tbody > tr > td {
-                          background-color: #374151 !important;
-                          border-color: #6b7280 !important;
-                        }
-                        .inventory-diagnosis-table .ant-table {
-                          background-color: #374151 !important;
-                        }
-                        .inventory-diagnosis-table .ant-table-container {
-                          border-color: #6b7280 !important;
-                        }
-                      `}</style>
-                    </div>
-                  );
-                })()
-              )}
-            </Modal>
-          </Card>
-        </div>
-      </div>
-    </div>
+                    />
+                    <style jsx>{`
+                      .inventory-diagnosis-table .ant-table-thead > tr > th {
+                        background-color: #374151 !important;
+                        border-color: #6b7280 !important;
+                        color: white !important;
+                      }
+                      .inventory-diagnosis-table .ant-table-tbody > tr > td {
+                        background-color: #374151 !important;
+                        border-color: #6b7280 !important;
+                      }
+                      .inventory-diagnosis-table .ant-table {
+                        background-color: #374151 !important;
+                      }
+                      .inventory-diagnosis-table .ant-table-container {
+                        border-color: #6b7280 !important;
+                      }
+                    `}</style>
+                  </div>
+                );
+              })()
+            )}
+          </Modal>
+        </Card>
+      </PageContentWrapper>
+    </React.Fragment>
   );
 };
 

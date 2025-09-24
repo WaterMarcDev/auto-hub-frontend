@@ -11,6 +11,8 @@ import {
   Checkbox,
 } from "antd";
 import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
+import TitleBox from "../../components/TitleBox";
+import PageContentWrapper from "../../components/PageContentWrapper";
 
 const PartInventoryList = () => {
   const [loading, setLoading] = useState(false);
@@ -400,287 +402,210 @@ const PartInventoryList = () => {
   };
 
   return (
-    <div>
-      <style>
-        {`
-          .dark-table .ant-table {
-            background-color: #1f2937 !important;
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-table-thead > tr > th {
-            background-color: #374151 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr > td {
-            background-color: #1f2937 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr:hover > td {
-            background-color: #374151 !important;
-          }
-          
-          .dark-table .ant-table-fixed-left,
-          .dark-table .ant-table-fixed-right {
-            background-color: #1f2937 !important;
-          }
-          
-          .dark-table .ant-pagination {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item {
-            background-color: #374151;
-            border-color: #4b5563;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item a {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item:hover {
-            border-color: #6b7280;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item-active {
-            background-color: #1d4ed8;
-            border-color: #1d4ed8;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-prev,
-          .dark-table .ant-pagination .ant-pagination-next {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-select-selector {
-            background-color: #374151 !important;
-            border-color: #4b5563 !important;
-            color: #f9fafb !important;
-          }
-          
-          .dark-table .ant-select-arrow {
-            color: #f9fafb;
-          }
-        `}
-      </style>
-      {/* Page Title */}
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Car Intake Lists</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Scrap Yard</a>
-            </li>
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Car Intake</a>
-            </li>
-            <li className="breadcrumb-item active">Car Intake Lists</li>
-          </ol>
-        </div>
-      </div>
+    <React.Fragment>
+      <TitleBox
+        title="Inventory List"
+        routes={["Scrap Yard", "Inventory"]}
+        current={"Inventory List"}
+      />
 
       {/* Page Content */}
-      <div className="container-fluid">
-        <div className="page-content-wrapper">
-          <Card
-            title={<span>Car Intake Lists</span>}
-            extra={
-              <div style={{ display: "flex", gap: 8 }}>
-                <Popover
-                  placement="bottomRight"
-                  content={() => (
-                    <div style={{ maxWidth: 320 }}>
-                      <div style={{ marginBottom: 8, fontWeight: 600 }}>
-                        Columns
-                      </div>
-                      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                        <Button
-                          size="small"
-                          onClick={() => selectAllColumns(true)}
-                        >
-                          Select All
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => selectAllColumns(false)}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                      <div style={{ maxHeight: 300, overflow: "auto" }}>
-                        {allColumns.map((col) => {
-                          const key = getColKey(col);
-                          return (
-                            <div key={key} style={{ marginBottom: 6 }}>
-                              <Checkbox
-                                checked={visibleColumns.includes(key)}
-                                onChange={(e) =>
-                                  toggleColumn(key, e.target.checked)
-                                }
-                              >
-                                {col.title}
-                              </Checkbox>
-                            </div>
-                          );
-                        })}
-                      </div>
+
+      <PageContentWrapper>
+        <Card
+          title={<span>Car Lists</span>}
+          extra={
+            <div style={{ display: "flex", gap: 8 }}>
+              <Popover
+                placement="bottomRight"
+                content={() => (
+                  <div style={{ maxWidth: 320 }}>
+                    <div style={{ marginBottom: 8, fontWeight: 600 }}>
+                      Columns
                     </div>
-                  )}
-                >
-                  <Button>Columns</Button>
-                </Popover>
-              </div>
-            }
+                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                      <Button
+                        size="small"
+                        onClick={() => selectAllColumns(true)}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => selectAllColumns(false)}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                    <div style={{ maxHeight: 300, overflow: "auto" }}>
+                      {allColumns.map((col) => {
+                        const key = getColKey(col);
+                        return (
+                          <div key={key} style={{ marginBottom: 6 }}>
+                            <Checkbox
+                              checked={visibleColumns.includes(key)}
+                              onChange={(e) =>
+                                toggleColumn(key, e.target.checked)
+                              }
+                            >
+                              {col.title}
+                            </Checkbox>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              >
+                <Button>Columns</Button>
+              </Popover>
+            </div>
+          }
+        >
+          <Table
+            columns={displayedColumns}
+            dataSource={carIntakes}
+            loading={loading}
+            rowKey={(record) => record._id || record.vin}
+            tableLayout="auto"
+            scroll={{
+              x: 2500, // Horizontal scroll for many columns
+              y: 600, // Vertical scroll height
+            }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+            }}
+            size="small"
+            bordered
+            className="dark-table"
+          />
+          <Modal
+            open={docModalVisible}
+            title="Document Preview"
+            footer={null}
+            onCancel={() => setDocModalVisible(false)}
+            width={800}
+            centered
+            getContainer={getPreviewContainer}
+            bodyStyle={{ maxHeight: "80vh", overflow: "auto" }}
           >
-            <Table
-              columns={displayedColumns}
-              dataSource={carIntakes}
-              loading={loading}
-              rowKey={(record) => record._id || record.vin}
-              tableLayout="auto"
-              scroll={{
-                x: 2500, // Horizontal scroll for many columns
-                y: 600, // Vertical scroll height
-              }}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: true,
-                showQuickJumper: true,
-              }}
-              size="small"
-              bordered
-              className="dark-table"
-            />
-            <Modal
-              open={docModalVisible}
-              title="Document Preview"
-              footer={null}
-              onCancel={() => setDocModalVisible(false)}
-              width={800}
-              centered
-              getContainer={getPreviewContainer}
-              bodyStyle={{ maxHeight: "80vh", overflow: "auto" }}
-            >
-              {docModalUrl ? (
-                docModalIsPdf ? (
-                  <iframe
-                    src={docModalUrl}
-                    title="PDF Preview"
-                    style={{ width: "100%", height: "70vh", border: "none" }}
-                  />
-                ) : (
-                  <img
-                    src={docModalUrl}
-                    alt="Document Preview"
-                    style={{ maxWidth: "100%", maxHeight: "70vh" }}
-                  />
-                )
-              ) : (
-                <div>No document to preview</div>
-              )}
-            </Modal>
-
-            <Modal
-              open={viewPartsModalVisible}
-              title={`Parts For VIN`}
-              onCancel={() => setViewPartsModalVisible(false)}
-              footer={null}
-              width={1200}
-              centered
-            >
-              {viewPartsLoading ? (
-                <div>Loading...</div>
-              ) : viewPartsData && viewPartsData.length > 0 ? (
-                <Table
-                  dataSource={viewPartsData}
-                  rowKey={(r) => r._id || r.tag || JSON.stringify(r)}
-                  pagination={false}
-                  size="small"
-                  bordered
-                  columns={[
-                    {
-                      title: "Part Name",
-                      dataIndex: "partName",
-                      key: "partName",
-                    },
-                    {
-                      title: "Make",
-                      dataIndex: ["make", "name"],
-                      key: "make",
-                    },
-                    {
-                      title: "Model",
-                      dataIndex: ["model", "name"],
-                      key: "model",
-                    },
-                    {
-                      title: "Trim",
-                      dataIndex: ["trim", "name"],
-                      key: "trim",
-                    },
-
-                    { title: "Unit", dataIndex: "unit", key: "unit" },
-                    { title: "Quality", dataIndex: "quality", key: "quality" },
-                    {
-                      title: "Cleaned",
-                      dataIndex: "cleaned",
-                      key: "cleaned",
-                      render: (c) => (c ? "Yes" : "No"),
-                    },
-                    { title: "Weight", dataIndex: "weight", key: "weight" },
-                    {
-                      title: "Dimensions",
-                      dataIndex: "dimensions",
-                      key: "dimensions",
-                    },
-                    {
-                      title: "Location",
-                      dataIndex: "location",
-                      key: "location",
-                    },
-                    { title: "Tag", dataIndex: "tag", key: "tag" },
-                    {
-                      title: "Action",
-                      key: "action",
-                      render: (_, part) => (
-                        <Space>
-                          <Button
-                            type="link"
-                            onClick={() => handlePrintTag(part)}
-                          >
-                            Print Tag
-                          </Button>
-                        </Space>
-                      ),
-                    },
-                  ]}
+            {docModalUrl ? (
+              docModalIsPdf ? (
+                <iframe
+                  src={docModalUrl}
+                  title="PDF Preview"
+                  style={{ width: "100%", height: "70vh", border: "none" }}
                 />
               ) : (
-                <div>No parts found for this VIN.</div>
-              )}
-            </Modal>
+                <img
+                  src={docModalUrl}
+                  alt="Document Preview"
+                  style={{ maxWidth: "100%", maxHeight: "70vh" }}
+                />
+              )
+            ) : (
+              <div>No document to preview</div>
+            )}
+          </Modal>
 
-            <Modal
-              open={printTagModalVisible}
-              title={null}
-              footer={null}
-              onCancel={() => setPrintTagModalVisible(false)}
-              centered
-              closable={false}
-              width={360}
-            >
-              <div style={{ padding: 8, textAlign: "center", fontWeight: 600 }}>
-                {printTagMessage || "Tag is being printed"}
-              </div>
-            </Modal>
-          </Card>
-        </div>
-      </div>
-    </div>
+          <Modal
+            open={viewPartsModalVisible}
+            title={`Parts For VIN`}
+            onCancel={() => setViewPartsModalVisible(false)}
+            footer={null}
+            width={1200}
+            centered
+          >
+            {viewPartsLoading ? (
+              <div>Loading...</div>
+            ) : viewPartsData && viewPartsData.length > 0 ? (
+              <Table
+                dataSource={viewPartsData}
+                rowKey={(r) => r._id || r.tag || JSON.stringify(r)}
+                pagination={false}
+                size="small"
+                bordered
+                columns={[
+                  {
+                    title: "Part Name",
+                    dataIndex: "partName",
+                    key: "partName",
+                  },
+                  {
+                    title: "Make",
+                    dataIndex: ["make", "name"],
+                    key: "make",
+                  },
+                  {
+                    title: "Model",
+                    dataIndex: ["model", "name"],
+                    key: "model",
+                  },
+                  {
+                    title: "Trim",
+                    dataIndex: ["trim", "name"],
+                    key: "trim",
+                  },
+
+                  { title: "Unit", dataIndex: "unit", key: "unit" },
+                  { title: "Quality", dataIndex: "quality", key: "quality" },
+                  {
+                    title: "Cleaned",
+                    dataIndex: "cleaned",
+                    key: "cleaned",
+                    render: (c) => (c ? "Yes" : "No"),
+                  },
+                  { title: "Weight", dataIndex: "weight", key: "weight" },
+                  {
+                    title: "Dimensions",
+                    dataIndex: "dimensions",
+                    key: "dimensions",
+                  },
+                  {
+                    title: "Location",
+                    dataIndex: "location",
+                    key: "location",
+                  },
+                  { title: "Tag", dataIndex: "tag", key: "tag" },
+                  {
+                    title: "Action",
+                    key: "action",
+                    render: (_, part) => (
+                      <Space>
+                        <Button
+                          type="link"
+                          onClick={() => handlePrintTag(part)}
+                        >
+                          Print Tag
+                        </Button>
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            ) : (
+              <div>No parts found for this VIN.</div>
+            )}
+          </Modal>
+
+          <Modal
+            open={printTagModalVisible}
+            title={null}
+            footer={null}
+            onCancel={() => setPrintTagModalVisible(false)}
+            centered
+            closable={false}
+            width={360}
+          >
+            <div style={{ padding: 8, textAlign: "center", fontWeight: 600 }}>
+              {printTagMessage || "Tag is being printed"}
+            </div>
+          </Modal>
+        </Card>
+      </PageContentWrapper>
+    </React.Fragment>
   );
 };
 

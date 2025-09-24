@@ -139,14 +139,14 @@ const Model = () => {
         setError={setError}
       />
       <TitleBox
-        title="Add Car Makes"
+        title="Add Car Model"
         routes={["Scrap Yard", "Master"]}
-        current="Add Car Make"
+        current="Add Car Model"
       />
       <div className="container-fluid">
         <div className="page-content-wrapper">
           <Card
-            title="Car Make"
+            title="Car Model"
             extra={
               <div style={{ display: "flex", gap: 8 }}>
                 <Popover
