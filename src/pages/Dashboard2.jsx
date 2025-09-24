@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import TitleBox from "../components/TitleBox";
 import PageContentWrapper from "../components/PageContentWrapper";
-import { Tabs, Input, Button, Table, Select, message, Modal } from "antd";
+import { Tabs, Input, Button, Table, Select, message, Modal, Tag } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import {
   carIntakeAPI,
@@ -243,10 +243,7 @@ const Dashboard2 = () => {
               id: "card-4",
               title: "Register User",
               color: "#eeb148",
-              onClick: () => {
-                setComingFeature("Register User");
-                setComingOpen(true);
-              },
+              onClick: () => {},
             },
             {
               id: "card-5",
@@ -305,21 +302,19 @@ const Dashboard2 = () => {
                       justifyContent: "center",
                     }}
                   >
-                    <Button
-                      size="small"
-                      type="link"
-                      style={{ color: "#fff", padding: 0 }}
+                    <Tag
+                      style={{ cursor: "pointer" }}
+                      color="#297e05ff"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate("/seller/register");
                       }}
                     >
                       Seller
-                    </Button>
-                    <Button
-                      size="small"
-                      type="link"
-                      style={{ color: "#fff", padding: 0 }}
+                    </Tag>
+                    <Tag
+                      style={{ cursor: "pointer" }}
+                      color="#108ee9"
                       onClick={(e) => {
                         e.stopPropagation();
                         setComingFeature("Register Buyer");
@@ -327,7 +322,7 @@ const Dashboard2 = () => {
                       }}
                     >
                       Buyer
-                    </Button>
+                    </Tag>
                   </div>
                 )}
               </div>
