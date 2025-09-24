@@ -224,7 +224,14 @@ const CarIntake = () => {
           } else if (step === 2) {
             payload = { carImages: stepData.carImages || stepData };
           } else if (step === 3) {
-            payload = { parts: stepData.diagnosis || stepData };
+            const partsPayload = stepData.diagnosis || stepData || {};
+            payload = {
+              parts: partsPayload,
+              partDetails: {
+                parts: partsPayload,
+                partsDescription: stepData.partsDescription || undefined,
+              },
+            };
           } else if (step === 4) {
             payload = {
               actualWeight: parseFloat(stepData.actualWeight) || undefined,
@@ -275,6 +282,12 @@ const CarIntake = () => {
               pickupType: normalizePickup(stepData.pickUpType),
               kycDescription: stepData.kycDescription,
             };
+            // If an existing seller was selected, tell backend to attach by id
+            if (stepData.sellerId) {
+              payload.sellerId = stepData.sellerId;
+              // avoid sending sellerData when attaching existing seller
+              delete payload.sellerData;
+            }
           } else if (step === 6) {
             // Payment component uses form fields named `paidTo` and `finalPrice`.
             // Normalize to backend expected keys: `paymentMethod` and `paidAmount`.
@@ -421,8 +434,15 @@ const CarIntake = () => {
         populated.imageDescription =
           imgs.imageDescription || formData.imageDescription;
       }
-      if (car.parts) {
-        populated.diagnosis = car.parts || formData.diagnosis;
+      // Prefer grouped `partDetails.parts` when present, fallback to legacy `parts`
+      if (car.partDetails?.parts || car.parts) {
+        populated.diagnosis =
+          car.partDetails?.parts || car.parts || formData.diagnosis;
+        // Populate partsDescription if available
+        populated.partsDescription =
+          car.partDetails?.partsDescription ||
+          car.partsDescription ||
+          formData.partsDescription;
       }
       if (car.price) {
         populated.actualWeight =
@@ -970,9 +990,11 @@ const CarIntake = () => {
         carImages: carImages,
         imageDescription: formData.imageDescription,
 
-        // Parts diagnosis
-        parts: formData.diagnosis || {},
-        partsDescription: formData.partsDescription || "",
+        // Parts diagnosis (both legacy `parts` and grouped `partDetails` expected)
+        partDetails: {
+          parts: formData.diagnosis || {},
+          partsDescription: formData.partsDescription || "",
+        },
 
         // Price information
         actualWeight: parseFloat(formData.actualWeight) || 0,
@@ -992,6 +1014,8 @@ const CarIntake = () => {
           mobileNo: formData.mobileNo || "",
           description: formData.kycDescription || "",
         },
+        // If an existing seller was selected, include sellerId instead of sellerData
+        ...(formData.sellerId ? { sellerId: formData.sellerId } : {}),
 
         // Documents
         documents: documents,

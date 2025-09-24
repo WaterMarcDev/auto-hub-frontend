@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Form,
   Input,
@@ -6,10 +6,12 @@ import {
   Row,
   Col,
   Typography,
-  Space,
   Card,
   DatePicker,
   Select,
+  Tabs,
+  List,
+  Avatar,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import CameraUpload from "../CameraUpload";
@@ -18,16 +20,52 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
+const UserKYCAndCarDoc = ({
+  formData = {},
+  updateFormData = () => {},
+  nextStep = () => {},
+  prevStep = () => {},
+}) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const doSearch = async (q) => {
+    if (!q || q.length < 2) return;
+    setSearchLoading(true);
+    try {
+      const api = await import("../../utils/api");
+      const res = await api.sellerAPI.search(q);
+      const sellers = (res && res.data && (res.data.sellers || res.data)) || [];
+      setSearchResults(sellers);
+    } catch (err) {
+      console.error("Seller search error", err);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSelectSeller = (seller) => {
+    if (!seller) return;
+    updateFormData({
+      sellerId: seller._id || seller.id || null,
+      firstName: seller.firstName || seller.first_name || "",
+      lastName: seller.lastName || seller.last_name || "",
+      email: seller.email || "",
+      mobileNo: seller.mobileNo || seller.phone || "",
+    });
+  };
+
   const handleImageUpload = (field, uploadResult) => {
-    // Update form data with uploaded image information
+    if (!field || !uploadResult) return;
     updateFormData({
       [field]: {
-        name: uploadResult.originalName,
-        url: uploadResult.imageUrl,
-        filename: uploadResult.filename,
+        name: uploadResult.originalName || uploadResult.name || "",
+        url: uploadResult.imageUrl || uploadResult.url || "",
+        filename: uploadResult.filename || "",
         uploaded: true,
-        size: uploadResult.size,
+        size: uploadResult.size || 0,
       },
     });
   };
@@ -48,36 +86,33 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
       <div
         style={{
           backgroundColor: "#374151",
-          borderRadius: "8px",
-          padding: "16px",
+          borderRadius: 8,
+          padding: 16,
           border: "1px solid #6b7280",
         }}
       >
         <CameraUpload
           onImageUpload={(result) => handleImageUpload(field, result)}
           multiple={false}
-          showPreview={true}
-          autoUpload={true}
+          showPreview
+          autoUpload
           className="document-upload"
         />
-
-        {/* Show upload status */}
         {formData[field] && formData[field].uploaded && (
-          <div style={{ marginTop: "8px" }}>
-            <Text style={{ color: "#10b981", fontSize: "12px" }}>
+          <div style={{ marginTop: 8 }}>
+            <Text style={{ color: "#10b981", fontSize: 12 }}>
               ✓ Uploaded: {formData[field].name}
             </Text>
           </div>
         )}
       </div>
-
       {description && (
         <Text
           style={{
             color: "#9ca3af",
-            fontSize: "11px",
+            fontSize: 11,
             display: "block",
-            marginTop: "4px",
+            marginTop: 4,
             fontStyle: "italic",
           }}
         >
@@ -87,178 +122,365 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
     </Form.Item>
   );
 
+  const renderSearchTab = () => (
+    <div>
+      <Row gutter={12}>
+        <Col span={18}>
+          <Input
+            placeholder="Search by mobile number or email (min 2 chars)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onPressEnter={(e) => doSearch(e.target.value)}
+          />
+        </Col>
+        <Col span={6}>
+          <Button
+            onClick={() => doSearch(searchQuery)}
+            loading={searchLoading}
+            type="primary"
+          >
+            Search
+          </Button>
+        </Col>
+      </Row>
+
+      <div style={{ marginTop: 12 }}>
+        <List
+          loading={searchLoading}
+          dataSource={searchResults}
+          locale={{ emptyText: "No sellers found" }}
+          renderItem={(item) => (
+            <List.Item
+              actions={[
+                <Button
+                  key={`select-${item._id || item.id}`}
+                  type={
+                    (formData.sellerId || null) === (item._id || item.id)
+                      ? "primary"
+                      : "default"
+                  }
+                  onClick={() => handleSelectSeller(item)}
+                >
+                  Select
+                </Button>,
+              ]}
+            >
+              <List.Item.Meta
+                avatar={<Avatar>{(item.firstName || "")[0] || "S"}</Avatar>}
+                title={`${item.firstName || ""} ${item.lastName || ""}`}
+                description={`${item.email || ""} • ${item.mobileNo || ""}`}
+              />
+            </List.Item>
+          )}
+        />
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        {/* Hidden fields to ensure validation runs when Search tab is active */}
+        <div style={{ display: "none" }}>
+          <Form.Item
+            name="firstName"
+            rules={[{ required: true, message: "First Name is required" }]}
+          >
+            <Input value={formData.firstName} readOnly />
+          </Form.Item>
+          <Form.Item
+            name="lastName"
+            rules={[{ required: true, message: "Last Name is required" }]}
+          >
+            <Input value={formData.lastName} readOnly />
+          </Form.Item>
+          <Form.Item
+            name="mobileNo"
+            rules={[
+              { required: true, message: "Mobile No. is required" },
+              {
+                pattern: /^\+?[\d\s\-()]{10,}$/,
+                message: "Invalid mobile number format",
+              },
+            ]}
+          >
+            <Input value={formData.mobileNo} readOnly />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Email is required" },
+              { type: "email", message: "Please enter a valid email address" },
+            ]}
+          >
+            <Input value={formData.email} readOnly />
+          </Form.Item>
+        </div>
+        <Row gutter={24}>
+          <Col span={12}>
+            {renderDocumentUploadField(
+              "dlDocument",
+              "Upload DL - DMV",
+              "Take a clear photo of the driver's license",
+              true
+            )}
+          </Col>
+          <Col span={12}>
+            {renderDocumentUploadField(
+              "carRC",
+              "Upload Car RC",
+              "Take a clear photo of the car registration document",
+              true
+            )}
+          </Col>
+        </Row>
+
+        <Row gutter={24}>
+          <Col span={12}>
+            <Form.Item
+              name="sellingDate"
+              label={<Text style={{ color: "white" }}>Date of Selling</Text>}
+              rules={[
+                { required: true, message: "Date of Selling is required" },
+              ]}
+            >
+              <DatePicker
+                value={formData.sellingDate}
+                onChange={(d) => updateFormData({ sellingDate: d })}
+                placeholder="Select date"
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="pickUpType"
+              label={<Text style={{ color: "white" }}>Pick Up Type</Text>}
+              rules={[{ required: true, message: "Pick Up Type is required" }]}
+            >
+              <Select
+                value={formData.pickUpType}
+                onChange={(val) => updateFormData({ pickUpType: val })}
+                placeholder="Select Pick Up Type"
+                style={{ width: "100%" }}
+              >
+                <Option value="You Pull">You Pull</Option>
+                <Option value="We Pull">We Pull</Option>
+                <Option value="Bulk">Bulk</Option>
+                <Option value="Location">Location</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col span={24}>
+            <Form.Item
+              name="kycDescription"
+              label={<Text style={{ color: "white" }}>Description</Text>}
+            >
+              <TextArea
+                rows={3}
+                value={formData.kycDescription}
+                onChange={(e) =>
+                  updateFormData({ kycDescription: e.target.value })
+                }
+                placeholder="Enter KYC description"
+                style={{ backgroundColor: "#4b5563", color: "white" }}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+      </div>
+    </div>
+  );
+
+  const renderCreateTab = () => (
+    <div>
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="firstName"
+            label={<Text style={{ color: "white" }}>First Name</Text>}
+            rules={[{ required: true, message: "First Name is required" }]}
+          >
+            <Input
+              placeholder="Enter First Name"
+              style={{
+                backgroundColor: "#4b5563",
+                borderColor: "#6b7280",
+                color: "white",
+              }}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="lastName"
+            label={<Text style={{ color: "white" }}>Last Name</Text>}
+            rules={[{ required: true, message: "Last Name is required" }]}
+          >
+            <Input
+              placeholder="Enter Last Name"
+              style={{
+                backgroundColor: "#4b5563",
+                borderColor: "#6b7280",
+                color: "white",
+              }}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="mobileNo"
+            label={<Text style={{ color: "white" }}>Mobile No.</Text>}
+            rules={[
+              { required: true, message: "Mobile No. is required" },
+              {
+                pattern: /^\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/,
+                message: "Enter a valid US phone number (e.g. +1 555-555-5555)",
+              },
+            ]}
+          >
+            <Input
+              placeholder="e.g. +1 555-555-5555"
+              style={{
+                backgroundColor: "#4b5563",
+                borderColor: "#6b7280",
+                color: "white",
+              }}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="email"
+            label={<Text style={{ color: "white" }}>Email</Text>}
+            rules={[
+              { required: true, message: "Email is required" },
+              { type: "email", message: "Please enter a valid email address" },
+            ]}
+          >
+            <Input
+              type="email"
+              placeholder="Enter a valid e-mail"
+              style={{
+                backgroundColor: "#4b5563",
+                borderColor: "#6b7280",
+                color: "white",
+              }}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row gutter={24}>
+        <Col span={12}>
+          {renderDocumentUploadField(
+            "dlDocument",
+            "Upload DL - DMV",
+            "Take a clear photo of the driver's license"
+          )}
+        </Col>
+        <Col span={12}>
+          {renderDocumentUploadField(
+            "carRC",
+            "Upload Car RC",
+            "Take a clear photo of the car registration document"
+          )}
+        </Col>
+      </Row>
+
+      <Row gutter={24}>
+        <Col span={12}>
+          <Form.Item
+            name="sellingDate"
+            label={<Text style={{ color: "white" }}>Date of Selling</Text>}
+            rules={[{ required: true, message: "Date of Selling is required" }]}
+          >
+            <DatePicker
+              value={formData.sellingDate}
+              onChange={(d) => updateFormData({ sellingDate: d })}
+              placeholder="Select date"
+              style={{
+                width: "100%",
+                backgroundColor: "#4b5563",
+                borderColor: "#6b7280",
+              }}
+            />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="pickUpType"
+            label={<Text style={{ color: "white" }}>Pick Up Type</Text>}
+            rules={[{ required: true, message: "Pick Up Type is required" }]}
+          >
+            <Select
+              value={formData.pickUpType}
+              onChange={(val) => updateFormData({ pickUpType: val })}
+              placeholder="Select Pick Up Type"
+              style={{ width: "100%" }}
+              dropdownStyle={{ backgroundColor: "#374151" }}
+            >
+              <Option value="You Pull">You Pull</Option>
+              <Option value="We Pull">We Pull</Option>
+              <Option value="Bulk">Bulk</Option>
+              <Option value="Location">Location</Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Row>
+        <Col span={24}>
+          <Form.Item
+            name="kycDescription"
+            label={<Text style={{ color: "white" }}>Description</Text>}
+          >
+            <TextArea
+              rows={4}
+              value={formData.kycDescription}
+              onChange={(e) =>
+                updateFormData({ kycDescription: e.target.value })
+              }
+              placeholder="Enter KYC description"
+              style={{
+                backgroundColor: "#4b5563",
+                borderColor: "#6b7280",
+                color: "white",
+              }}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+    </div>
+  );
+
   return (
     <div>
       <Card
         style={{
           backgroundColor: "#374151",
           borderColor: "#6b7280",
-          marginBottom: "24px",
+          marginBottom: 24,
         }}
       >
-        <>
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                name="firstName"
-                label={<Text style={{ color: "white" }}>First Name</Text>}
-                rules={[{ required: true, message: "First Name is required" }]}
-              >
-                <Input
-                  placeholder="Enter First Name"
-                  style={{
-                    backgroundColor: "#4b5563",
-                    borderColor: "#6b7280",
-                    color: "white",
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="lastName"
-                label={<Text style={{ color: "white" }}>Last Name</Text>}
-                rules={[{ required: true, message: "Last Name is required" }]}
-              >
-                <Input
-                  placeholder="Enter Last Name"
-                  style={{
-                    backgroundColor: "#4b5563",
-                    borderColor: "#6b7280",
-                    color: "white",
-                  }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                name="mobileNo"
-                label={<Text style={{ color: "white" }}>Mobile No.</Text>}
-                rules={[
-                  { required: true, message: "Mobile No. is required" },
-                  {
-                    pattern:
-                      /^\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/, // US formats
-                    message:
-                      "Enter a valid US phone number (e.g. +1 555-555-5555)",
-                  },
-                ]}
-              >
-                <Input
-                  placeholder="e.g. +1 555-555-5555"
-                  style={{
-                    backgroundColor: "#4b5563",
-                    borderColor: "#6b7280",
-                    color: "white",
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="email"
-                label={<Text style={{ color: "white" }}>Email</Text>}
-                rules={[
-                  { required: true, message: "Email is required" },
-                  {
-                    type: "email",
-                    message: "Please enter a valid email address",
-                  },
-                ]}
-              >
-                <Input
-                  type="email"
-                  placeholder="Enter a valid e-mail"
-                  style={{
-                    backgroundColor: "#4b5563",
-                    borderColor: "#6b7280",
-                    color: "white",
-                  }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={24}>
-            <Col span={12}>
-              {renderDocumentUploadField(
-                "dlDocument",
-                "Upload DL - DMV",
-                "Take a clear photo of the driver's license"
-              )}
-            </Col>
-            <Col span={12}>
-              {renderDocumentUploadField(
-                "carRC",
-                "Upload Car RC",
-                "Take a clear photo of the car registration document"
-              )}
-            </Col>
-          </Row>
-
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                name="sellingDate"
-                label={<Text style={{ color: "white" }}>Date of Selling</Text>}
-                rules={[
-                  { required: true, message: "Date of Selling is required" },
-                ]}
-              >
-                <DatePicker
-                  placeholder="Select date"
-                  style={{
-                    width: "100%",
-                    backgroundColor: "#4b5563",
-                    borderColor: "#6b7280",
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="pickUpType"
-                label={<Text style={{ color: "white" }}>Pick Up Type</Text>}
-                rules={[
-                  { required: true, message: "Pick Up Type is required" },
-                ]}
-              >
-                <Select
-                  placeholder="Select Pick Up Type"
-                  style={{ width: "100%" }}
-                  dropdownStyle={{ backgroundColor: "#374151" }}
-                >
-                  <Option value="You Pull">You Pull</Option>
-                  <Option value="We Pull">We Pull</Option>
-                  <Option value="Bulk">Bulk</Option>
-                  <Option value="Location">Location</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row>
-            <Col span={24}>
-              <Form.Item
-                name="kycDescription"
-                label={<Text style={{ color: "white" }}>Description</Text>}
-              >
-                <TextArea
-                  rows={4}
-                  placeholder="Enter KYC description"
-                  style={{
-                    backgroundColor: "#4b5563",
-                    borderColor: "#6b7280",
-                    color: "white",
-                  }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </>
+        <Tabs
+          defaultActiveKey="search"
+          type="card"
+          items={[
+            {
+              key: "search",
+              label: "Search Seller",
+              children: renderSearchTab(),
+            },
+            {
+              key: "create",
+              label: "Create / Upload New",
+              children: renderCreateTab(),
+            },
+          ]}
+        />
       </Card>
 
       <Row gutter={24}>
@@ -337,6 +559,7 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
             </Form.Item>
           </Card>
         </Col>
+
         <Col span={12}>
           <Card
             title={
@@ -354,7 +577,7 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
               label={<Text style={{ color: "white" }}>Actual Price</Text>}
             >
               <Input
-                value={`$${formData.actualPrice || "0"}`}
+                value={"$" + (formData.actualPrice || "0")}
                 readOnly
                 style={{
                   backgroundColor: "#4b5563",
@@ -368,7 +591,7 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
               label={<Text style={{ color: "white" }}>Our Price</Text>}
             >
               <Input
-                value={`$${formData.ourPrice || "0"}`}
+                value={"$" + (formData.ourPrice || "0")}
                 readOnly
                 style={{
                   backgroundColor: "#4b5563",
@@ -382,7 +605,7 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
               label={<Text style={{ color: "white" }}>Customer Price</Text>}
             >
               <Input
-                value={`$${formData.customerPrice || "0"}`}
+                value={"$" + (formData.customerPrice || "0")}
                 readOnly
                 style={{
                   backgroundColor: "#4b5563",
@@ -410,7 +633,7 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
               label={<Text style={{ color: "white" }}>Final Price</Text>}
             >
               <Input
-                value={`$${formData.finalPrice || "0"}`}
+                value={"$" + (formData.finalPrice || "0")}
                 readOnly
                 style={{
                   backgroundColor: "#4b5563",
@@ -428,7 +651,7 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          marginTop: "24px",
+          marginTop: 24,
         }}
       >
         <Button
@@ -448,7 +671,6 @@ const UserKYCAndCarDoc = ({ formData, updateFormData, nextStep, prevStep }) => {
           size="large"
           onClick={nextStep}
           icon={<ArrowRightOutlined />}
-          iconPosition="end"
         >
           Payment
         </Button>

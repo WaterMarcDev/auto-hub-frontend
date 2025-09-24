@@ -254,7 +254,7 @@ const CarInventory = ({ formData, prevStep }) => {
           <Col span={12}>
             <Form.Item label={<Text style={{ color: "white" }}>Amount</Text>}>
               <Input
-                value={`$${formData.paymentAmount || "0"}`}
+                value={`$${formData.finalPrice || "0"}`}
                 readOnly
                 style={{
                   backgroundColor: "#4b5563",

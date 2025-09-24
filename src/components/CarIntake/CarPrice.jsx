@@ -95,6 +95,7 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
             <Form.Item
               name="actualWeight"
               label={<Text style={{ color: "white" }}>Weight</Text>}
+              extra={formData.weight}
               rules={[{ required: true, message: "Weight is required" }]}
             >
               <InputNumber
