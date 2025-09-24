@@ -706,6 +706,7 @@ const CarInventoryList = () => {
                           selectedElementsMap[key]?.weight || rec.weight || "";
                         return (
                           <Input
+                            type="number"
                             value={val}
                             onChange={(e) =>
                               handleElementFieldChange(

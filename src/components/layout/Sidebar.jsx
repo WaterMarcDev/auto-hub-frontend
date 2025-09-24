@@ -255,7 +255,7 @@ const Sidebar = ({ isOpen }) => {
               </ul>
             </li>
 
-            {/* <li>
+            <li>
               <a
                 href="#"
                 className="has-arrow waves-effect"
@@ -273,13 +273,13 @@ const Sidebar = ({ isOpen }) => {
                 style={{ display: isDropdownOpen("seller") ? "block" : "none" }}
               >
                 <li>
-                  <Link to="/add-new-seller">Add New Seller</Link>
+                  <Link to="/seller/register">Add New Seller</Link>
                 </li>
                 <li>
-                  <Link to="/seller-lists">Seller Lists</Link>
+                  <Link to="/seller/list">Seller Lists</Link>
                 </li>
               </ul>
-            </li> */}
+            </li>
 
             {/* <li>
               <a

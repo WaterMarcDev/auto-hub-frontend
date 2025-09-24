@@ -186,5 +186,14 @@ export const uploadAPI = {
   },
 };
 
+export const sellerAPI = {
+  getAll: (params = {}) => api.get("/sellers", { params }),
+  getById: (id) => api.get(`/sellers/${id}`),
+  create: (data) => api.post(`/sellers`, data),
+  update: (id, data) => api.put(`/sellers/${id}`, data),
+  delete: (id) => api.delete(`/sellers/${id}`),
+  search: (q) => api.get(`/sellers/search`, { params: { q } }),
+};
+
 // Export the configured axios instance as default
 export default api;

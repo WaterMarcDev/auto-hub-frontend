@@ -305,8 +305,29 @@ const Dashboard2 = () => {
                       justifyContent: "center",
                     }}
                   >
-                    <div>Seller</div>
-                    <div>Buyer</div>
+                    <Button
+                      size="small"
+                      type="link"
+                      style={{ color: "#fff", padding: 0 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate("/seller/register");
+                      }}
+                    >
+                      Seller
+                    </Button>
+                    <Button
+                      size="small"
+                      type="link"
+                      style={{ color: "#fff", padding: 0 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setComingFeature("Register Buyer");
+                        setComingOpen(true);
+                      }}
+                    >
+                      Buyer
+                    </Button>
                   </div>
                 )}
               </div>
