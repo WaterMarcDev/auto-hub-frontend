@@ -357,6 +357,8 @@ const AddScrap = () => {
     try {
       await carIntakeAPI.updateStatus(id, "scraped");
       message.success("Record marked as scraped");
+      // Optimistically update UI and refresh list from server to ensure
+      // consistent state (in case other fields changed server-side).
       setCarIntakes((prev) =>
         prev.map((r) =>
           (r._id || r.vin) === (record._id || record.vin)
@@ -364,6 +366,11 @@ const AddScrap = () => {
             : r
         )
       );
+
+      // Small delay to allow backend to settle, then refetch full list
+      setTimeout(() => {
+        fetchCarIntakes();
+      }, 300);
     } catch (err) {
       console.error("Failed to mark as scraped", err);
       message.error(

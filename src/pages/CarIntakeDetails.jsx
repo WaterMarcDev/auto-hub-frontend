@@ -224,7 +224,7 @@ const CarIntakeDetails = () => {
 
   const renderParts = () => {
     if (!car) return <span>N/A</span>;
-    const parts = car.parts || {};
+    const parts = car.partDetails.parts || {};
     const entries = Object.entries(parts || {});
     if (!entries.length) return <span>N/A</span>;
 

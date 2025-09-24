@@ -10,7 +10,7 @@ import {
   Popover,
   Checkbox,
 } from "antd";
-import { carIntakeAPI, uploadAPI } from "../../utils/api";
+import { carIntakeAPI, uploadAPI, scrapElementAPI } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
 
@@ -22,6 +22,10 @@ const ScrapList = () => {
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
+  const [viewElementsModalVisible, setViewElementsModalVisible] =
+    useState(false);
+  const [viewElementsLoading, setViewElementsLoading] = useState(false);
+  const [viewElementsData, setViewElementsData] = useState([]);
 
   const getPreviewContainer = () => {
     let el = document.getElementById("image-preview-root");
@@ -300,6 +304,13 @@ const ScrapList = () => {
           >
             View
           </Button>
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => openViewElementsModal(record)}
+          >
+            View Elements
+          </Button>
         </Space>
       ),
     },
@@ -356,6 +367,33 @@ const ScrapList = () => {
   useEffect(() => {
     fetchCarIntakes();
   }, []);
+
+  const fetchViewElementsByVIN = async (vin) => {
+    if (!vin) return;
+    setViewElementsLoading(true);
+    try {
+      const res = await scrapElementAPI.getByVIN(vin);
+      const data = res.data || res;
+      setViewElementsData(data || []);
+      setViewElementsModalVisible(true);
+    } catch (err) {
+      console.error("Failed to fetch scrap elements by VIN", err);
+      message.error(
+        `Failed to fetch elements for VIN ${vin}: ${
+          err.response?.data?.message || err.message
+        }`
+      );
+      setViewElementsData([]);
+    } finally {
+      setViewElementsLoading(false);
+    }
+  };
+
+  const openViewElementsModal = (record) => {
+    const vin = record?.vin || record?._id || "";
+    if (!vin) return message.error("No VIN available for this record");
+    fetchViewElementsByVIN(vin);
+  };
 
   return (
     <div>
@@ -529,6 +567,44 @@ const ScrapList = () => {
                 )
               ) : (
                 <div>No document to preview</div>
+              )}
+            </Modal>
+
+            <Modal
+              open={viewElementsModalVisible}
+              title={`Scraped Elements`}
+              onCancel={() => setViewElementsModalVisible(false)}
+              footer={null}
+              width={900}
+              centered
+            >
+              {viewElementsLoading ? (
+                <div>Loading...</div>
+              ) : viewElementsData && viewElementsData.length > 0 ? (
+                <Table
+                  dataSource={viewElementsData}
+                  rowKey={(r) => r._id || JSON.stringify(r)}
+                  pagination={false}
+                  size="small"
+                  bordered
+                  columns={[
+                    {
+                      title: "Element",
+                      dataIndex: "elementName",
+                      key: "elementName",
+                    },
+                    { title: "Unit", dataIndex: "unit", key: "unit" },
+                    { title: "Quality", dataIndex: "quality", key: "quality" },
+                    { title: "Weight", dataIndex: "weight", key: "weight" },
+                    {
+                      title: "Dimensions",
+                      dataIndex: "dimensions",
+                      key: "dimensions",
+                    },
+                  ]}
+                />
+              ) : (
+                <div>No elements found for this VIN.</div>
               )}
             </Modal>
           </Card>

@@ -336,7 +336,8 @@ const PartInventoryList = () => {
       const res = await carIntakeAPI.getAll({
         page: 1,
         limit: 100,
-        status: "part-added-to-inventory",
+        status:
+          "part-added-to-inventory,elements-scraped,car-added-to-inventory,elements-scraped,scraped",
       });
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
