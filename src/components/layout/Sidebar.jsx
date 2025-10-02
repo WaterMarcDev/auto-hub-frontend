@@ -7,6 +7,9 @@ const Sidebar = ({ isOpen }) => {
   const { user } = useAuth();
   const [openDropdowns, setOpenDropdowns] = useState({});
 
+  // Check if user is a manager
+  const isManager = user?.role?.toLowerCase() === "manager";
+
   // Functions used for Car Intake menu
   const isSubMenuActive = (path) => {
     return location.pathname === path ? "active" : "";
@@ -102,53 +105,59 @@ const Sidebar = ({ isOpen }) => {
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className="menu-title">Menu</li>
-            <li className={isActive("/")}>
-              <Link to="/" className="waves-effect">
-                <i className="dripicons-home"></i>
-                <span>Home</span>
-              </Link>
-            </li>
-            <li className={isActive("/dashboard")}>
-              <Link to="/dashboard" className="waves-effect">
-                <i className="dripicons-graph-line"></i>
-                <span>Dashboard</span>
-              </Link>
-            </li>
+            {!isManager && (
+              <>
+                <li className={isActive("/")}>
+                  <Link to="/" className="waves-effect">
+                    <i className="dripicons-home"></i>
+                    <span>Home</span>
+                  </Link>
+                </li>
+                <li className={isActive("/dashboard")}>
+                  <Link to="/dashboard" className="waves-effect">
+                    <i className="dripicons-graph-line"></i>
+                    <span>Dashboard</span>
+                  </Link>
+                </li>
 
-            <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("master");
-                }}
-              >
-                <i className="dripicons-suitcase"></i>
-                <span>Master</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("master")}
-                style={{ display: isDropdownOpen("master") ? "block" : "none" }}
-              >
-                <li className={isSubMenuActive("/add-car-make")}>
-                  <Link to="/make">Add Car Make</Link>
+                <li>
+                  <a
+                    href="#"
+                    className="has-arrow waves-effect"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleDropdown("master");
+                    }}
+                  >
+                    <i className="dripicons-suitcase"></i>
+                    <span>Master</span>
+                  </a>
+                  <ul
+                    className="sub-menu"
+                    aria-expanded={isDropdownOpen("master")}
+                    style={{
+                      display: isDropdownOpen("master") ? "block" : "none",
+                    }}
+                  >
+                    <li className={isSubMenuActive("/add-car-make")}>
+                      <Link to="/make">Add Car Make</Link>
+                    </li>
+                    <li className={isSubMenuActive("/model")}>
+                      <Link to="/model">Add Car Model</Link>
+                    </li>
+                    <li className={isSubMenuActive("/trim")}>
+                      <Link to="/trim">Add Car Trim</Link>
+                    </li>
+                    <li className={isSubMenuActive("/part")}>
+                      <Link to="/part">Add Inventory Parts</Link>
+                    </li>
+                    <li className={isSubMenuActive("/element")}>
+                      <Link to="/element">Add Scrap Elements</Link>
+                    </li>
+                  </ul>
                 </li>
-                <li className={isSubMenuActive("/model")}>
-                  <Link to="/model">Add Car Model</Link>
-                </li>
-                <li className={isSubMenuActive("/trim")}>
-                  <Link to="/trim">Add Car Trim</Link>
-                </li>
-                <li className={isSubMenuActive("/part")}>
-                  <Link to="/part">Add Inventory Parts</Link>
-                </li>
-                <li className={isSubMenuActive("/element")}>
-                  <Link to="/element">Add Scrap Elements</Link>
-                </li>
-              </ul>
-            </li>
+              </>
+            )}
 
             <li>
               <a
@@ -178,114 +187,122 @@ const Sidebar = ({ isOpen }) => {
               </ul>
             </li>
 
-            <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("carPartsInventory");
-                }}
-              >
-                <i className="dripicons-gear"></i>
-                <span>Car Parts Inventory</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("carPartsInventory")}
-                style={{
-                  display: isDropdownOpen("carPartsInventory")
-                    ? "block"
-                    : "none",
-                }}
-              >
+            {!isManager && (
+              <>
                 <li>
-                  <Link to="/add-inventory">Add Inventory</Link>
+                  <a
+                    href="#"
+                    className="has-arrow waves-effect"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleDropdown("carPartsInventory");
+                    }}
+                  >
+                    <i className="dripicons-gear"></i>
+                    <span>Car Parts Inventory</span>
+                  </a>
+                  <ul
+                    className="sub-menu"
+                    aria-expanded={isDropdownOpen("carPartsInventory")}
+                    style={{
+                      display: isDropdownOpen("carPartsInventory")
+                        ? "block"
+                        : "none",
+                    }}
+                  >
+                    <li>
+                      <Link to="/add-inventory">Add Inventory</Link>
+                    </li>
+                    <li>
+                      <Link to="/inventory-list">Inventory Lists</Link>
+                    </li>
+                  </ul>
                 </li>
-                <li>
-                  <Link to="/inventory-list">Inventory Lists</Link>
-                </li>
-              </ul>
-            </li>
 
-            <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("carInventory");
-                }}
-              >
-                <i className="dripicons-suitcase"></i>
-                <span>Car Inventory</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("carInventory")}
-                style={{
-                  display: isDropdownOpen("carInventory") ? "block" : "none",
-                }}
-              >
                 <li>
-                  <Link to="/car-inventory">Car Inventory Lists</Link>
+                  <a
+                    href="#"
+                    className="has-arrow waves-effect"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleDropdown("carInventory");
+                    }}
+                  >
+                    <i className="dripicons-suitcase"></i>
+                    <span>Car Inventory</span>
+                  </a>
+                  <ul
+                    className="sub-menu"
+                    aria-expanded={isDropdownOpen("carInventory")}
+                    style={{
+                      display: isDropdownOpen("carInventory")
+                        ? "block"
+                        : "none",
+                    }}
+                  >
+                    <li>
+                      <Link to="/car-inventory">Car Inventory Lists</Link>
+                    </li>
+                  </ul>
                 </li>
-              </ul>
-            </li>
 
-            <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("scrapCar");
-                }}
-              >
-                <i className="dripicons-box"></i>
-                <span>Scrap a Car</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("scrapCar")}
-                style={{
-                  display: isDropdownOpen("scrapCar") ? "block" : "none",
-                }}
-              >
                 <li>
-                  <Link to="/add-scrap">Add New</Link>
+                  <a
+                    href="#"
+                    className="has-arrow waves-effect"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleDropdown("scrapCar");
+                    }}
+                  >
+                    <i className="dripicons-box"></i>
+                    <span>Scrap a Car</span>
+                  </a>
+                  <ul
+                    className="sub-menu"
+                    aria-expanded={isDropdownOpen("scrapCar")}
+                    style={{
+                      display: isDropdownOpen("scrapCar") ? "block" : "none",
+                    }}
+                  >
+                    <li>
+                      <Link to="/add-scrap">Add New</Link>
+                    </li>
+                    <li>
+                      <Link to="/scrap-list">Scrap Car Lists</Link>
+                    </li>
+                  </ul>
                 </li>
-                <li>
-                  <Link to="/scrap-list">Scrap Car Lists</Link>
-                </li>
-              </ul>
-            </li>
 
-            <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("seller");
-                }}
-              >
-                <i className="dripicons-user"></i>
-                <span>Seller</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("seller")}
-                style={{ display: isDropdownOpen("seller") ? "block" : "none" }}
-              >
                 <li>
-                  <Link to="/seller/register">Add New Seller</Link>
+                  <a
+                    href="#"
+                    className="has-arrow waves-effect"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleDropdown("seller");
+                    }}
+                  >
+                    <i className="dripicons-user"></i>
+                    <span>Seller</span>
+                  </a>
+                  <ul
+                    className="sub-menu"
+                    aria-expanded={isDropdownOpen("seller")}
+                    style={{
+                      display: isDropdownOpen("seller") ? "block" : "none",
+                    }}
+                  >
+                    <li>
+                      <Link to="/seller/register">Add New Seller</Link>
+                    </li>
+                    <li>
+                      <Link to="/seller/list">Seller Lists</Link>
+                    </li>
+                  </ul>
                 </li>
-                <li>
-                  <Link to="/seller/list">Seller Lists</Link>
-                </li>
-              </ul>
-            </li>
+              </>
+            )}
 
             {/* <li>
               <a
