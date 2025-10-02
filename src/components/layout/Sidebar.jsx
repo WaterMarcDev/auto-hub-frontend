@@ -102,9 +102,15 @@ const Sidebar = ({ isOpen }) => {
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className="menu-title">Menu</li>
+            <li className={isActive("/")}>
+              <Link to="/" className="waves-effect">
+                <i className="dripicons-home"></i>
+                <span>Home</span>
+              </Link>
+            </li>
             <li className={isActive("/dashboard")}>
               <Link to="/dashboard" className="waves-effect">
-                <i className="dripicons-home"></i>
+                <i className="dripicons-graph-line"></i>
                 <span>Dashboard</span>
               </Link>
             </li>

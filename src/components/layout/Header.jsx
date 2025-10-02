@@ -22,7 +22,7 @@ const Header = ({ onMenuToggle }) => {
 
   const goToDashboard = (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    navigate("/dashboard");
+    navigate("/");
   };
 
   return (
@@ -31,11 +31,7 @@ const Header = ({ onMenuToggle }) => {
         <div className="d-flex">
           {/* LOGO */}
           <div className="navbar-brand-box">
-            <a
-              href="/dashboard"
-              onClick={goToDashboard}
-              className="logo logo-dark"
-            >
+            <a href="/" onClick={goToDashboard} className="logo logo-dark">
               <span className="logo-sm">
                 <img src="/assets/images/logo-sm.png" alt="" height="45" />
               </span>
@@ -43,11 +39,7 @@ const Header = ({ onMenuToggle }) => {
                 <img src="/assets/images/logo-dark.png" alt="" height="40" />
               </span>
             </a>
-            <a
-              href="/dashboard"
-              onClick={goToDashboard}
-              className="logo logo-light"
-            >
+            <a href="/" onClick={goToDashboard} className="logo logo-light">
               <span className="logo-sm">
                 <img src="/assets/images/logo-sm.png" alt="" height="45" />
               </span>

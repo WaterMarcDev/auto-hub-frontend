@@ -175,16 +175,8 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <Routes>
-                      <Route
-                        path="/"
-                        element={
-                          <React.Fragment>
-                            <Navigate to="/dashboard" replace />
-                          </React.Fragment>
-                        }
-                      />
-                      <Route path="/main-dashboard" element={<Dashboard />} />
-                      <Route path="/dashboard" element={<Dashboard2 />} />
+                      <Route path="/" element={<Dashboard2 />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/make" element={<Make />} />
                       <Route path="/model" element={<Model />} />
                       <Route path="/trim" element={<Trim />} />

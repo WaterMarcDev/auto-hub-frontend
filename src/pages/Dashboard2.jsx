@@ -40,9 +40,11 @@ const Dashboard2 = () => {
   const [sellerResults, setSellerResults] = useState([]);
   const [loadingSellers, setLoadingSellers] = useState(false);
 
-  const [open, setOpen] = useState(false);
   const [comingOpen, setComingOpen] = useState(false);
   const [comingFeature, setComingFeature] = useState("");
+  const [sellerModalOpen, setSellerModalOpen] = useState(false);
+  const [carSearchOpen, setCarSearchOpen] = useState(false);
+  const [partSearchOpen, setPartSearchOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -201,20 +203,42 @@ const Dashboard2 = () => {
     <React.Fragment>
       <TitleBox title="Dashboard" routes={["Scrap Yard"]} current="Dashboard" />
       <PageContentWrapper>
-        <div
-          className="mb-4"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 8,
-            alignItems: "stretch",
-            width: "100%",
-            boxSizing: "border-box",
-          }}
-        >
+        <div className="dashboard-cards-grid mb-4">
           {[
             {
               id: "card-1",
+              title: "Dashboard",
+              color: "#ef4444",
+              onClick: () => navigate("/dashboard"),
+            },
+            {
+              id: "card-2",
+              title: "VIN Search",
+              color: "#5ba4e5",
+              onClick: () => {
+                navigate("/car-intake");
+              },
+            },
+            {
+              id: "card-3",
+              title: "Seller",
+              color: "#f59e0b",
+              onClick: () => {},
+            },
+            {
+              id: "card-4",
+              title: "Buyer",
+              color: "#06b6d4",
+              onClick: () => {},
+            },
+            {
+              id: "card-5",
+              title: "Search",
+              color: "#10b981",
+              onClick: () => {},
+            },
+            {
+              id: "card-6",
               title: "Check-In",
               color: "#525ce5",
               onClick: () => {
@@ -223,7 +247,7 @@ const Dashboard2 = () => {
               },
             },
             {
-              id: "card-2",
+              id: "card-7",
               title: "Check-Out",
               color: "#23c58f",
               onClick: () => {
@@ -232,39 +256,13 @@ const Dashboard2 = () => {
               },
             },
             {
-              id: "card-3",
-              title: "VIN Search",
-              color: "#5ba4e5",
-              onClick: () => {
-                navigate("/car-intake");
-              },
-            },
-            {
-              id: "card-4",
-              title: "Register User",
-              color: "#eeb148",
-              onClick: () => {},
-            },
-            {
-              id: "card-5",
+              id: "card-8",
               title: "Wavier Form",
               color: "#8b5cf6",
               onClick: () => {
                 setComingFeature("Waiver Form");
                 setComingOpen(true);
               },
-            },
-            {
-              id: "card-6",
-              title: "Dashboard",
-              color: "#ef4444",
-              onClick: () => navigate("/main-dashboard"),
-            },
-            {
-              id: "card-7",
-              title: "Search",
-              color: "#10b981",
-              onClick: () => setOpen(true),
             },
           ].map((c) => (
             <div
@@ -292,36 +290,152 @@ const Dashboard2 = () => {
             >
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 18, fontWeight: 600 }}>{c.title}</div>
-                {c.id === "card-4" && (
+                {c.id === "card-3" && (
                   <div
                     style={{
-                      fontSize: 12,
-                      marginTop: 6,
+                      marginTop: 8,
                       display: "flex",
-                      gap: 8,
+                      gap: 10,
                       justifyContent: "center",
                     }}
                   >
                     <Tag
-                      style={{ cursor: "pointer" }}
-                      color="#297e05ff"
+                      style={{
+                        cursor: "pointer",
+                        padding: "6px 16px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        borderRadius: 6,
+                        border: "none",
+                        margin: 0,
+                        transition: "all 0.3s ease",
+                      }}
+                      color="#2563eb"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSellerModalOpen(true);
+                      }}
+                    >
+                      Search
+                    </Tag>
+                    <Tag
+                      style={{
+                        cursor: "pointer",
+                        padding: "6px 16px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        borderRadius: 6,
+                        border: "none",
+                        margin: 0,
+                        transition: "all 0.3s ease",
+                      }}
+                      color="#16a34a"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate("/seller/register");
                       }}
                     >
-                      Seller
+                      Register
+                    </Tag>
+                  </div>
+                )}
+                {c.id === "card-4" && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: "flex",
+                      gap: 10,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Tag
+                      style={{
+                        cursor: "pointer",
+                        padding: "6px 16px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        borderRadius: 6,
+                        border: "none",
+                        margin: 0,
+                        transition: "all 0.3s ease",
+                      }}
+                      color="#2563eb"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setComingFeature("Buyer Search");
+                        setComingOpen(true);
+                      }}
+                    >
+                      Search
                     </Tag>
                     <Tag
-                      style={{ cursor: "pointer" }}
-                      color="#108ee9"
+                      style={{
+                        cursor: "pointer",
+                        padding: "6px 16px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        borderRadius: 6,
+                        border: "none",
+                        margin: 0,
+                        transition: "all 0.3s ease",
+                      }}
+                      color="#16a34a"
                       onClick={(e) => {
                         e.stopPropagation();
                         setComingFeature("Register Buyer");
                         setComingOpen(true);
                       }}
                     >
-                      Buyer
+                      Register
+                    </Tag>
+                  </div>
+                )}
+                {c.id === "card-5" && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: "flex",
+                      gap: 10,
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Tag
+                      style={{
+                        cursor: "pointer",
+                        padding: "6px 16px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        borderRadius: 6,
+                        border: "none",
+                        margin: 0,
+                        transition: "all 0.3s ease",
+                      }}
+                      color="#2563eb"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCarSearchOpen(true);
+                      }}
+                    >
+                      Car Search
+                    </Tag>
+                    <Tag
+                      style={{
+                        cursor: "pointer",
+                        padding: "6px 16px",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        borderRadius: 6,
+                        border: "none",
+                        margin: 0,
+                        transition: "all 0.3s ease",
+                      }}
+                      color="#16a34a"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPartSearchOpen(true);
+                      }}
+                    >
+                      Part Search
                     </Tag>
                   </div>
                 )}
@@ -331,185 +445,194 @@ const Dashboard2 = () => {
         </div>
         <div className="row">
           {/* Our Process */}
-          <div className="col-xl-4">
+          <div className="col-xl-4 col-lg-6 col-md-12 mb-4">
             <OurProcess />
           </div>
 
           {/* RTX Recycling */}
-          <div className="col-xl-4">
+          <div className="col-xl-4 col-lg-6 col-md-12 mb-4">
             <RtxRecycling />
           </div>
           {/* Earning Goal */}
-          <div className="col-xl-4">
+          <div className="col-xl-4 col-lg-12 col-md-12 mb-4">
             <PopularPartsCarousel />
           </div>
         </div>
+        {/* Car Search Modal - Independent */}
         <Modal
-          open={open}
-          onCancel={() => setOpen(false)}
+          open={carSearchOpen}
+          onCancel={() => setCarSearchOpen(false)}
           width="80%"
           footer={null}
-          title="Search"
+          title="Search Car"
         >
-          <Tabs defaultActiveKey="1">
-            <TabPane tab="Search Car" key="1">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginBottom: 12,
-                  gap: 8,
-                  width: "100%",
-                }}
-              >
-                <Input
-                  placeholder="Search VIN / Make / Model "
-                  value={carQuery}
-                  onChange={(e) => setCarQuery(e.target.value)}
-                  onPressEnter={searchCars}
-                  style={{ width: "100%" }}
-                />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginBottom: 12,
+              gap: 8,
+              width: "100%",
+            }}
+          >
+            <Input
+              placeholder="Search VIN / Make / Model "
+              value={carQuery}
+              onChange={(e) => setCarQuery(e.target.value)}
+              onPressEnter={searchCars}
+              style={{ width: "100%" }}
+            />
 
-                <Button
-                  icon={<SearchOutlined />}
-                  loading={loadingCars}
-                  onClick={searchCars}
-                >
-                  Search
-                </Button>
-                <Button onClick={clearCars} style={{ marginLeft: 8 }}>
-                  Clear
-                </Button>
-              </div>
-              <Table
-                columns={carColumns}
-                dataSource={carResults}
-                rowKey={(r) => r._id || r.vin}
-                pagination={{ pageSize: 10 }}
-                locale={{ emptyText: "No cars found" }}
-              />
-            </TabPane>
+            <Button
+              icon={<SearchOutlined />}
+              loading={loadingCars}
+              onClick={searchCars}
+            >
+              Search
+            </Button>
+            <Button onClick={clearCars} style={{ marginLeft: 8 }}>
+              Clear
+            </Button>
+          </div>
+          <Table
+            columns={carColumns}
+            dataSource={carResults}
+            rowKey={(r) => r._id || r.vin}
+            pagination={{ pageSize: 10 }}
+            locale={{ emptyText: "No cars found" }}
+          />
+        </Modal>
 
-            <TabPane tab="Search Part" key="2">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  gap: 8,
-                }}
-              >
-                <Select
-                  allowClear
-                  placeholder="Select Make"
-                  style={{ width: "100%" }}
-                  value={selectedMake}
-                  onChange={(val) => setSelectedMake(val)}
+        {/* Part Search Modal - Independent */}
+        <Modal
+          open={partSearchOpen}
+          onCancel={() => setPartSearchOpen(false)}
+          width="80%"
+          footer={null}
+          title="Search Part"
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              marginBottom: 12,
+              gap: 8,
+            }}
+          >
+            <Select
+              allowClear
+              placeholder="Select Make"
+              style={{ width: "100%" }}
+              value={selectedMake}
+              onChange={(val) => setSelectedMake(val)}
+            >
+              {makes.map((m) => (
+                <Select.Option
+                  key={m._id || m.id || m.name}
+                  value={m._id || m.id || m.name}
                 >
-                  {makes.map((m) => (
-                    <Select.Option
-                      key={m._id || m.id || m.name}
-                      value={m._id || m.id || m.name}
-                    >
-                      {m.name || m}
-                    </Select.Option>
-                  ))}
-                </Select>
+                  {m.name || m}
+                </Select.Option>
+              ))}
+            </Select>
 
-                <Select
-                  allowClear
-                  placeholder="Select Model"
-                  style={{ width: "100%" }}
-                  value={selectedModel}
-                  onChange={(val) => setSelectedModel(val)}
+            <Select
+              allowClear
+              placeholder="Select Model"
+              style={{ width: "100%" }}
+              value={selectedModel}
+              onChange={(val) => setSelectedModel(val)}
+            >
+              {models.map((m) => (
+                <Select.Option
+                  key={m._id || m.id || m.name}
+                  value={m._id || m.id || m.name}
                 >
-                  {models.map((m) => (
-                    <Select.Option
-                      key={m._id || m.id || m.name}
-                      value={m._id || m.id || m.name}
-                    >
-                      {m.name || m}
-                    </Select.Option>
-                  ))}
-                </Select>
+                  {m.name || m}
+                </Select.Option>
+              ))}
+            </Select>
 
-                <Select
-                  allowClear
-                  placeholder="Select Trim"
-                  style={{ width: "100%" }}
-                  value={selectedTrim}
-                  onChange={(val) => setSelectedTrim(val)}
+            <Select
+              allowClear
+              placeholder="Select Trim"
+              style={{ width: "100%" }}
+              value={selectedTrim}
+              onChange={(val) => setSelectedTrim(val)}
+            >
+              {trims.map((t) => (
+                <Select.Option
+                  key={t._id || t.id || t.name}
+                  value={t._id || t.id || t.name}
                 >
-                  {trims.map((t) => (
-                    <Select.Option
-                      key={t._id || t.id || t.name}
-                      value={t._id || t.id || t.name}
-                    >
-                      {t.name || t}
-                    </Select.Option>
-                  ))}
-                </Select>
+                  {t.name || t}
+                </Select.Option>
+              ))}
+            </Select>
 
-                <Button
-                  icon={<SearchOutlined />}
-                  loading={loadingParts}
-                  onClick={searchParts}
-                >
-                  Search Parts
-                </Button>
-                <Button onClick={clearParts} style={{ marginLeft: 8 }}>
-                  Clear
-                </Button>
-              </div>
-              <Table
-                columns={partColumns}
-                dataSource={partResults}
-                rowKey={(r) =>
-                  r._id || r.tag || `${r.partName}-${Math.random()}`
-                }
-                pagination={{ pageSize: 10 }}
-                locale={{ emptyText: "No parts found" }}
-              />
-            </TabPane>
+            <Button
+              icon={<SearchOutlined />}
+              loading={loadingParts}
+              onClick={searchParts}
+            >
+              Search Parts
+            </Button>
+            <Button onClick={clearParts} style={{ marginLeft: 8 }}>
+              Clear
+            </Button>
+          </div>
+          <Table
+            columns={partColumns}
+            dataSource={partResults}
+            rowKey={(r) => r._id || r.tag || `${r.partName}-${Math.random()}`}
+            pagination={{ pageSize: 10 }}
+            locale={{ emptyText: "No parts found" }}
+          />
+        </Modal>
 
-            <TabPane tab="Search Seller" key="3">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  alignItems: "center",
-                  marginBottom: 12,
-                  gap: 8,
-                }}
-              >
-                <Input
-                  placeholder="Search seller by name / email / phone"
-                  value={sellerQuery}
-                  onChange={(e) => setSellerQuery(e.target.value)}
-                  onPressEnter={searchSellers}
-                  style={{ width: "100%" }}
-                />
-                <Button
-                  icon={<SearchOutlined />}
-                  loading={loadingSellers}
-                  onClick={searchSellers}
-                >
-                  Search
-                </Button>
-                <Button onClick={clearSellers} style={{ marginLeft: 8 }}>
-                  Clear
-                </Button>
-              </div>
-              <Table
-                columns={sellerColumns}
-                dataSource={sellerResults}
-                rowKey={(r) => r._id || r.email}
-                pagination={{ pageSize: 10 }}
-                locale={{ emptyText: "No sellers found" }}
-              />
-            </TabPane>
-          </Tabs>
+        {/* Seller Search Modal - Independent */}
+        <Modal
+          open={sellerModalOpen}
+          onCancel={() => setSellerModalOpen(false)}
+          width="80%"
+          footer={null}
+          title="Search Seller"
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              marginBottom: 12,
+              gap: 8,
+            }}
+          >
+            <Input
+              placeholder="Search seller by name / email / phone"
+              value={sellerQuery}
+              onChange={(e) => setSellerQuery(e.target.value)}
+              onPressEnter={searchSellers}
+              style={{ width: "100%" }}
+            />
+            <Button
+              icon={<SearchOutlined />}
+              loading={loadingSellers}
+              onClick={searchSellers}
+            >
+              Search
+            </Button>
+            <Button onClick={clearSellers} style={{ marginLeft: 8 }}>
+              Clear
+            </Button>
+          </div>
+          <Table
+            columns={sellerColumns}
+            dataSource={sellerResults}
+            rowKey={(r) => r._id || r.email}
+            pagination={{ pageSize: 10 }}
+            locale={{ emptyText: "No sellers found" }}
+          />
         </Modal>
       </PageContentWrapper>
       <ComingSoonModal
