@@ -7,8 +7,11 @@ const Sidebar = ({ isOpen }) => {
   const { user } = useAuth();
   const [openDropdowns, setOpenDropdowns] = useState({});
 
-  // Check if user is a manager
-  const isManager = user?.role?.toLowerCase() === "manager";
+  // Check user roles
+  const userRole = user?.role?.toLowerCase();
+  const isManager = userRole === "manager";
+  const isFrontDesk = userRole === "front_desk";
+  const isAdmin = userRole === "admin";
 
   // Functions used for Car Intake menu
   const isSubMenuActive = (path) => {
@@ -94,8 +97,13 @@ const Sidebar = ({ isOpen }) => {
               </h5>
               <span className="font-size-13 text-white-50">
                 {user?.role
-                  ? user.role.charAt(0).toUpperCase() +
-                    user.role.slice(1).toLowerCase()
+                  ? user.role
+                      .split("_")
+                      .map(
+                        (part) =>
+                          part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+                      )
+                      .join(" ")
                   : "User"}
               </span>
             </div>
@@ -105,6 +113,7 @@ const Sidebar = ({ isOpen }) => {
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
             <li className="menu-title">Menu</li>
+            {/* Home and Dashboard - visible for Admin and Front Desk */}
             {!isManager && (
               <>
                 <li className={isActive("/")}>
@@ -119,46 +128,50 @@ const Sidebar = ({ isOpen }) => {
                     <span>Dashboard</span>
                   </Link>
                 </li>
-
-                <li>
-                  <a
-                    href="#"
-                    className="has-arrow waves-effect"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleDropdown("master");
-                    }}
-                  >
-                    <i className="dripicons-suitcase"></i>
-                    <span>Master</span>
-                  </a>
-                  <ul
-                    className="sub-menu"
-                    aria-expanded={isDropdownOpen("master")}
-                    style={{
-                      display: isDropdownOpen("master") ? "block" : "none",
-                    }}
-                  >
-                    <li className={isSubMenuActive("/add-car-make")}>
-                      <Link to="/make">Add Car Make</Link>
-                    </li>
-                    <li className={isSubMenuActive("/model")}>
-                      <Link to="/model">Add Car Model</Link>
-                    </li>
-                    <li className={isSubMenuActive("/trim")}>
-                      <Link to="/trim">Add Car Trim</Link>
-                    </li>
-                    <li className={isSubMenuActive("/part")}>
-                      <Link to="/part">Add Inventory Parts</Link>
-                    </li>
-                    <li className={isSubMenuActive("/element")}>
-                      <Link to="/element">Add Scrap Elements</Link>
-                    </li>
-                  </ul>
-                </li>
               </>
             )}
 
+            {/* Master Menu - Only for Admin */}
+            {isAdmin && (
+              <li>
+                <a
+                  href="#"
+                  className="has-arrow waves-effect"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleDropdown("master");
+                  }}
+                >
+                  <i className="dripicons-suitcase"></i>
+                  <span>Master</span>
+                </a>
+                <ul
+                  className="sub-menu"
+                  aria-expanded={isDropdownOpen("master")}
+                  style={{
+                    display: isDropdownOpen("master") ? "block" : "none",
+                  }}
+                >
+                  <li className={isSubMenuActive("/add-car-make")}>
+                    <Link to="/make">Add Car Make</Link>
+                  </li>
+                  <li className={isSubMenuActive("/model")}>
+                    <Link to="/model">Add Car Model</Link>
+                  </li>
+                  <li className={isSubMenuActive("/trim")}>
+                    <Link to="/trim">Add Car Trim</Link>
+                  </li>
+                  <li className={isSubMenuActive("/part")}>
+                    <Link to="/part">Add Inventory Parts</Link>
+                  </li>
+                  <li className={isSubMenuActive("/element")}>
+                    <Link to="/element">Add Scrap Elements</Link>
+                  </li>
+                </ul>
+              </li>
+            )}
+
+            {/* Car Intake - visible for Manager, Front Desk, and Admin */}
             <li>
               <a
                 href="#"
@@ -187,147 +200,158 @@ const Sidebar = ({ isOpen }) => {
               </ul>
             </li>
 
-            {!isManager && (
-              <>
-                <li>
-                  <a
-                    href="#"
-                    className="has-arrow waves-effect"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleDropdown("carPartsInventory");
-                    }}
-                  >
-                    <i className="dripicons-gear"></i>
-                    <span>Car Parts Inventory</span>
-                  </a>
-                  <ul
-                    className="sub-menu"
-                    aria-expanded={isDropdownOpen("carPartsInventory")}
-                    style={{
-                      display: isDropdownOpen("carPartsInventory")
-                        ? "block"
-                        : "none",
-                    }}
-                  >
+            {/* Car Parts Inventory - visible for Front Desk and Admin */}
+            {(isFrontDesk || isAdmin) && (
+              <li>
+                <a
+                  href="#"
+                  className="has-arrow waves-effect"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleDropdown("carPartsInventory");
+                  }}
+                >
+                  <i className="dripicons-gear"></i>
+                  <span>Car Parts Inventory</span>
+                </a>
+                <ul
+                  className="sub-menu"
+                  aria-expanded={isDropdownOpen("carPartsInventory")}
+                  style={{
+                    display: isDropdownOpen("carPartsInventory")
+                      ? "block"
+                      : "none",
+                  }}
+                >
+                  {isAdmin && (
                     <li>
                       <Link to="/add-inventory">Add Inventory</Link>
                     </li>
-                    <li>
-                      <Link to="/inventory-list">Inventory Lists</Link>
-                    </li>
-                  </ul>
-                </li>
-
-                <li>
-                  <a
-                    href="#"
-                    className="has-arrow waves-effect"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleDropdown("carInventory");
-                    }}
-                  >
-                    <i className="dripicons-suitcase"></i>
-                    <span>Car Inventory</span>
-                  </a>
-                  <ul
-                    className="sub-menu"
-                    aria-expanded={isDropdownOpen("carInventory")}
-                    style={{
-                      display: isDropdownOpen("carInventory")
-                        ? "block"
-                        : "none",
-                    }}
-                  >
-                    <li>
-                      <Link to="/car-inventory">Car Inventory Lists</Link>
-                    </li>
-                  </ul>
-                </li>
-
-                <li>
-                  <a
-                    href="#"
-                    className="has-arrow waves-effect"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleDropdown("scrapCar");
-                    }}
-                  >
-                    <i className="dripicons-box"></i>
-                    <span>Scrap a Car</span>
-                  </a>
-                  <ul
-                    className="sub-menu"
-                    aria-expanded={isDropdownOpen("scrapCar")}
-                    style={{
-                      display: isDropdownOpen("scrapCar") ? "block" : "none",
-                    }}
-                  >
-                    <li>
-                      <Link to="/add-scrap">Add New</Link>
-                    </li>
-                    <li>
-                      <Link to="/scrap-list">Scrap Car Lists</Link>
-                    </li>
-                  </ul>
-                </li>
-
-                <li>
-                  <a
-                    href="#"
-                    className="has-arrow waves-effect"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleDropdown("seller");
-                    }}
-                  >
-                    <i className="dripicons-user"></i>
-                    <span>Seller</span>
-                  </a>
-                  <ul
-                    className="sub-menu"
-                    aria-expanded={isDropdownOpen("seller")}
-                    style={{
-                      display: isDropdownOpen("seller") ? "block" : "none",
-                    }}
-                  >
-                    <li>
-                      <Link to="/seller/register">Add New Seller</Link>
-                    </li>
-                    <li>
-                      <Link to="/seller/list">Seller Lists</Link>
-                    </li>
-                  </ul>
-                </li>
-              </>
+                  )}
+                  <li>
+                    <Link to="/inventory-list">Inventory Lists</Link>
+                  </li>
+                </ul>
+              </li>
             )}
 
-            {/* <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("payment");
-                }}
-              >
-                <i className="dripicons-card"></i>
-                <span>Payment</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("payment")}
-                style={{
-                  display: isDropdownOpen("payment") ? "block" : "none",
-                }}
-              >
-                <li>
-                  <Link to="/payment-lists">Payment Lists</Link>
-                </li>
-              </ul>
-            </li> */}
+            {/* Car Inventory - Only for Admin */}
+            {isAdmin && (
+              <li>
+                <a
+                  href="#"
+                  className="has-arrow waves-effect"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleDropdown("carInventory");
+                  }}
+                >
+                  <i className="dripicons-suitcase"></i>
+                  <span>Car Inventory</span>
+                </a>
+                <ul
+                  className="sub-menu"
+                  aria-expanded={isDropdownOpen("carInventory")}
+                  style={{
+                    display: isDropdownOpen("carInventory") ? "block" : "none",
+                  }}
+                >
+                  <li>
+                    <Link to="/car-inventory">Car Inventory Lists</Link>
+                  </li>
+                </ul>
+              </li>
+            )}
+
+            {/* Scrap a Car - Only for Admin */}
+            {isAdmin && (
+              <li>
+                <a
+                  href="#"
+                  className="has-arrow waves-effect"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleDropdown("scrapCar");
+                  }}
+                >
+                  <i className="dripicons-box"></i>
+                  <span>Scrap a Car</span>
+                </a>
+                <ul
+                  className="sub-menu"
+                  aria-expanded={isDropdownOpen("scrapCar")}
+                  style={{
+                    display: isDropdownOpen("scrapCar") ? "block" : "none",
+                  }}
+                >
+                  <li>
+                    <Link to="/add-scrap">Add New</Link>
+                  </li>
+                  <li>
+                    <Link to="/scrap-list">Scrap Car Lists</Link>
+                  </li>
+                </ul>
+              </li>
+            )}
+
+            {/* Seller - visible for Front Desk and Admin */}
+            {(isFrontDesk || isAdmin) && (
+              <li>
+                <a
+                  href="#"
+                  className="has-arrow waves-effect"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleDropdown("seller");
+                  }}
+                >
+                  <i className="dripicons-user"></i>
+                  <span>Seller</span>
+                </a>
+                <ul
+                  className="sub-menu"
+                  aria-expanded={isDropdownOpen("seller")}
+                  style={{
+                    display: isDropdownOpen("seller") ? "block" : "none",
+                  }}
+                >
+                  <li>
+                    <Link to="/seller/register">Add New Seller</Link>
+                  </li>
+                  <li>
+                    <Link to="/seller/list">Seller Lists</Link>
+                  </li>
+                </ul>
+              </li>
+            )}
+
+            {/* Payment - visible for Front Desk and Admin */}
+            {/* {(isFrontDesk || isAdmin) && (
+              <li>
+                <a
+                  href="#"
+                  className="has-arrow waves-effect"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleDropdown("payment");
+                  }}
+                >
+                  <i className="dripicons-card"></i>
+                  <span>Payment</span>
+                </a>
+                <ul
+                  className="sub-menu"
+                  aria-expanded={isDropdownOpen("payment")}
+                  style={{
+                    display: isDropdownOpen("payment") ? "block" : "none",
+                  }}
+                >
+                  <li>
+                    <Link to="/payment-lists">Payment Lists</Link>
+                  </li>
+                </ul>
+              </li>
+            )} */}
 
             {/* <li>
               <a
