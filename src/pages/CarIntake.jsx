@@ -50,6 +50,8 @@ const CarIntake = () => {
   const [isLoadingVin, setIsLoadingVin] = useState(false);
   const [vinData, setVinData] = useState(null);
   const [stepSaveStatus, setStepSaveStatus] = useState({});
+  const [validationModalVisible, setValidationModalVisible] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
   const [formData, setFormData] = useState({
     // Step 1: Car Details - matching original template
     vin: "",
@@ -922,9 +924,16 @@ const CarIntake = () => {
       }
     } catch (errorInfo) {
       console.warn("Validation failed:", errorInfo);
-      // Force form to show validation errors by scrolling to first error
-      form.scrollToField(errorInfo.errorFields[0].name);
-      // Ant Design will automatically show the validation errors
+
+      // Collect all validation errors
+      const errors = errorInfo.errorFields.map((field) => ({
+        field: field.name[0],
+        message: field.errors[0],
+      }));
+
+      // Show validation errors in a modal
+      setValidationErrors(errors);
+      setValidationModalVisible(true);
     }
   };
 
@@ -1106,8 +1115,23 @@ const CarIntake = () => {
       }
     } catch (error) {
       console.error("Submit error:", error);
-      message.error(`Error submitting form: ${error.message}`);
-      showAlert("danger", `Error submitting form: ${error.message}`);
+
+      // Check if it's a validation error
+      if (error.errorFields) {
+        // Collect all validation errors
+        const errors = error.errorFields.map((field) => ({
+          field: field.name[0],
+          message: field.errors[0],
+        }));
+
+        // Show validation errors in a modal
+        setValidationErrors(errors);
+        setValidationModalVisible(true);
+      } else {
+        // Show other errors using message and alert
+        message.error(`Error submitting form: ${error.message}`);
+        showAlert("danger", `Error submitting form: ${error.message}`);
+      }
     }
   };
 
@@ -1277,6 +1301,176 @@ const CarIntake = () => {
               />
             </Form.Item>
           </Form>
+        </div>
+      </Modal>
+
+      {/* Validation Error Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "4px 0",
+            }}
+          >
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                backgroundColor: "rgba(255, 77, 79, 0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+              }}
+            >
+              ⚠️
+            </div>
+            <div>
+              <div
+                style={{
+                  color: "#ffffff",
+                  fontSize: "16px",
+                  fontWeight: "600",
+                }}
+              >
+                Validation Failed
+              </div>
+              <div
+                style={{
+                  color: "#9ca3af",
+                  fontSize: "12px",
+                  fontWeight: "400",
+                }}
+              >
+                {validationErrors.length}{" "}
+                {validationErrors.length === 1 ? "error" : "errors"} found
+              </div>
+            </div>
+          </div>
+        }
+        open={validationModalVisible}
+        onCancel={() => setValidationModalVisible(false)}
+        width={600}
+        centered
+        footer={null}
+        closeIcon={
+          <span style={{ color: "#9ca3af", fontSize: "20px" }}>×</span>
+        }
+        styles={{
+          header: {
+            backgroundColor: "#1F293D",
+            borderBottom: "1px solid #2a3f5f",
+            padding: "16px 20px",
+          },
+          body: {
+            backgroundColor: "#1F293D",
+            padding: "16px 20px",
+          },
+          content: {
+            backgroundColor: "#1F293D",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
+          },
+        }}
+      >
+        <div>
+          <div
+            style={{
+              maxHeight: "280px",
+              overflowY: "auto",
+              paddingRight: "4px",
+            }}
+          >
+            {validationErrors.map((error, index) => (
+              <div
+                key={index}
+                style={{
+                  marginBottom: "8px",
+                  padding: "10px 14px",
+                  backgroundColor: "#141b2d",
+                  borderLeft: "3px solid #ff4d4f",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "10px",
+                }}
+              >
+                <div
+                  style={{
+                    minWidth: "20px",
+                    height: "20px",
+                    borderRadius: "50%",
+                    backgroundColor: "rgba(255, 77, 79, 0.15)",
+                    border: "1.5px solid #ff4d4f",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "10px",
+                    fontWeight: "bold",
+                    color: "#ff7875",
+                    flexShrink: 0,
+                    marginTop: "2px",
+                  }}
+                >
+                  {index + 1}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontWeight: "600",
+                      color: "#ffffff",
+                      fontSize: "13px",
+                      marginBottom: "4px",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {error.field.replace(/([A-Z])/g, " $1").trim()}
+                  </div>
+                  <div
+                    style={{
+                      color: "#ff9c9c",
+                      fontSize: "12px",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    {error.message}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer with action button */}
+          <div
+            style={{
+              marginTop: "16px",
+              paddingTop: "16px",
+              borderTop: "1px solid #2a3f5f",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              onClick={() => setValidationModalVisible(false)}
+              size="large"
+              style={{
+                minWidth: "100px",
+                height: "38px",
+                fontSize: "14px",
+                fontWeight: "500",
+                backgroundColor: "#ff4d4f",
+                borderColor: "#ff4d4f",
+                color: "#ffffff",
+              }}
+              type="primary"
+            >
+              Got it
+            </Button>
+          </div>
         </div>
       </Modal>
 
