@@ -201,7 +201,7 @@ const Dashboard2 = () => {
 
   return (
     <React.Fragment>
-      <TitleBox title="Dashboard" routes={["Scrap Yard"]} current="Dashboard" />
+      <TitleBox title="Home" routes={["Scrap Yard"]} current="Home" />
       <PageContentWrapper>
         <div className="dashboard-cards-grid mb-4">
           {[
