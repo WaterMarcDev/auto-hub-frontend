@@ -11,12 +11,20 @@ import {
   Popover,
   Checkbox,
 } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { sellerAPI, uploadAPI } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
+import TitleBox from "../../components/TitleBox";
+import PageContentWrapper from "../../components/PageContentWrapper";
 
 const SellerList = () => {
   const [sellers, setSellers] = useState([]);
+  const [filteredSellers, setFilteredSellers] = useState([]);
+  const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -57,7 +65,9 @@ const SellerList = () => {
       });
 
       const data = res.data || res;
-      setSellers(data.sellers || []);
+      const fetchedSellers = data.sellers || [];
+      setSellers(fetchedSellers);
+      setFilteredSellers(fetchedSellers);
       if (data.pagination) setPagination(data.pagination);
     } catch (err) {
       console.error(err);
@@ -68,6 +78,47 @@ const SellerList = () => {
       setLoading(false);
     }
   };
+
+  // Universal search function
+  const handleSearch = (value) => {
+    const searchValue = value.toLowerCase().trim();
+
+    if (!searchValue) {
+      setFilteredSellers(sellers);
+      return;
+    }
+
+    const filtered = sellers.filter((seller) => {
+      // Search in name (firstName + lastName)
+      const fullName = `${seller.firstName || ""} ${
+        seller.lastName || ""
+      }`.toLowerCase();
+
+      // Search in email
+      const email = (seller.email || "").toLowerCase();
+
+      // Search in mobile number
+      const mobileNo = (seller.mobileNo || "").toLowerCase();
+
+      // Search in description
+      const description = (seller.description || "").toLowerCase();
+
+      return (
+        fullName.includes(searchValue) ||
+        email.includes(searchValue) ||
+        mobileNo.includes(searchValue) ||
+        description.includes(searchValue)
+      );
+    });
+
+    setFilteredSellers(filtered);
+  };
+
+  // Clear search
+  const handleSearchClear = () => {
+    setSearchValue("");
+    setFilteredSellers(sellers);
+  };
   const INITIAL_LIMIT = 10;
 
   useEffect(() => {
@@ -76,7 +127,9 @@ const SellerList = () => {
       try {
         const res = await sellerAPI.getAll({ page: 1, limit: INITIAL_LIMIT });
         const data = res.data || res;
-        setSellers(data.sellers || []);
+        const fetchedSellers = data.sellers || [];
+        setSellers(fetchedSellers);
+        setFilteredSellers(fetchedSellers);
         if (data.pagination) setPagination(data.pagination);
       } catch (err) {
         console.error(err);
@@ -166,54 +219,74 @@ const SellerList = () => {
 
   return (
     <div>
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Seller Lists</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Sellers</a>
-            </li>
-            <li className="breadcrumb-item active">List</li>
-          </ol>
-        </div>
-      </div>
+      <TitleBox title="Seller Lists" routes={["Sellers"]} current="List" />
 
-      <div className="container-fluid">
-        <div className="page-content-wrapper">
-          <Card title="Sellers">
-            <div
-              style={{
-                marginBottom: 12,
-                display: "flex",
-                justifyContent: "end",
-              }}
-            >
+      <PageContentWrapper>
+        <Card title="Sellers">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "16px",
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <Space.Compact style={{ flex: 1, maxWidth: 600 }} size="middle">
+              <Input
+                placeholder="Search sellers by name, email, or mobile number..."
+                value={searchValue}
+                onChange={(e) => {
+                  setSearchValue(e.target.value);
+                  if (!e.target.value) {
+                    handleSearchClear();
+                  }
+                }}
+                onPressEnter={() => handleSearch(searchValue)}
+                size="middle"
+                style={{ width: "100%" }}
+              />
               <Button
                 type="primary"
-                onClick={() => (window.location.href = "/seller/register")}
+                icon={<SearchOutlined />}
+                onClick={() => handleSearch(searchValue)}
+                size="middle"
               >
-                New Seller
+                Search
               </Button>
-            </div>
+            </Space.Compact>
 
-            <Table
-              columns={columns}
-              dataSource={sellers}
-              rowKey={(r) => r._id || r.email}
-              loading={loading}
-              size="small"
-              bordered={true}
-              pagination={{
-                current: pagination.page,
-                pageSize: pagination.limit,
-                total: pagination.total,
-                onChange: (page, pageSize) =>
-                  fetchSellers({ page, limit: pageSize }),
-              }}
-            />
-          </Card>
-        </div>
-      </div>
+            <Button
+              type="primary"
+              size="middle"
+              onClick={() => (window.location.href = "/seller/register")}
+            >
+              + New Seller
+            </Button>
+          </div>
+
+          <Table
+            columns={columns}
+            dataSource={filteredSellers}
+            rowKey={(r) => r._id || r.email}
+            loading={loading}
+            size="small"
+            bordered={true}
+            pagination={{
+              current: pagination.page,
+              pageSize: pagination.limit,
+              total: filteredSellers.length || pagination.total,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} sellers`,
+              showSizeChanger: true,
+              pageSizeOptions: ["10", "20", "50", "100"],
+              onChange: (page, pageSize) =>
+                fetchSellers({ page, limit: pageSize }),
+            }}
+          />
+        </Card>
+      </PageContentWrapper>
       <Modal
         title={"Drivers License Preview"}
         open={docModalVisible}
