@@ -523,24 +523,53 @@ const PartInventoryList = () => {
             open={viewPartsModalVisible}
             title={`Parts For VIN`}
             onCancel={() => setViewPartsModalVisible(false)}
-            footer={null}
+            footer={[
+              <Button
+                key="close"
+                onClick={() => setViewPartsModalVisible(false)}
+              >
+                Close
+              </Button>,
+            ]}
             width={1200}
             centered
+            styles={{
+              body: {
+                minHeight: "400px",
+                maxHeight: "55vh",
+                overflow: "auto",
+              },
+            }}
           >
             {viewPartsLoading ? (
               <div>Loading...</div>
             ) : viewPartsData && viewPartsData.length > 0 ? (
               <Table
                 dataSource={viewPartsData}
-                rowKey={(r) => r._id || r.tag || JSON.stringify(r)}
+                rowKey={(r, index) => r._id || r.tag || `part-${index}`}
                 pagination={false}
                 size="small"
                 bordered
                 columns={[
                   {
+                    title: "Sr. No.",
+                    key: "srNo",
+                    width: 80,
+                    render: (text, record, index) => index + 1,
+                  },
+                  {
                     title: "Part Name",
                     dataIndex: "partName",
                     key: "partName",
+                    render: (text) => {
+                      if (!text) return "N/A";
+                      // Convert to proper case (Title Case)
+                      return text
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/[_-]/g, " ")
+                        .replace(/^./, (str) => str.toUpperCase())
+                        .trim();
+                    },
                   },
                   {
                     title: "Make",

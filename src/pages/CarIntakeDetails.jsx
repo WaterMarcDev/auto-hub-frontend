@@ -163,7 +163,7 @@ const CarIntakeDetails = () => {
     // 3) car.images as an array
     const collected = [];
 
-    if (car.imagesStep && typeof car.imagesStep === "object") {
+    if (car?.imagesStep && typeof car.imagesStep === "object") {
       // Only include values that are strings and look like image paths/URLs.
       // Some keys (e.g. imagesUploadedBy or descriptions) are objects or non-image strings
       // and should not be rendered as images.
@@ -189,7 +189,7 @@ const CarIntakeDetails = () => {
       )
       .forEach((k) => collected.push(car[k]));
 
-    if (Array.isArray(car.images)) {
+    if (Array.isArray(car?.images)) {
       collected.push(...car.images);
     }
 
@@ -224,7 +224,7 @@ const CarIntakeDetails = () => {
 
   const renderParts = () => {
     if (!car) return <span>N/A</span>;
-    const parts = car.partDetails.parts || {};
+    const parts = car?.partDetails?.parts || {};
     const entries = Object.entries(parts || {});
     if (!entries.length) return <span>N/A</span>;
 
@@ -291,29 +291,31 @@ const CarIntakeDetails = () => {
         <Row gutter={16}>
           <Col xs={24} sm={12} md={8}>
             <div style={{ color: "#e5e7eb" }}>Amount</div>
-            <div style={{ fontWeight: 600 }}>${transaction.amount}</div>
+            <div style={{ fontWeight: 600 }}>${transaction?.amount || 0}</div>
           </Col>
           <Col xs={24} sm={12} md={8}>
             <div style={{ color: "#e5e7eb" }}>Method</div>
-            <div>{transaction.paymentMethod || transaction.type || "N/A"}</div>
+            <div>
+              {transaction?.paymentMethod || transaction?.type || "N/A"}
+            </div>
           </Col>
           <Col xs={24} sm={12} md={8}>
             <div style={{ color: "#e5e7eb" }}>Status</div>
             <Tag
               color={
-                transaction.status === "completed"
+                transaction?.status === "completed"
                   ? "green"
-                  : transaction.status === "pending"
+                  : transaction?.status === "pending"
                   ? "orange"
                   : "default"
               }
             >
-              {transaction.status}
+              {transaction?.status || "N/A"}
             </Tag>
           </Col>
         </Row>
 
-        {transaction.description && (
+        {transaction?.description && (
           <div style={{ marginTop: 12 }}>
             <div style={{ color: "#e5e7eb" }}>Description</div>
             <div>{transaction.description}</div>
