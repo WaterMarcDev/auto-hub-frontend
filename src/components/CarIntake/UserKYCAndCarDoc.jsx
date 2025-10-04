@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Form,
   Input,
@@ -13,7 +13,9 @@ import {
   List,
   Avatar,
   Descriptions,
+  message,
 } from "antd";
+import { uploadAPI } from "../../utils/api";
 import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
@@ -35,10 +37,192 @@ const UserKYCAndCarDoc = ({
   updateFormData = () => {},
   nextStep = () => {},
   prevStep = () => {},
+  form, // Ant Design form from parent
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [signaturePreview, setSignaturePreview] = useState(
+    formData.sellerSignature || null
+  );
+  const canvasRef = useRef(null);
+  const drawing = useRef(false);
+  const lastPos = useRef({ x: 0, y: 0 });
+
+  // Update signature preview when formData.sellerSignature changes (edit mode)
+  useEffect(() => {
+    if (
+      formData.sellerSignature &&
+      formData.sellerSignature !== signaturePreview
+    ) {
+      setSignaturePreview(formData.sellerSignature);
+    }
+  }, [formData.sellerSignature, signaturePreview]);
+
+  useEffect(() => {
+    // initialize canvas for high DPI screens
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const ratio = window.devicePixelRatio || 1;
+    // use the actual displayed size (boundingClientRect) to avoid offset
+    const rect = canvas.getBoundingClientRect();
+    const cssWidth = rect.width || canvas.clientWidth || 800;
+    const cssHeight = rect.height || canvas.clientHeight || 160;
+    canvas.width = Math.round(cssWidth * ratio);
+    canvas.height = Math.round(cssHeight * ratio);
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
+    ctx.scale(ratio, ratio);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#111827";
+    ctx.lineWidth = 2.5;
+
+    // Don't draw existing signature image on canvas to avoid tainting it
+    // The signature preview will be shown below the canvas instead
+  }, []);
+
+  const getCanvasPos = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    // Prefer offset coordinates from the native event when available (accounts for padding/border)
+    const native = e.nativeEvent || e;
+    const offsetX =
+      (native && (native.offsetX ?? native.layerX ?? native.pageX)) ??
+      undefined;
+    const offsetY =
+      (native && (native.offsetY ?? native.layerY ?? native.pageY)) ??
+      undefined;
+    if (typeof offsetX === "number" && typeof offsetY === "number") {
+      return { x: offsetX, y: offsetY };
+    }
+
+    // Support TouchEvent and PointerEvent fallback
+    const clientX =
+      e.clientX ?? (e.touches && e.touches[0] && e.touches[0].clientX);
+    const clientY =
+      e.clientY ?? (e.touches && e.touches[0] && e.touches[0].clientY);
+    // Map client coordinates to CSS pixels inside canvas
+    const x = (clientX ?? 0) - rect.left;
+    const y = (clientY ?? 0) - rect.top;
+    return { x, y };
+  };
+
+  const handlePointerDown = (e) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    drawing.current = true;
+    // capture pointer to continue receiving events outside canvas bounds
+    if (canvas.setPointerCapture) {
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+    const pos = getCanvasPos(e);
+    lastPos.current = pos;
+  };
+
+  const handlePointerMove = (e) => {
+    if (!drawing.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const pos = getCanvasPos(e);
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.moveTo(lastPos.current.x, lastPos.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastPos.current = pos;
+  };
+
+  const handlePointerUp = () => {
+    drawing.current = false;
+    const canvas = canvasRef.current;
+    if (canvas && canvas.releasePointerCapture) {
+      try {
+        canvas.releasePointerCapture();
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignaturePreview(null);
+    updateFormData({ sellerSignature: null });
+    if (form && form.setFieldsValue)
+      form.setFieldsValue({ sellerSignature: null });
+  };
+
+  const [uploadingSignature, setUploadingSignature] = useState(false);
+
+  const saveSignature = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Convert canvas to blob
+    const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
+    if (!blob) {
+      message.error("Failed to read signature from canvas");
+      return;
+    }
+
+    // Create a file to upload
+    const file = new File([blob], `signature-${Date.now()}.png`, {
+      type: "image/png",
+    });
+
+    setUploadingSignature(true);
+    try {
+      const resp = await uploadAPI.uploadImage(file);
+      const result = resp.data || resp;
+
+      // Determine a usable URL from response
+      const possible =
+        result.url ||
+        result.imageUrl ||
+        result.path ||
+        result.filename ||
+        result.file ||
+        result.originalName ||
+        result.name;
+      const uploadedUrl = uploadAPI.getImageUrl(possible);
+
+      if (!uploadedUrl) {
+        // Fallback to data URL preview if backend didn't return a usable path
+        const dataUrl = canvas.toDataURL("image/png");
+        setSignaturePreview(dataUrl);
+        updateFormData({ sellerSignature: dataUrl });
+        if (form && form.setFieldsValue)
+          form.setFieldsValue({ sellerSignature: dataUrl });
+        message.warning(
+          "Uploaded signature but server did not return a file URL; using local data URL."
+        );
+      } else {
+        setSignaturePreview(uploadedUrl);
+        updateFormData({ sellerSignature: uploadedUrl });
+        if (form && form.setFieldsValue)
+          form.setFieldsValue({ sellerSignature: uploadedUrl });
+        console.log("Signature saved to formData:", uploadedUrl);
+        message.success("Signature uploaded successfully");
+      }
+    } catch (err) {
+      console.error("Signature upload failed:", err);
+      message.error(
+        err.response?.data?.error || err.message || "Failed to upload signature"
+      );
+    } finally {
+      setUploadingSignature(false);
+    }
+  };
 
   const doSearch = async (q) => {
     if (!q || q.length < 2) return;
@@ -634,6 +818,137 @@ const UserKYCAndCarDoc = ({
             },
           ]}
         />
+      </Card>
+
+      {/* Signature pad - visible for both tabs (select seller / create seller) */}
+      <Card
+        title={<Text style={{ color: "white" }}>Seller Signature</Text>}
+        style={{
+          backgroundColor: "#374151",
+          borderColor: "#6b7280",
+          marginBottom: 24,
+        }}
+      >
+        <div>
+          {/* Disclaimer */}
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 12,
+              backgroundColor: "#4b5563",
+              borderRadius: 6,
+              border: "1px solid #6b7280",
+            }}
+          >
+            <Text
+              style={{ color: "#d1d5db", fontSize: "13px", lineHeight: 1.6 }}
+            >
+              <strong>Declaration:</strong> I certify I own the vehicle as
+              described above. I warrant I have the right to sell it, and it is
+              free of liens. I sell all my rights in this vehicle to RTX
+              Recycling LLC. I release RTX Recycling LLC from any liability
+              related to this vehicle. This agreement supersedes all prior
+              agreements. This agreement is governed by the laws of the State of
+              New Jersey.
+            </Text>
+          </div>
+
+          <canvas
+            ref={canvasRef}
+            id="seller-signature-canvas"
+            // // width={800}
+            // height={160}
+            style={{
+              width: "100%",
+              height: "250px",
+              // maxWidth: "820px",
+              border: "1px dashed #6b7280",
+              borderRadius: 6,
+              touchAction: "none",
+              background: "white",
+            }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+          />
+
+          <div
+            style={{
+              marginTop: 12,
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+            }}
+          >
+            <Button onClick={clearSignature} size="middle">
+              Clear
+            </Button>
+            <Button
+              type="primary"
+              onClick={saveSignature}
+              size="middle"
+              loading={uploadingSignature}
+              disabled={uploadingSignature}
+            >
+              {uploadingSignature ? "Uploading..." : "Save Signature"}
+            </Button>
+            <Text style={{ color: "#9ca3af", marginLeft: 8 }}>
+              {signaturePreview
+                ? "Draw a new signature to replace the saved one."
+                : "Ask seller to sign on screen. Saved signature appears as preview."}
+            </Text>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            {signaturePreview ? (
+              <div>
+                <Text style={{ color: "#d1d5db", fontWeight: 500 }}>
+                  Saved Signature:
+                </Text>
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: 12,
+                    backgroundColor: "#4b5563",
+                    borderRadius: 8,
+                    border: "1px solid #6b7280",
+                    width: "100%",
+                  }}
+                >
+                  <img
+                    src={signaturePreview}
+                    alt="signature preview"
+                    style={{
+                      width: "100%",
+                      height: "auto",
+                      maxHeight: "200px",
+                      display: "block",
+                      backgroundColor: "white",
+                      border: "1px solid #9ca3af",
+                      borderRadius: 4,
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <Text style={{ color: "#9ca3af" }}>No signature saved yet.</Text>
+            )}
+          </div>
+
+          {/* Hidden Form Item to allow Antd validation from parent form */}
+          <div style={{ display: "none" }}>
+            <Form.Item
+              name="sellerSignature"
+              rules={[
+                { required: true, message: "Seller signature is required" },
+              ]}
+            >
+              <Input value={formData.sellerSignature} readOnly />
+            </Form.Item>
+          </div>
+        </div>
       </Card>
 
       <Row gutter={24}>

@@ -112,6 +112,7 @@ const CarIntake = () => {
     titleCertificate: null,
     sellingDate: dayjs(),
     pickUpType: "You Pull",
+    sellerSignature: null,
 
     // Step 6: Payment
     paymentMethod: "",
@@ -291,7 +292,12 @@ const CarIntake = () => {
               sellingDate: sellingDateValue,
               pickupType: normalizePickup(stepData.pickUpType),
               kycDescription: stepData.kycDescription,
+              sellerSignature: stepData.sellerSignature || undefined,
             };
+            console.log("Step 5 payload:", {
+              ...payload,
+              sellerSignature: payload.sellerSignature ? "Present" : "Missing",
+            });
             // If an existing seller was selected, tell backend to attach by id
             if (stepData.sellerId) {
               payload.sellerId = stepData.sellerId;
@@ -511,6 +517,10 @@ const CarIntake = () => {
             uploaded: true,
             name: docs.titleCertificate.split("/").pop(),
           };
+        }
+        // Populate seller signature if exists
+        if (car.kyc.sellerSignature) {
+          populated.sellerSignature = car.kyc.sellerSignature;
         }
       }
       if (car.payment) {
@@ -836,6 +846,7 @@ const CarIntake = () => {
           "mobileNo",
           "email",
           "dlDocument",
+          "sellerSignature",
           "carRC",
           "sellingDate",
           "pickUpType",
@@ -911,6 +922,7 @@ const CarIntake = () => {
       sellingDate: dayjs(),
       pickUpType: "You Pull",
       kycDescription: "",
+      sellerSignature: null,
 
       // Step 6: Payment
       paidTo: "",
@@ -1087,6 +1099,8 @@ const CarIntake = () => {
           mobileNo: formData.mobileNo || "",
           description: formData.kycDescription || "",
         },
+        // Seller signature - image URL from upload
+        sellerSignature: formData.sellerSignature || undefined,
         // If an existing seller was selected, include sellerId instead of sellerData
         ...(formData.sellerId ? { sellerId: formData.sellerId } : {}),
 
@@ -1119,6 +1133,12 @@ const CarIntake = () => {
       if (STEP_STATUS_MAP[6]) {
         submitData.status = STEP_STATUS_MAP[6];
       }
+
+      // Debug log to verify sellerSignature is in payload
+      console.log("Submit payload:", {
+        ...submitData,
+        sellerSignature: submitData.sellerSignature ? "Present" : "Missing",
+      });
 
       let response;
       if (serverId) {

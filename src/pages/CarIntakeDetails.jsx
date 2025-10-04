@@ -439,6 +439,38 @@ const CarIntakeDetails = () => {
                 {(car?.seller && car?.seller?.description) || "N/A"}
               </Descriptions.Item>
 
+              <Descriptions.Item label="Seller Signature" span={2}>
+                {car?.kyc?.sellerSignature ? (
+                  <div
+                    style={{
+                      padding: 12,
+                      backgroundColor: "#f5f5f5",
+                      borderRadius: 8,
+                      border: "1px solid #d9d9d9",
+                      display: "inline-block",
+                      maxWidth: "100%",
+                    }}
+                  >
+                    <Image
+                      src={car.kyc.sellerSignature}
+                      alt="Seller Signature"
+                      style={{
+                        maxWidth: "400px",
+                        maxHeight: "150px",
+                        backgroundColor: "white",
+                        border: "1px solid #d9d9d9",
+                      }}
+                      preview={{
+                        mask: "View Signature",
+                        getContainer: getPreviewContainer,
+                      }}
+                    />
+                  </div>
+                ) : (
+                  "N/A"
+                )}
+              </Descriptions.Item>
+
               <Descriptions.Item label="Images" span={2}>
                 {renderImages()}
               </Descriptions.Item>
