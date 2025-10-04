@@ -62,7 +62,7 @@ const CarIntake = () => {
     color: "",
     bodyClass: "",
     chassisNo: "",
-    displacementCC: "",
+    engine: "",
     engineVariant: "",
     drive: "",
     transmission: "",
@@ -109,6 +109,7 @@ const CarIntake = () => {
     customerAddress: "",
     dlDocument: null,
     carRC: null,
+    titleCertificate: null,
     sellingDate: dayjs(),
     pickUpType: "You Pull",
 
@@ -180,7 +181,7 @@ const CarIntake = () => {
             color: stepData.color,
             bodyClass: stepData.bodyClass,
             chassisNo: stepData.chassisNo,
-            displacementCC: stepData.displacementCC || stepData.engineNo,
+            engine: stepData.engine || stepData.engineNo,
             engineVariant: stepData.engineVariant,
             drive: stepData.drive,
             transmission: stepData.transmission,
@@ -211,7 +212,7 @@ const CarIntake = () => {
               color: stepData.color,
               bodyClass: stepData.bodyClass,
               chassisNo: stepData.chassisNo,
-              displacementCC: stepData.displacementCC || stepData.engineNo,
+              engine: stepData.engine || stepData.engineNo,
               engineVariant: stepData.engineVariant,
               drive: stepData.drive,
               transmission: stepData.transmission,
@@ -252,7 +253,7 @@ const CarIntake = () => {
               sellingDateValue = sellingDateValue.format("YYYY-MM-DD");
             }
             // Collect document URLs from either `stepData.documents` or
-            // individual upload fields (`dlDocument`, `carRC`). This ensures
+            // individual upload fields (`dlDocument`, `carRC`, `titleCertificate`). This ensures
             // documents uploaded via the KYC component are included in the
             // payload when saving step 5.
             const documents = { ...(stepData.documents || {}) };
@@ -269,6 +270,13 @@ const CarIntake = () => {
               stepData.carRC.url
             ) {
               documents.carRegistration = stepData.carRC.url;
+            }
+            if (
+              stepData.titleCertificate &&
+              stepData.titleCertificate.uploaded &&
+              stepData.titleCertificate.url
+            ) {
+              documents.titleCertificate = stepData.titleCertificate.url;
             }
 
             payload = {
@@ -381,11 +389,13 @@ const CarIntake = () => {
         populated.color = car.carDetails.color || formData.color;
         populated.bodyClass = car.carDetails.bodyClass || formData.bodyClass;
         populated.chassisNo = car.carDetails.chassisNo || formData.chassisNo;
-        populated.displacementCC =
-          car.carDetails.displacementCC ||
+        populated.engine =
+          car.carDetails.engine ||
+          car.vinDetails?.DisplacementL ||
           car.carDetails.engineNo ||
-          formData.displacementCC ||
-          formData.engineNo;
+          formData.engine ||
+          formData.engineNo ||
+          "";
         populated.engineVariant =
           car.carDetails.engineVariant || formData.engineVariant;
         populated.drive = car.carDetails.drive || formData.drive;
@@ -478,7 +488,7 @@ const CarIntake = () => {
         }
         populated.pickUpType = car.kyc.pickupType ?? formData.pickUpType;
         // Map backend documents object into individual form fields so the
-        // KYC component shows uploaded status for driver license and RC.
+        // KYC component shows uploaded status for driver license, RC, and title certificate.
         const docs = car.kyc.documents || {};
         populated.documents = docs || formData.documents;
         if (docs.driversLicense) {
@@ -493,6 +503,13 @@ const CarIntake = () => {
             url: docs.carRegistration,
             uploaded: true,
             name: docs.carRegistration.split("/").pop(),
+          };
+        }
+        if (docs.titleCertificate) {
+          populated.titleCertificate = {
+            url: docs.titleCertificate,
+            uploaded: true,
+            name: docs.titleCertificate.split("/").pop(),
           };
         }
       }
@@ -842,7 +859,7 @@ const CarIntake = () => {
       color: "",
       bodyClass: "",
       chassisNo: "",
-      displacementCC: "",
+      engine: "",
       engineVariant: "",
       drive: "",
       transmission: "",
@@ -890,6 +907,7 @@ const CarIntake = () => {
       mobileNo: "",
       dlDocument: null,
       carRC: null,
+      titleCertificate: null,
       sellingDate: dayjs(),
       pickUpType: "You Pull",
       kycDescription: "",
@@ -1011,6 +1029,13 @@ const CarIntake = () => {
       if (formData.carRC && formData.carRC.uploaded && formData.carRC.url) {
         documents.carRegistration = formData.carRC.url;
       }
+      if (
+        formData.titleCertificate &&
+        formData.titleCertificate.uploaded &&
+        formData.titleCertificate.url
+      ) {
+        documents.titleCertificate = formData.titleCertificate.url;
+      }
 
       // Create JSON payload instead of FormData
       const submitData = {
@@ -1023,7 +1048,7 @@ const CarIntake = () => {
         color: formData.color,
         bodyClass: formData.bodyClass,
         chassisNo: formData.chassisNo,
-        displacementCC: formData.displacementCC || formData.engineNo,
+        engine: formData.engine || formData.engineNo,
         engineVariant: formData.engineVariant,
         drive: formData.drive,
         transmission: formData.transmission,

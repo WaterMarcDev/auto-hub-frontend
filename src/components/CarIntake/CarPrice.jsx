@@ -119,14 +119,23 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
               rules={[{ required: true, message: "Rate is required" }]}
             >
               <Select
-                placeholder="Select Rate"
+                placeholder="Select Rate (Cent / Pound)"
                 style={{ width: "100%" }}
                 dropdownStyle={{ backgroundColor: "#374151" }}
+                optionLabelProp="label"
               >
-                <Option value="5">5 Cent / Pound</Option>
-                <Option value="6">6 Cent / Pound</Option>
-                <Option value="7">7 Cent / Pound</Option>
-                <Option value="8">8 Cent / Pound</Option>
+                <Option value="5" label="5 Cent / Pound">
+                  5 Cent / Pound
+                </Option>
+                <Option value="6" label="6 Cent / Pound">
+                  6 Cent / Pound
+                </Option>
+                <Option value="7" label="7 Cent / Pound">
+                  7 Cent / Pound
+                </Option>
+                <Option value="8" label="8 Cent / Pound">
+                  8 Cent / Pound
+                </Option>
               </Select>
             </Form.Item>
           </Col>

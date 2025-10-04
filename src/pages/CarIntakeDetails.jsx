@@ -394,10 +394,8 @@ const CarIntakeDetails = () => {
               <Descriptions.Item label="Chassis No.">
                 {car?.carDetails?.chassisNo || "N/A"}
               </Descriptions.Item>
-              <Descriptions.Item label="Displacement (CC)">
-                {car?.carDetails?.displacementCC ||
-                  car?.carDetails?.engineNo ||
-                  "N/A"}
+              <Descriptions.Item label="Engine Size">
+                {car?.carDetails?.engine || car?.carDetails?.engineNo || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Scrap Yard">
                 {car?.carDetails?.scrapYardName || "N/A"}

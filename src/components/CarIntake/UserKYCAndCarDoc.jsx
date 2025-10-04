@@ -12,8 +12,18 @@ import {
   Tabs,
   List,
   Avatar,
+  Descriptions,
 } from "antd";
-import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  ArrowRightOutlined,
+  CloseCircleOutlined,
+  UserOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  IdcardOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import CameraUpload from "../CameraUpload";
 
 const { TextArea } = Input;
@@ -54,7 +64,21 @@ const UserKYCAndCarDoc = ({
       lastName: seller.lastName || seller.last_name || "",
       email: seller.email || "",
       mobileNo: seller.mobileNo || seller.phone || "",
+      selectedSellerData: seller, // Store the full seller object for display
     });
+  };
+
+  const handleClearSelection = () => {
+    updateFormData({
+      sellerId: null,
+      firstName: "",
+      lastName: "",
+      email: "",
+      mobileNo: "",
+      selectedSellerData: null,
+    });
+    setSearchQuery("");
+    setSearchResults([]);
   };
 
   const handleImageUpload = (field, uploadResult) => {
@@ -124,56 +148,163 @@ const UserKYCAndCarDoc = ({
 
   const renderSearchTab = () => (
     <div>
-      <Row gutter={12}>
-        <Col span={18}>
-          <Input
-            placeholder="Search by mobile number or email (min 2 chars)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onPressEnter={(e) => doSearch(e.target.value)}
-          />
-        </Col>
-        <Col span={6}>
-          <Button
-            onClick={() => doSearch(searchQuery)}
-            loading={searchLoading}
-            type="primary"
+      {/* Show selected seller card if a seller is selected */}
+      {formData.sellerId && formData.selectedSellerData ? (
+        <Card
+          style={{
+            backgroundColor: "#1f2937",
+            borderColor: "#10b981",
+            border: "2px solid #10b981",
+            marginBottom: 16,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              marginBottom: 16,
+            }}
           >
-            Search
-          </Button>
-        </Col>
-      </Row>
-
-      <div style={{ marginTop: 12 }}>
-        <List
-          loading={searchLoading}
-          dataSource={searchResults}
-          locale={{ emptyText: "No sellers found" }}
-          renderItem={(item) => (
-            <List.Item
-              actions={[
-                <Button
-                  key={`select-${item._id || item.id}`}
-                  type={
-                    (formData.sellerId || null) === (item._id || item.id)
-                      ? "primary"
-                      : "default"
-                  }
-                  onClick={() => handleSelectSeller(item)}
-                >
-                  Select
-                </Button>,
-              ]}
+            <Title level={5} style={{ color: "#10b981", margin: 0 }}>
+              <UserOutlined /> Selected Seller
+            </Title>
+            <Button
+              danger
+              type="primary"
+              icon={<CloseCircleOutlined />}
+              onClick={handleClearSelection}
+              size="small"
             >
-              <List.Item.Meta
-                avatar={<Avatar>{(item.firstName || "")[0] || "S"}</Avatar>}
-                title={`${item.firstName || ""} ${item.lastName || ""}`}
-                description={`${item.email || ""} • ${item.mobileNo || ""}`}
+              Clear Selection
+            </Button>
+          </div>
+          <Descriptions column={1} bordered size="small">
+            <Descriptions.Item
+              label={
+                <Text style={{ color: "#9ca3af" }}>
+                  <UserOutlined /> Name
+                </Text>
+              }
+              contentStyle={{
+                backgroundColor: "#374151",
+                color: "white",
+                fontWeight: 600,
+              }}
+              labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+            >
+              {formData.selectedSellerData.firstName}{" "}
+              {formData.selectedSellerData.lastName}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <Text style={{ color: "#9ca3af" }}>
+                  <MailOutlined /> Email
+                </Text>
+              }
+              contentStyle={{ backgroundColor: "#374151", color: "white" }}
+              labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+            >
+              {formData.selectedSellerData.email || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item
+              label={
+                <Text style={{ color: "#9ca3af" }}>
+                  <PhoneOutlined /> Mobile No.
+                </Text>
+              }
+              contentStyle={{ backgroundColor: "#374151", color: "white" }}
+              labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+            >
+              {formData.selectedSellerData.mobileNo || "N/A"}
+            </Descriptions.Item>
+            {formData.selectedSellerData.driversLicense && (
+              <Descriptions.Item
+                label={
+                  <Text style={{ color: "#9ca3af" }}>
+                    <IdcardOutlined /> Driver's License
+                  </Text>
+                }
+                contentStyle={{ backgroundColor: "#374151", color: "white" }}
+                labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+              >
+                <Button
+                  type="link"
+                  icon={<EyeOutlined />}
+                  onClick={async () => {
+                    const { uploadAPI } = await import("../../utils/api");
+                    const imageUrl = uploadAPI.getImageUrl(
+                      formData.selectedSellerData.driversLicense
+                    );
+                    window.open(imageUrl, "_blank");
+                  }}
+                  style={{ padding: 0, color: "#60a5fa" }}
+                >
+                  View Document
+                </Button>
+              </Descriptions.Item>
+            )}
+            {formData.selectedSellerData.description && (
+              <Descriptions.Item
+                label={<Text style={{ color: "#9ca3af" }}>Description</Text>}
+                contentStyle={{ backgroundColor: "#374151", color: "white" }}
+                labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+              >
+                {formData.selectedSellerData.description}
+              </Descriptions.Item>
+            )}
+          </Descriptions>
+        </Card>
+      ) : (
+        <>
+          <Row gutter={12}>
+            <Col span={18}>
+              <Input
+                placeholder="Search by mobile number or email (min 2 chars)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onPressEnter={(e) => doSearch(e.target.value)}
               />
-            </List.Item>
-          )}
-        />
-      </div>
+            </Col>
+            <Col span={6}>
+              <Button
+                onClick={() => doSearch(searchQuery)}
+                loading={searchLoading}
+                type="primary"
+              >
+                Search
+              </Button>
+            </Col>
+          </Row>
+
+          <div style={{ marginTop: 12 }}>
+            <List
+              loading={searchLoading}
+              dataSource={searchResults}
+              locale={{ emptyText: "No sellers found" }}
+              renderItem={(item) => (
+                <List.Item
+                  actions={[
+                    <Button
+                      key={`select-${item._id || item.id}`}
+                      type="default"
+                      onClick={() => handleSelectSeller(item)}
+                    >
+                      Select
+                    </Button>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={<Avatar>{(item.firstName || "")[0] || "S"}</Avatar>}
+                    title={`${item.firstName || ""} ${item.lastName || ""}`}
+                    description={`${item.email || ""} • ${item.mobileNo || ""}`}
+                  />
+                </List.Item>
+              )}
+            />
+          </div>
+        </>
+      )}
 
       <div style={{ marginTop: 16 }}>
         {/* Hidden fields to ensure validation runs when Search tab is active */}
@@ -205,7 +336,6 @@ const UserKYCAndCarDoc = ({
           <Form.Item
             name="email"
             rules={[
-              { required: true, message: "Email is required" },
               { type: "email", message: "Please enter a valid email address" },
             ]}
           >
@@ -218,7 +348,7 @@ const UserKYCAndCarDoc = ({
               "dlDocument",
               "Upload DL - DMV",
               "Take a clear photo of the driver's license",
-              true
+              false
             )}
           </Col>
           <Col span={12}>
@@ -226,7 +356,18 @@ const UserKYCAndCarDoc = ({
               "carRC",
               "Upload Car RC",
               "Take a clear photo of the car registration document",
-              true
+              false
+            )}
+          </Col>
+        </Row>
+
+        <Row gutter={24}>
+          <Col span={12}>
+            {renderDocumentUploadField(
+              "titleCertificate",
+              "Upload Title Certificate",
+              "Take a clear photo of the vehicle title certificate",
+              false
             )}
           </Col>
         </Row>
@@ -356,7 +497,6 @@ const UserKYCAndCarDoc = ({
             name="email"
             label={<Text style={{ color: "white" }}>Email</Text>}
             rules={[
-              { required: true, message: "Email is required" },
               { type: "email", message: "Please enter a valid email address" },
             ]}
           >
@@ -378,14 +518,27 @@ const UserKYCAndCarDoc = ({
           {renderDocumentUploadField(
             "dlDocument",
             "Upload DL - DMV",
-            "Take a clear photo of the driver's license"
+            "Take a clear photo of the driver's license",
+            false
           )}
         </Col>
         <Col span={12}>
           {renderDocumentUploadField(
             "carRC",
             "Upload Car RC",
-            "Take a clear photo of the car registration document"
+            "Take a clear photo of the car registration document",
+            false
+          )}
+        </Col>
+      </Row>
+
+      <Row gutter={24}>
+        <Col span={12}>
+          {renderDocumentUploadField(
+            "titleCertificate",
+            "Upload Title Certificate",
+            "Take a clear photo of the vehicle title certificate",
+            false
           )}
         </Col>
       </Row>

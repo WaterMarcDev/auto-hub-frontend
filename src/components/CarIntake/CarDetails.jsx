@@ -188,11 +188,11 @@ const CarDetails = ({ nextStep, vinData, form }) => {
       <Row gutter={24}>
         <Col span={12}>
           <Form.Item
-            name="displacementCC"
-            label={<Text style={{ color: "white" }}>Displacement (CC)</Text>}
+            name="engine"
+            label={<Text style={{ color: "white" }}>Engine Size</Text>}
           >
             <Input
-              placeholder="Please Enter Displacement (CC)"
+              placeholder="Please Enter Engine Size"
               style={{
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
@@ -205,7 +205,6 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="engineVariant"
             label={<Text style={{ color: "white" }}>Engine Variant</Text>}
-            rules={[{ required: true, message: "Engine Variant is required" }]}
           >
             <Input
               placeholder="Please Enter Engine Variant"

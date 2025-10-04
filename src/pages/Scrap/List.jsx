@@ -132,11 +132,10 @@ const ScrapList = () => {
       render: (text) => text || "N/A",
     },
     {
-      title: "Displacement (CC)",
-      dataIndex: ["carDetails", "displacementCC"],
-      key: "displacementCC",
-      minWidth: 100,
-      render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
+      title: "Engine",
+      dataIndex: ["carDetails", "engine"],
+      key: "engine",
+      minWidth: 120,
     },
     {
       title: "Scrap Yard",
@@ -197,6 +196,7 @@ const ScrapList = () => {
         const docs = record?.kyc?.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
         const rc = docs.carRegistration || docs.car_registration || null;
+        const tc = docs.titleCertificate || docs.title_certificate || null;
 
         const openDoc = (url) => {
           if (!url) return;
@@ -227,7 +227,16 @@ const ScrapList = () => {
                 RC
               </Tag>
             ) : null}
-            {!dl && !rc ? <Tag color="red">None</Tag> : null}
+            {tc ? (
+              <Tag
+                color="purple"
+                style={{ cursor: "pointer" }}
+                onClick={() => openDoc(uploadAPI.getImageUrl(tc))}
+              >
+                TC
+              </Tag>
+            ) : null}
+            {!dl && !rc && !tc ? <Tag color="red">None</Tag> : null}
           </div>
         );
       },

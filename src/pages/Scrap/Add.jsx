@@ -120,9 +120,9 @@ const AddScrap = () => {
       render: (text) => text || "N/A",
     },
     {
-      title: "Displacement (CC)",
-      dataIndex: ["carDetails", "displacementCC"],
-      key: "displacementCC",
+      title: "Engine",
+      dataIndex: ["carDetails", "engine"],
+      key: "engine",
       minWidth: 100,
       render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
     },

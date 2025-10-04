@@ -133,11 +133,10 @@ const CarIntakeList = () => {
       render: (text) => text || "N/A",
     },
     {
-      title: "Displacement (CC)",
-      dataIndex: ["carDetails", "displacementCC"],
-      key: "displacementCC",
-      minWidth: 150,
-      render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
+      title: "Engine",
+      dataIndex: ["carDetails", "engine"],
+      key: "engine",
+      minWidth: 100,
     },
     {
       title: "Scrap Yard",
@@ -199,6 +198,7 @@ const CarIntakeList = () => {
         const docs = record?.kyc?.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
         const rc = docs.carRegistration || docs.car_registration || null;
+        const tc = docs.titleCertificate || docs.title_certificate || null;
 
         const openDoc = (url) => {
           if (!url) return;
@@ -229,7 +229,16 @@ const CarIntakeList = () => {
                 RC
               </Tag>
             ) : null}
-            {!dl && !rc ? <Tag color="red">None</Tag> : null}
+            {tc ? (
+              <Tag
+                color="purple"
+                style={{ cursor: "pointer" }}
+                onClick={() => openDoc(uploadAPI.getImageUrl(tc))}
+              >
+                TC
+              </Tag>
+            ) : null}
+            {!dl && !rc && !tc ? <Tag color="red">None</Tag> : null}
           </div>
         );
       },
