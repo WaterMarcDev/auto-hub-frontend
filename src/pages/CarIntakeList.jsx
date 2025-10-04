@@ -77,6 +77,7 @@ const CarIntakeList = () => {
       render: (text, record) => (
         <Button
           type="link"
+          size="small"
           onClick={() => navigate(`/car-intake/${record._id}/details`)}
         >
           {text || "N/A"}
@@ -622,8 +623,8 @@ const CarIntakeList = () => {
             loading={loading}
             rowKey={(record) => record._id || record.vin}
             scroll={{
-              x: 2500, // Horizontal scroll for many columns
-              y: 600, // Vertical scroll height
+              x: "max-content", // Horizontal scroll for many columns
+              y: "calc(100vh - 510px)", // Dynamic height based on viewport
             }}
             pagination={{
               current: pagination.current,
@@ -638,6 +639,7 @@ const CarIntakeList = () => {
             size="small"
             bordered
             className="dark-table"
+            sticky
           />
           <Modal
             open={docModalVisible}

@@ -394,3 +394,52 @@
 .ant-menu-sub.ant-menu-inline {
   background-color: rgba(0, 0, 0, 0.15) !important;
 }
+
+/* Pagination button spacing */
+.ant-pagination-item,
+.ant-pagination-prev,
+.ant-pagination-next,
+.ant-pagination-jump-prev,
+.ant-pagination-jump-next {
+  margin-inline-end: 8px !important;
+}
+
+.ant-pagination-options {
+  margin-inline-start: 8px !important;
+}
+
+/* Sidebar scrollbar positioning */
+.vertical-menu {
+  direction: ltr !important;
+}
+
+.vertical-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vertical-menu::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.vertical-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.vertical-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Fix Simplebar scrollbar position in sidebar */
+.vertical-menu .simplebar-track.simplebar-vertical {
+  right: 0 !important;
+  left: auto !important;
+}
+
+.vertical-menu .simplebar-scrollbar::before {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.vertical-menu [data-simplebar] {
+  direction: ltr !important;
+}
