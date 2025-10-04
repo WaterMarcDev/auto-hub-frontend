@@ -70,6 +70,8 @@ export const carIntakeAPI = {
     api.patch(`/car-intake/${id}/status`, { status }),
 
   getStats: (params = {}) => api.get("/car-intake/stats", { params }),
+
+  bulkUpload: (fileUrl) => api.post("/car-intake/bulk-upload", { fileUrl }),
 };
 
 export const makeAPI = {

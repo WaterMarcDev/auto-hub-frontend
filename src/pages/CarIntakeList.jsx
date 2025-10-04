@@ -10,8 +10,17 @@ import {
   Modal,
   Popover,
   Checkbox,
+  Upload,
+  Spin,
+  Input,
 } from "antd";
-import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  UploadOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
@@ -20,10 +29,22 @@ import PageContentWrapper from "../components/PageContentWrapper";
 const CarIntakeList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
+
+  // Bulk upload state
+  const [bulkUploadModalVisible, setBulkUploadModalVisible] = useState(false);
+  const [bulkUploadFile, setBulkUploadFile] = useState(null);
+  const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
+  const [bulkUploadResult, setBulkUploadResult] = useState(null);
 
   // Ensure modal preview container is above fixed header/sidebar
   const getPreviewContainer = () => {
@@ -44,7 +65,8 @@ const CarIntakeList = () => {
       key: "srNo",
       fixed: "left",
       minWidth: 70,
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        (pagination.current - 1) * pagination.pageSize + index + 1,
     },
     {
       title: "VIN No.",
@@ -366,12 +388,32 @@ const CarIntakeList = () => {
   );
 
   // Fetch car intakes data
-  const fetchCarIntakes = async () => {
+  const fetchCarIntakes = async (page = 1, pageSize = 10, search = "") => {
     setLoading(true);
     try {
-      const res = await carIntakeAPI.getAll({ page: 1, limit: 100 });
+      const params = { page, limit: pageSize };
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
+      const res = await carIntakeAPI.getAll(params);
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
+
+      // Update pagination info if available from backend
+      if (data.pagination) {
+        setPagination({
+          current: data.pagination.page,
+          pageSize: data.pagination.limit,
+          total: data.pagination.total,
+        });
+      } else {
+        // Fallback if pagination data not available
+        setPagination((prev) => ({
+          ...prev,
+          current: page,
+          pageSize: pageSize,
+        }));
+      }
     } catch (error) {
       message.error(
         `Failed to fetch car intakes: ${
@@ -383,10 +425,80 @@ const CarIntakeList = () => {
     }
   };
 
+  // Handle table pagination change
+  const handleTableChange = (paginationConfig) => {
+    fetchCarIntakes(
+      paginationConfig.current,
+      paginationConfig.pageSize,
+      searchTerm
+    );
+  };
+
+  // Handle search with debounce
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    // Reset to first page when searching
+    fetchCarIntakes(1, pagination.pageSize, value);
+  };
+
   // Handle actions
   const handleDelete = () => {
     // Simple delete without confirmation for now
     message.info("Delete functionality will be implemented");
+  };
+
+  // Bulk upload handlers
+  const handleBulkUploadOpen = () => {
+    setBulkUploadFile(null);
+    setBulkUploadResult(null);
+    setBulkUploadModalVisible(true);
+  };
+
+  const handleBulkUploadClose = () => {
+    setBulkUploadModalVisible(false);
+    setBulkUploadFile(null);
+    setBulkUploadResult(null);
+  };
+
+  const handleFileChange = (info) => {
+    if (info.fileList.length > 0) {
+      setBulkUploadFile(info.file);
+    } else {
+      setBulkUploadFile(null);
+    }
+  };
+
+  const handleBulkUploadSubmit = async () => {
+    if (!bulkUploadFile) {
+      message.error("Please select an Excel file");
+      return;
+    }
+
+    setBulkUploadLoading(true);
+    try {
+      // Step 1: Upload the file first
+      const uploadResponse = await uploadAPI.uploadImage(bulkUploadFile);
+      const fileUrl = uploadResponse.data.imageUrl;
+
+      // Step 2: Submit bulk upload with file URL
+      const bulkResponse = await carIntakeAPI.bulkUpload(fileUrl);
+      const result = bulkResponse.data;
+
+      setBulkUploadResult(result);
+      message.success(
+        `Bulk upload completed! ${result.summary.successful} successful, ${result.summary.failed} failed, ${result.summary.skipped} skipped`
+      );
+
+      // Refresh the list
+      fetchCarIntakes();
+    } catch (error) {
+      console.error("Bulk upload error:", error);
+      message.error(
+        `Failed to upload: ${error.response?.data?.error || error.message}`
+      );
+    } finally {
+      setBulkUploadLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -403,9 +515,41 @@ const CarIntakeList = () => {
 
       {/* Page Content */}
       <PageContentWrapper>
-        <Card
-          title={<span>Car Intake Lists</span>}
-          extra={
+        <Card title={<span>Car Intake Lists</span>}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "16px",
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <Space.Compact style={{ flex: 1, maxWidth: 600 }} size="middle">
+              <Input
+                placeholder="Search by VIN, Make, Model, Trim, or Seller..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (!e.target.value) {
+                    handleSearch("");
+                  }
+                }}
+                onPressEnter={() => handleSearch(searchTerm)}
+                size="middle"
+                style={{ width: "100%" }}
+              />
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={() => handleSearch(searchTerm)}
+                size="middle"
+              >
+                Search
+              </Button>
+            </Space.Compact>
+
             <div style={{ display: "flex", gap: 8 }}>
               <Popover
                 placement="bottomRight"
@@ -448,19 +592,29 @@ const CarIntakeList = () => {
                   </div>
                 )}
               >
-                <Button>Columns</Button>
+                <Button size="middle">Columns</Button>
               </Popover>
 
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => navigate("/car-intake")}
+                size="middle"
               >
                 Add New Car
               </Button>
+
+              <Button
+                type="default"
+                icon={<UploadOutlined />}
+                onClick={handleBulkUploadOpen}
+                size="middle"
+              >
+                Bulk Upload
+              </Button>
             </div>
-          }
-        >
+          </div>
+
           <Table
             columns={displayedColumns}
             dataSource={carIntakes}
@@ -472,10 +626,15 @@ const CarIntakeList = () => {
               y: 600, // Vertical scroll height
             }}
             pagination={{
-              pageSize: 10,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
               showSizeChanger: true,
               showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} items`,
             }}
+            onChange={handleTableChange}
             size="small"
             bordered
             className="dark-table"
@@ -506,6 +665,121 @@ const CarIntakeList = () => {
               )
             ) : (
               <div>No document to preview</div>
+            )}
+          </Modal>
+
+          {/* Bulk Upload Modal */}
+          <Modal
+            open={bulkUploadModalVisible}
+            title="Bulk Upload Car Intakes"
+            onCancel={handleBulkUploadClose}
+            footer={[
+              <Button key="cancel" onClick={handleBulkUploadClose}>
+                {bulkUploadResult ? "Close" : "Cancel"}
+              </Button>,
+              <Button
+                key="submit"
+                type="primary"
+                loading={bulkUploadLoading}
+                onClick={handleBulkUploadSubmit}
+                disabled={!bulkUploadFile || bulkUploadResult !== null}
+              >
+                Upload
+              </Button>,
+            ]}
+            width={700}
+            centered
+          >
+            <div style={{ marginBottom: 16 }}>
+              <Typography.Title level={5}>Upload Excel File</Typography.Title>
+              <Typography.Text type="secondary">
+                Select an Excel file (.xlsx or .xls) containing car intake data.
+                <br />
+                <strong>Required column:</strong> VIN
+                <br />
+                <strong>Optional columns:</strong> Make, Model, Year, trim,
+                color, Body Class, Engine, Transmission, Drive, Fuel type, Where
+                (Location), Keys, date In
+              </Typography.Text>
+            </div>
+
+            <Upload
+              accept=".xlsx,.xls"
+              maxCount={1}
+              beforeUpload={() => false}
+              onChange={handleFileChange}
+              fileList={bulkUploadFile ? [bulkUploadFile] : []}
+            >
+              <Button icon={<UploadOutlined />} block>
+                Select Excel File
+              </Button>
+            </Upload>
+
+            {bulkUploadResult && (
+              <div style={{ marginTop: 24 }}>
+                <Typography.Title level={5} style={{ color: "#fff" }}>
+                  Upload Results
+                </Typography.Title>
+                <div
+                  style={{
+                    padding: 16,
+                    background: "#1f1f1f",
+                    border: "1px solid #434343",
+                    borderRadius: 8,
+                  }}
+                >
+                  <div style={{ marginBottom: 8, color: "#e0e0e0" }}>
+                    <strong>Total Records:</strong>{" "}
+                    {bulkUploadResult.summary.total}
+                  </div>
+                  <div style={{ marginBottom: 8, color: "#52c41a" }}>
+                    <strong>Successful:</strong>{" "}
+                    {bulkUploadResult.summary.successful}
+                  </div>
+                  <div style={{ marginBottom: 8, color: "#ff4d4f" }}>
+                    <strong>Failed:</strong> {bulkUploadResult.summary.failed}
+                  </div>
+                  <div style={{ color: "#faad14" }}>
+                    <strong>Skipped:</strong> {bulkUploadResult.summary.skipped}
+                  </div>
+
+                  {(bulkUploadResult.results.failed.length > 0 ||
+                    bulkUploadResult.results.skipped.length > 0) && (
+                    <div style={{ marginTop: 16 }}>
+                      <Typography.Text strong style={{ color: "#e0e0e0" }}>
+                        Details:
+                      </Typography.Text>
+                      <div
+                        style={{
+                          maxHeight: 200,
+                          overflow: "auto",
+                          marginTop: 8,
+                          padding: 8,
+                          background: "#141414",
+                          borderRadius: 4,
+                        }}
+                      >
+                        {bulkUploadResult.results.failed.map((item, index) => (
+                          <div
+                            key={`failed-${index}`}
+                            style={{ marginBottom: 4, color: "#ff7875" }}
+                          >
+                            <strong>Row {item.row}:</strong> {item.reason}
+                          </div>
+                        ))}
+                        {bulkUploadResult.results.skipped.map((item, index) => (
+                          <div
+                            key={`skipped-${index}`}
+                            style={{ marginBottom: 4, color: "#ffc53d" }}
+                          >
+                            <strong>Row {item.row}:</strong> {item.reason}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </Modal>
         </Card>
