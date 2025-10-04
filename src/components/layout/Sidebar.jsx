@@ -1,11 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Menu } from "antd";
+import {
+  HomeOutlined,
+  DashboardOutlined,
+  AppstoreOutlined,
+  CarOutlined,
+  ToolOutlined,
+  InboxOutlined,
+  DeleteOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
 import { useAuth } from "../../hooks/useAuth";
+
+// Custom FontAwesome bullet icon component using circle-dot
+const BulletIcon = () => (
+  <FontAwesomeIcon
+    icon={faCircleDot}
+    style={{ fontSize: "8px", marginRight: "10px" }}
+  />
+);
 
 const Sidebar = ({ isOpen }) => {
   const location = useLocation();
   const { user } = useAuth();
-  const [openDropdowns, setOpenDropdowns] = useState({});
+  const [openKeys, setOpenKeys] = useState([]);
+  const [selectedKeys, setSelectedKeys] = useState([]);
 
   // Check user roles
   const userRole = user?.role?.toLowerCase();
@@ -13,61 +35,206 @@ const Sidebar = ({ isOpen }) => {
   const isFrontDesk = userRole === "front_desk";
   const isAdmin = userRole === "admin";
 
-  // Functions used for Car Intake menu
-  const isSubMenuActive = (path) => {
-    return location.pathname === path ? "active" : "";
+  // Setup menu items based on user role
+  const getMenuItems = () => {
+    const items = [];
+
+    // Menu Title (non-clickable)
+    items.push({
+      key: "menu-title",
+      label: "Menu",
+      type: "group",
+    });
+
+    // Home and Dashboard - visible for Admin and Front Desk
+    if (!isManager) {
+      items.push({
+        key: "/",
+        icon: <HomeOutlined />,
+        label: <Link to="/">Home</Link>,
+      });
+      items.push({
+        key: "/dashboard",
+        icon: <DashboardOutlined />,
+        label: <Link to="/dashboard">Dashboard</Link>,
+      });
+    }
+
+    // Master Menu - Only for Admin
+    if (isAdmin) {
+      items.push({
+        key: "master",
+        icon: <AppstoreOutlined />,
+        label: "Master",
+        children: [
+          {
+            key: "/make",
+            icon: <BulletIcon />,
+            label: <Link to="/make">Add Car Make</Link>,
+          },
+          {
+            key: "/model",
+            icon: <BulletIcon />,
+            label: <Link to="/model">Add Car Model</Link>,
+          },
+          {
+            key: "/trim",
+            icon: <BulletIcon />,
+            label: <Link to="/trim">Add Car Trim</Link>,
+          },
+          {
+            key: "/part",
+            icon: <BulletIcon />,
+            label: <Link to="/part">Add Inventory Parts</Link>,
+          },
+          {
+            key: "/element",
+            icon: <BulletIcon />,
+            label: <Link to="/element">Add Scrap Elements</Link>,
+          },
+        ],
+      });
+    }
+
+    // Car Intake - visible for Manager, Front Desk, and Admin
+    items.push({
+      key: "carIntake",
+      icon: <CarOutlined />,
+      label: "Car Intake",
+      children: [
+        {
+          key: "/car-intake",
+          icon: <BulletIcon />,
+          label: <Link to="/car-intake">Add New Car</Link>,
+        },
+        {
+          key: "/car-intake-list",
+          icon: <BulletIcon />,
+          label: <Link to="/car-intake-list">Lists</Link>,
+        },
+      ],
+    });
+
+    // Car Parts Inventory - visible for Front Desk and Admin
+    if (isFrontDesk || isAdmin) {
+      const carPartsChildren = [];
+      if (isAdmin) {
+        carPartsChildren.push({
+          key: "/add-inventory",
+          icon: <BulletIcon />,
+          label: <Link to="/add-inventory">Add Inventory</Link>,
+        });
+      }
+      carPartsChildren.push({
+        key: "/inventory-list",
+        icon: <BulletIcon />,
+        label: <Link to="/inventory-list">Inventory Lists</Link>,
+      });
+
+      items.push({
+        key: "carPartsInventory",
+        icon: <ToolOutlined />,
+        label: "Car Parts Inventory",
+        children: carPartsChildren,
+      });
+    }
+
+    // Car Inventory - Only for Admin
+    if (isAdmin) {
+      items.push({
+        key: "carInventory",
+        icon: <InboxOutlined />,
+        label: "Car Inventory",
+        children: [
+          {
+            key: "/car-inventory",
+            icon: <BulletIcon />,
+            label: <Link to="/car-inventory">Car Inventory Lists</Link>,
+          },
+        ],
+      });
+    }
+
+    // Scrap a Car - Only for Admin
+    if (isAdmin) {
+      items.push({
+        key: "scrapCar",
+        icon: <DeleteOutlined />,
+        label: "Scrap a Car",
+        children: [
+          {
+            key: "/add-scrap",
+            icon: <BulletIcon />,
+            label: <Link to="/add-scrap">Add New</Link>,
+          },
+          {
+            key: "/scrap-list",
+            icon: <BulletIcon />,
+            label: <Link to="/scrap-list">Scrap Car Lists</Link>,
+          },
+        ],
+      });
+    }
+
+    // Seller - visible for Front Desk and Admin
+    if (isFrontDesk || isAdmin) {
+      items.push({
+        key: "seller",
+        icon: <UserOutlined />,
+        label: "Seller",
+        children: [
+          {
+            key: "/seller/register",
+            icon: <BulletIcon />,
+            label: <Link to="/seller/register">Add New Seller</Link>,
+          },
+          {
+            key: "/seller/list",
+            icon: <BulletIcon />,
+            label: <Link to="/seller/list">Seller Lists</Link>,
+          },
+        ],
+      });
+    }
+
+    return items;
   };
 
-  // Top-level active helper
-  const isActive = (path) => {
-    return location.pathname === path ? "active" : "";
-  };
-
-  const toggleDropdown = (menuKey) => {
-    setOpenDropdowns((prev) => ({
-      ...prev,
-      [menuKey]: !prev[menuKey],
-    }));
-  };
-
-  const isDropdownOpen = (menuKey) => {
-    return openDropdowns[menuKey] || false;
-  };
+  // Update selected and open keys based on current route
   useEffect(() => {
     const path = location.pathname;
+    setSelectedKeys([path]);
+
+    // Route to submenu mapping
     const routeMapping = {
-      "/add-car-make": "master",
-      "/add-car-model": "master",
-      "/add-car-trim": "master",
-      "/add-inventory-parts": "master",
-      "/add-junk-elements": "master",
+      "/make": "master",
+      "/model": "master",
+      "/trim": "master",
+      "/part": "master",
+      "/element": "master",
       "/car-intake": "carIntake",
       "/car-intake-list": "carIntake",
       "/add-inventory": "carPartsInventory",
-      "/inventory-lists": "carPartsInventory",
-      "/print-tag": "carPartsInventory",
-      "/junk-car": "carInventory",
-      "/junk-car-lists": "carInventory",
-      "/scrap-car": "scrapCar",
-      "/scrap-car-lists": "scrapCar",
-      "/add-new-seller": "seller",
-      "/seller-lists": "seller",
-      "/payment-lists": "payment",
-      "/print-receipt": "printHub",
-      "/auth-login": "authentication",
-      "/auth-register": "authentication",
-      "/auth-recoverpw": "authentication",
-      "/auth-lock-screen": "authentication",
+      "/inventory-list": "carPartsInventory",
+      "/car-inventory": "carInventory",
+      "/add-scrap": "scrapCar",
+      "/scrap-list": "scrapCar",
+      "/seller/register": "seller",
+      "/seller/list": "seller",
     };
 
-    const menuKey = routeMapping[path];
-    if (menuKey) {
-      setOpenDropdowns((prev) => ({
-        ...prev,
-        [menuKey]: true,
-      }));
+    const parentKey = routeMapping[path];
+    if (parentKey && !openKeys.includes(parentKey)) {
+      setOpenKeys([parentKey]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
+
+  const handleOpenChange = (keys) => {
+    // Only allow one submenu open at a time (accordion mode)
+    const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
+    setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+  };
 
   return (
     <div className={`vertical-menu ${isOpen ? "show" : ""}`}>
@@ -80,6 +247,7 @@ const Sidebar = ({ isOpen }) => {
             backgroundRepeat: "no-repeat",
             backgroundSize: "cover",
             backgroundPosition: "center",
+            height: "167px",
           }}
         >
           <div className="dropdown">
@@ -101,7 +269,8 @@ const Sidebar = ({ isOpen }) => {
                       .split("_")
                       .map(
                         (part) =>
-                          part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+                          part.charAt(0).toUpperCase() +
+                          part.slice(1).toLowerCase()
                       )
                       .join(" ")
                   : "User"}
@@ -110,322 +279,19 @@ const Sidebar = ({ isOpen }) => {
           </div>
         </div>
 
-        <div id="sidebar-menu">
-          <ul className="metismenu list-unstyled" id="side-menu">
-            <li className="menu-title">Menu</li>
-            {/* Home and Dashboard - visible for Admin and Front Desk */}
-            {!isManager && (
-              <>
-                <li className={isActive("/")}>
-                  <Link to="/" className="waves-effect">
-                    <i className="dripicons-home"></i>
-                    <span>Home</span>
-                  </Link>
-                </li>
-                <li className={isActive("/dashboard")}>
-                  <Link to="/dashboard" className="waves-effect">
-                    <i className="dripicons-graph-line"></i>
-                    <span>Dashboard</span>
-                  </Link>
-                </li>
-              </>
-            )}
-
-            {/* Master Menu - Only for Admin */}
-            {isAdmin && (
-              <li>
-                <a
-                  href="#"
-                  className="has-arrow waves-effect"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown("master");
-                  }}
-                >
-                  <i className="dripicons-suitcase"></i>
-                  <span>Master</span>
-                </a>
-                <ul
-                  className="sub-menu"
-                  aria-expanded={isDropdownOpen("master")}
-                  style={{
-                    display: isDropdownOpen("master") ? "block" : "none",
-                  }}
-                >
-                  <li className={isSubMenuActive("/add-car-make")}>
-                    <Link to="/make">Add Car Make</Link>
-                  </li>
-                  <li className={isSubMenuActive("/model")}>
-                    <Link to="/model">Add Car Model</Link>
-                  </li>
-                  <li className={isSubMenuActive("/trim")}>
-                    <Link to="/trim">Add Car Trim</Link>
-                  </li>
-                  <li className={isSubMenuActive("/part")}>
-                    <Link to="/part">Add Inventory Parts</Link>
-                  </li>
-                  <li className={isSubMenuActive("/element")}>
-                    <Link to="/element">Add Scrap Elements</Link>
-                  </li>
-                </ul>
-              </li>
-            )}
-
-            {/* Car Intake - visible for Manager, Front Desk, and Admin */}
-            <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("carIntake");
-                }}
-              >
-                <i className="dripicons-enter"></i>
-                <span>Car Intake</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("carIntake")}
-                style={{
-                  display: isDropdownOpen("carIntake") ? "block" : "none",
-                }}
-              >
-                <li className={isSubMenuActive("/car-intake")}>
-                  <Link to="/car-intake">Add New Car</Link>
-                </li>
-                <li className={isSubMenuActive("/car-intake-list")}>
-                  <Link to="/car-intake-list">Lists</Link>
-                </li>
-              </ul>
-            </li>
-
-            {/* Car Parts Inventory - visible for Front Desk and Admin */}
-            {(isFrontDesk || isAdmin) && (
-              <li>
-                <a
-                  href="#"
-                  className="has-arrow waves-effect"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown("carPartsInventory");
-                  }}
-                >
-                  <i className="dripicons-gear"></i>
-                  <span>Car Parts Inventory</span>
-                </a>
-                <ul
-                  className="sub-menu"
-                  aria-expanded={isDropdownOpen("carPartsInventory")}
-                  style={{
-                    display: isDropdownOpen("carPartsInventory")
-                      ? "block"
-                      : "none",
-                  }}
-                >
-                  {isAdmin && (
-                    <li>
-                      <Link to="/add-inventory">Add Inventory</Link>
-                    </li>
-                  )}
-                  <li>
-                    <Link to="/inventory-list">Inventory Lists</Link>
-                  </li>
-                </ul>
-              </li>
-            )}
-
-            {/* Car Inventory - Only for Admin */}
-            {isAdmin && (
-              <li>
-                <a
-                  href="#"
-                  className="has-arrow waves-effect"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown("carInventory");
-                  }}
-                >
-                  <i className="dripicons-suitcase"></i>
-                  <span>Car Inventory</span>
-                </a>
-                <ul
-                  className="sub-menu"
-                  aria-expanded={isDropdownOpen("carInventory")}
-                  style={{
-                    display: isDropdownOpen("carInventory") ? "block" : "none",
-                  }}
-                >
-                  <li>
-                    <Link to="/car-inventory">Car Inventory Lists</Link>
-                  </li>
-                </ul>
-              </li>
-            )}
-
-            {/* Scrap a Car - Only for Admin */}
-            {isAdmin && (
-              <li>
-                <a
-                  href="#"
-                  className="has-arrow waves-effect"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown("scrapCar");
-                  }}
-                >
-                  <i className="dripicons-box"></i>
-                  <span>Scrap a Car</span>
-                </a>
-                <ul
-                  className="sub-menu"
-                  aria-expanded={isDropdownOpen("scrapCar")}
-                  style={{
-                    display: isDropdownOpen("scrapCar") ? "block" : "none",
-                  }}
-                >
-                  <li>
-                    <Link to="/add-scrap">Add New</Link>
-                  </li>
-                  <li>
-                    <Link to="/scrap-list">Scrap Car Lists</Link>
-                  </li>
-                </ul>
-              </li>
-            )}
-
-            {/* Seller - visible for Front Desk and Admin */}
-            {(isFrontDesk || isAdmin) && (
-              <li>
-                <a
-                  href="#"
-                  className="has-arrow waves-effect"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown("seller");
-                  }}
-                >
-                  <i className="dripicons-user"></i>
-                  <span>Seller</span>
-                </a>
-                <ul
-                  className="sub-menu"
-                  aria-expanded={isDropdownOpen("seller")}
-                  style={{
-                    display: isDropdownOpen("seller") ? "block" : "none",
-                  }}
-                >
-                  <li>
-                    <Link to="/seller/register">Add New Seller</Link>
-                  </li>
-                  <li>
-                    <Link to="/seller/list">Seller Lists</Link>
-                  </li>
-                </ul>
-              </li>
-            )}
-
-            {/* Payment - visible for Front Desk and Admin */}
-            {/* {(isFrontDesk || isAdmin) && (
-              <li>
-                <a
-                  href="#"
-                  className="has-arrow waves-effect"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleDropdown("payment");
-                  }}
-                >
-                  <i className="dripicons-card"></i>
-                  <span>Payment</span>
-                </a>
-                <ul
-                  className="sub-menu"
-                  aria-expanded={isDropdownOpen("payment")}
-                  style={{
-                    display: isDropdownOpen("payment") ? "block" : "none",
-                  }}
-                >
-                  <li>
-                    <Link to="/payment-lists">Payment Lists</Link>
-                  </li>
-                </ul>
-              </li>
-            )} */}
-
-            {/* <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("printHub");
-                }}
-              >
-                <i className="dripicons-print"></i>
-                <span>Print Hub</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("printHub")}
-                style={{
-                  display: isDropdownOpen("printHub") ? "block" : "none",
-                }}
-              >
-                <li>
-                  <Link to="/print-receipt">Print</Link>
-                </li>
-              </ul>
-            </li> */}
-
-            {/* <li>
-              <a href="#" className="waves-effect">
-                <i className="dripicons-user"></i>
-                <span>Attendance</span>
-              </a>
-            </li> */}
-
-            {/* <li>
-              <a
-                href="#"
-                className="has-arrow waves-effect"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown("authentication");
-                }}
-              >
-                <i className="dripicons-user-group"></i>
-                <span>Authentication</span>
-              </a>
-              <ul
-                className="sub-menu"
-                aria-expanded={isDropdownOpen("authentication")}
-                style={{
-                  display: isDropdownOpen("authentication") ? "block" : "none",
-                }}
-              >
-                <li>
-                  <Link to="/auth-login">Login</Link>
-                </li>
-                <li>
-                  <Link to="/auth-register">Register</Link>
-                </li>
-                <li>
-                  <Link to="/auth-recoverpw">Re-Password</Link>
-                </li>
-                <li>
-                  <Link to="/auth-lock-screen">Lock Screen</Link>
-                </li>
-              </ul>
-            </li> */}
-
-            {/* <li>
-              <a href="#" className="waves-effect">
-                <i className="dripicons-message"></i>
-                <span>Reporting</span>
-              </a>
-            </li> */}
-          </ul>
+        <div>
+          <Menu
+            mode="inline"
+            selectedKeys={selectedKeys}
+            openKeys={openKeys}
+            onOpenChange={handleOpenChange}
+            items={getMenuItems()}
+            style={{
+              height: "100%",
+              borderRight: 0,
+              background: "transparent",
+            }}
+          />
         </div>
       </div>
     </div>

@@ -9,6 +9,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 // Import Ant Design CSS
 import "antd/dist/reset.css";
 
+// Import App CSS for layout
+import "./App.css";
+
 // Import custom layout CSS to fix positioning
 import "./assets/css/custom-layout.css";
 

@@ -355,3 +355,42 @@
     font-size: 14px !important;
   }
 }
+
+/* Ant Design Menu Dark Theme Overrides */
+.ant-menu-inline,
+.ant-menu-vertical {
+  border-right: none !important;
+}
+
+.ant-menu-item,
+.ant-menu-submenu-title {
+  color: #a6b0cf !important;
+}
+
+.ant-menu-item:hover,
+.ant-menu-submenu-title:hover {
+  color: #ffffff !important;
+}
+
+.ant-menu-item-selected {
+  color: #525be5 !important;
+  background-color: rgba(82, 91, 229, 0.1) !important;
+}
+
+.ant-menu-item-selected a {
+  color: #525be5 !important;
+}
+
+.ant-menu-submenu-selected > .ant-menu-submenu-title {
+  color: #ffffff !important;
+}
+
+.ant-menu-inline .ant-menu-item,
+.ant-menu-inline .ant-menu-submenu-title {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.ant-menu-sub.ant-menu-inline {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+}

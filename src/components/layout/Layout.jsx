@@ -13,16 +13,6 @@ const Layout = ({ children }) => {
 
   // Add/remove body class when sidebar opens/closes
   useEffect(() => {
-    // Force dark theme by setting data attributes and classes
-    document.body.setAttribute("data-sidebar", "dark");
-    document.body.setAttribute("data-layout-mode", "dark");
-    document.body.setAttribute("data-topbar", "dark");
-    document.documentElement.setAttribute("data-theme", "dark");
-    document.body.classList.add("dark-theme");
-
-    // Add layout wrapper class
-    // document.body.classList.add("layout-wrapper");
-
     if (sidebarOpen) {
       document.body.classList.add("sidebar-enable");
     } else {
