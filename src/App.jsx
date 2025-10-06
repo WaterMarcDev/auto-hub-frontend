@@ -31,6 +31,7 @@ import SellerRegister from "./pages/Seller/Register";
 import SellerList from "./pages/Seller/List";
 import BuyerRegister from "./pages/Buyer/Register";
 import BuyerList from "./pages/Buyer/List";
+import { AddWaiver, WaiverList, WaiverDetails } from "./pages/Waiver";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -223,6 +224,9 @@ function App() {
                         path="/buyer/edit/:id"
                         element={<BuyerRegister />}
                       />
+                      <Route path="/waivers" element={<WaiverList />} />
+                      <Route path="/waivers/add" element={<AddWaiver />} />
+                      <Route path="/waivers/:id" element={<WaiverDetails />} />
                     </Routes>
                   </Layout>
                 </ProtectedRoute>

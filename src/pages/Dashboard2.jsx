@@ -14,6 +14,7 @@ import api from "../utils/api";
 import OurProcess from "../components/dashboard/OurProcess";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
+import WaiverCard from "../components/dashboard/WaiverCard";
 import { useNavigate } from "react-router-dom";
 import ComingSoonModal from "../components/ComingSoonModal";
 
@@ -297,12 +298,9 @@ const Dashboard2 = () => {
             },
             {
               id: "card-8",
-              title: "Wavier Form",
+              title: "Waiver Form",
               color: "#8b5cf6",
-              onClick: () => {
-                setComingFeature("Waiver Form");
-                setComingOpen(true);
-              },
+              onClick: () => navigate("/waivers/add"),
             },
           ].map((c) => (
             <div
@@ -494,6 +492,13 @@ const Dashboard2 = () => {
           {/* Earning Goal */}
           <div className="col-xl-4 col-lg-12 col-md-12 mb-4">
             <PopularPartsCarousel />
+          </div>
+        </div>
+
+        {/* Waiver Card */}
+        <div className="row">
+          <div className="col-xl-4 col-lg-6 col-md-12 mb-4">
+            <WaiverCard />
           </div>
         </div>
         {/* Car Search Modal - Independent */}

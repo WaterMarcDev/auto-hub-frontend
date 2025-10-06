@@ -10,6 +10,7 @@ import {
   InboxOutlined,
   DeleteOutlined,
   UserOutlined,
+  FileProtectOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
@@ -218,6 +219,27 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
+    // Waiver - visible for Front Desk and Admin
+    if (isFrontDesk || isAdmin) {
+      items.push({
+        key: "waiver",
+        icon: <FileProtectOutlined />,
+        label: "Waiver Form",
+        children: [
+          {
+            key: "/waivers/add",
+            icon: <BulletIcon />,
+            label: <Link to="/waivers/add">Fill Waiver Form</Link>,
+          },
+          {
+            key: "/waivers",
+            icon: <BulletIcon />,
+            label: <Link to="/waivers">Lists</Link>,
+          },
+        ],
+      });
+    }
+
     return items;
   };
 
@@ -244,6 +266,8 @@ const Sidebar = ({ isOpen }) => {
       "/seller/list": "seller",
       "/buyer/register": "buyer",
       "/buyer/list": "buyer",
+      "/waivers/add": "waiver",
+      "/waivers": "waiver",
     };
 
     const parentKey = routeMapping[path];

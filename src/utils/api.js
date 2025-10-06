@@ -206,5 +206,16 @@ export const buyerAPI = {
   search: (q) => api.get(`/buyers/search`, { params: { q } }),
 };
 
+export const waiverAPI = {
+  getAll: (params = {}) => api.get("/waivers", { params }),
+  getById: (id) => api.get(`/waivers/${id}`),
+  create: (data) => api.post(`/waivers`, data),
+  update: (id, data) => api.put(`/waivers/${id}`, data),
+  delete: (id) => api.delete(`/waivers/${id}`),
+  getBySeller: (sellerId) => api.get(`/waivers/seller/${sellerId}`),
+  getByBuyer: (buyerId) => api.get(`/waivers/buyer/${buyerId}`),
+  getStats: (params = {}) => api.get("/waivers/stats", { params }),
+};
+
 // Export the configured axios instance as default
 export default api;
