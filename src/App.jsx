@@ -29,6 +29,8 @@ import AddScrap from "./pages/Scrap/Add";
 import ScrapList from "./pages/Scrap/List";
 import SellerRegister from "./pages/Seller/Register";
 import SellerList from "./pages/Seller/List";
+import BuyerRegister from "./pages/Buyer/Register";
+import BuyerList from "./pages/Buyer/List";
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -211,6 +213,15 @@ function App() {
                       <Route
                         path="/seller/register"
                         element={<SellerRegister />}
+                      />
+                      <Route path="/buyer/list" element={<BuyerList />} />
+                      <Route
+                        path="/buyer/register"
+                        element={<BuyerRegister />}
+                      />
+                      <Route
+                        path="/buyer/edit/:id"
+                        element={<BuyerRegister />}
                       />
                     </Routes>
                   </Layout>

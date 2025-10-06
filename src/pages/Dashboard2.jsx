@@ -40,9 +40,15 @@ const Dashboard2 = () => {
   const [sellerResults, setSellerResults] = useState([]);
   const [loadingSellers, setLoadingSellers] = useState(false);
 
+  // Buyer search
+  const [buyerQuery, setBuyerQuery] = useState("");
+  const [buyerResults, setBuyerResults] = useState([]);
+  const [loadingBuyers, setLoadingBuyers] = useState(false);
+
   const [comingOpen, setComingOpen] = useState(false);
   const [comingFeature, setComingFeature] = useState("");
   const [sellerModalOpen, setSellerModalOpen] = useState(false);
+  const [buyerModalOpen, setBuyerModalOpen] = useState(false);
   const [carSearchOpen, setCarSearchOpen] = useState(false);
   const [partSearchOpen, setPartSearchOpen] = useState(false);
 
@@ -173,6 +179,30 @@ const Dashboard2 = () => {
     setSellerResults([]);
   };
 
+  const searchBuyers = async () => {
+    if (!buyerQuery || buyerQuery.length < 2) {
+      message.info("Enter at least 2 characters to search buyers");
+      return;
+    }
+    setLoadingBuyers(true);
+    try {
+      const res = await api.get(`/buyers/search`, {
+        params: { q: buyerQuery },
+      });
+      const data = res.data || res;
+      setBuyerResults(data.buyers || data);
+    } catch (err) {
+      message.error(`Buyer search failed: ${err.message}`);
+    } finally {
+      setLoadingBuyers(false);
+    }
+  };
+
+  const clearBuyers = () => {
+    setBuyerQuery("");
+    setBuyerResults([]);
+  };
+
   const carColumns = [
     { title: "VIN", dataIndex: "vin", key: "vin" },
     { title: "Make", dataIndex: ["carDetails", "make"], key: "make" },
@@ -190,6 +220,16 @@ const Dashboard2 = () => {
   ];
 
   const sellerColumns = [
+    {
+      title: "Name",
+      key: "name",
+      render: (_, r) => `${r.firstName || ""} ${r.lastName || ""}`,
+    },
+    { title: "Email", dataIndex: "email", key: "email" },
+    { title: "Phone", dataIndex: "mobileNo", key: "mobileNo" },
+  ];
+
+  const buyerColumns = [
     {
       title: "Name",
       key: "name",
@@ -362,8 +402,7 @@ const Dashboard2 = () => {
                       color="#2563eb"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setComingFeature("Buyer Search");
-                        setComingOpen(true);
+                        setBuyerModalOpen(true);
                       }}
                     >
                       Search
@@ -382,8 +421,7 @@ const Dashboard2 = () => {
                       color="#16a34a"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setComingFeature("Register Buyer");
-                        setComingOpen(true);
+                        navigate("/buyer/register");
                       }}
                     >
                       Register
@@ -632,6 +670,50 @@ const Dashboard2 = () => {
             rowKey={(r) => r._id || r.email}
             pagination={{ pageSize: 10 }}
             locale={{ emptyText: "No sellers found" }}
+          />
+        </Modal>
+
+        {/* Buyer Search Modal - Independent */}
+        <Modal
+          open={buyerModalOpen}
+          onCancel={() => setBuyerModalOpen(false)}
+          width="80%"
+          footer={null}
+          title="Search Buyer"
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              marginBottom: 12,
+              gap: 8,
+            }}
+          >
+            <Input
+              placeholder="Search buyer by name / email / phone"
+              value={buyerQuery}
+              onChange={(e) => setBuyerQuery(e.target.value)}
+              onPressEnter={searchBuyers}
+              style={{ width: "100%" }}
+            />
+            <Button
+              icon={<SearchOutlined />}
+              loading={loadingBuyers}
+              onClick={searchBuyers}
+            >
+              Search
+            </Button>
+            <Button onClick={clearBuyers} style={{ marginLeft: 8 }}>
+              Clear
+            </Button>
+          </div>
+          <Table
+            columns={buyerColumns}
+            dataSource={buyerResults}
+            rowKey={(r) => r._id || r.email}
+            pagination={{ pageSize: 10 }}
+            locale={{ emptyText: "No buyers found" }}
           />
         </Modal>
       </PageContentWrapper>

@@ -197,6 +197,27 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
+    // Buyer - visible for Front Desk and Admin
+    if (isFrontDesk || isAdmin) {
+      items.push({
+        key: "buyer",
+        icon: <UserOutlined />,
+        label: "Buyer",
+        children: [
+          {
+            key: "/buyer/register",
+            icon: <BulletIcon />,
+            label: <Link to="/buyer/register">Add New Buyer</Link>,
+          },
+          {
+            key: "/buyer/list",
+            icon: <BulletIcon />,
+            label: <Link to="/buyer/list">Buyer Lists</Link>,
+          },
+        ],
+      });
+    }
+
     return items;
   };
 
@@ -221,6 +242,8 @@ const Sidebar = ({ isOpen }) => {
       "/scrap-list": "scrapCar",
       "/seller/register": "seller",
       "/seller/list": "seller",
+      "/buyer/register": "buyer",
+      "/buyer/list": "buyer",
     };
 
     const parentKey = routeMapping[path];
