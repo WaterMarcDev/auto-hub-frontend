@@ -131,6 +131,12 @@ const Sidebar = ({ isOpen }) => {
         icon: <BulletIcon />,
         label: <Link to="/inventory-list">Inventory Lists</Link>,
       });
+      // Master Parts page (master list view)
+      carPartsChildren.push({
+        key: "/inventory-master",
+        icon: <BulletIcon />,
+        label: <Link to="/inventory-master">Master Parts</Link>,
+      });
 
       items.push({
         key: "carPartsInventory",
@@ -259,6 +265,7 @@ const Sidebar = ({ isOpen }) => {
       "/car-intake-list": "carIntake",
       "/add-inventory": "carPartsInventory",
       "/inventory-list": "carPartsInventory",
+      "/inventory-master": "carPartsInventory",
       "/car-inventory": "carInventory",
       "/add-scrap": "scrapCar",
       "/scrap-list": "scrapCar",

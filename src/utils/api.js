@@ -110,6 +110,7 @@ export const partAPI = {
 export const inventoryAPI = {
   create: (data) => api.post("/inventory", data),
   getByVIN: (vin) => api.get(`/inventory/vin/${vin}`),
+  getPartsMaster: (params = {}) => api.get(`/inventory/parts`, { params }),
   getAll: (params = {}) => api.get("/inventory", { params }),
 };
 

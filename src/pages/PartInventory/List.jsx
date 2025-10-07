@@ -11,6 +11,7 @@ import {
   Checkbox,
 } from "antd";
 import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
+import AddInventoryModal from "../../components/AddInventoryModal";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 
@@ -27,6 +28,10 @@ const PartInventoryList = () => {
   const [viewPartsData, setViewPartsData] = useState([]);
   const [printTagModalVisible, setPrintTagModalVisible] = useState(false);
   const [printTagMessage, setPrintTagMessage] = useState("");
+  const [addInventoryModalVisible, setAddInventoryModalVisible] =
+    useState(false);
+
+  // ...existing code...
 
   // Ensure modal preview container is above fixed header/sidebar
   const getPreviewContainer = () => {
@@ -425,6 +430,13 @@ const PartInventoryList = () => {
           title={<span>Car Lists</span>}
           extra={
             <div style={{ display: "flex", gap: 8 }}>
+              <Button
+                type="primary"
+                onClick={() => setAddInventoryModalVisible(true)}
+              >
+                Add Inventory Item
+              </Button>
+              {/* Master Parts button removed - use separate page */}
               <Popover
                 placement="bottomRight"
                 content={() => (
@@ -627,6 +639,13 @@ const PartInventoryList = () => {
               <div>No parts found for this VIN.</div>
             )}
           </Modal>
+
+          {/* Master Parts modal removed - use separate /inventory-master page */}
+          <AddInventoryModal
+            visible={addInventoryModalVisible}
+            onCancel={() => setAddInventoryModalVisible(false)}
+            onSuccess={() => fetchCarIntakes()}
+          />
 
           <Modal
             open={printTagModalVisible}

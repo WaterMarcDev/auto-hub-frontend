@@ -15,6 +15,7 @@ import {
   Select,
 } from "antd";
 import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
+import AddInventoryModal from "../../components/AddInventoryModal";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 
@@ -26,6 +27,8 @@ const PartInventoryAdd = () => {
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
   const [inventoryModalVisible, setInventoryModalVisible] = useState(false);
+  const [addInventoryModalVisible, setAddInventoryModalVisible] =
+    useState(false);
   const [inventoryRecord, setInventoryRecord] = useState(null);
   const [inventoryParts, setInventoryParts] = useState({});
 
@@ -541,6 +544,12 @@ const PartInventoryAdd = () => {
           title={<span>Car Lists</span>}
           extra={
             <div style={{ display: "flex", gap: 8 }}>
+              <Button
+                type="primary"
+                onClick={() => setAddInventoryModalVisible(true)}
+              >
+                Add Inventory Item
+              </Button>
               <Popover
                 placement="bottomRight"
                 content={() => (
@@ -901,6 +910,14 @@ const PartInventoryAdd = () => {
               })()
             )}
           </Modal>
+          <AddInventoryModal
+            visible={addInventoryModalVisible}
+            onCancel={() => setAddInventoryModalVisible(false)}
+            onSuccess={() => {
+              // refresh
+              fetchCarIntakes();
+            }}
+          />
         </Card>
       </PageContentWrapper>
     </React.Fragment>

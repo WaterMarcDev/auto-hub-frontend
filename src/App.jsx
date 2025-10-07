@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -9,29 +9,44 @@ import {
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/layout/Layout";
-import Dashboard from "./pages/Dashboard";
-import CarIntake from "./pages/CarIntake";
-import CarIntakeList from "./pages/CarIntakeList";
-import CarIntakeDetails from "./pages/CarIntakeDetails";
-import Login from "./pages/Login";
+import { Spin } from "antd";
+
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const CarIntake = React.lazy(() => import("./pages/CarIntake"));
+const CarIntakeList = React.lazy(() => import("./pages/CarIntakeList"));
+const CarIntakeDetails = React.lazy(() => import("./pages/CarIntakeDetails"));
+const Login = React.lazy(() => import("./pages/Login"));
 
 import { ConfigProvider, theme } from "antd";
-import Make from "./pages/Make";
-import Model from "./pages/Model";
-import Trim from "./pages/Trim";
-import Part from "./pages/Part";
-import Element from "./pages/Element";
-import PartInventoryAdd from "./pages/PartInventory/Add";
-import PartInventoryList from "./pages/PartInventory/List";
-import Dashboard2 from "./pages/Dashboard2";
-import CarInventoryList from "./pages/CarInventory/List";
-import AddScrap from "./pages/Scrap/Add";
-import ScrapList from "./pages/Scrap/List";
-import SellerRegister from "./pages/Seller/Register";
-import SellerList from "./pages/Seller/List";
-import BuyerRegister from "./pages/Buyer/Register";
-import BuyerList from "./pages/Buyer/List";
-import { AddWaiver, WaiverList, WaiverDetails } from "./pages/Waiver";
+const Make = React.lazy(() => import("./pages/Make"));
+const Model = React.lazy(() => import("./pages/Model"));
+const Trim = React.lazy(() => import("./pages/Trim"));
+const Part = React.lazy(() => import("./pages/Part"));
+const Element = React.lazy(() => import("./pages/Element"));
+const PartInventoryAdd = React.lazy(() => import("./pages/PartInventory/Add"));
+const PartInventoryList = React.lazy(() =>
+  import("./pages/PartInventory/List")
+);
+const PartInventoryMaster = React.lazy(() =>
+  import("./pages/PartInventory/MasterList")
+);
+const Dashboard2 = React.lazy(() => import("./pages/Dashboard2"));
+const CarInventoryList = React.lazy(() => import("./pages/CarInventory/List"));
+const AddScrap = React.lazy(() => import("./pages/Scrap/Add"));
+const ScrapList = React.lazy(() => import("./pages/Scrap/List"));
+const SellerRegister = React.lazy(() => import("./pages/Seller/Register"));
+const SellerList = React.lazy(() => import("./pages/Seller/List"));
+const BuyerRegister = React.lazy(() => import("./pages/Buyer/Register"));
+const BuyerList = React.lazy(() => import("./pages/Buyer/List"));
+const AddWaiver = React.lazy(() =>
+  import("./pages/Waiver").then((mod) => ({ default: mod.AddWaiver }))
+);
+const WaiverList = React.lazy(() =>
+  import("./pages/Waiver").then((mod) => ({ default: mod.WaiverList }))
+);
+const WaiverDetails = React.lazy(() =>
+  import("./pages/Waiver").then((mod) => ({ default: mod.WaiverDetails }))
+);
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -157,7 +172,20 @@ function App() {
         <Router>
           <Routes>
             {/* Authentication Routes (without main layout) */}
-            <Route path="/auth-login" element={<Login />} />
+            <Route
+              path="/auth-login"
+              element={
+                <Suspense
+                  fallback={
+                    <div style={{ textAlign: "center", padding: 40 }}>
+                      <Spin size="large" />
+                    </div>
+                  }
+                >
+                  <Login />
+                </Suspense>
+              }
+            />
             <Route
               path="/auth-register"
               element={<AuthPlaceholderPage title="Register" />}
@@ -177,57 +205,72 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Layout>
-                    <Routes>
-                      <Route path="/" element={<Dashboard2 />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/make" element={<Make />} />
-                      <Route path="/model" element={<Model />} />
-                      <Route path="/trim" element={<Trim />} />
-                      <Route path="/element" element={<Element />} />
-                      <Route path="/part" element={<Part />} />
-                      <Route path="/car-intake" element={<CarIntake />} />
-                      <Route
-                        path="/car-intake-list"
-                        element={<CarIntakeList />}
-                      />
-                      {/* Keep details on a specific details route, and use /car-intake/:id for edit (reuse form) */}
-                      <Route path="/car-intake/:id" element={<CarIntake />} />
-                      <Route
-                        path="/car-intake/:id/details"
-                        element={<CarIntakeDetails />}
-                      />
-                      <Route
-                        path="/add-inventory"
-                        element={<PartInventoryAdd />}
-                      />
-                      <Route
-                        path="/inventory-list"
-                        element={<PartInventoryList />}
-                      />
-                      <Route
-                        path="/car-inventory"
-                        element={<CarInventoryList />}
-                      />
-                      <Route path="/add-scrap" element={<AddScrap />} />
-                      <Route path="/scrap-list" element={<ScrapList />} />
-                      <Route path="/seller/list" element={<SellerList />} />
-                      <Route
-                        path="/seller/register"
-                        element={<SellerRegister />}
-                      />
-                      <Route path="/buyer/list" element={<BuyerList />} />
-                      <Route
-                        path="/buyer/register"
-                        element={<BuyerRegister />}
-                      />
-                      <Route
-                        path="/buyer/edit/:id"
-                        element={<BuyerRegister />}
-                      />
-                      <Route path="/waivers" element={<WaiverList />} />
-                      <Route path="/waivers/add" element={<AddWaiver />} />
-                      <Route path="/waivers/:id" element={<WaiverDetails />} />
-                    </Routes>
+                    <Suspense
+                      fallback={
+                        <div style={{ textAlign: "center", padding: 40 }}>
+                          <Spin size="large" />
+                        </div>
+                      }
+                    >
+                      <Routes>
+                        <Route path="/" element={<Dashboard2 />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/make" element={<Make />} />
+                        <Route path="/model" element={<Model />} />
+                        <Route path="/trim" element={<Trim />} />
+                        <Route path="/element" element={<Element />} />
+                        <Route path="/part" element={<Part />} />
+                        <Route path="/car-intake" element={<CarIntake />} />
+                        <Route
+                          path="/car-intake-list"
+                          element={<CarIntakeList />}
+                        />
+                        {/* Keep details on a specific details route, and use /car-intake/:id for edit (reuse form) */}
+                        <Route path="/car-intake/:id" element={<CarIntake />} />
+                        <Route
+                          path="/car-intake/:id/details"
+                          element={<CarIntakeDetails />}
+                        />
+                        <Route
+                          path="/add-inventory"
+                          element={<PartInventoryAdd />}
+                        />
+                        <Route
+                          path="/inventory-list"
+                          element={<PartInventoryList />}
+                        />
+                        <Route
+                          path="/inventory-master"
+                          element={<PartInventoryMaster />}
+                        />
+                        <Route
+                          path="/car-inventory"
+                          element={<CarInventoryList />}
+                        />
+                        <Route path="/add-scrap" element={<AddScrap />} />
+                        <Route path="/scrap-list" element={<ScrapList />} />
+                        <Route path="/seller/list" element={<SellerList />} />
+                        <Route
+                          path="/seller/register"
+                          element={<SellerRegister />}
+                        />
+                        <Route path="/buyer/list" element={<BuyerList />} />
+                        <Route
+                          path="/buyer/register"
+                          element={<BuyerRegister />}
+                        />
+                        <Route
+                          path="/buyer/edit/:id"
+                          element={<BuyerRegister />}
+                        />
+                        <Route path="/waivers" element={<WaiverList />} />
+                        <Route path="/waivers/add" element={<AddWaiver />} />
+                        <Route
+                          path="/waivers/:id"
+                          element={<WaiverDetails />}
+                        />
+                      </Routes>
+                    </Suspense>
                   </Layout>
                 </ProtectedRoute>
               }
