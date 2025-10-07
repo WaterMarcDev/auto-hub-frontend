@@ -70,8 +70,13 @@ export const carIntakeAPI = {
     api.patch(`/car-intake/${id}/status`, { status }),
 
   getStats: (params = {}) => api.get("/car-intake/stats", { params }),
-
   bulkUpload: (fileUrl) => api.post("/car-intake/bulk-upload", { fileUrl }),
+  // Accept either a string (fileUrl) or an object { fileUrl, defaultYard, defaultYardLocation }
+  bulkUploadScraped: (payload) =>
+    api.post(
+      "/car-intake/bulk-upload-scraped",
+      typeof payload === "string" ? { fileUrl: payload } : payload
+    ),
 };
 
 export const makeAPI = {
