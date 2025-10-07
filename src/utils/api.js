@@ -105,6 +105,7 @@ export const partAPI = {
   getById: (id) => api.get(`/part/${id}`),
   create: (data) => api.post("/part", data),
   update: (id, data) => api.put(`/part/${id}`, data),
+  delete: (id) => api.delete(`/part/${id}`),
 };
 
 export const inventoryAPI = {

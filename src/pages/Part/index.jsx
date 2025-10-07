@@ -7,12 +7,20 @@ import {
   Table,
   Space,
   Popover,
+  Popconfirm,
   Checkbox,
   Image,
+  Input,
+  Tooltip,
 } from "antd";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
-import { PlusOutlined } from "@ant-design/icons";
+import {
+  PlusOutlined,
+  SearchOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import PartForm from "./PartForm";
 
 const Part = () => {
@@ -26,21 +34,43 @@ const Part = () => {
   const [selectedPart, setSelectedPart] = React.useState(null);
   const [success, setSuccess] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const [search, setSearch] = React.useState("");
+  const [searchInput, setSearchInput] = React.useState("");
 
   const [notificationApi, contextHolder] = notification.useNotification();
 
+  // Debounced fetch: when pagination or search changes, refetch parts
   React.useEffect(() => {
+    let cancelled = false;
     const getParts = async () => {
-      const { data } = await partAPI.getAll({
+      const params = {
         page: pagination.page,
         limit: pagination.limit,
-      });
+      };
+      if (search && String(search).trim() !== "") params.search = search.trim();
+
+      const { data } = await partAPI.getAll(params);
+      if (cancelled) return;
       setParts(data.parts);
       setPagination(data.pagination);
     };
 
     getParts();
-  }, [success, pagination.page, pagination.limit]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [success, pagination.page, pagination.limit, search]);
+
+  // Debounce search input -> update `search` after delay
+  React.useEffect(() => {
+    const t = setTimeout(() => {
+      setPagination((p) => ({ ...p, page: 1 }));
+      setSearch(searchInput);
+    }, 300);
+
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   React.useEffect(() => {
     if (error) {
@@ -68,7 +98,8 @@ const Part = () => {
     {
       title: "Sr. No.",
       key: "srNo",
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        (pagination.page - 1) * pagination.limit + index + 1,
     },
     {
       title: "Part Name",
@@ -129,18 +160,48 @@ const Part = () => {
     {
       title: "Actions",
       key: "actions",
+      width: 110,
       render: (text, record) => (
-        <Space size="middle">
-          <Button
-            type="link"
-            size="small"
-            onClick={() => {
-              setSelectedPart(record);
-              setOpen(true);
-            }}
-          >
-            Edit
-          </Button>
+        <Space size="small">
+          <Tooltip title="Edit">
+            <Button
+              type="default"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setSelectedPart(record);
+                setOpen(true);
+              }}
+            />
+          </Tooltip>
+
+          <Tooltip title="Delete">
+            <Popconfirm
+              title={`Delete part "${record.name}"?`}
+              onConfirm={async () => {
+                try {
+                  await partAPI.delete(record._id);
+                  setSuccess("Part deleted successfully");
+                  setPagination((p) => ({ ...p }));
+                } catch (err) {
+                  setError(
+                    err.response?.data?.message ||
+                      err.message ||
+                      "Delete failed"
+                  );
+                }
+              }}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button
+                type="primary"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
@@ -190,10 +251,47 @@ const Part = () => {
         current="Add Inventory Parts"
       />
       <PageContentWrapper>
-        <Card
-          title="Inventory Parts"
-          extra={
-            <div style={{ display: "flex", gap: 8 }}>
+        <Card title="Inventory Parts">
+          {/* Toolbar: search (left) and controls (right) */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <Space.Compact style={{ flex: 1, maxWidth: 520 }} size="middle">
+              <Input
+                placeholder="Search parts by name"
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  if (!e.target.value) {
+                    setSearch("");
+                  }
+                }}
+                onPressEnter={() => {
+                  setPagination((p) => ({ ...p, page: 1 }));
+                  setSearch(searchInput);
+                }}
+                style={{ width: "100%" }}
+              />
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={() => {
+                  setPagination((p) => ({ ...p, page: 1 }));
+                  setSearch(searchInput);
+                }}
+              >
+                Search
+              </Button>
+            </Space.Compact>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <Popover
                 placement="bottomRight"
                 content={
@@ -237,6 +335,7 @@ const Part = () => {
               >
                 <Button>Columns</Button>
               </Popover>
+
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
@@ -248,15 +347,15 @@ const Part = () => {
                 Add New
               </Button>
             </div>
-          }
-        >
+          </div>
+
           <Table
             columns={displayedColumns}
             dataSource={parts}
             rowKey="_id"
-            size="small"
+            size="middle"
             bordered
-            scroll={{ y: 285 }}
+            scroll={{ y: 360 }}
             pagination={{
               current: pagination.page,
               pageSize: pagination.limit,
