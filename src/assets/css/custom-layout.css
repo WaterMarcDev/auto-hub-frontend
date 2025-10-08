@@ -5,7 +5,6 @@
 .ant-card-body {
   background-color: #1f293d !important;
   border: none !important;
-  border-radius: 8px !important;
 }
 
 /* Override Ant Design styles for non-form/table components */

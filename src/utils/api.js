@@ -84,6 +84,7 @@ export const makeAPI = {
   getById: (id) => api.get(`/make/${id}`),
   create: (data) => api.post("/make", data),
   update: (id, data) => api.put(`/make/${id}`, data),
+  delete: (id) => api.delete(`/make/${id}`),
 };
 
 export const modelAPI = {

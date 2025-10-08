@@ -1,7 +1,20 @@
 import React from "react";
 import TitleBox from "../../components/TitleBox";
-import { Button, Card, Checkbox, Popover, Table, notification } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Input,
+  Popover,
+  Table,
+  notification,
+} from "antd";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import { makeAPI } from "../../utils/api";
 import MakeForm from "./MakeForm";
 
@@ -16,6 +29,7 @@ const Make = () => {
   const [selectedMake, setSelectedMake] = React.useState(null);
   const [success, setSuccess] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const [search, setSearch] = React.useState("");
 
   const [notificationApi, contextHolder] = notification.useNotification();
 
@@ -23,6 +37,7 @@ const Make = () => {
     const { data } = await makeAPI.getAll({
       page: pagination.page,
       limit: pagination.limit,
+      search,
     });
     setMakes(data.makes);
     setPagination(data.pagination);
@@ -30,7 +45,7 @@ const Make = () => {
 
   React.useEffect(() => {
     getMakes();
-  }, [success, pagination.page, pagination.limit]);
+  }, [success, pagination.page, pagination.limit, search]);
 
   React.useEffect(() => {
     if (error) {
@@ -53,6 +68,18 @@ const Make = () => {
       setSuccess(null);
     }
   }, [success]);
+
+  const handleDelete = async (id) => {
+    try {
+      await makeAPI.delete(id);
+      setSuccess("Make deleted successfully.");
+      getMakes();
+    } catch (err) {
+      setError(err?.message || "Failed to delete make.");
+    }
+  };
+
+  const [deletePopoverVisible, setDeletePopoverVisible] = React.useState(null);
 
   const columns = [
     {
@@ -81,14 +108,52 @@ const Make = () => {
       render: (text, record) => (
         <div style={{ display: "flex", gap: 8 }}>
           <Button
-            type="link"
+            size="small"
+            type="text"
+            style={{ color: "#1890ff" }}
             onClick={() => {
               setSelectedMake(record);
               setOpen(true);
             }}
+            icon={<EditOutlined />}
+          />
+          <Popover
+            placement="top"
+            open={deletePopoverVisible === record._id}
+            content={
+              <div>
+                <div>Are you sure to delete this make?</div>
+                <div style={{ marginTop: 8, textAlign: "right" }}>
+                  <Button
+                    size="small"
+                    danger
+                    onClick={async () => {
+                      await handleDelete(record._id);
+                      setDeletePopoverVisible(null);
+                    }}
+                    style={{ marginRight: 8 }}
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => setDeletePopoverVisible(null)}
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+            }
+            trigger="click"
           >
-            Edit
-          </Button>
+            <Button
+              size="small"
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => setDeletePopoverVisible(record._id)}
+            />
+          </Popover>
         </div>
       ),
     },
@@ -199,6 +264,13 @@ const Make = () => {
               </div>
             }
           >
+            <Input
+              placeholder="Search Makes"
+              value={search}
+              variant="outlined"
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: "100%", marginBottom: 16 }}
+            />
             <Table
               columns={displayedColumns}
               dataSource={makes}
