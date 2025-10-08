@@ -92,6 +92,7 @@ export const modelAPI = {
   getById: (id) => api.get(`/model/${id}`),
   create: (data) => api.post("/model", data),
   update: (id, data) => api.put(`/model/${id}`, data),
+  delete: (id) => api.delete(`/model/${id}`),
 };
 
 export const trimAPI = {
@@ -99,6 +100,7 @@ export const trimAPI = {
   getById: (id) => api.get(`/trim/${id}`),
   create: (data) => api.post("/trim", data),
   update: (id, data) => api.put(`/trim/${id}`, data),
+  delete: (id) => api.delete(`/trim/${id}`),
 };
 
 export const partAPI = {
@@ -121,6 +123,7 @@ export const elementAPI = {
   getById: (id) => api.get(`/element/${id}`),
   create: (data) => api.post("/element", data),
   update: (id, data) => api.put(`/element/${id}`, data),
+  delete: (id) => api.delete(`/element/${id}`),
 };
 
 export const scrapElementAPI = {

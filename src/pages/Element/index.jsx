@@ -8,10 +8,11 @@ import {
   Space,
   Popover,
   Checkbox,
+  Input,
 } from "antd";
+import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
-import { PlusOutlined } from "@ant-design/icons";
 import ElementForm from "./ElementForm";
 
 const Element = () => {
@@ -25,21 +26,27 @@ const Element = () => {
   const [selectedElement, setSelectedElement] = React.useState(null);
   const [success, setSuccess] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const [search, setSearch] = React.useState("");
 
   const [notificationApi, contextHolder] = notification.useNotification();
 
-  React.useEffect(() => {
-    const getElements = async () => {
+  const fetchElements = React.useCallback(async () => {
+    try {
       const { data } = await elementAPI.getAll({
         page: pagination.page,
         limit: pagination.limit,
+        search,
       });
       setElements(data.elements);
       setPagination(data.pagination);
-    };
+    } catch (err) {
+      setError(err?.message || "Failed to fetch elements.");
+    }
+  }, [pagination.page, pagination.limit, search]);
 
-    getElements();
-  }, [success, pagination.page, pagination.limit]);
+  React.useEffect(() => {
+    fetchElements();
+  }, [fetchElements, success]);
 
   React.useEffect(() => {
     if (error) {
@@ -100,15 +107,52 @@ const Element = () => {
       render: (text, record) => (
         <Space size="middle">
           <Button
-            type="link"
             size="small"
+            type="text"
+            style={{ color: "#1890ff" }}
+            icon={<EditOutlined />}
             onClick={() => {
               setSelectedElement(record);
               setOpen(true);
             }}
+          />
+          <Popover
+            placement="top"
+            content={
+              <div>
+                <div>Are you sure to delete this element?</div>
+                <div style={{ marginTop: 8, textAlign: "right" }}>
+                  <Button
+                    size="small"
+                    danger
+                    onClick={async () => {
+                      await handleDelete(record._id);
+                      setDeletePopoverVisible(null);
+                    }}
+                    style={{ marginRight: 8 }}
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => setDeletePopoverVisible(null)}
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+            }
+            trigger="click"
+            open={deletePopoverVisible === record._id}
           >
-            Edit
-          </Button>
+            <Button
+              size="small"
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => setDeletePopoverVisible(record._id)}
+            />
+          </Popover>
         </Space>
       ),
     },
@@ -125,6 +169,8 @@ const Element = () => {
     columns.map((c) => getColKey(c))
   );
 
+  const [deletePopoverVisible, setDeletePopoverVisible] = React.useState(null);
+
   const toggleColumn = (key, checked) => {
     setVisibleColumns((prev) => {
       if (checked) return Array.from(new Set([...prev, key]));
@@ -140,6 +186,16 @@ const Element = () => {
   const displayedColumns = columns.filter((c) =>
     visibleColumns.includes(getColKey(c))
   );
+
+  const handleDelete = async (id) => {
+    try {
+      await elementAPI.delete(id);
+      setSuccess("Element deleted successfully.");
+      fetchElements();
+    } catch (err) {
+      setError(err?.message || "Failed to delete element.");
+    }
+  };
 
   return (
     <React.Fragment>
@@ -205,16 +261,24 @@ const Element = () => {
               >
                 <Button>Columns</Button>
               </Popover>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setSelectedElement(null);
-                  setOpen(true);
-                }}
-              >
-                Add New
-              </Button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Input
+                  placeholder="Search Elements"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{ width: 220 }}
+                />
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => {
+                    setSelectedElement(null);
+                    setOpen(true);
+                  }}
+                >
+                  Add New
+                </Button>
+              </div>
             </div>
           }
         >

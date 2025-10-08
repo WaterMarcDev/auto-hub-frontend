@@ -1,8 +1,17 @@
 import React from "react";
 import TitleBox from "../../components/TitleBox";
-import { Button, Card, Checkbox, Popover, Table, notification } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
-import { modelAPI } from "../../utils/api";
+import {
+  Button,
+  Card,
+  Checkbox,
+  Popover,
+  Table,
+  notification,
+  Input,
+  Select,
+} from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { modelAPI, makeAPI } from "../../utils/api";
 import ModelForm from "./ModelForm";
 
 const Model = () => {
@@ -16,21 +25,56 @@ const Model = () => {
   const [selectedModel, setSelectedModel] = React.useState(null);
   const [success, setSuccess] = React.useState(null);
   const [error, setError] = React.useState(null);
+  const [search, setSearch] = React.useState("");
+  const [makeOptions, setMakeOptions] = React.useState([]);
+  const [selectedMake, setSelectedMake] = React.useState(null);
 
   const [notificationApi, contextHolder] = notification.useNotification();
 
-  const getModels = async () => {
-    const { data } = await modelAPI.getAll({
+  const getModels = React.useCallback(async () => {
+    const params = {
       page: pagination.page,
       limit: pagination.limit,
-    });
+    };
+    if (search) params.search = search;
+    if (selectedMake) params.make = selectedMake;
+    const { data } = await modelAPI.getAll(params);
     setModels(data.models);
     setPagination(data.pagination);
+  }, [pagination.page, pagination.limit, search, selectedMake]);
+
+  const handleDelete = async (id) => {
+    try {
+      await modelAPI.delete(id);
+      setSuccess("Model deleted successfully.");
+      getModels();
+    } catch (err) {
+      setError(err?.message || "Failed to delete model.");
+    }
   };
+
+  const [deletePopoverVisible, setDeletePopoverVisible] = React.useState(null);
 
   React.useEffect(() => {
     getModels();
-  }, [success, pagination.page, pagination.limit]);
+  }, [getModels, success]);
+
+  // Fetch makes for the filter select
+  React.useEffect(() => {
+    let mounted = true;
+    const loadMakes = async () => {
+      try {
+        const { data } = await makeAPI.getAll({ limit: 1000 });
+        if (!mounted) return;
+        const items = data.makes || data || [];
+        setMakeOptions(items.map((m) => ({ label: m.name, value: m._id })));
+      } catch {
+        // ignore
+      }
+    };
+    loadMakes();
+    return () => (mounted = false);
+  }, []);
 
   React.useEffect(() => {
     if (error) {
@@ -41,7 +85,7 @@ const Model = () => {
       });
       setError(null);
     }
-  }, [error]);
+  }, [error, notificationApi]);
 
   React.useEffect(() => {
     if (success) {
@@ -52,7 +96,7 @@ const Model = () => {
       });
       setSuccess(null);
     }
-  }, [success]);
+  }, [success, notificationApi]);
 
   const columns = [
     {
@@ -86,15 +130,52 @@ const Model = () => {
       render: (text, record) => (
         <div style={{ display: "flex", gap: 8 }}>
           <Button
-            type="link"
             size="small"
+            type="text"
+            style={{ color: "#1890ff" }}
             onClick={() => {
               setSelectedModel(record);
               setOpen(true);
             }}
+            icon={<EditOutlined />}
+          />
+          <Popover
+            placement="top"
+            open={deletePopoverVisible === record._id}
+            content={
+              <div>
+                <div>Are you sure to delete this model?</div>
+                <div style={{ marginTop: 8, textAlign: "right" }}>
+                  <Button
+                    size="small"
+                    danger
+                    onClick={async () => {
+                      await handleDelete(record._id);
+                      setDeletePopoverVisible(null);
+                    }}
+                    style={{ marginRight: 8 }}
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => setDeletePopoverVisible(null)}
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+            }
+            trigger="click"
           >
-            Edit
-          </Button>
+            <Button
+              size="small"
+              type="text"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => setDeletePopoverVisible(record._id)}
+            />
+          </Popover>
         </div>
       ),
     },
@@ -148,7 +229,7 @@ const Model = () => {
           <Card
             title="Car Model"
             extra={
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <Popover
                   placement="bottomRight"
                   content={
@@ -205,6 +286,33 @@ const Model = () => {
               </div>
             }
           >
+            {/* Filters row: second row below card header */}
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                marginBottom: 12,
+                marginTop: 8,
+                alignItems: "center",
+                justifyContent: "flex-end",
+                width: "100%",
+              }}
+            >
+              <Select
+                placeholder="Filter by Make"
+                style={{ width: 220 }}
+                allowClear
+                options={makeOptions}
+                value={selectedMake}
+                onChange={(val) => setSelectedMake(val)}
+              />
+              <Input
+                placeholder="Search models"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ width: 280 }}
+              />
+            </div>
             <Table
               columns={displayedColumns}
               dataSource={models}
