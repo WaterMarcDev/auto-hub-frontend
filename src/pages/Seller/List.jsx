@@ -4,19 +4,20 @@ import {
   Tag,
   Button,
   Card,
-  message,
+  notification,
   Input,
   Space,
   Modal,
   Popover,
   Checkbox,
+  Popconfirm,
 } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import { sellerAPI, uploadAPI } from "../../utils/api";
+import { customerAPI, uploadAPI } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
@@ -34,10 +35,13 @@ const SellerList = () => {
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
+  const [sigModalVisible, setSigModalVisible] = useState(false);
+  const [sigModalUrl, setSigModalUrl] = useState(null);
   const [carsModalVisible, setCarsModalVisible] = useState(false);
   const [carsModalSeller, setCarsModalSeller] = useState(null);
   const [carsLoading, setCarsLoading] = useState(false);
   const navigate = useNavigate();
+  const [notificationApi, contextHolder] = notification.useNotification();
 
   const getPreviewContainer = () => {
     let el = document.getElementById("image-preview-root");
@@ -56,24 +60,41 @@ const SellerList = () => {
     setDocModalIsPdf(false);
   };
 
+  const openSignatureModal = (url) => {
+    if (!url) {
+      notificationApi.error({ message: "No signature available" });
+      return;
+    }
+    setSigModalUrl(uploadAPI.getImageUrl(url));
+    setSigModalVisible(true);
+  };
+
+  const closeSignatureModal = () => {
+    setSigModalVisible(false);
+    setSigModalUrl(null);
+  };
+
   const fetchSellers = async (params = {}) => {
     setLoading(true);
     try {
-      const res = await sellerAPI.getAll({
+      // Use customers endpoint filtered by type to keep single source of truth
+      const res = await customerAPI.getAll({
+        type: "seller",
         page: params.page || pagination.page,
         limit: params.limit || pagination.limit,
       });
 
       const data = res.data || res;
-      const fetchedSellers = data.sellers || [];
+      const fetchedSellers = data.customers || data.sellers || [];
       setSellers(fetchedSellers);
       setFilteredSellers(fetchedSellers);
       if (data.pagination) setPagination(data.pagination);
     } catch (err) {
       console.error(err);
-      message.error(
-        err.response?.data?.error || err.message || "Failed to fetch sellers"
-      );
+      notificationApi.error({
+        message: "Failed to fetch sellers",
+        description: err.response?.data?.error || err.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -121,25 +142,53 @@ const SellerList = () => {
   };
   const INITIAL_LIMIT = 10;
 
+  const minWidthForTitle = (title) => {
+    if (!title) return 80;
+    // base calculation: 12px per character + padding
+    const base = Math.max(60, title.length * 12 + 20);
+    return base;
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await customerAPI.delete(id);
+      notificationApi.success({ message: "Seller deleted successfully" });
+      fetchSellers();
+    } catch (err) {
+      console.error(err);
+      notificationApi.error({
+        message: "Failed to delete seller",
+        description: err.response?.data?.error || err.message,
+      });
+    }
+  };
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const res = await sellerAPI.getAll({ page: 1, limit: INITIAL_LIMIT });
+        const res = await customerAPI.getAll({
+          type: "seller",
+          page: 1,
+          limit: INITIAL_LIMIT,
+        });
         const data = res.data || res;
-        const fetchedSellers = data.sellers || [];
+        const fetchedSellers = data.customers || data.sellers || [];
         setSellers(fetchedSellers);
         setFilteredSellers(fetchedSellers);
         if (data.pagination) setPagination(data.pagination);
       } catch (err) {
         console.error(err);
-        message.error(
-          err.response?.data?.error || err.message || "Failed to fetch sellers"
-        );
+        notificationApi.error({
+          message: "Failed to fetch sellers",
+          description: err.response?.data?.error || err.message,
+        });
       } finally {
         setLoading(false);
       }
     })();
+    // notificationApi is stable from Ant and safe to omit from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const columns = [
@@ -152,25 +201,46 @@ const SellerList = () => {
     { title: "Email", dataIndex: "email", key: "email" },
     { title: "Mobile", dataIndex: "mobileNo", key: "mobileNo" },
     {
-      title: "DL",
-      key: "dl",
+      title: "ID Type",
+      dataIndex: "idProofType",
+      key: "idProofType",
+      render: (t) => t || "N/A",
+    },
+    {
+      title: "ID Number",
+      dataIndex: "idProofNumber",
+      key: "idProofNumber",
+      render: (n) => n || "N/A",
+    },
+    {
+      title: "ID Image",
+      key: "idImage",
       render: (text, rec) => {
-        const dl = rec.driversLicense;
-        const openDoc = (url) => {
-          if (!url) return message.error("No document available");
-          const lower = String(url).toLowerCase();
-          const isPdf = lower.endsWith(".pdf");
-          setDocModalIsPdf(isPdf);
-          setDocModalUrl(url);
-          setDocModalVisible(true);
-        };
-
-        return dl ? (
+        const idProof = rec.idProofImage;
+        return idProof ? (
           <Button
-            type="primary"
             size="small"
-            onClick={() => openDoc(uploadAPI.getImageUrl(dl))}
+            onClick={() => {
+              setDocModalIsPdf(String(idProof).toLowerCase().endsWith(".pdf"));
+              setDocModalUrl(uploadAPI.getImageUrl(idProof));
+              setDocModalVisible(true);
+            }}
           >
+            Preview
+          </Button>
+        ) : (
+          <span>N/A</span>
+        );
+      },
+    },
+    {
+      title: "Signature",
+      key: "signature",
+      render: (text, rec) => {
+        const sig =
+          rec.signatureImage || rec.signature || rec.kyc?.signature || null;
+        return sig ? (
+          <Button size="small" onClick={() => openSignatureModal(sig)}>
             Preview
           </Button>
         ) : (
@@ -190,23 +260,48 @@ const SellerList = () => {
           >
             Cars
           </Button>
+          <Popconfirm
+            title="Are you sure you want to delete this buyer?"
+            onConfirm={() => handleDelete(rec._id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button
+              size="small"
+              // type="primary"
+              danger
+              icon={<DeleteOutlined />}
+              title="Delete"
+            />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
+  // attach minWidth to columns without changing each definition
+  const columnsWithMin = columns.map((col) => {
+    const title = typeof col.title === "string" ? col.title : col.key || "col";
+    const min = minWidthForTitle(title);
+    return {
+      ...col,
+      onCell: () => ({ style: { minWidth: `${min}px` } }),
+    };
+  });
+
   const openCarsModal = async (sellerId) => {
     setCarsLoading(true);
     try {
-      const res = await sellerAPI.getById(sellerId);
+      const res = await customerAPI.getById(sellerId);
       const data = res.data || res;
-      setCarsModalSeller(data.seller || data);
+      setCarsModalSeller(data.customer || data.seller || data);
       setCarsModalVisible(true);
     } catch (err) {
       console.error(err);
-      message.error(
-        err.response?.data?.error || err.message || "Failed to load seller cars"
-      );
+      notificationApi.error({
+        message: "Failed to load seller cars",
+        description: err.response?.data?.error || err.message,
+      });
     } finally {
       setCarsLoading(false);
     }
@@ -217,8 +312,280 @@ const SellerList = () => {
     setCarsModalSeller(null);
   };
 
+  const carsColumns = [
+    {
+      title: "Sr. No.",
+      key: "srNo",
+      fixed: "left",
+      width: 70,
+      render: (text, record, index) => index + 1,
+    },
+    {
+      title: "VIN No.",
+      dataIndex: "vin",
+      key: "vin",
+      fixed: "left",
+      width: 200,
+      render: (text, record) => (
+        <Button
+          type="link"
+          onClick={() => navigate(`/car-intake/${record._id}/details`)}
+        >
+          {text || "N/A"}
+        </Button>
+      ),
+    },
+    {
+      title: "Make",
+      dataIndex: ["carDetails", "make"],
+      key: "make",
+      width: 100,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Year",
+      dataIndex: ["carDetails", "year"],
+      key: "year",
+      width: 80,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Model",
+      dataIndex: ["carDetails", "model"],
+      key: "model",
+      width: 120,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Trim",
+      dataIndex: ["carDetails", "trim"],
+      key: "trim",
+      width: 100,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Color",
+      dataIndex: ["carDetails", "color"],
+      key: "color",
+      width: 100,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Body Class",
+      dataIndex: ["carDetails", "bodyClass"],
+      key: "bodyClass",
+      width: 120,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Transmission",
+      dataIndex: ["carDetails", "transmission"],
+      key: "transmission",
+      width: 120,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Drive",
+      dataIndex: ["carDetails", "drive"],
+      key: "drive",
+      width: 100,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Fuel Type",
+      dataIndex: ["carDetails", "fuelType"],
+      key: "fuelType",
+      width: 250,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Chassis No.",
+      dataIndex: ["carDetails", "chassisNo"],
+      key: "chassisNo",
+      width: 180,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Displacement (CC)",
+      dataIndex: ["carDetails", "displacementCC"],
+      key: "displacementCC",
+      width: 180,
+      render: (text, record) => text || record?.carDetails?.engineNo || "N/A",
+    },
+    {
+      title: "Scrap Yard",
+      dataIndex: ["carDetails", "scrapYardName"],
+      key: "scrapYardName",
+      width: 120,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Scrap Yard Location",
+      dataIndex: ["carDetails", "scrapYardLocation"],
+      key: "scrapYardLocation",
+      width: 180,
+      render: (text) => text || "N/A",
+    },
+    {
+      title: "Keys",
+      key: "keys",
+      width: 80,
+      render: (_, record) => {
+        const cd = record.carDetails || {};
+        const hasKeys = cd.keys ?? cd.hasKeys ?? false;
+        return (
+          <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
+        );
+      },
+    },
+    {
+      title: "Final Price",
+      dataIndex: ["price", "finalPrice"],
+      key: "finalPrice",
+      width: 100,
+      render: (price) => `$${price || "0"}`,
+    },
+    {
+      title: "Documents",
+      key: "documents",
+      width: 160,
+      render: (_, record) => {
+        const docs = record?.kyc?.documents || {};
+        const dl = docs.driversLicense || docs.drivers_license || null;
+        const rc = docs.carRegistration || docs.car_registration || null;
+        const openDoc = (url) => {
+          if (!url) return;
+          const lower = String(url).toLowerCase();
+          const isPdf = lower.endsWith(".pdf");
+          setDocModalIsPdf(isPdf);
+          setDocModalUrl(url);
+          setDocModalVisible(true);
+        };
+        return (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            {dl ? (
+              <Tag
+                color="blue"
+                style={{ cursor: "pointer" }}
+                onClick={() => openDoc(uploadAPI.getImageUrl(dl))}
+              >
+                DL
+              </Tag>
+            ) : null}
+            {rc ? (
+              <Tag
+                color="green"
+                style={{ cursor: "pointer" }}
+                onClick={() => openDoc(uploadAPI.getImageUrl(rc))}
+              >
+                RC
+              </Tag>
+            ) : null}
+            {!dl && !rc ? <Tag color="red">None</Tag> : null}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Paid In",
+      dataIndex: ["payment", "paymentMethod"],
+      key: "paymentMethod",
+      width: 120,
+      render: (method) => <Tag color="green">{method || "N/A"}</Tag>,
+    },
+    {
+      title: "Inventory",
+      dataIndex: "inventoryAdded",
+      key: "inventoryAdded",
+      width: 100,
+      render: (inventoryAdded) => (
+        <Tag color={inventoryAdded ? "green" : "red"}>
+          {inventoryAdded ? "Yes" : "No"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Seller Copy Printed",
+      dataIndex: "sellerCopyPrinted",
+      key: "sellerCopyPrinted",
+      width: 150,
+      render: (printed) => (
+        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
+      ),
+    },
+    {
+      title: "Document Printed",
+      dataIndex: "documentPrinted",
+      key: "documentPrinted",
+      width: 140,
+      render: (printed) => (
+        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
+      ),
+    },
+    {
+      title: "Receipt Printed",
+      dataIndex: "receiptPrinted",
+      key: "receiptPrinted",
+      width: 130,
+      render: (printed) => (
+        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 150,
+      render: (status) => {
+        let color = "default";
+        if (status === "completed") color = "green";
+        else if (status === "in-progress") color = "orange";
+        else if (status === "intake") color = "blue";
+        return <Tag color={color}>{status || "Intake"}</Tag>;
+      },
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 160,
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="default"
+            size="small"
+            onClick={() => navigate(`/car-intake/${record._id}/details`)}
+          >
+            View
+          </Button>
+          <Button
+            type="primary"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => notificationApi.info({ message: "Edit disabled" })}
+            title="Edit"
+          />
+          <Button
+            type="primary"
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={() => notificationApi.info({ message: "Delete disabled" })}
+            title="Delete"
+          />
+        </Space>
+      ),
+    },
+  ];
+
+  const carsColumnsWithMin = carsColumns.map((col) => {
+    const title = typeof col.title === "string" ? col.title : col.key || "col";
+    const min = minWidthForTitle(title);
+    return { ...col, onCell: () => ({ style: { minWidth: `${min}px` } }) };
+  });
+
   return (
     <div>
+      {contextHolder}
       <TitleBox title="Seller Lists" routes={["Sellers"]} current="List" />
 
       <PageContentWrapper>
@@ -267,11 +634,12 @@ const SellerList = () => {
           </div>
 
           <Table
-            columns={columns}
+            columns={columnsWithMin}
             dataSource={filteredSellers}
             rowKey={(r) => r._id || r.email}
             loading={loading}
             size="small"
+            tableLayout="auto"
             bordered={true}
             pagination={{
               current: pagination.page,
@@ -288,7 +656,7 @@ const SellerList = () => {
         </Card>
       </PageContentWrapper>
       <Modal
-        title={"Drivers License Preview"}
+        title={"ID Proof Preview"}
         open={docModalVisible}
         footer={null}
         onCancel={closeDocModal}
@@ -307,6 +675,25 @@ const SellerList = () => {
             alt="DL"
             style={{ maxWidth: "100%", maxHeight: "60vh" }}
           />
+        )}
+      </Modal>
+      <Modal
+        title={"Signature Preview"}
+        open={sigModalVisible}
+        footer={null}
+        onCancel={closeSignatureModal}
+        width={600}
+        getContainer={getPreviewContainer}
+        bodyStyle={{ background: "#fff", textAlign: "center" }}
+      >
+        {sigModalUrl ? (
+          <img
+            src={sigModalUrl}
+            alt="Signature"
+            style={{ maxWidth: "100%", maxHeight: "60vh", background: "#fff" }}
+          />
+        ) : (
+          <div style={{ textAlign: "center" }}>No signature</div>
         )}
       </Modal>
       <Modal
@@ -331,288 +718,9 @@ const SellerList = () => {
             loading={carsLoading}
             pagination={{ pageSize: 10 }}
             size="small"
+            tableLayout="auto"
             scroll={{ x: 1800 }}
-            columns={[
-              {
-                title: "Sr. No.",
-                key: "srNo",
-                fixed: "left",
-                width: 70,
-                render: (text, record, index) => index + 1,
-              },
-              {
-                title: "VIN No.",
-                dataIndex: "vin",
-                key: "vin",
-                fixed: "left",
-                width: 200,
-                render: (text, record) => (
-                  <Button
-                    type="link"
-                    onClick={() =>
-                      navigate(`/car-intake/${record._id}/details`)
-                    }
-                  >
-                    {text || "N/A"}
-                  </Button>
-                ),
-              },
-              {
-                title: "Make",
-                dataIndex: ["carDetails", "make"],
-                key: "make",
-                width: 100,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Year",
-                dataIndex: ["carDetails", "year"],
-                key: "year",
-                width: 80,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Model",
-                dataIndex: ["carDetails", "model"],
-                key: "model",
-                width: 120,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Trim",
-                dataIndex: ["carDetails", "trim"],
-                key: "trim",
-                width: 100,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Color",
-                dataIndex: ["carDetails", "color"],
-                key: "color",
-                width: 100,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Body Class",
-                dataIndex: ["carDetails", "bodyClass"],
-                key: "bodyClass",
-                width: 120,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Transmission",
-                dataIndex: ["carDetails", "transmission"],
-                key: "transmission",
-                width: 120,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Drive",
-                dataIndex: ["carDetails", "drive"],
-                key: "drive",
-                width: 100,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Fuel Type",
-                dataIndex: ["carDetails", "fuelType"],
-                key: "fuelType",
-                width: 250,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Chassis No.",
-                dataIndex: ["carDetails", "chassisNo"],
-                key: "chassisNo",
-                width: 180,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Displacement (CC)",
-                dataIndex: ["carDetails", "displacementCC"],
-                key: "displacementCC",
-                width: 180,
-                render: (text, record) =>
-                  text || record?.carDetails?.engineNo || "N/A",
-              },
-              {
-                title: "Scrap Yard",
-                dataIndex: ["carDetails", "scrapYardName"],
-                key: "scrapYardName",
-                width: 120,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Scrap Yard Location",
-                dataIndex: ["carDetails", "scrapYardLocation"],
-                key: "scrapYardLocation",
-                width: 180,
-                render: (text) => text || "N/A",
-              },
-              {
-                title: "Keys",
-                key: "keys",
-                width: 80,
-                render: (_, record) => {
-                  const cd = record.carDetails || {};
-                  const hasKeys = cd.keys ?? cd.hasKeys ?? false;
-                  return (
-                    <Tag color={hasKeys ? "blue" : "red"}>
-                      {hasKeys ? "Yes" : "No"}
-                    </Tag>
-                  );
-                },
-              },
-              {
-                title: "Final Price",
-                dataIndex: ["price", "finalPrice"],
-                key: "finalPrice",
-                width: 100,
-                render: (price) => `$${price || "0"}`,
-              },
-              {
-                title: "Documents",
-                key: "documents",
-                width: 160,
-                render: (_, record) => {
-                  const docs = record?.kyc?.documents || {};
-                  const dl =
-                    docs.driversLicense || docs.drivers_license || null;
-                  const rc =
-                    docs.carRegistration || docs.car_registration || null;
-                  const openDoc = (url) => {
-                    if (!url) return;
-                    const lower = String(url).toLowerCase();
-                    const isPdf = lower.endsWith(".pdf");
-                    setDocModalIsPdf(isPdf);
-                    setDocModalUrl(url);
-                    setDocModalVisible(true);
-                  };
-                  return (
-                    <div
-                      style={{ display: "flex", gap: 8, alignItems: "center" }}
-                    >
-                      {dl ? (
-                        <Tag
-                          color="blue"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => openDoc(uploadAPI.getImageUrl(dl))}
-                        >
-                          DL
-                        </Tag>
-                      ) : null}
-                      {rc ? (
-                        <Tag
-                          color="green"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => openDoc(uploadAPI.getImageUrl(rc))}
-                        >
-                          RC
-                        </Tag>
-                      ) : null}
-                      {!dl && !rc ? <Tag color="red">None</Tag> : null}
-                    </div>
-                  );
-                },
-              },
-              {
-                title: "Paid In",
-                dataIndex: ["payment", "paymentMethod"],
-                key: "paymentMethod",
-                width: 120,
-                render: (method) => <Tag color="green">{method || "N/A"}</Tag>,
-              },
-              {
-                title: "Inventory",
-                dataIndex: "inventoryAdded",
-                key: "inventoryAdded",
-                width: 100,
-                render: (inventoryAdded) => (
-                  <Tag color={inventoryAdded ? "green" : "red"}>
-                    {inventoryAdded ? "Yes" : "No"}
-                  </Tag>
-                ),
-              },
-              {
-                title: "Seller Copy Printed",
-                dataIndex: "sellerCopyPrinted",
-                key: "sellerCopyPrinted",
-                width: 150,
-                render: (printed) => (
-                  <Tag color={printed ? "blue" : "red"}>
-                    {printed ? "Yes" : "No"}
-                  </Tag>
-                ),
-              },
-              {
-                title: "Document Printed",
-                dataIndex: "documentPrinted",
-                key: "documentPrinted",
-                width: 140,
-                render: (printed) => (
-                  <Tag color={printed ? "blue" : "red"}>
-                    {printed ? "Yes" : "No"}
-                  </Tag>
-                ),
-              },
-              {
-                title: "Receipt Printed",
-                dataIndex: "receiptPrinted",
-                key: "receiptPrinted",
-                width: 130,
-                render: (printed) => (
-                  <Tag color={printed ? "blue" : "red"}>
-                    {printed ? "Yes" : "No"}
-                  </Tag>
-                ),
-              },
-              {
-                title: "Status",
-                dataIndex: "status",
-                key: "status",
-                width: 150,
-                render: (status) => {
-                  let color = "default";
-                  if (status === "completed") color = "green";
-                  else if (status === "in-progress") color = "orange";
-                  else if (status === "intake") color = "blue";
-                  return <Tag color={color}>{status || "Intake"}</Tag>;
-                },
-              },
-              {
-                title: "Action",
-                key: "action",
-                width: 160,
-                render: (_, record) => (
-                  <Space>
-                    <Button
-                      type="default"
-                      size="small"
-                      onClick={() =>
-                        navigate(`/car-intake/${record._id}/details`)
-                      }
-                    >
-                      View
-                    </Button>
-                    <Button
-                      type="primary"
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={() => message.info("Edit disabled")}
-                      title="Edit"
-                    />
-                    <Button
-                      type="primary"
-                      danger
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      onClick={() => message.info("Delete disabled")}
-                      title="Delete"
-                    />
-                  </Space>
-                ),
-              },
-            ]}
+            columns={carsColumnsWithMin}
           />
         </div>
       </Modal>

@@ -208,6 +208,14 @@ export const sellerAPI = {
   search: (q) => api.get(`/sellers/search`, { params: { q } }),
 };
 
+export const customerAPI = {
+  create: (data) => api.post(`/customers`, data),
+  getAll: (params = {}) => api.get(`/customers`, { params }),
+  getById: (id) => api.get(`/customers/${id}`),
+  update: (id, data) => api.put(`/customers/${id}`, data),
+  delete: (id) => api.delete(`/customers/${id}`),
+};
+
 export const buyerAPI = {
   getAll: (params = {}) => api.get("/buyers", { params }),
   getById: (id) => api.get(`/buyers/${id}`),

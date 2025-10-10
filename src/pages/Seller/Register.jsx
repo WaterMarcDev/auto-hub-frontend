@@ -1,39 +1,74 @@
 import React, { useState } from "react";
-import { Card, Form, Input, Button, message, Row, Col } from "antd";
-import { sellerAPI } from "../../utils/api";
+import { Card, Form, Input, Button, notification, Row, Col } from "antd";
+import { customerAPI, uploadAPI } from "../../utils/api";
 import CameraUpload from "../../components/CameraUpload";
+import SignatureCanvas from "../../components/SignatureCanvas";
 
 const SellerRegister = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
-  const [uploadedDL, setUploadedDL] = useState(null);
+  const [uploadedIdProof, setUploadedIdProof] = useState(null);
+  const [signatureUrl, setSignatureUrl] = useState(null);
+  const [notificationApi, contextHolder] = notification.useNotification();
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const payload = { ...values };
+      // values used directly to build customerPayload
 
-      // If FileUpload has uploaded data, it sets `uploadedDL` state (object or string).
-      if (uploadedDL) {
-        // allow either a string (url/filename) or object
-        if (typeof uploadedDL === "string") payload.driversLicense = uploadedDL;
-        else
-          payload.driversLicense =
-            uploadedDL.filename ||
-            uploadedDL.file ||
-            uploadedDL.path ||
-            uploadedDL.url ||
-            uploadedDL;
+      // No DL upload field — we only collect customer ID proof and signature now.
+
+      // Build customer payload and call customers endpoint
+      const customerPayload = {
+        type: "seller",
+        firstName: values.firstName,
+        lastName: values.lastName,
+        mobileNo: values.mobileNo,
+        email: values.email,
+        idProofType: values.idProofType,
+        idProofNumber: values.idProofNumber,
+      };
+
+      // If ID proof was uploaded via CameraUpload, include its path
+      if (uploadedIdProof) {
+        customerPayload.idProofImage = uploadedIdProof;
       }
 
-      await sellerAPI.create(payload);
-      message.success("Seller created successfully");
+      // Include signature URL if available
+      if (signatureUrl) customerPayload.signatureImage = signatureUrl;
+
+      try {
+        await customerAPI.create(customerPayload);
+        notificationApi.success({
+          message: "Success",
+          description: "Seller created successfully",
+          duration: 3,
+        });
+        // Clear uploads and signature preview
+        setUploadedIdProof("");
+        setSignatureUrl(null);
+      } catch (custErr) {
+        console.error("Customer creation failed:", custErr);
+        notificationApi.error({
+          message: "Error",
+          description:
+            custErr?.response?.data?.error ||
+            custErr.message ||
+            "Failed to create customer",
+          duration: 3,
+        });
+      }
+
       form.resetFields();
     } catch (err) {
       console.error(err);
       const errMsg =
         err.response?.data?.error || err.message || "Failed to create seller";
-      message.error(errMsg);
+      notificationApi.error({
+        message: "Error",
+        description: errMsg,
+        duration: 3,
+      });
     } finally {
       setLoading(false);
     }
@@ -41,6 +76,7 @@ const SellerRegister = () => {
 
   return (
     <div>
+      {contextHolder}
       <div className="page-title-box">
         <div className="page-title">
           <h4>Register Seller</h4>
@@ -88,7 +124,6 @@ const SellerRegister = () => {
                     label="Mobile No."
                     name="mobileNo"
                     rules={[
-                      { required: true, message: "Mobile number is required" },
                       {
                         validator: (_, value) => {
                           if (!value) return Promise.resolve();
@@ -114,7 +149,7 @@ const SellerRegister = () => {
                       },
                     ]}
                   >
-                    <Input placeholder="Enter Mobile No" />
+                    <Input placeholder="Enter Mobile No (optional)" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
@@ -123,29 +158,140 @@ const SellerRegister = () => {
                     name="email"
                     rules={[
                       {
-                        required: true,
                         type: "email",
                         message: "Enter a valid e-mail",
                       },
                     ]}
                   >
-                    <Input placeholder="Enter a valid e-mail" />
+                    <Input placeholder="Enter a valid e-mail (optional)" />
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item label="Upload DL - DMB">
-                <CameraUpload
-                  onImageUpload={(res) => {
-                    // res is the uploaded result object (from uploadAPI)
-                    setUploadedDL(res);
-                    form.setFieldsValue({ driversLicense: res });
-                  }}
-                  autoUpload={true}
-                  multiple={false}
-                  showPreview={false}
-                />
-              </Form.Item>
+              {/* Upload DL removed as requested */}
+
+              {/* New Customer fields: ID proof type/number, image and signature */}
+              <Row gutter={24}>
+                <Col span={12}>
+                  <Form.Item
+                    label="ID Proof Type"
+                    name="idProofType"
+                    rules={[
+                      { required: true, message: "Please enter ID proof type" },
+                    ]}
+                  >
+                    <Input placeholder="e.g. NIC, Passport" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="ID Proof Number"
+                    name="idProofNumber"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please enter ID proof number",
+                      },
+                    ]}
+                  >
+                    <Input placeholder="Enter ID proof number" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={24} align="middle">
+                <Col span={12}>
+                  <Form.Item
+                    label="ID Proof Image"
+                    name="idProofImage"
+                    rules={[
+                      {
+                        required: true,
+                        message: "Please upload ID proof image",
+                      },
+                    ]}
+                  >
+                    <div
+                      style={{
+                        minHeight: 220,
+                        display: "flex",
+                      }}
+                    >
+                      {!uploadedIdProof ? (
+                        <div style={{ width: "100%" }}>
+                          <CameraUpload
+                            onImageUpload={(res) => {
+                              const imageUrl = res?.imageUrl || res?.url || res;
+                              setUploadedIdProof(imageUrl);
+                              form.setFieldsValue({ idProofImage: imageUrl });
+                            }}
+                            autoUpload={true}
+                            multiple={false}
+                            showPreview={true}
+                          />
+                        </div>
+                      ) : (
+                        <div style={{ width: "100%" }}>
+                          <div
+                            style={{
+                              border: "1px solid #d9d9d9",
+                              borderRadius: "4px",
+                              // padding: "8px",
+                              backgroundColor: "#f5f5f5",
+                              textAlign: "center",
+                              marginTop: "4px",
+                              height: "160px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <img
+                              src={uploadAPI.getImageUrl(uploadedIdProof)}
+                              alt="ID Proof"
+                              style={{
+                                maxWidth: "100%",
+                                maxHeight: "100%",
+                                objectFit: "contain",
+                              }}
+                            />
+                          </div>
+                          <Button
+                            size="small"
+                            onClick={() => {
+                              setUploadedIdProof("");
+                              form.setFieldsValue({ idProofImage: "" });
+                            }}
+                            style={{ marginTop: "16px" }}
+                          >
+                            Clear & Re-upload
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </Form.Item>
+                </Col>
+
+                <Col span={12}>
+                  <Form.Item
+                    label="Signature"
+                    name="signatureImage"
+                    rules={[
+                      { required: true, message: "Please provide signature" },
+                    ]}
+                  >
+                    <div style={{ minHeight: 220 }}>
+                      <SignatureCanvas
+                        value={signatureUrl}
+                        onChange={(val) => {
+                          setSignatureUrl(val);
+                          form.setFieldsValue({ signatureImage: val });
+                        }}
+                      />
+                    </div>
+                  </Form.Item>
+                </Col>
+              </Row>
 
               <Form.Item label="Description" name="description">
                 <Input.TextArea rows={6} />
