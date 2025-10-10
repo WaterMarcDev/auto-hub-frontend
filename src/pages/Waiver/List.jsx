@@ -8,12 +8,11 @@ import {
   message,
   Input,
   DatePicker,
-  Row,
-  Col,
+  Modal,
 } from "antd";
-import { PlusOutlined, EyeOutlined, SearchOutlined } from "@ant-design/icons";
+import { PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { waiverAPI } from "../../utils/api";
+import { customerAPI, uploadAPI } from "../../utils/api";
 import dayjs from "dayjs";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
@@ -22,7 +21,7 @@ const { RangePicker } = DatePicker;
 
 const WaiverList = () => {
   const navigate = useNavigate();
-  const [waivers, setWaivers] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -35,58 +34,115 @@ const WaiverList = () => {
     endDate: null,
   });
 
-  const fetchWaivers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = {
-        page: pagination.current,
-        limit: pagination.pageSize,
-        ...filters,
-      };
+  const [docModalVisible, setDocModalVisible] = useState(false);
+  const [docModalUrl, setDocModalUrl] = useState(null);
+  const [docModalIsPdf, setDocModalIsPdf] = useState(false);
+  const [sigModalVisible, setSigModalVisible] = useState(false);
+  const [sigModalUrl, setSigModalUrl] = useState(null);
 
-      if (filters.startDate) {
-        params.startDate = filters.startDate;
-      }
-      if (filters.endDate) {
-        params.endDate = filters.endDate;
-      }
-
-      const response = await waiverAPI.getAll(params);
-      setWaivers(response.data.waivers || []);
-      setPagination((prev) => ({
-        ...prev,
-        total: response.data.pagination?.total || 0,
-      }));
-    } catch (err) {
-      console.error("Error fetching waivers:", err);
-      message.error("Failed to fetch waivers");
-    } finally {
-      setLoading(false);
+  const getPreviewContainer = () => {
+    let el = document.getElementById("image-preview-root");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "image-preview-root";
+      el.style.zIndex = "2000";
+      document.body.appendChild(el);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.current, pagination.pageSize, filters]);
+    return el;
+  };
+
+  const openDocModal = (url) => {
+    if (!url) return;
+    setDocModalIsPdf(String(url).toLowerCase().endsWith(".pdf"));
+    setDocModalUrl(uploadAPI.getImageUrl(url));
+    setDocModalVisible(true);
+  };
+
+  const closeDocModal = () => {
+    setDocModalVisible(false);
+    setDocModalUrl(null);
+    setDocModalIsPdf(false);
+  };
+
+  const openSignatureModal = (url) => {
+    if (!url) {
+      message.error("No signature available");
+      return;
+    }
+    setSigModalUrl(uploadAPI.getImageUrl(url));
+    setSigModalVisible(true);
+  };
+
+  const closeSignatureModal = () => {
+    setSigModalVisible(false);
+    setSigModalUrl(null);
+  };
+
+  const fetchCustomers = useCallback(
+    async (opts = {}) => {
+      setLoading(true);
+      try {
+        const params = {
+          page: opts.page || pagination.current,
+          limit: opts.limit || pagination.pageSize,
+          search: opts.search ?? filters.search ?? "",
+        };
+
+        if (filters.startDate) params.startDate = filters.startDate;
+        if (filters.endDate) params.endDate = filters.endDate;
+
+        const res = await customerAPI.getAll(params);
+        const data = res.data || res;
+        const fetched = data.customers || data.sellers || data.buyers || [];
+        setCustomers(fetched);
+        setPagination((prev) => ({
+          ...prev,
+          total: data.pagination?.total || fetched.length,
+        }));
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+        message.error(
+          err.response?.data?.error ||
+            err.message ||
+            "Failed to fetch customers"
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters, pagination]
+  );
 
   useEffect(() => {
-    fetchWaivers();
-  }, [fetchWaivers]);
+    fetchCustomers({ page: 1, limit: pagination.pageSize });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = () => {
     setPagination((prev) => ({ ...prev, current: 1 }));
-    fetchWaivers();
+    fetchCustomers({
+      page: 1,
+      limit: pagination.pageSize,
+      search: filters.search,
+    });
   };
 
   const handleReset = () => {
-    setFilters({
-      search: "",
-      startDate: null,
-      endDate: null,
-    });
+    setFilters({ search: "", startDate: null, endDate: null });
     setPagination((prev) => ({ ...prev, current: 1 }));
-    setTimeout(() => fetchWaivers(), 100);
+    setTimeout(
+      () => fetchCustomers({ page: 1, limit: pagination.pageSize }),
+      100
+    );
   };
 
   const handleTableChange = (newPagination) => {
     setPagination(newPagination);
+    fetchCustomers({
+      page: newPagination.current,
+      limit: newPagination.pageSize,
+      search: filters.search,
+    });
   };
 
   const columns = [
@@ -102,9 +158,9 @@ const WaiverList = () => {
       },
     },
     {
-      title: "Customer Type",
-      dataIndex: "customerType",
-      key: "customerType",
+      title: "Type",
+      dataIndex: "type",
+      key: "type",
       width: 120,
       render: (type) => (
         <Tag color={type === "seller" ? "blue" : "green"}>
@@ -113,72 +169,88 @@ const WaiverList = () => {
       ),
     },
     {
-      title: "Seller",
-      dataIndex: "seller",
-      key: "seller",
+      title: "Name",
+      dataIndex: "firstName",
+      key: "name",
       minWidth: 160,
-      render: (seller, record) =>
-        seller ? (
-          <Button
-            type="link"
-            size="small"
-            onClick={() => navigate(`/waivers/${record._id}`)}
-          >
-            {`${seller.firstName} ${seller.lastName}`}
-          </Button>
-        ) : (
-          "N/A"
-        ),
-    },
-    {
-      title: "Buyer",
-      dataIndex: "buyer",
-      key: "buyer",
-      minWidth: 160,
-      render: (buyer, record) =>
-        buyer ? (
-          <Button
-            type="link"
-            size="small"
-            onClick={() => navigate(`/waivers/${record._id}`)}
-          >
-            {`${buyer.firstName} ${buyer.lastName}`}
-          </Button>
-        ) : (
-          "N/A"
-        ),
-    },
-    {
-      title: "ID Proof Type",
-      dataIndex: "idProofType",
-      key: "idProofType",
-      width: 150,
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "ID Proof Number",
-      dataIndex: "idProofNumber",
-      key: "idProofNumber",
-      width: 150,
-      render: (text) => text || "N/A",
-    },
-    {
-      title: "Payment Amount",
-      dataIndex: "payment",
-      key: "payment",
-      minWidth: 180,
-      render: (payment) => (
-        <div style={{ textAlign: "right", minWidth: 140 }}>
-          {payment?.amount ? `$${payment.amount.toFixed(2)}` : "N/A"}
-        </div>
+      render: (fn, rec) => (
+        <Button
+          type="link"
+          size="small"
+          onClick={() => navigate(`/waivers/${rec._id}`)}
+        >
+          {`${fn || ""} ${rec.lastName || ""}`.trim() || "N/A"}
+        </Button>
       ),
     },
     {
-      title: "Created Date",
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      minWidth: 140,
+      render: (e) => e || "N/A",
+    },
+    {
+      title: "Mobile",
+      dataIndex: "mobileNo",
+      key: "mobileNo",
+      minWidth: 120,
+      render: (m) => m || "N/A",
+    },
+    {
+      title: "ID Type",
+      dataIndex: "idProofType",
+      key: "idProofType",
+      width: 150,
+      render: (t) => t || "N/A",
+    },
+    {
+      title: "ID Number",
+      dataIndex: "idProofNumber",
+      key: "idProofNumber",
+      width: 150,
+      render: (n) => n || "N/A",
+    },
+    {
+      title: "ID Image",
+      key: "idImage",
+      minWidth: 100,
+      render: (text, rec) => {
+        const idProof =
+          rec.idProofImage ||
+          rec.documents?.idProofImage ||
+          rec.kyc?.documents?.idProofImage;
+        return idProof ? (
+          <Button size="small" onClick={() => openDocModal(idProof)}>
+            Preview
+          </Button>
+        ) : (
+          <span>N/A</span>
+        );
+      },
+    },
+    {
+      title: "Signature",
+      key: "signature",
+      minWidth: 120,
+      render: (text, rec) => {
+        const sig =
+          rec.signatureImage || rec.signature || rec.kyc?.signature || null;
+        return sig ? (
+          <Button size="small" onClick={() => openSignatureModal(sig)}>
+            Preview
+          </Button>
+        ) : (
+          <span>N/A</span>
+        );
+      },
+    },
+    {
+      title: "Created",
       dataIndex: "createdAt",
       key: "createdAt",
       width: 120,
-      render: (date) => dayjs(date).format("MMM DD, YYYY"),
+      render: (date) => (date ? dayjs(date).format("MMM DD, YYYY") : "-"),
     },
     {
       title: "Action",
@@ -222,7 +294,6 @@ const WaiverList = () => {
             </Button>
           </div>
 
-          {/* Filters */}
           <div
             style={{
               display: "flex",
@@ -233,47 +304,34 @@ const WaiverList = () => {
               justifyContent: "flex-end",
             }}
           >
-            <Space.Compact style={{ flex: 1, maxWidth: 600 }} size="middle">
-              <Input
-                placeholder="Search by ID proof, seller, or buyer"
-                value={filters.search}
-                onChange={(e) => {
-                  setFilters({ ...filters, search: e.target.value });
-                  if (!e.target.value) {
-                    handleSearch();
-                  }
-                }}
-                onPressEnter={handleSearch}
-                size="middle"
-                style={{ width: "100%" }}
-              />
+            <Input
+              placeholder="Search by name, email, or mobile"
+              value={filters.search}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, search: e.target.value }))
+              }
+              onPressEnter={handleSearch}
+              style={{ width: 400 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
               <Button
                 type="primary"
                 icon={<SearchOutlined />}
                 onClick={handleSearch}
-                size="middle"
               >
                 Search
               </Button>
-            </Space.Compact>
-
-            <div style={{ display: "flex", gap: 8 }}>
-              <Button onClick={handleReset} size="middle">
-                Reset
-              </Button>
+              <Button onClick={handleReset}>Reset</Button>
             </div>
           </div>
 
           <Table
             columns={columns}
-            dataSource={waivers}
+            dataSource={customers}
             tableLayout="auto"
             loading={loading}
-            rowKey={(record) => record._id}
-            scroll={{
-              x: "max-content",
-              y: "calc(100vh - 510px)",
-            }}
+            rowKey={(r) => r._id}
+            scroll={{ x: "max-content", y: "calc(100vh - 510px)" }}
             pagination={{
               current: pagination.current,
               pageSize: pagination.pageSize,
@@ -291,6 +349,49 @@ const WaiverList = () => {
           />
         </Card>
       </PageContentWrapper>
+
+      <Modal
+        title={"ID Proof Preview"}
+        open={docModalVisible}
+        footer={null}
+        onCancel={closeDocModal}
+        width={800}
+        getContainer={getPreviewContainer}
+        style={{ textAlign: "center" }}
+      >
+        {docModalIsPdf ? (
+          <iframe
+            src={docModalUrl}
+            style={{ width: "100%", height: "60vh", border: "none" }}
+          />
+        ) : (
+          <img
+            src={docModalUrl}
+            alt="ID"
+            style={{ maxWidth: "100%", maxHeight: "60vh" }}
+          />
+        )}
+      </Modal>
+
+      <Modal
+        title={"Signature Preview"}
+        open={sigModalVisible}
+        footer={null}
+        onCancel={closeSignatureModal}
+        width={600}
+        getContainer={getPreviewContainer}
+        bodyStyle={{ background: "#fff", textAlign: "center" }}
+      >
+        {sigModalUrl ? (
+          <img
+            src={sigModalUrl}
+            alt="Signature"
+            style={{ maxWidth: "100%", maxHeight: "60vh", background: "#fff" }}
+          />
+        ) : (
+          <div style={{ textAlign: "center" }}>No signature</div>
+        )}
+      </Modal>
     </div>
   );
 };

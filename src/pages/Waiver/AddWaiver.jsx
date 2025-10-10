@@ -1,103 +1,112 @@
-import React, { useState } from "react";
-import {
-  Card,
-  Steps,
-  Button,
-  message,
-  Radio,
-  Tabs,
-  Form,
-  Input,
-  Select,
-  Row,
-  Col,
-} from "antd";
+import React from "react";
+import { Card, Steps, message } from "antd";
 import { useNavigate } from "react-router-dom";
-import CameraUpload from "../../components/CameraUpload";
-import { waiverAPI } from "../../utils/api";
+import { customerAPI } from "../../utils/api";
 import CustomerInfoStep from "./CustomerInfoStep";
-import TransactionStep from "./TransactionStep";
 
 const { Step } = Steps;
 
 const AddWaiver = () => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Form data state
-  const [waiverData, setWaiverData] = useState({
-    customerType: "seller", // seller or buyer
-    customerMode: "select", // select or create
-    // Customer info
+  // initial data passed to the step (stateless here)
+  const initialData = {
+    customerType: "seller",
+    customerMode: "select",
     sellerId: null,
     sellerData: null,
     buyerId: null,
     buyerData: null,
-    // ID Proof info
     idProofType: "",
     idProofNumber: "",
     idProofImage: "",
     signatureImage: "",
-    // Transaction info (step 2)
-    transactionData: null,
-    employeeSignature: "",
-  });
-
-  const handleCustomerInfoComplete = (data) => {
-    setWaiverData((prev) => ({
-      ...prev,
-      ...data,
-    }));
-    setCurrentStep(1);
   };
 
-  const handleTransactionComplete = async (data) => {
-    setLoading(true);
+  const handleCustomerInfoComplete = async (data) => {
+    // Final submission: create a Customer record via customers API, then create waiver
     try {
-      // Combine all data
-      const payload = {
-        customerType: waiverData.customerType,
-        idProofType: waiverData.idProofType,
-        idProofNumber: waiverData.idProofNumber,
-        idProofImage: waiverData.idProofImage,
-        signatureImage: waiverData.signatureImage,
-        transactionData: data.transactionData,
-        employeeSignature: data.employeeSignature,
+      // Build customer payload from the CustomerInfoStep values
+      const customerPayload = {
+        type: data.type || "customer",
+        firstName: data.firstName || undefined,
+        lastName: data.lastName || undefined,
+        email: data.email || undefined,
+        mobileNo: data.mobileNo || undefined,
+        idProofType: data.idProofType || undefined,
+        idProofNumber: data.idProofNumber || undefined,
+        idProofImage: data.idProofImage || undefined,
+        signature: data.signature || undefined,
+        linkedSeller: data.linkedSeller || null,
+        linkedBuyer: data.linkedBuyer || null,
       };
 
-      // Add seller or buyer data based on customerType
-      if (waiverData.customerType === "seller") {
-        if (waiverData.sellerId) {
-          payload.sellerId = waiverData.sellerId;
-        } else if (waiverData.sellerData) {
-          payload.sellerData = waiverData.sellerData;
-        }
-      } else {
-        if (waiverData.buyerId) {
-          payload.buyerId = waiverData.buyerId;
-        } else if (waiverData.buyerData) {
-          payload.buyerData = waiverData.buyerData;
+      // If linked seller/buyer IDs are provided but key fields are missing, fetch them from customerAPI
+      if (
+        customerPayload.linkedSeller &&
+        !customerPayload.firstName &&
+        !customerPayload.lastName
+      ) {
+        try {
+          const res = await customerAPI.getById(customerPayload.linkedSeller);
+          const person = res.data || res;
+          if (person) {
+            customerPayload.firstName =
+              customerPayload.firstName ||
+              person.firstName ||
+              person.first_name;
+            customerPayload.lastName =
+              customerPayload.lastName || person.lastName || person.last_name;
+            customerPayload.email = customerPayload.email || person.email;
+            customerPayload.mobileNo =
+              customerPayload.mobileNo || person.mobileNo || person.mobile_no;
+          }
+        } catch (error) {
+          // ignore and proceed with whatever data we have
+          console.error("linkedSeller fetch error", error);
         }
       }
 
-      console.log("Submitting waiver:", payload);
+      if (
+        customerPayload.linkedBuyer &&
+        !customerPayload.firstName &&
+        !customerPayload.lastName
+      ) {
+        try {
+          const res = await customerAPI.getById(customerPayload.linkedBuyer);
+          const person = res.data || res;
+          if (person) {
+            customerPayload.firstName =
+              customerPayload.firstName ||
+              person.firstName ||
+              person.first_name;
+            customerPayload.lastName =
+              customerPayload.lastName || person.lastName || person.last_name;
+            customerPayload.email = customerPayload.email || person.email;
+            customerPayload.mobileNo =
+              customerPayload.mobileNo || person.mobileNo || person.mobile_no;
+          }
+        } catch (error) {
+          // ignore and proceed
+          console.error("linkedBuyer fetch error", error);
+        }
+      }
 
-      await waiverAPI.create(payload);
-      message.success("Waiver created successfully");
+      // Create customer via customerAPI only
+      const customerRes = await customerAPI.create(customerPayload);
+      const createdCustomer = customerRes.data || customerRes;
+
+      console.log("Customer created via waiver form:", createdCustomer);
+      message.success("Customer created successfully");
       navigate("/waivers");
     } catch (err) {
-      console.error("Error creating waiver:", err);
+      console.error("Error creating waiver/customer:", err);
       const errMsg =
         err.response?.data?.error || err.message || "Failed to create waiver";
       message.error(errMsg);
     } finally {
-      setLoading(false);
+      // finished
     }
-  };
-
-  const handleBack = () => {
-    setCurrentStep(0);
   };
 
   const steps = [
@@ -105,19 +114,8 @@ const AddWaiver = () => {
       title: "Customer Info",
       content: (
         <CustomerInfoStep
-          data={waiverData}
+          data={initialData}
           onComplete={handleCustomerInfoComplete}
-        />
-      ),
-    },
-    {
-      title: "Transaction",
-      content: (
-        <TransactionStep
-          data={waiverData}
-          onComplete={handleTransactionComplete}
-          onBack={handleBack}
-          loading={loading}
         />
       ),
     },
@@ -140,12 +138,7 @@ const AddWaiver = () => {
       <div className="container-fluid">
         <div className="page-content-wrapper">
           <Card>
-            <Steps current={currentStep} style={{ marginBottom: 24 }}>
-              {steps.map((item) => (
-                <Step key={item.title} title={item.title} />
-              ))}
-            </Steps>
-            <div className="steps-content">{steps[currentStep].content}</div>
+            <div className="steps-content">{steps[0].content}</div>
           </Card>
         </div>
       </div>

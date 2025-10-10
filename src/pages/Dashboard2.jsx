@@ -9,8 +9,8 @@ import {
   modelAPI,
   trimAPI,
   inventoryAPI,
+  customerAPI,
 } from "../utils/api";
-import api from "../utils/api";
 import OurProcess from "../components/dashboard/OurProcess";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
@@ -155,20 +155,27 @@ const Dashboard2 = () => {
     setPartResults([]);
   };
 
-  const searchSellers = async () => {
-    if (!sellerQuery || sellerQuery.length < 2) {
+  const searchSellers = async (opts = {}) => {
+    const q = (opts.query ?? sellerQuery ?? "").trim();
+    if (!q || q.length < 2) {
       message.info("Enter at least 2 characters to search sellers");
       return;
     }
     setLoadingSellers(true);
     try {
-      const res = await api.get(`/sellers/search`, {
-        params: { q: sellerQuery },
+      const res = await customerAPI.getAll({
+        type: "seller",
+        search: q,
+        page: 1,
+        limit: 50,
       });
       const data = res.data || res;
-      setSellerResults(data.sellers || data);
+      const results = data.customers || data.sellers || data;
+      setSellerResults(results || []);
     } catch (err) {
-      message.error(`Seller search failed: ${err.message}`);
+      message.error(
+        `Seller search failed: ${err.response?.data?.error || err.message}`
+      );
     } finally {
       setLoadingSellers(false);
     }
@@ -179,20 +186,27 @@ const Dashboard2 = () => {
     setSellerResults([]);
   };
 
-  const searchBuyers = async () => {
-    if (!buyerQuery || buyerQuery.length < 2) {
+  const searchBuyers = async (opts = {}) => {
+    const q = (opts.query ?? buyerQuery ?? "").trim();
+    if (!q || q.length < 2) {
       message.info("Enter at least 2 characters to search buyers");
       return;
     }
     setLoadingBuyers(true);
     try {
-      const res = await api.get(`/buyers/search`, {
-        params: { q: buyerQuery },
+      const res = await customerAPI.getAll({
+        type: "buyer",
+        search: q,
+        page: 1,
+        limit: 50,
       });
       const data = res.data || res;
-      setBuyerResults(data.buyers || data);
+      const results = data.customers || data.buyers || data;
+      setBuyerResults(results || []);
     } catch (err) {
-      message.error(`Buyer search failed: ${err.message}`);
+      message.error(
+        `Buyer search failed: ${err.response?.data?.error || err.message}`
+      );
     } finally {
       setLoadingBuyers(false);
     }
