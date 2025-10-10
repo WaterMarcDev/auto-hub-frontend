@@ -13,6 +13,7 @@ import {
   List,
   Avatar,
   Descriptions,
+  Modal,
   message,
 } from "antd";
 import { uploadAPI } from "../../utils/api";
@@ -45,6 +46,11 @@ const UserKYCAndCarDoc = ({
   const [signaturePreview, setSignaturePreview] = useState(
     formData.sellerSignature || null
   );
+  const [docModalVisible, setDocModalVisible] = useState(false);
+  const [docModalUrl, setDocModalUrl] = useState(null);
+  const [docModalIsPdf, setDocModalIsPdf] = useState(false);
+  const [sigModalVisible, setSigModalVisible] = useState(false);
+  const [sigModalUrl, setSigModalUrl] = useState(null);
   const canvasRef = useRef(null);
   const drawing = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
@@ -59,28 +65,75 @@ const UserKYCAndCarDoc = ({
     }
   }, [formData.sellerSignature, signaturePreview]);
 
+  // Debug: log initial formData and changes to seller selection
+  const debugSellerId = formData && formData.sellerId;
+  const debugSelectedSeller = formData && formData.selectedSellerData;
   useEffect(() => {
-    // initialize canvas for high DPI screens
+    console.debug("UserKYCAndCarDoc props/changes", {
+      sellerId: debugSellerId,
+      selectedSellerData: debugSelectedSeller,
+    });
+  }, [debugSellerId, debugSelectedSeller]);
+
+  useEffect(() => {
+    // initialize and keep the canvas sized correctly for high DPI and responsive layout
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const ratio = window.devicePixelRatio || 1;
-    // use the actual displayed size (boundingClientRect) to avoid offset
-    const rect = canvas.getBoundingClientRect();
-    const cssWidth = rect.width || canvas.clientWidth || 800;
-    const cssHeight = rect.height || canvas.clientHeight || 160;
-    canvas.width = Math.round(cssWidth * ratio);
-    canvas.height = Math.round(cssHeight * ratio);
-    canvas.style.width = `${cssWidth}px`;
-    canvas.style.height = `${cssHeight}px`;
-    ctx.scale(ratio, ratio);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#111827";
-    ctx.lineWidth = 2.5;
+
+    const applyContextSettings = () => {
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#111827";
+      ctx.lineWidth = 2.5;
+    };
+
+    const resizeCanvas = () => {
+      const ratio = window.devicePixelRatio || 1;
+      // use the actual displayed size (boundingClientRect) to avoid offset
+      const rect = canvas.getBoundingClientRect();
+      const cssWidth = rect.width || canvas.clientWidth || 800;
+      const cssHeight = rect.height || canvas.clientHeight || 160;
+
+      // Set the internal pixel size taking device pixel ratio into account
+      canvas.width = Math.round(cssWidth * ratio);
+      canvas.height = Math.round(cssHeight * ratio);
+
+      // Keep the CSS size so it remains responsive in layout
+      canvas.style.width = `${cssWidth}px`;
+      canvas.style.height = `${cssHeight}px`;
+
+      // Scale drawing operations to device pixels
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // reset any existing transform
+      ctx.scale(ratio, ratio);
+      applyContextSettings();
+    };
+
+    // Initial sizing
+    resizeCanvas();
+
+    // Watch for parent/container resize to keep canvas responsive
+    let ro;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => {
+        // When container/canvas size changes, reinitialize pixel buffer
+        resizeCanvas();
+      });
+      // Observe the canvas' parent if available, otherwise the canvas itself
+      const target = canvas.parentElement || canvas;
+      ro.observe(target);
+    } else {
+      // Fallback: window resize
+      window.addEventListener("resize", resizeCanvas);
+    }
 
     // Don't draw existing signature image on canvas to avoid tainting it
-    // The signature preview will be shown below the canvas instead
+    // The signature preview (saved image) will be shown below the canvas instead
+
+    return () => {
+      if (ro && ro.disconnect) ro.disconnect();
+      else window.removeEventListener("resize", resizeCanvas);
+    };
   }, []);
 
   const getCanvasPos = (e) => {
@@ -162,6 +215,31 @@ const UserKYCAndCarDoc = ({
       form.setFieldsValue({ sellerSignature: null });
   };
 
+  const openDocModal = (url) => {
+    if (!url) return;
+    const isPdf = String(url).toLowerCase().endsWith(".pdf");
+    setDocModalIsPdf(isPdf);
+    setDocModalUrl(uploadAPI.getImageUrl(url));
+    setDocModalVisible(true);
+  };
+
+  const closeDocModal = () => {
+    setDocModalVisible(false);
+    setDocModalUrl(null);
+    setDocModalIsPdf(false);
+  };
+
+  const openSignatureModal = (url) => {
+    if (!url) return;
+    setSigModalUrl(uploadAPI.getImageUrl(url));
+    setSigModalVisible(true);
+  };
+
+  const closeSignatureModal = () => {
+    setSigModalVisible(false);
+    setSigModalUrl(null);
+  };
+
   const [uploadingSignature, setUploadingSignature] = useState(false);
 
   const saveSignature = async () => {
@@ -225,15 +303,21 @@ const UserKYCAndCarDoc = ({
   };
 
   const doSearch = async (q) => {
+    // Search customers endpoint for type 'seller' to find seller records
     if (!q || q.length < 2) return;
     setSearchLoading(true);
     try {
       const api = await import("../../utils/api");
-      const res = await api.sellerAPI.search(q);
-      const sellers = (res && res.data && (res.data.sellers || res.data)) || [];
-      setSearchResults(sellers);
+      // customer API returns { customers, pagination }
+      const res = await api.customerAPI.getAll({
+        search: q,
+        type: "seller",
+        limit: 10,
+      });
+      const customers = (res && res.data && res.data.customers) || [];
+      setSearchResults(customers);
     } catch (err) {
-      console.error("Seller search error", err);
+      console.error("Seller search (customers) error", err);
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -242,23 +326,20 @@ const UserKYCAndCarDoc = ({
 
   const handleSelectSeller = (seller) => {
     if (!seller) return;
+    // Only store reference to the existing seller. Do not populate the full
+    // seller form fields when selecting an existing seller — backend updates
+    // should receive only the seller _id.
     updateFormData({
       sellerId: seller._id || seller.id || null,
-      firstName: seller.firstName || seller.first_name || "",
-      lastName: seller.lastName || seller.last_name || "",
-      email: seller.email || "",
-      mobileNo: seller.mobileNo || seller.phone || "",
-      selectedSellerData: seller, // Store the full seller object for display
+      selectedSellerData: seller,
     });
   };
 
   const handleClearSelection = () => {
+    // Clear only the seller selection; leave other form fields untouched
+    // in case user was filling/creating a new seller.
     updateFormData({
       sellerId: null,
-      firstName: "",
-      lastName: "",
-      email: "",
-      mobileNo: "",
       selectedSellerData: null,
     });
     setSearchQuery("");
@@ -277,6 +358,58 @@ const UserKYCAndCarDoc = ({
       },
     });
   };
+
+  // If editing an existing intake and sellerId is present, fetch the customer
+  // record so the selected-seller card shows up automatically.
+  const sellerIdForFetch = formData && formData.sellerId;
+
+  const hasSelectedSeller = !!(formData && formData.selectedSellerData);
+
+  useEffect(() => {
+    const fetchSellerIfNeeded = async () => {
+      if (!sellerIdForFetch) return;
+      // If selectedSellerData already present, don't refetch
+      if (hasSelectedSeller) {
+        console.debug(
+          "fetchSellerIfNeeded: already have selectedSellerData, skipping fetch",
+          {
+            sellerIdForFetch,
+          }
+        );
+        return;
+      }
+      console.debug("fetchSellerIfNeeded: attempting fetch for sellerId", {
+        sellerIdForFetch,
+      });
+      try {
+        const api = await import("../../utils/api");
+        const res = await api.customerAPI.getById(sellerIdForFetch);
+        const seller = res && res.data ? res.data.customer || res.data : null;
+        if (seller) {
+          // Ensure sellerId is present in formData and selectedSellerData is set
+          updateFormData({
+            sellerId: seller._id || seller.id || sellerIdForFetch,
+            selectedSellerData: seller,
+          });
+          // also set signature preview if available
+          if (seller.signatureImage || seller.signature) {
+            const sig = seller.signatureImage || seller.signature;
+            // set signature preview only if not already present
+            if (!signaturePreview) setSignaturePreview(sig);
+          }
+          console.debug(
+            "Fetched seller for sellerId",
+            sellerIdForFetch,
+            seller
+          );
+        }
+      } catch (err) {
+        console.error("Failed to fetch seller by ID", err);
+      }
+    };
+
+    fetchSellerIfNeeded();
+  }, [sellerIdForFetch, hasSelectedSeller, updateFormData, signaturePreview]);
 
   const renderDocumentUploadField = (
     field,
@@ -415,16 +548,53 @@ const UserKYCAndCarDoc = ({
                 <Button
                   type="link"
                   icon={<EyeOutlined />}
-                  onClick={async () => {
-                    const { uploadAPI } = await import("../../utils/api");
-                    const imageUrl = uploadAPI.getImageUrl(
-                      formData.selectedSellerData.driversLicense
-                    );
-                    window.open(imageUrl, "_blank");
-                  }}
+                  onClick={() =>
+                    openDocModal(formData.selectedSellerData.driversLicense)
+                  }
                   style={{ padding: 0, color: "#60a5fa" }}
                 >
                   View Document
+                </Button>
+              </Descriptions.Item>
+            )}
+            {/* ID Proof fields from Customer model (used when searching customers of type 'seller') */}
+            {formData.selectedSellerData.idProofType && (
+              <Descriptions.Item
+                label={
+                  <Text style={{ color: "#9ca3af" }}>
+                    {formData.selectedSellerData.idProofType}
+                  </Text>
+                }
+                contentStyle={{
+                  backgroundColor: "#374151",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+                labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+              >
+                {formData.selectedSellerData.idProofNumber || "N/A"}
+              </Descriptions.Item>
+            )}
+
+            {formData.selectedSellerData.idProofImage && (
+              <Descriptions.Item
+                label={
+                  <Text style={{ color: "#9ca3af" }}>
+                    <IdcardOutlined /> ID Proof Image
+                  </Text>
+                }
+                contentStyle={{ backgroundColor: "#374151", color: "white" }}
+                labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+              >
+                <Button
+                  type="link"
+                  icon={<EyeOutlined />}
+                  onClick={() =>
+                    openDocModal(formData.selectedSellerData.idProofImage)
+                  }
+                  style={{ padding: 0, color: "#60a5fa" }}
+                >
+                  View ID Image
                 </Button>
               </Descriptions.Item>
             )}
@@ -435,6 +605,29 @@ const UserKYCAndCarDoc = ({
                 labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
               >
                 {formData.selectedSellerData.description}
+              </Descriptions.Item>
+            )}
+            {/* Signature stored on customer as signatureImage (or signature) */}
+            {(formData.selectedSellerData.signatureImage ||
+              formData.selectedSellerData.signature) && (
+              <Descriptions.Item
+                label={<Text style={{ color: "#9ca3af" }}>Signature</Text>}
+                contentStyle={{ backgroundColor: "#374151", color: "white" }}
+                labelStyle={{ backgroundColor: "#1f2937", color: "#9ca3af" }}
+              >
+                <Button
+                  type="link"
+                  icon={<EyeOutlined />}
+                  onClick={() =>
+                    openSignatureModal(
+                      formData.selectedSellerData.signatureImage ||
+                        formData.selectedSellerData.signature
+                    )
+                  }
+                  style={{ padding: 0, color: "#60a5fa" }}
+                >
+                  View Signature
+                </Button>
               </Descriptions.Item>
             )}
           </Descriptions>
@@ -491,39 +684,20 @@ const UserKYCAndCarDoc = ({
       )}
 
       <div style={{ marginTop: 16 }}>
-        {/* Hidden fields to ensure validation runs when Search tab is active */}
+        {/* Hidden field: require sellerId when using Search Seller tab so the
+            parent form validates presence of a seller reference instead of
+            requiring the full seller form inputs. */}
         <div style={{ display: "none" }}>
           <Form.Item
-            name="firstName"
-            rules={[{ required: true, message: "First Name is required" }]}
-          >
-            <Input value={formData.firstName} readOnly />
-          </Form.Item>
-          <Form.Item
-            name="lastName"
-            rules={[{ required: true, message: "Last Name is required" }]}
-          >
-            <Input value={formData.lastName} readOnly />
-          </Form.Item>
-          <Form.Item
-            name="mobileNo"
+            name="sellerId"
             rules={[
-              { required: true, message: "Mobile No. is required" },
               {
-                pattern: /^\+?[\d\s\-()]{10,}$/,
-                message: "Invalid mobile number format",
+                required: true,
+                message: "Select a seller or create a new one",
               },
             ]}
           >
-            <Input value={formData.mobileNo} readOnly />
-          </Form.Item>
-          <Form.Item
-            name="email"
-            rules={[
-              { type: "email", message: "Please enter a valid email address" },
-            ]}
-          >
-            <Input value={formData.email} readOnly />
+            <Input value={formData.sellerId} readOnly />
           </Form.Item>
         </div>
         <Row gutter={24}>
@@ -616,183 +790,6 @@ const UserKYCAndCarDoc = ({
     </div>
   );
 
-  const renderCreateTab = () => (
-    <div>
-      <Row gutter={24}>
-        <Col span={12}>
-          <Form.Item
-            name="firstName"
-            label={<Text style={{ color: "white" }}>First Name</Text>}
-            rules={[{ required: true, message: "First Name is required" }]}
-          >
-            <Input
-              placeholder="Enter First Name"
-              style={{
-                backgroundColor: "#4b5563",
-                borderColor: "#6b7280",
-                color: "white",
-              }}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="lastName"
-            label={<Text style={{ color: "white" }}>Last Name</Text>}
-            rules={[{ required: true, message: "Last Name is required" }]}
-          >
-            <Input
-              placeholder="Enter Last Name"
-              style={{
-                backgroundColor: "#4b5563",
-                borderColor: "#6b7280",
-                color: "white",
-              }}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={24}>
-        <Col span={12}>
-          <Form.Item
-            name="mobileNo"
-            label={<Text style={{ color: "white" }}>Mobile No.</Text>}
-            rules={[
-              { required: true, message: "Mobile No. is required" },
-              {
-                pattern: /^\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/,
-                message: "Enter a valid US phone number (e.g. +1 555-555-5555)",
-              },
-            ]}
-          >
-            <Input
-              placeholder="e.g. +1 555-555-5555"
-              style={{
-                backgroundColor: "#4b5563",
-                borderColor: "#6b7280",
-                color: "white",
-              }}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="email"
-            label={<Text style={{ color: "white" }}>Email</Text>}
-            rules={[
-              { type: "email", message: "Please enter a valid email address" },
-            ]}
-          >
-            <Input
-              type="email"
-              placeholder="Enter a valid e-mail"
-              style={{
-                backgroundColor: "#4b5563",
-                borderColor: "#6b7280",
-                color: "white",
-              }}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row gutter={24}>
-        <Col span={12}>
-          {renderDocumentUploadField(
-            "dlDocument",
-            "Upload DL - DMV",
-            "Take a clear photo of the driver's license",
-            false
-          )}
-        </Col>
-        <Col span={12}>
-          {renderDocumentUploadField(
-            "carRC",
-            "Upload Car RC",
-            "Take a clear photo of the car registration document",
-            false
-          )}
-        </Col>
-      </Row>
-
-      <Row gutter={24}>
-        <Col span={12}>
-          {renderDocumentUploadField(
-            "titleCertificate",
-            "Upload Title Certificate",
-            "Take a clear photo of the vehicle title certificate",
-            false
-          )}
-        </Col>
-      </Row>
-
-      <Row gutter={24}>
-        <Col span={12}>
-          <Form.Item
-            name="sellingDate"
-            label={<Text style={{ color: "white" }}>Date of Selling</Text>}
-            rules={[{ required: true, message: "Date of Selling is required" }]}
-          >
-            <DatePicker
-              value={formData.sellingDate}
-              onChange={(d) => updateFormData({ sellingDate: d })}
-              placeholder="Select date"
-              style={{
-                width: "100%",
-                backgroundColor: "#4b5563",
-                borderColor: "#6b7280",
-              }}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            name="pickUpType"
-            label={<Text style={{ color: "white" }}>Pick Up Type</Text>}
-            rules={[{ required: true, message: "Pick Up Type is required" }]}
-          >
-            <Select
-              value={formData.pickUpType}
-              onChange={(val) => updateFormData({ pickUpType: val })}
-              placeholder="Select Pick Up Type"
-              style={{ width: "100%" }}
-              dropdownStyle={{ backgroundColor: "#374151" }}
-            >
-              <Option value="You Pull">You Pull</Option>
-              <Option value="We Pull">We Pull</Option>
-              <Option value="Bulk">Bulk</Option>
-              <Option value="Location">Location</Option>
-            </Select>
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Row>
-        <Col span={24}>
-          <Form.Item
-            name="kycDescription"
-            label={<Text style={{ color: "white" }}>Description</Text>}
-          >
-            <TextArea
-              rows={4}
-              value={formData.kycDescription}
-              onChange={(e) =>
-                updateFormData({ kycDescription: e.target.value })
-              }
-              placeholder="Enter KYC description"
-              style={{
-                backgroundColor: "#4b5563",
-                borderColor: "#6b7280",
-                color: "white",
-              }}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-    </div>
-  );
-
   return (
     <div>
       <Card
@@ -802,22 +799,11 @@ const UserKYCAndCarDoc = ({
           marginBottom: 24,
         }}
       >
-        <Tabs
-          defaultActiveKey="search"
-          type="card"
-          items={[
-            {
-              key: "search",
-              label: "Search Seller",
-              children: renderSearchTab(),
-            },
-            {
-              key: "create",
-              label: "Create / Upload New",
-              children: renderCreateTab(),
-            },
-          ]}
-        />
+        <Tabs defaultActiveKey="search" type="card">
+          <Tabs.TabPane tab="Search Seller" key="search">
+            {renderSearchTab()}
+          </Tabs.TabPane>
+        </Tabs>
       </Card>
 
       {/* Signature pad - visible for both tabs (select seller / create seller) */}
@@ -853,25 +839,35 @@ const UserKYCAndCarDoc = ({
             </Text>
           </div>
 
-          <canvas
-            ref={canvasRef}
-            id="seller-signature-canvas"
-            // // width={800}
-            // height={160}
+          <div
             style={{
               width: "100%",
-              height: "250px",
-              // maxWidth: "820px",
-              border: "1px dashed #6b7280",
+              overflow: "hidden",
               borderRadius: 6,
-              touchAction: "none",
+              border: "1px dashed #6b7280",
               background: "white",
             }}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-          />
+          >
+            <canvas
+              ref={canvasRef}
+              id="seller-signature-canvas"
+              // // width={800}
+              // height={160}
+              style={{
+                width: "100%",
+                height: "250px",
+                maxWidth: "100%",
+                display: "block",
+                boxSizing: "border-box",
+                touchAction: "none",
+                background: "white",
+              }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+            />
+          </div>
 
           <div
             style={{
@@ -1143,6 +1139,50 @@ const UserKYCAndCarDoc = ({
           Payment
         </Button>
       </div>
+      {/* Document / Signature Preview Modals */}
+      <Modal
+        open={docModalVisible}
+        onCancel={closeDocModal}
+        footer={null}
+        width={800}
+      >
+        {docModalUrl ? (
+          docModalIsPdf ? (
+            <iframe
+              src={docModalUrl}
+              title="Document Preview"
+              style={{ width: "100%", height: "70vh", border: 0 }}
+            />
+          ) : (
+            <img
+              src={docModalUrl}
+              alt="Document Preview"
+              style={{ width: "100%", height: "auto" }}
+            />
+          )
+        ) : (
+          <div style={{ textAlign: "center" }}>No document</div>
+        )}
+      </Modal>
+
+      <Modal
+        title={"Signature Preview"}
+        open={sigModalVisible}
+        onCancel={closeSignatureModal}
+        footer={null}
+        width={600}
+        bodyStyle={{ backgroundColor: "#ffffff" }}
+      >
+        {sigModalUrl ? (
+          <img
+            src={sigModalUrl}
+            alt="Signature"
+            style={{ width: "100%", height: "auto" }}
+          />
+        ) : (
+          <div style={{ textAlign: "center" }}>No signature</div>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -641,6 +641,7 @@ const SellerList = () => {
             size="small"
             tableLayout="auto"
             bordered={true}
+            scroll={{ y: "calc(100vh - 510px)" }}
             pagination={{
               current: pagination.page,
               pageSize: pagination.limit,

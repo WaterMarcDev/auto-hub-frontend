@@ -383,6 +383,7 @@ const CarIntake = () => {
   const populateFormFromCar = useCallback(
     (car) => {
       if (!car) return;
+      console.log("Populating form from car:", car);
       const populated = {};
       // Ensure VIN is populated from top-level or carDetails when editing
       populated.vin =
@@ -522,6 +523,40 @@ const CarIntake = () => {
         if (car.kyc.sellerSignature) {
           populated.sellerSignature = car.kyc.sellerSignature;
         }
+      }
+      // Backend may embed the selected seller under car.kyc.seller (full object)
+      if (car.kyc && car.kyc.seller) {
+        populated.sellerId =
+          car.kyc.seller._id || car.kyc.seller.id || populated.sellerId;
+        populated.selectedSellerData = car.kyc.seller;
+        console.debug(
+          "populateFormFromCar: attached car.kyc.seller to populated",
+          {
+            sellerId: populated.sellerId,
+            seller: car.kyc.seller,
+          }
+        );
+      }
+      // If the backend returned a linked seller object, attach it so the
+      // UserKYC component can show the selected seller card immediately.
+      if (car.seller) {
+        populated.sellerId =
+          car.seller._id || car.seller.id || populated.sellerId;
+        populated.selectedSellerData = car.seller;
+        console.debug("populateFormFromCar: attached car.seller to populated", {
+          sellerId: populated.sellerId,
+          seller: car.seller,
+        });
+      } else if (car.kyc && car.kyc.sellerId) {
+        // If only a sellerId was stored in kyc, ensure sellerId is set so the
+        // KYC component may fetch the full customer record.
+        populated.sellerId = car.kyc.sellerId || populated.sellerId;
+        console.debug(
+          "populateFormFromCar: attached kyc.sellerId to populated",
+          {
+            sellerId: populated.sellerId,
+          }
+        );
       }
       if (car.payment) {
         populated.paidTo = car.payment.paymentMethod || formData.paidTo;
