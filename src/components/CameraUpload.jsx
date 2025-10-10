@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { uploadAPI } from "../utils/api";
+import { Modal, Tabs, Button } from "antd";
 
 const CameraUpload = ({
   onImageCapture,
@@ -28,14 +29,13 @@ const CameraUpload = ({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: "environment", // Use back camera on mobile
+          facingMode: "environment",
         },
       });
 
       setStream(mediaStream);
       setIsCamera(true);
 
-      // Wait for video element to be ready
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
@@ -47,14 +47,14 @@ const CameraUpload = ({
     }
   };
 
-  // Stop camera
-  const stopCamera = () => {
+  // Stop camera (stable reference)
+  const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
     setIsCamera(false);
-  };
+  }, [stream]);
 
   // Capture photo from camera
   const capturePhoto = () => {
@@ -64,14 +64,11 @@ const CameraUpload = ({
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
 
-    // Set canvas dimensions to match video
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // Draw video frame to canvas
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convert canvas to blob
     canvas.toBlob(
       async (blob) => {
         if (blob) {
@@ -90,7 +87,6 @@ const CameraUpload = ({
       0.8
     );
 
-    // Stop camera after capture unless multiple is enabled
     if (!multiple) {
       stopCamera();
     }
@@ -98,13 +94,11 @@ const CameraUpload = ({
 
   // Handle individual image file
   const handleImageFile = async (file) => {
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       setError("Please select only image files");
       return;
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError("File size must be less than 5MB");
       return;
@@ -112,7 +106,6 @@ const CameraUpload = ({
 
     setError("");
 
-    // If autoUpload is enabled, upload immediately
     if (autoUpload) {
       setUploading(true);
       try {
@@ -126,7 +119,6 @@ const CameraUpload = ({
         setUploadSuccess(result.originalName);
         setUploading(false);
 
-        // Clear success message after 3 seconds
         setTimeout(() => setUploadSuccess(null), 3000);
         return;
       } catch (err) {
@@ -135,11 +127,9 @@ const CameraUpload = ({
           err.response?.data?.error || err.message || "Failed to upload image"
         );
         setUploading(false);
-        // Fall through to normal preview behavior on error
       }
     }
 
-    // Create preview URL for manual upload mode
     const previewUrl = URL.createObjectURL(file);
 
     const imageData = {
@@ -153,7 +143,6 @@ const CameraUpload = ({
     if (multiple) {
       setImages((prev) => [...prev, imageData]);
     } else {
-      // Clean up previous preview URL
       if (images.length > 0) {
         URL.revokeObjectURL(images[0].previewUrl);
       }
@@ -191,7 +180,6 @@ const CameraUpload = ({
         onImageUpload(multiple ? results.files : results.files[0]);
       }
 
-      // Clear images after successful upload
       images.forEach((img) => URL.revokeObjectURL(img.previewUrl));
       setImages([]);
     } catch (err) {
@@ -205,13 +193,11 @@ const CameraUpload = ({
   };
 
   // Cleanup on unmount
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
-      // Cleanup camera stream
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
-      // Cleanup preview URLs
       images.forEach((img) => {
         if (img.previewUrl) {
           URL.revokeObjectURL(img.previewUrl);
@@ -228,8 +214,62 @@ const CameraUpload = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
+  // Modal & Tab state (using antd)
+  const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("camera");
+
+  const openModal = () => {
+    setShowModal(true);
+    setActiveTab("camera");
+    // start camera when modal opens and camera tab active
+    setTimeout(() => startCamera(), 150);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+  };
+
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+    if (key === "camera") {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+  };
+
+  const handleFileInput = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    for (const f of files) {
+      await handleImageFile(f);
+    }
+    e.target.value = null;
+  };
+
+  // Stop camera whenever modal is closed to cover backdrop/Esc interactions
+  useEffect(() => {
+    if (!showModal) {
+      // ensure camera is stopped when modal closes
+      stopCamera();
+    }
+  }, [showModal, stopCamera]);
+
   return (
     <div className={`camera-upload ${className}`}>
+      {/* Trigger button to open modal */}
+      <div className="mb-2">
+        <Button
+          type="primary"
+          onClick={openModal}
+          disabled={disabled}
+          icon={<i className="fas fa-camera me-2"></i>}
+        >
+          Add Image
+        </Button>
+      </div>
+
+      {/* Alerts */}
       {error && (
         <div
           className="alert alert-danger alert-dismissible fade show"
@@ -269,120 +309,117 @@ const CameraUpload = ({
         </div>
       )}
 
-      {/* Camera View */}
-      {isCamera && (
-        <div className="camera-container mb-3">
-          <div className="position-relative">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-100 rounded"
-              style={{ maxHeight: "400px", objectFit: "cover" }}
-            />
-            <div className="camera-controls position-absolute bottom-0 start-50 translate-middle-x mb-3">
-              <button
-                type="button"
-                className="btn btn-light btn-lg rounded-circle me-3"
-                onClick={capturePhoto}
-                disabled={disabled}
-              >
-                <i className="fas fa-camera"></i>
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={stopCamera}
-              >
-                <i className="fas fa-times me-2"></i>Close Camera
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Canvas for capturing (hidden) */}
-      <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
-
-      {/* Upload Controls */}
-      {!isCamera && (
-        <div className="upload-controls mb-3">
-          <div className="d-flex gap-2 flex-wrap">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={startCamera}
-              disabled={disabled}
-            >
-              <i className="fas fa-camera me-2"></i>Open Camera
-            </button>
-
-            {images.length > 0 && !autoUpload && (
-              <button
-                type="button"
-                className="btn btn-success"
-                onClick={uploadImages}
-                disabled={disabled || uploading}
-              >
-                {uploading ? (
-                  <>
-                    <span
-                      className="spinner-border spinner-border-sm me-2"
-                      role="status"
-                    ></span>
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <i className="fas fa-cloud-upload-alt me-2"></i>
-                    Upload ({images.length})
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Image Previews */}
-      {showPreview && images.length > 0 && (
-        <div className="image-previews">
-          <h6>Selected Images:</h6>
-          <div className="row g-3">
-            {images.map((imageData) => (
-              <div key={imageData.id} className="col-md-6 col-lg-4">
-                <div className="card">
-                  <div className="position-relative">
-                    <img
-                      src={imageData.previewUrl}
-                      alt="Preview"
-                      className="card-img-top"
-                      style={{ height: "200px", objectFit: "cover" }}
+      {/* Antd Modal with Tabs */}
+      <Modal
+        open={showModal}
+        title="Add Image"
+        onCancel={closeModal}
+        footer={null}
+        centered
+        width={800}
+      >
+        <Tabs activeKey={activeTab} onChange={handleTabChange}>
+          <Tabs.TabPane tab="Camera" key="camera">
+            {isCamera ? (
+              <div className="camera-container mb-3">
+                <div className="position-relative">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-100 rounded"
+                    style={{ maxHeight: "400px", objectFit: "cover" }}
+                  />
+                  <div className="camera-controls position-absolute bottom-0 start-50 translate-middle-x mb-3">
+                    <Button
+                      shape="circle"
+                      size="large"
+                      onClick={capturePhoto}
+                      disabled={disabled}
+                      icon={<i className="fas fa-camera"></i>}
                     />
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
-                      onClick={() => removeImage(imageData.id)}
-                      disabled={disabled || uploading}
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </div>
-                  <div className="card-body p-2">
-                    <small className="text-muted d-block text-truncate">
-                      {imageData.name}
-                    </small>
-                    <small className="text-muted">
-                      {formatFileSize(imageData.size)}
-                    </small>
                   </div>
                 </div>
               </div>
-            ))}
+            ) : (
+              <div className="mb-3">
+                <p className="text-muted">Initializing camera...</p>
+              </div>
+            )}
+          </Tabs.TabPane>
+
+          <Tabs.TabPane tab="Upload" key="upload">
+            <div className="mb-3">
+              <label className="form-label text-white">
+                Select image(s) to upload
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-control bg-dark text-white border-secondary"
+                multiple={multiple}
+                onChange={handleFileInput}
+                disabled={disabled}
+              />
+            </div>
+
+            {images.length > 0 && !autoUpload && (
+              <div className="mb-3">
+                <Button
+                  type="primary"
+                  onClick={uploadImages}
+                  disabled={disabled || uploading}
+                >
+                  {uploading ? "Uploading..." : `Upload (${images.length})`}
+                </Button>
+              </div>
+            )}
+          </Tabs.TabPane>
+        </Tabs>
+
+        {/* Canvas for capturing (hidden) */}
+        <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
+
+        {/* Image previews (shared) */}
+        {showPreview && images.length > 0 && (
+          <div className="image-previews mt-3">
+            <h6>Selected Images:</h6>
+            <div className="row g-3">
+              {images.map((imageData) => (
+                <div key={imageData.id} className="col-md-6 col-lg-4">
+                  <div className="card bg-dark text-white">
+                    <div className="position-relative">
+                      <img
+                        src={imageData.previewUrl}
+                        alt="Preview"
+                        className="card-img-top"
+                        style={{ height: "200px", objectFit: "cover" }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                        onClick={() => removeImage(imageData.id)}
+                        disabled={disabled || uploading}
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <div className="card-body p-2">
+                      <small className="text-white-50 d-block text-truncate">
+                        {imageData.name}
+                      </small>
+                      <small className="text-white-50">
+                        {formatFileSize(imageData.size)}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };
