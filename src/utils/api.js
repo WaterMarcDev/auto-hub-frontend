@@ -236,5 +236,11 @@ export const waiverAPI = {
   getStats: (params = {}) => api.get("/waivers/stats", { params }),
 };
 
+export const checkInAPI = {
+  getAll: (params = {}) => api.get("/checkins", { params }),
+  create: (data) => api.post("/checkins", data),
+  checkout: (id) => api.post(`/checkins/${id}/checkout`),
+};
+
 // Export the configured axios instance as default
 export default api;

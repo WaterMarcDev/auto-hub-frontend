@@ -204,6 +204,27 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
+    // Check-In - visible for Front Desk and Admin
+    if (isFrontDesk || isAdmin) {
+      items.push({
+        key: "checkin",
+        icon: <CarOutlined />,
+        label: "Check-In",
+        children: [
+          {
+            key: "/checkins",
+            icon: <BulletIcon />,
+            label: <Link to="/checkins">Checked In</Link>,
+          },
+          {
+            key: "/checkins/all",
+            icon: <BulletIcon />,
+            label: <Link to="/checkins/all">All Check-Ins</Link>,
+          },
+        ],
+      });
+    }
+
     // Buyer - visible for Front Desk and Admin
     if (isFrontDesk || isAdmin) {
       items.push({
@@ -275,6 +296,8 @@ const Sidebar = ({ isOpen }) => {
       "/buyer/list": "buyer",
       "/waivers/add": "waiver",
       "/waivers": "waiver",
+      "/checkins": "checkin",
+      "/checkins/all": "checkin",
     };
 
     const parentKey = routeMapping[path];

@@ -47,6 +47,8 @@ const WaiverList = React.lazy(() =>
 const WaiverDetails = React.lazy(() =>
   import("./pages/Waiver").then((mod) => ({ default: mod.WaiverDetails }))
 );
+const CheckedInList = React.lazy(() => import("./pages/CheckIn/CheckedInList"));
+const AllCheckins = React.lazy(() => import("./pages/CheckIn/AllCheckins"));
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -269,6 +271,8 @@ function App() {
                           path="/waivers/:id"
                           element={<WaiverDetails />}
                         />
+                        <Route path="/checkins" element={<CheckedInList />} />
+                        <Route path="/checkins/all" element={<AllCheckins />} />
                       </Routes>
                     </Suspense>
                   </Layout>

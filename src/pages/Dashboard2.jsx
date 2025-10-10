@@ -16,6 +16,7 @@ import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
 import { useNavigate } from "react-router-dom";
 import ComingSoonModal from "../components/ComingSoonModal";
+import CreateCheckInModal from "../components/CheckIn/CreateCheckInModal";
 
 const { TabPane } = Tabs;
 
@@ -46,11 +47,12 @@ const Dashboard2 = () => {
   const [loadingBuyers, setLoadingBuyers] = useState(false);
 
   const [comingOpen, setComingOpen] = useState(false);
-  const [comingFeature, setComingFeature] = useState("");
+  const [comingFeature, _setComingFeature] = useState("");
   const [sellerModalOpen, setSellerModalOpen] = useState(false);
   const [buyerModalOpen, setBuyerModalOpen] = useState(false);
   const [carSearchOpen, setCarSearchOpen] = useState(false);
   const [partSearchOpen, setPartSearchOpen] = useState(false);
+  const [checkInOpen, setCheckInOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -296,8 +298,7 @@ const Dashboard2 = () => {
               title: "Check-In",
               color: "#525ce5",
               onClick: () => {
-                setComingFeature("Check-In");
-                setComingOpen(true);
+                setCheckInOpen(true);
               },
             },
             {
@@ -305,8 +306,7 @@ const Dashboard2 = () => {
               title: "Check-Out",
               color: "#23c58f",
               onClick: () => {
-                setComingFeature("Check-Out");
-                setComingOpen(true);
+                navigate("/checkins");
               },
             },
             {
@@ -732,6 +732,18 @@ const Dashboard2 = () => {
         open={comingOpen}
         onClose={() => setComingOpen(false)}
         featureName={comingFeature}
+      />
+      <CreateCheckInModal
+        open={checkInOpen}
+        onClose={() => setCheckInOpen(false)}
+        onCreated={(created) => {
+          // close modal and optionally navigate or show message; keep simple for now
+          setCheckInOpen(false);
+          if (created) {
+            // navigate to checked-in list to show the new item
+            navigate("/checkins");
+          }
+        }}
       />
     </React.Fragment>
   );
