@@ -68,6 +68,7 @@ const CarIntakeList = () => {
       key: "srNo",
       fixed: "left",
       minWidth: 70,
+      width: 70,
       render: (text, record, index) =>
         (pagination.current - 1) * pagination.pageSize + index + 1,
     },
@@ -77,6 +78,7 @@ const CarIntakeList = () => {
       key: "vin",
       fixed: "left",
       minWidth: 100,
+      width: 100,
       render: (text, record) => (
         <Button
           type="link"
@@ -387,6 +389,8 @@ const CarIntakeList = () => {
     visibleColumns.includes(getColKey(c))
   );
 
+  // `minWidth` is handled via CSS with tableLayout="auto" elsewhere; keep columns as-is
+
   // Fetch car intakes data
   const fetchCarIntakes = useCallback(
     async (page = 1, pageSize = 10, search = "", statusArg) => {
@@ -662,7 +666,6 @@ const CarIntakeList = () => {
             loading={loading}
             rowKey={(record) => record._id || record.vin}
             scroll={{
-              x: "max-content", // Horizontal scroll for many columns
               y: "calc(100vh - 510px)", // Dynamic height based on viewport
             }}
             pagination={{
