@@ -17,6 +17,7 @@ import {
 import { UploadOutlined } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
+import getStatusColor from "../../utils/statusColors";
 
 const AddScrap = () => {
   const [loading, setLoading] = useState(false);
@@ -278,14 +279,9 @@ const AddScrap = () => {
       dataIndex: "status",
       key: "status",
       minWidth: 150,
-      render: (status) => {
-        let color = "default";
-        if (status === "completed") color = "green";
-        else if (status === "in-progress") color = "orange";
-        else if (status === "intake") color = "blue";
-
-        return <Tag color={color}>{status || "Intake"}</Tag>;
-      },
+      render: (status) => (
+        <Tag color={getStatusColor(status)}>{status || "Intake"}</Tag>
+      ),
     },
     {
       title: "Action",

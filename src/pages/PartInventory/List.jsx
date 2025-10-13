@@ -13,6 +13,7 @@ import {
 import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
 import AddInventoryModal from "../../components/AddInventoryModal";
 import TitleBox from "../../components/TitleBox";
+import getStatusColor from "../../utils/statusColors";
 import PageContentWrapper from "../../components/PageContentWrapper";
 
 const PartInventoryList = () => {
@@ -292,14 +293,9 @@ const PartInventoryList = () => {
       dataIndex: "status",
       key: "status",
       minWidth: 150,
-      render: (status) => {
-        let color = "default";
-        if (status === "completed") color = "green";
-        else if (status === "in-progress") color = "orange";
-        else if (status === "intake") color = "blue";
-
-        return <Tag color={color}>{status || "Intake"}</Tag>;
-      },
+      render: (status) => (
+        <Tag color={getStatusColor(status)}>{status || "Intake"}</Tag>
+      ),
     },
     {
       title: "Action",

@@ -20,6 +20,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../utils/api";
+import getStatusColor from "../utils/statusColors";
 
 const CarIntakeDetails = () => {
   const { id } = useParams();
@@ -411,7 +412,9 @@ const CarIntakeDetails = () => {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Status">
-                <Tag>{car?.status || "intake"}</Tag>
+                <Tag color={getStatusColor(car?.status)}>
+                  {car?.status || "intake"}
+                </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Final Price">
                 {car?.price?.finalPrice ? `$${car?.price?.finalPrice}` : "N/A"}

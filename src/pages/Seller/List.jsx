@@ -20,6 +20,7 @@ import {
 import { customerAPI, uploadAPI } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
+import getStatusColor from "../../utils/statusColors";
 import PageContentWrapper from "../../components/PageContentWrapper";
 
 const SellerList = () => {
@@ -536,13 +537,9 @@ const SellerList = () => {
       dataIndex: "status",
       key: "status",
       width: 150,
-      render: (status) => {
-        let color = "default";
-        if (status === "completed") color = "green";
-        else if (status === "in-progress") color = "orange";
-        else if (status === "intake") color = "blue";
-        return <Tag color={color}>{status || "Intake"}</Tag>;
-      },
+      render: (status) => (
+        <Tag color={getStatusColor(status)}>{status || "Intake"}</Tag>
+      ),
     },
     {
       title: "Action",

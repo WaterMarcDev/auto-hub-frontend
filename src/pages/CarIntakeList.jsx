@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   message,
   Table,
@@ -11,6 +11,7 @@ import {
   Popover,
   Checkbox,
   Upload,
+  Select,
   Spin,
   Input,
 } from "antd";
@@ -22,6 +23,7 @@ import {
   SearchOutlined,
 } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../utils/api";
+import getStatusColor from "../utils/statusColors";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
 import PageContentWrapper from "../components/PageContentWrapper";
@@ -35,6 +37,7 @@ const CarIntakeList = () => {
     total: 0,
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState(null);
   const navigate = useNavigate();
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
@@ -317,11 +320,7 @@ const CarIntakeList = () => {
       key: "status",
       minWidth: 150,
       render: (status) => {
-        let color = "default";
-        if (status === "completed") color = "green";
-        else if (status === "in-progress") color = "orange";
-        else if (status === "intake") color = "blue";
-
+        const color = getStatusColor(status);
         return <Tag color={color}>{status || "Intake"}</Tag>;
       },
     },
@@ -389,42 +388,52 @@ const CarIntakeList = () => {
   );
 
   // Fetch car intakes data
-  const fetchCarIntakes = async (page = 1, pageSize = 10, search = "") => {
-    setLoading(true);
-    try {
-      const params = { page, limit: pageSize };
-      if (search && search.trim()) {
-        params.search = search.trim();
-      }
-      const res = await carIntakeAPI.getAll(params);
-      const data = res.data || res;
-      setCarIntakes(data.carIntakes || data);
+  const fetchCarIntakes = useCallback(
+    async (page = 1, pageSize = 10, search = "", statusArg) => {
+      setLoading(true);
+      try {
+        const params = { page, limit: pageSize };
+        if (search && search.trim()) {
+          params.search = search.trim();
+        }
+        // include status filter if any (single value)
+        const statusToSend = statusArg !== undefined ? statusArg : statusFilter;
+        if (statusToSend) {
+          params.status = statusToSend;
+        }
+        // debug
+        // console.debug("fetchCarIntakes params:", params);
+        const res = await carIntakeAPI.getAll(params);
+        const data = res.data || res;
+        setCarIntakes(data.carIntakes || data);
 
-      // Update pagination info if available from backend
-      if (data.pagination) {
-        setPagination({
-          current: data.pagination.page,
-          pageSize: data.pagination.limit,
-          total: data.pagination.total,
-        });
-      } else {
-        // Fallback if pagination data not available
-        setPagination((prev) => ({
-          ...prev,
-          current: page,
-          pageSize: pageSize,
-        }));
+        // Update pagination info if available from backend
+        if (data.pagination) {
+          setPagination({
+            current: data.pagination.page,
+            pageSize: data.pagination.limit,
+            total: data.pagination.total,
+          });
+        } else {
+          // Fallback if pagination data not available
+          setPagination((prev) => ({
+            ...prev,
+            current: page,
+            pageSize: pageSize,
+          }));
+        }
+      } catch (error) {
+        message.error(
+          `Failed to fetch car intakes: ${
+            error.response?.data?.error || error.message
+          }`
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      message.error(
-        `Failed to fetch car intakes: ${
-          error.response?.data?.error || error.message
-        }`
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [statusFilter]
+  );
 
   // Handle table pagination change
   const handleTableChange = (paginationConfig) => {
@@ -440,6 +449,13 @@ const CarIntakeList = () => {
     setSearchTerm(value);
     // Reset to first page when searching
     fetchCarIntakes(1, pagination.pageSize, value);
+  };
+
+  const handleStatusChange = (value) => {
+    const newStatus = value || null;
+    setStatusFilter(newStatus);
+    // Reset to first page when filtering. Pass the selected value directly so request uses it immediately.
+    fetchCarIntakes(1, pagination.pageSize, searchTerm, newStatus);
   };
 
   // Handle actions
@@ -504,7 +520,7 @@ const CarIntakeList = () => {
 
   useEffect(() => {
     fetchCarIntakes();
-  }, []);
+  }, [fetchCarIntakes]);
 
   return (
     <div>
@@ -550,6 +566,29 @@ const CarIntakeList = () => {
                 Search
               </Button>
             </Space.Compact>
+
+            <div style={{ minWidth: 260 }}>
+              <Select
+                placeholder="Filter by status"
+                value={statusFilter}
+                onChange={handleStatusChange}
+                allowClear
+                style={{ width: "100%" }}
+                options={[
+                  { label: "Intake", value: "intake" },
+                  { label: "VIN Fetched", value: "vin-fetched" },
+                  { label: "Details Uploaded", value: "details-uploaded" },
+                  { label: "Images Uploaded", value: "images-uploaded" },
+                  { label: "Parts Uploaded", value: "parts-uploaded" },
+                  { label: "Price Uploaded", value: "price-uploaded" },
+                  { label: "KYC Uploaded", value: "kyc-uploaded" },
+                  { label: "Payment Done", value: "payment-done" },
+                  { label: "Scraped", value: "scraped" },
+                  { label: "Sold", value: "sold" },
+                  { label: "Towed", value: "towed" },
+                ]}
+              />
+            </div>
 
             <div style={{ display: "flex", gap: 8 }}>
               <Popover

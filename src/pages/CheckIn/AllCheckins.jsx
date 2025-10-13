@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Card, Table, Button, Space, Input, Select, message } from "antd";
 import { checkInAPI } from "../../utils/api";
+import getStatusColor from "../../utils/statusColors";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import dayjs from "dayjs";
@@ -88,7 +89,12 @@ const AllCheckins = () => {
         return `1 + ${n}`;
       },
     },
-    { title: "Status", dataIndex: "status", key: "status" },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => <Tag color={getStatusColor(status)}>{status}</Tag>,
+    },
   ];
 
   return (

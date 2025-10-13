@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Card, Table, Button, Space, Input, Modal, message } from "antd";
 import { checkInAPI } from "../../utils/api";
+import getStatusColor from "../../utils/statusColors";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import CreateCheckInModal from "../../components/CheckIn/CreateCheckInModal";
@@ -114,7 +115,12 @@ const CheckedInList = () => {
         return `1 + ${n}`;
       },
     },
-    { title: "Status", dataIndex: "status", key: "status" },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => <Tag color={getStatusColor(status)}>{status}</Tag>,
+    },
     {
       title: "Action",
       key: "action",
