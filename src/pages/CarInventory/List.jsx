@@ -24,6 +24,11 @@ import getStatusColor from "../../utils/statusColors";
 const CarInventoryList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
@@ -53,7 +58,9 @@ const CarInventoryList = () => {
       key: "srNo",
       fixed: "left",
       minWidth: 70,
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        (pagination?.current - 1) * pagination?.pageSize + index + 1 ||
+        index + 1,
     },
     {
       title: "VIN No.",
@@ -302,7 +309,7 @@ const CarInventoryList = () => {
       minWidth: 160,
       render: (text, record) => (
         <Space>
-          <Button onClick={() => openExtractElementsModal(record)}>
+          <Button size="small" onClick={() => openExtractElementsModal(record)}>
             Extract Elements
           </Button>
         </Space>
@@ -341,12 +348,19 @@ const CarInventoryList = () => {
     setLoading(true);
     try {
       const res = await carIntakeAPI.getAll({
-        page: 1,
-        limit: 100,
-        status: "part-added-to-inventory",
+        page: pagination.current,
+        limit: pagination.pageSize,
+        status: "part-added-to-inventory, payment-done",
       });
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
+      if (data.pagination) {
+        setPagination({
+          current: data.pagination.page,
+          pageSize: data.pagination.limit,
+          total: data.pagination.total,
+        });
+      }
     } catch (error) {
       message.error(
         `Failed to fetch car intakes: ${
@@ -360,7 +374,7 @@ const CarInventoryList = () => {
 
   useEffect(() => {
     fetchCarIntakes();
-  }, []);
+  }, [pagination.current, pagination.pageSize]);
 
   const openExtractElementsModal = async (record) => {
     const vin = record?.vin || record?._id || "";
@@ -469,73 +483,6 @@ const CarInventoryList = () => {
 
   return (
     <div>
-      <style>
-        {`
-          .dark-table .ant-table {
-            background-color: #1f2937 !important;
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-table-thead > tr > th {
-            background-color: #374151 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr > td {
-            background-color: #1f2937 !important;
-            color: #f9fafb !important;
-            border-color: #4b5563 !important;
-          }
-          
-          .dark-table .ant-table-tbody > tr:hover > td {
-            background-color: #374151 !important;
-          }
-          
-          .dark-table .ant-table-fixed-left,
-          .dark-table .ant-table-fixed-right {
-            background-color: #1f2937 !important;
-          }
-          
-          .dark-table .ant-pagination {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item {
-            background-color: #374151;
-            border-color: #4b5563;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item a {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item:hover {
-            border-color: #6b7280;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-item-active {
-            background-color: #1d4ed8;
-            border-color: #1d4ed8;
-          }
-          
-          .dark-table .ant-pagination .ant-pagination-prev,
-          .dark-table .ant-pagination .ant-pagination-next {
-            color: #f9fafb;
-          }
-          
-          .dark-table .ant-select-selector {
-            background-color: #374151 !important;
-            border-color: #4b5563 !important;
-            color: #f9fafb !important;
-          }
-          
-          .dark-table .ant-select-arrow {
-            color: #f9fafb;
-          }
-        `}
-      </style>
-
       <TitleBox
         title="Car Inventory Lists"
         routes={["Scrap Yard", "Car Intake"]}
@@ -601,13 +548,23 @@ const CarInventoryList = () => {
               rowKey={(record) => record._id || record.vin}
               tableLayout="auto"
               scroll={{
-                x: 2500,
-                y: 600,
+                y: "calc(100vh - 510px)",
               }}
               pagination={{
-                pageSize: 10,
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
                 showSizeChanger: true,
                 showQuickJumper: true,
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} of ${total} items`,
+              }}
+              onChange={(pagination) => {
+                setPagination({
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                });
               }}
               size="small"
               bordered

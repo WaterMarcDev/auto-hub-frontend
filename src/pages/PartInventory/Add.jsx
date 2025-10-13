@@ -23,6 +23,11 @@ import PageContentWrapper from "../../components/PageContentWrapper";
 const PartInventoryAdd = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
@@ -52,7 +57,9 @@ const PartInventoryAdd = () => {
       key: "srNo",
       fixed: "left",
       minWidth: 70,
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        (pagination?.current - 1) * pagination?.pageSize + index + 1 ||
+        index + 1,
     },
     {
       title: "VIN No.",
@@ -335,13 +342,26 @@ const PartInventoryAdd = () => {
   const fetchCarIntakes = async () => {
     setLoading(true);
     try {
+      console.log(
+        "Fetching car intakes, page:",
+        pagination.current,
+        "limit:",
+        pagination.pageSize
+      );
       const res = await carIntakeAPI.getAll({
-        page: 1,
-        limit: 100,
+        page: pagination.current,
+        limit: pagination.pageSize,
         status: "payment-done",
       });
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
+      if (data.pagination) {
+        setPagination({
+          current: data.pagination.page,
+          pageSize: data.pagination.limit,
+          total: data.pagination.total,
+        });
+      }
     } catch (error) {
       message.error(
         `Failed to fetch car intakes: ${
@@ -355,7 +375,7 @@ const PartInventoryAdd = () => {
 
   useEffect(() => {
     fetchCarIntakes();
-  }, []);
+  }, [pagination.current, pagination.pageSize]);
 
   // Build inventory data for selected parts of a given record
   const openInventoryModal = (record) => {
@@ -533,8 +553,6 @@ const PartInventoryAdd = () => {
         routes={["Scrap Yard", "Inventory"]}
         current={"Add Inventory"}
       />
-      {/* Page Content */}
-
       <PageContentWrapper>
         <Card
           title={<span>Car Lists</span>}
@@ -599,13 +617,23 @@ const PartInventoryAdd = () => {
             rowKey={(record) => record._id || record.vin}
             tableLayout="auto"
             scroll={{
-              x: 2500, // Horizontal scroll for many columns
-              y: 600, // Vertical scroll height
+              y: "calc(100vh - 510px)", // Dynamic height based on viewport
             }}
             pagination={{
-              pageSize: 10,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
               showSizeChanger: true,
               showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} items`,
+            }}
+            onChange={(pagination) => {
+              setPagination({
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+              });
             }}
             size="small"
             bordered

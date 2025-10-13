@@ -309,8 +309,7 @@ const MasterList = () => {
             tableLayout="auto"
             bordered
             scroll={{
-              x: "max-content", // Horizontal scroll for many columns
-              y: "calc(100vh - 510px)", // Dynamic height based on viewport
+              y: "calc(100vh - 510px)",
             }}
             columns={[
               {

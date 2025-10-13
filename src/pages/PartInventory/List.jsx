@@ -19,6 +19,11 @@ import PageContentWrapper from "../../components/PageContentWrapper";
 const PartInventoryList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
 
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
@@ -53,7 +58,9 @@ const PartInventoryList = () => {
       key: "srNo",
       fixed: "left",
       minWidth: 70,
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        (pagination?.current - 1) * pagination?.pageSize + index + 1 ||
+        index + 1,
     },
     {
       title: "VIN No.",
@@ -346,12 +353,19 @@ const PartInventoryList = () => {
     setLoading(true);
     try {
       const res = await carIntakeAPI.getAll({
-        page: 1,
-        limit: 100,
+        page: pagination.current,
+        limit: pagination.pageSize,
         status:
           "part-added-to-inventory,elements-scraped,car-added-to-inventory,elements-scraped,scraped",
       });
       const data = res.data || res;
+      if (data.pagination) {
+        setPagination({
+          current: data.pagination.page,
+          pageSize: data.pagination.limit,
+          total: data.pagination.total,
+        });
+      }
       setCarIntakes(data.carIntakes || data);
     } catch (error) {
       message.error(
@@ -366,7 +380,7 @@ const PartInventoryList = () => {
 
   useEffect(() => {
     fetchCarIntakes();
-  }, []);
+  }, [pagination.current, pagination.pageSize]);
 
   // View parts by VIN - open modal and fetch inventory items
   const fetchViewPartsByVIN = async (vin) => {
@@ -418,9 +432,6 @@ const PartInventoryList = () => {
         routes={["Scrap Yard", "Inventory"]}
         current={"Inventory List"}
       />
-
-      {/* Page Content */}
-
       <PageContentWrapper>
         <Card
           title={<span>Car Lists</span>}
@@ -486,13 +497,23 @@ const PartInventoryList = () => {
             rowKey={(record) => record._id || record.vin}
             tableLayout="auto"
             scroll={{
-              x: 2500, // Horizontal scroll for many columns
-              y: 600, // Vertical scroll height
+              y: "calc(100vh - 450px)", // Vertical scroll height
             }}
             pagination={{
-              pageSize: 10,
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
               showSizeChanger: true,
               showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} items`,
+            }}
+            onChange={(pagination) => {
+              setPagination({
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+              });
             }}
             size="small"
             bordered

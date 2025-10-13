@@ -18,6 +18,11 @@ import getStatusColor from "../../utils/statusColors";
 const ScrapList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const navigate = useNavigate();
 
   const [docModalVisible, setDocModalVisible] = useState(false);
@@ -45,7 +50,9 @@ const ScrapList = () => {
       key: "srNo",
       fixed: "left",
       minWidth: 70,
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        (pagination?.current - 1) * pagination?.pageSize + index + 1 ||
+        index + 1,
     },
     {
       title: "VIN No.",
@@ -352,12 +359,19 @@ const ScrapList = () => {
     setLoading(true);
     try {
       const res = await carIntakeAPI.getAll({
-        page: 1,
-        limit: 100,
+        page: pagination.current,
+        limit: pagination.pageSize,
         status: "scraped",
       });
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
+      if (data.pagination) {
+        setPagination({
+          current: data.pagination.page,
+          pageSize: data.pagination.limit,
+          total: data.pagination.total,
+        });
+      }
     } catch (error) {
       message.error(
         `Failed to fetch car intakes: ${
@@ -371,7 +385,7 @@ const ScrapList = () => {
 
   useEffect(() => {
     fetchCarIntakes();
-  }, []);
+  }, [pagination.current, pagination.pageSize]);
 
   const fetchViewElementsByVIN = async (vin) => {
     if (!vin) return;
@@ -533,13 +547,23 @@ const ScrapList = () => {
               rowKey={(record) => record._id || record.vin}
               tableLayout="auto"
               scroll={{
-                x: 2500,
-                y: 600,
+                y: "calc(100vh - 510px)",
               }}
               pagination={{
-                pageSize: 10,
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
                 showSizeChanger: true,
                 showQuickJumper: true,
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} of ${total} items`,
+              }}
+              onChange={(pagination) => {
+                setPagination({
+                  current: pagination.current,
+                  pageSize: pagination.pageSize,
+                  total: pagination.total,
+                });
               }}
               size="small"
               bordered

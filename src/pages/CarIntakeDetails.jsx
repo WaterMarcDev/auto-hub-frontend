@@ -285,7 +285,7 @@ const CarIntakeDetails = () => {
   };
 
   const renderTransaction = () => {
-    if (!transaction) return <span>N/A</span>;
+    if (!transaction) return <div className="p-3"></div>;
 
     return (
       <Card title="Transaction Summary" size="small" style={{ marginTop: 16 }}>
@@ -470,7 +470,7 @@ const CarIntakeDetails = () => {
                     />
                   </div>
                 ) : (
-                  "N/A"
+                  <></>
                 )}
               </Descriptions.Item>
 
