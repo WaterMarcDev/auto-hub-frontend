@@ -326,6 +326,71 @@ const CarIntakeDetails = () => {
     );
   };
 
+  const openPrintSlip = () => {
+    // Fetch the rendered slip HTML from the backend and print inside a hidden iframe
+    (async () => {
+      try {
+        const base = (
+          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+        ).replace(/\/api\/?$/, "");
+        const url = `${base}/api/car-intake/${id}/print-payment`;
+
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) throw new Error(`Failed to load slip: ${res.status}`);
+        const html = await res.text();
+
+        // Create hidden iframe
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.style.visibility = "hidden";
+        document.body.appendChild(iframe);
+
+        const idoc = iframe.contentWindow || iframe.contentDocument;
+        const doc = idoc.document || idoc;
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        // Wait for content to load then print
+        const whenLoaded = () =>
+          new Promise((resolve) => {
+            const win = iframe.contentWindow || iframe;
+            if (win.document.readyState === "complete") return resolve(win);
+            win.addEventListener("load", () => resolve(win));
+          });
+
+        const win = await whenLoaded();
+        try {
+          win.focus();
+        } catch {
+          /* ignore */
+        }
+        try {
+          win.print();
+        } catch (errPrint) {
+          console.error(errPrint);
+        }
+
+        // Cleanup the iframe after a short delay (allow user to finish print dialog)
+        setTimeout(() => {
+          try {
+            document.body.removeChild(iframe);
+          } catch {
+            /* ignore */
+          }
+        }, 2000);
+      } catch (err) {
+        console.error(err);
+        message.error(err.message || "Failed to print slip");
+      }
+    })();
+  };
+
   return (
     <div>
       <div className="page-title-box">
@@ -424,26 +489,26 @@ const CarIntakeDetails = () => {
               </Descriptions.Item>
 
               <Descriptions.Item label="Seller Name">
-                {car?.seller
-                  ? `${car?.seller?.firstName || ""} ${
-                      car?.seller?.lastName || ""
+                {car?.kyc?.seller
+                  ? `${car?.kyc?.seller?.firstName || ""} ${
+                      car?.kyc?.seller?.lastName || ""
                     }`.trim() || "N/A"
                   : "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Seller Phone">
-                {(car?.seller &&
-                  (car?.seller?.mobileNo || car?.seller?.phone)) ||
+                {(car?.kyc?.seller &&
+                  (car?.kyc?.seller?.mobileNo || car?.kyc?.seller?.phone)) ||
                   "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Seller Email">
-                {(car?.seller && car?.seller?.email) || "N/A"}
+                {(car?.kyc?.seller && car?.kyc?.seller?.email) || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Seller Description" span={2}>
-                {(car?.seller && car?.seller?.description) || "N/A"}
+                {(car?.kyc?.seller && car?.kyc?.seller?.description) || "N/A"}
               </Descriptions.Item>
 
               <Descriptions.Item label="Seller Signature" span={2}>
-                {car?.kyc?.sellerSignature ? (
+                {car?.kyc?.seller?.signatureImage ? (
                   <div
                     style={{
                       padding: 12,
@@ -455,7 +520,7 @@ const CarIntakeDetails = () => {
                     }}
                   >
                     <Image
-                      src={car.kyc.sellerSignature}
+                      src={car.kyc.seller.signatureImage}
                       alt="Seller Signature"
                       style={{
                         maxWidth: "400px",
@@ -490,12 +555,7 @@ const CarIntakeDetails = () => {
               <Button
                 size="large"
                 icon={<PrinterOutlined />}
-                onClick={() =>
-                  showModal(
-                    "Print Receipt",
-                    "Receipt is being generated and printed"
-                  )
-                }
+                onClick={openPrintSlip}
                 style={{
                   backgroundColor: "#8b5cf6",
                   borderColor: "#8b5cf6",
