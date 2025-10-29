@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Form,
   Input,
@@ -17,13 +17,46 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const Payment = ({ formData, prevStep, saveStep, nextStep }) => {
+const TAX_RATE = 0.06625; // 6.625%
+
+const Payment = ({
+  formData,
+  prevStep,
+  saveStep,
+  nextStep,
+  updateFormData,
+}) => {
+  // compute derived tax values from entered amount
+  const grossAmount = useMemo(() => {
+    const v =
+      formData.finalPrice ?? formData.paymentAmount ?? formData.paidAmount ?? 0;
+    const n = Number(v) || 0;
+    return Number(n.toFixed(2));
+  }, [formData.finalPrice, formData.paymentAmount, formData.paidAmount]);
+
+  const taxAmount = useMemo(
+    () => Number(Math.abs(grossAmount * TAX_RATE).toFixed(2)),
+    [grossAmount]
+  );
+  // Payment in car intake uses transaction type 'debit' (tax deducted)
+  const netAmount = useMemo(
+    () => Number((grossAmount - taxAmount).toFixed(2)),
+    [grossAmount, taxAmount]
+  );
   const handleInventoryClick = async () => {
     // Save the payment step via saveStep so the backend receives
     // the step payload and status. Then move to the next UI step.
     try {
       if (typeof saveStep === "function") {
-        await saveStep(6, formData);
+        // Ensure the backend receives the taxRate so Transaction hooks compute/stores tax
+        const stepPayload = {
+          ...formData,
+          finalPrice: grossAmount,
+          paymentAmount: grossAmount,
+          taxRate: TAX_RATE,
+          taxAmount,
+        };
+        await saveStep(6, stepPayload);
       }
     } catch (e) {
       console.error("Failed to save step 6:", e);
@@ -246,8 +279,59 @@ const Payment = ({ formData, prevStep, saveStep, nextStep }) => {
                     `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                   }
                   parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                  onChange={(val) => {
+                    // Keep parent formData in sync so derived values update
+                    if (typeof updateFormData === "function") {
+                      updateFormData({ finalPrice: val });
+                    }
+                  }}
                 />
               </Form.Item>
+
+              {/* Tax summary */}
+              <div style={{ marginTop: 8 }}>
+                <Card
+                  size="small"
+                  style={{ backgroundColor: "#111827", color: "white" }}
+                >
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Text style={{ color: "#9ca3af" }}>Tax Rate</Text>
+                      <Text style={{ color: "white" }}>
+                        {(TAX_RATE * 100).toFixed(3)}%
+                      </Text>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Text style={{ color: "#9ca3af" }}>Tax Amount</Text>
+                      <Text style={{ color: "white" }}>
+                        ${taxAmount.toFixed(2)}
+                      </Text>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <Text style={{ color: "#9ca3af" }}>Net Amount</Text>
+                      <Text style={{ color: "white" }}>
+                        ${netAmount.toFixed(2)}
+                      </Text>
+                    </div>
+                  </Space>
+                </Card>
+              </div>
             </Col>
           </Row>
 

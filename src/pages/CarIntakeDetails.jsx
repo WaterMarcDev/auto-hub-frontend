@@ -287,12 +287,39 @@ const CarIntakeDetails = () => {
   const renderTransaction = () => {
     if (!transaction) return <div className="p-3"></div>;
 
+    // Helpers / fallbacks for tax values
+    const rawAmount = Number(transaction?.amount) || 0;
+    const rate =
+      transaction && typeof transaction.taxRate === "number"
+        ? Number(transaction.taxRate)
+        : undefined;
+    const defaultRate = 0.06625; // 6.625% fallback
+    const usedRate = rate != null ? rate : defaultRate;
+    const taxAmt =
+      transaction && typeof transaction.taxAmount === "number"
+        ? Number(transaction.taxAmount)
+        : Math.round((Math.abs(rawAmount) * usedRate + Number.EPSILON) * 100) /
+          100;
+
+    const netAmt =
+      transaction && typeof transaction.netAmount === "number"
+        ? Number(transaction.netAmount)
+        : transaction?.type === "debit"
+        ? Math.round((rawAmount - taxAmt + Number.EPSILON) * 100) / 100
+        : Math.round((rawAmount + taxAmt + Number.EPSILON) * 100) / 100;
+
+    const fmt = (v) => `$${(Number(v) || 0).toFixed(2)}`;
+
     return (
-      <Card title="Transaction Summary" size="small" style={{ marginTop: 16 }}>
+      <Card
+        title="Transaction Summary"
+        size="small"
+        style={{ marginTop: 16, marginBottom: 80 }}
+      >
         <Row gutter={16}>
           <Col xs={24} sm={12} md={8}>
             <div style={{ color: "#e5e7eb" }}>Amount</div>
-            <div style={{ fontWeight: 600 }}>${transaction?.amount || 0}</div>
+            <div style={{ fontWeight: 600 }}>{fmt(rawAmount)}</div>
           </Col>
           <Col xs={24} sm={12} md={8}>
             <div style={{ color: "#e5e7eb" }}>Method</div>
@@ -313,6 +340,23 @@ const CarIntakeDetails = () => {
             >
               {transaction?.status || "N/A"}
             </Tag>
+          </Col>
+        </Row>
+
+        <Row gutter={16} style={{ marginTop: 12 }}>
+          <Col xs={24} sm={12} md={8}>
+            <div style={{ color: "#e5e7eb" }}>Tax Rate</div>
+            <div>
+              {rate != null ? `${(usedRate * 100).toFixed(3)}%` : "6.625%"}
+            </div>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <div style={{ color: "#e5e7eb" }}>Tax Amount</div>
+            <div style={{ fontWeight: 600 }}>{fmt(taxAmt)}</div>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <div style={{ color: "#e5e7eb" }}>Net Amount</div>
+            <div style={{ fontWeight: 600 }}>{fmt(netAmt)}</div>
           </Col>
         </Row>
 

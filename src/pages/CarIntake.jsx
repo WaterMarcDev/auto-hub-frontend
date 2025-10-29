@@ -307,16 +307,22 @@ const CarIntake = () => {
           } else if (step === 6) {
             // Payment component uses form fields named `paidTo` and `finalPrice`.
             // Normalize to backend expected keys: `paymentMethod` and `paidAmount`.
+            // Compute tax data locally and include taxRate so backend computes/stores tax
+            const _gross =
+              stepData.finalPrice !== undefined && stepData.finalPrice !== ""
+                ? parseFloat(stepData.finalPrice)
+                : stepData.paymentAmount !== undefined
+                ? parseFloat(stepData.paymentAmount)
+                : stepData.paidAmount || 0;
+            const TAX_RATE = 0.06625;
+            const _taxAmount = Number(Math.abs(_gross * TAX_RATE).toFixed(2));
+
             payload = {
               paymentMethod: stepData.paidTo || stepData.paymentMethod,
-              paidAmount:
-                // prefer numeric finalPrice, fallback to paymentAmount or paidAmount
-                stepData.finalPrice !== undefined && stepData.finalPrice !== ""
-                  ? parseFloat(stepData.finalPrice)
-                  : stepData.paymentAmount !== undefined
-                  ? parseFloat(stepData.paymentAmount)
-                  : stepData.paidAmount,
+              paidAmount: _gross,
               paymentDescription: stepData.paymentDescription,
+              taxRate: TAX_RATE,
+              taxAmount: _taxAmount,
             };
           }
 
@@ -1160,6 +1166,14 @@ const CarIntake = () => {
           : formData.paymentAmount !== undefined
           ? parseFloat(formData.paymentAmount)
           : formData.paidAmount;
+
+      // Include tax info so backend can persist transaction tax fields
+      const SUBMIT_GROSS = submitData.paidAmount || 0;
+      const SUBMIT_TAX_RATE = 0.06625;
+      submitData.taxRate = SUBMIT_TAX_RATE;
+      submitData.taxAmount = Number(
+        Math.abs(SUBMIT_GROSS * SUBMIT_TAX_RATE).toFixed(2)
+      );
 
       // Ensure backend receives status indicating payment step completed
       if (STEP_STATUS_MAP[6]) submitData.status = STEP_STATUS_MAP[6];

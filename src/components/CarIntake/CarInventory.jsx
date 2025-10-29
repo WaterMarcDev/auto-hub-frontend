@@ -50,6 +50,95 @@ const CarInventory = ({ formData, prevStep }) => {
     setModalVisible(false);
     setModalContent({ title: "", message: "", status: "" });
   };
+
+  const openPrintSlip = () => {
+    // Fetch the rendered slip HTML from the backend and print inside a hidden iframe
+    (async () => {
+      try {
+        const base = (
+          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+        ).replace(/\/api\/?$/, "");
+        // Determine car intake id: prefer formData._id or formData.id, otherwise try to parse from the URL
+        const carId =
+          formData?._id ||
+          formData?.id ||
+          (() => {
+            try {
+              const m = window.location.pathname.match(
+                /\/car-intake\/(?:([^/]+))(?:\/?|$)/
+              );
+              return m ? m[1] : null;
+            } catch {
+              return null;
+            }
+          })();
+
+        if (!carId) {
+          showModal(
+            "Print Error",
+            "Unable to determine Car Intake id for printing."
+          );
+          return;
+        }
+
+        const url = `${base}/api/car-intake/${carId}/print-payment`;
+
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) throw new Error(`Failed to load slip: ${res.status}`);
+        const html = await res.text();
+
+        // Create hidden iframe
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.style.visibility = "hidden";
+        document.body.appendChild(iframe);
+
+        const idoc = iframe.contentWindow || iframe.contentDocument;
+        const doc = idoc.document || idoc;
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        // Wait for content to load then print
+        const whenLoaded = () =>
+          new Promise((resolve) => {
+            const win = iframe.contentWindow || iframe;
+            if (win.document.readyState === "complete") return resolve(win);
+            win.addEventListener("load", () => resolve(win));
+          });
+
+        const win = await whenLoaded();
+        try {
+          win.focus();
+        } catch {
+          /* ignore */
+        }
+        try {
+          win.print();
+        } catch (errPrint) {
+          console.error(errPrint);
+        }
+
+        // Cleanup the iframe after a short delay (allow user to finish print dialog)
+        setTimeout(() => {
+          try {
+            document.body.removeChild(iframe);
+          } catch {
+            /* ignore */
+          }
+        }, 2000);
+      } catch (err) {
+        console.error(err);
+        // message.error(err.message || "Failed to print slip");
+      }
+    })();
+  };
+
   return (
     <div>
       <Result
@@ -263,6 +352,70 @@ const CarInventory = ({ formData, prevStep }) => {
                   cursor: "not-allowed",
                 }}
               />
+              {/* Tax summary: use provided taxRate/taxAmount when available, otherwise compute from finalPrice */}
+              <div style={{ marginTop: 8 }}>
+                {(() => {
+                  const gross = Number(
+                    formData.finalPrice || formData.paymentAmount || 0
+                  );
+                  const taxRate =
+                    typeof formData.taxRate === "number"
+                      ? formData.taxRate
+                      : 0.06625;
+                  const taxAmount =
+                    typeof formData.taxAmount === "number"
+                      ? formData.taxAmount
+                      : Number(Math.abs(gross * taxRate).toFixed(2));
+                  const netAmount = Number((gross - taxAmount).toFixed(2));
+                  return (
+                    <Card
+                      size="small"
+                      style={{
+                        backgroundColor: "#111827",
+                        color: "white",
+                        marginTop: 8,
+                      }}
+                    >
+                      <Space direction="vertical" style={{ width: "100%" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Text style={{ color: "#9ca3af" }}>Tax Rate</Text>
+                          <Text style={{ color: "white" }}>
+                            {(taxRate * 100).toFixed(3)}%
+                          </Text>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Text style={{ color: "#9ca3af" }}>Tax Amount</Text>
+                          <Text style={{ color: "white" }}>
+                            ${taxAmount.toFixed(2)}
+                          </Text>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontWeight: 700,
+                          }}
+                        >
+                          <Text style={{ color: "#9ca3af" }}>Net Amount</Text>
+                          <Text style={{ color: "white" }}>
+                            ${netAmount.toFixed(2)}
+                          </Text>
+                        </div>
+                      </Space>
+                    </Card>
+                  );
+                })()}
+              </div>
             </Form.Item>
           </Col>
         </Row>
@@ -305,12 +458,7 @@ const CarInventory = ({ formData, prevStep }) => {
           <Button
             size="large"
             icon={<PrinterOutlined />}
-            onClick={() =>
-              showModal(
-                "Print Receipt",
-                "Receipt is being generated and printed"
-              )
-            }
+            onClick={openPrintSlip}
             style={{
               backgroundColor: "#8b5cf6",
               borderColor: "#8b5cf6",
