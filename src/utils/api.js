@@ -242,5 +242,34 @@ export const checkInAPI = {
   checkout: (id) => api.post(`/checkins/${id}/checkout`),
 };
 
+// Dashboard APIs (for charts and counts)
+export const dashboardAPI = {
+  getSummary: (params = {}) => api.get("/dashboard/summary", { params }),
+  getRevenueTrend: (params = {}) => {
+    // Default to all-time if no start/end provided
+    const hasStart = params && (params.startDate || params.start);
+    const hasEnd = params && (params.endDate || params.end);
+    if (!params || Object.keys(params).length === 0 || (!hasStart && !hasEnd)) {
+      const start = new Date(0).toISOString();
+      const now = new Date();
+      const end = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59,
+        999
+      ).toISOString();
+      params = { startDate: start, endDate: end };
+    }
+    return api.get("/dashboard/revenue-trend", { params });
+  },
+  getSummaryCounts: (params = {}) =>
+    api.get("/dashboard/summary-counts", { params }),
+  getEarningGoal: (params = {}) =>
+    api.get("/dashboard/earning-goal", { params }),
+};
+
 // Export the configured axios instance as default
 export default api;

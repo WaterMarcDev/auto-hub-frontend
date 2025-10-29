@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Chart from "react-apexcharts";
+import { dashboardAPI } from "../../utils/api";
 
 const defaultListChart1 = {
   options: {
@@ -44,8 +45,55 @@ const defaultListChart2 = {
 };
 
 const EarningGoal = ({ listChart1, listChart2 }) => {
-  const lc1 = listChart1 || defaultListChart1;
-  const lc2 = listChart2 || defaultListChart2;
+  const [fromScrap, setFromScrap] = useState({
+    amount: 13545.65,
+    percentageOfGoal: 70,
+  });
+  const [fromJunk, setFromJunk] = useState({
+    amount: 84265.45,
+    percentageOfGoal: 80,
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchGoal = async () => {
+      try {
+        const res = await dashboardAPI.getEarningGoal();
+        const payload = res.data || res;
+        if (!mounted) return;
+        if (payload.fromScrap) setFromScrap(payload.fromScrap);
+        if (payload.fromJunk) setFromJunk(payload.fromJunk);
+      } catch {
+        console.error("Failed to load earning goal");
+      }
+    };
+
+    fetchGoal();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const lc1 = listChart1 || {
+    options: defaultListChart1.options,
+    series: [fromScrap.percentageOfGoal || 0],
+  };
+  const lc2 = listChart2 || {
+    options: defaultListChart2.options,
+    series: [fromJunk.percentageOfGoal || 0],
+  };
+
+  const formatUSD = (v) => {
+    try {
+      return `USD ${Number(v || 0).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    } catch (e) {
+      return `USD ${v}`;
+    }
+  };
+
   return (
     <div
       className="card"
@@ -64,7 +112,9 @@ const EarningGoal = ({ listChart1, listChart2 }) => {
                 height={65}
               />
               <p className="text-muted mb-2 mt-2 pt-1">From Scrap:</p>
-              <h5 className="font-size-18 mb-1">USD 13,545.65</h5>
+              <h5 className="font-size-18 mb-1">
+                {formatUSD(fromScrap.amount)}
+              </h5>
             </div>
 
             <div className="col-md-6 d-flex flex-column align-items-center">
@@ -76,7 +126,9 @@ const EarningGoal = ({ listChart1, listChart2 }) => {
                 height={65}
               />
               <p className="text-muted mb-2 mt-2 pt-1">From Junk:</p>
-              <h5 className="font-size-18 mb-1">USD 84,265.45</h5>
+              <h5 className="font-size-18 mb-1">
+                {formatUSD(fromJunk.amount)}
+              </h5>
             </div>
           </div>
         </div>
