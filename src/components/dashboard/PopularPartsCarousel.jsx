@@ -125,11 +125,12 @@ const PopularPartsCarousel = ({ partsSlides }) => {
       style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
     >
       <div className="card-body">
-        <h4 className="header-title mb-4">Popular Car Parts</h4>
+        <h4 className="header-title mb-3">Popular Car Parts</h4>
         <div
           id="popularPartsCarousel"
           className="carousel slide"
           data-bs-ride="carousel"
+          style={{ minHeight: "200px" }}
         >
           <div className="carousel-indicators">
             {slides.map((_, idx) => (
@@ -145,35 +146,37 @@ const PopularPartsCarousel = ({ partsSlides }) => {
             ))}
           </div>
 
-          <div className="carousel-inner">
+          <div className="carousel-inner" style={{ minHeight: "200px" }}>
             {slides.map((part, idx) => (
               <div
                 key={part.title}
                 className={`carousel-item${idx === 0 ? " active" : ""}`}
+                style={{ minHeight: "200px" }}
               >
-                <div className="d-flex justify-content-between mb-5">
-                  <div className="col-md-4">
+                <div className="row align-items-center" style={{ minHeight: "200px" }}>
+                  <div className="col-5 d-flex align-items-center justify-content-center">
                     <img
                       src={part.img}
-                      className="img-fluid me-3"
+                      className="img-fluid"
                       alt={part.title}
+                      style={{ maxWidth: "100%", maxHeight: "150px", objectFit: "contain" }}
                     />
                   </div>
-                  <div className="col-md-7 offset-md-1">
-                    <div className="mt-4 mt-sm-0">
-                      <p className="text-muted mb-2">Car</p>
-                      <h5 className="text-primary">{part.title}</h5>
-                      <div className="row no-gutters mt-4">
-                        <div className="col-4">
-                          <div className="mt-1">
-                            <h4 className="font-size-13">{part.sold}</h4>
-                            <p className="text-muted mb-1 font-size-10">Sold</p>
+                  <div className="col-7">
+                    <div>
+                      <p className="text-muted mb-2 font-size-12">Car</p>
+                      <h5 className="text-primary mb-3 font-size-16">{part.title}</h5>
+                      <div className="row mt-3">
+                        <div className="col-6">
+                          <div>
+                            <h4 className="font-size-18 mb-1">{part.sold}</h4>
+                            <p className="text-muted mb-0 font-size-11">Sold</p>
                           </div>
                         </div>
-                        <div className="col-4">
-                          <div className="mt-1">
-                            <h4 className="font-size-13">{part.stock}</h4>
-                            <p className="text-muted mb-1 font-size-10">
+                        <div className="col-6">
+                          <div>
+                            <h4 className="font-size-18 mb-1">{part.stock}</h4>
+                            <p className="text-muted mb-0 font-size-11">
                               Stock
                             </p>
                           </div>

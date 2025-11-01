@@ -12,7 +12,12 @@ const defaultOptions = {
   plotOptions: {
     bar: { horizontal: false, columnWidth: "20%", endingShape: "rounded" },
   },
-  dataLabels: { enabled: true },
+  dataLabels: { 
+    enabled: true,
+    style: {
+      colors: ['#ffffff']
+    }
+  },
   xaxis: {
     categories: [
       "Jan",
@@ -29,14 +34,30 @@ const defaultOptions = {
       "Dec",
     ],
   },
-  colors: ["#525ce5", "#edf1f5"],
+  colors: ["#525ce5", "#34c38f"],
   legend: { show: false },
   fill: { opacity: 1 },
+  tooltip: {
+    theme: "dark",
+    style: {
+      fontSize: "12px",
+      fontFamily: "inherit",
+      backgroundColor: "#1F293D",
+    },
+    x: {
+      show: true,
+    },
+    y: {
+      formatter: function (val) {
+        return val;
+      },
+    },
+  },
 };
 
 const defaultSeries = [
-  { name: "Earning", data: [5, 7, 7, 6, 7, 5, 7, 6, 7, 4, 6, 7] },
-  { name: "Paid", data: [5, 6, 4, 5, 6, 4, 3, 5, 4, 6, 4, 3] },
+  { name: "Total Cars", data: [5, 7, 7, 6, 7, 5, 7, 6, 7, 4, 6, 7] },
+  { name: "Scraped", data: [3, 4, 5, 4, 5, 3, 4, 4, 5, 2, 4, 5] },
 ];
 
 const SummaryChart = ({
@@ -68,10 +89,11 @@ const SummaryChart = ({
         );
         if (!mounted) return;
         if (Array.isArray(payload.labels) && Array.isArray(payload.series)) {
-          // For hourly grouping, show time only in 24-hour format (HH:00)
+          // Format labels based on groupBy
           let displayLabels = payload.labels;
           try {
             if (groupBy === "hour") {
+              // For hourly grouping, show time only in 24-hour format (HH:00)
               displayLabels = payload.labels.map((lbl) => {
                 // Expecting formats like 'YYYY-MM-DDTHH' or 'YYYY-MM-DDTHH:mm' or ISO strings
                 const m = String(lbl).match(/T?(\d{2})(?::\d{2})?$/);
@@ -82,9 +104,20 @@ const SummaryChart = ({
                   return `${String(d.getHours()).padStart(2, "0")}:00`;
                 return lbl;
               });
+            } else if (groupBy === "day") {
+              // For daily grouping, show day only (1, 2, 3, ...)
+              displayLabels = payload.labels.map((lbl) => {
+                // Expecting format 'YYYY-MM-DD'
+                const m = String(lbl).match(/\d{4}-\d{2}-(\d{2})$/);
+                if (m && m[1] !== undefined) return String(parseInt(m[1], 10));
+                // Fallback: parse date and extract day
+                const d = new Date(lbl);
+                if (!isNaN(d)) return String(d.getDate());
+                return lbl;
+              });
             }
           } catch (e) {
-            console.warn("Failed to format hourly labels", e);
+            console.warn("Failed to format labels", e);
             displayLabels = payload.labels;
           }
 

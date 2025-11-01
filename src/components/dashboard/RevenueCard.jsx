@@ -4,13 +4,35 @@ import { dashboardAPI } from "../../utils/api";
 
 const defaultChart = {
   options: {
-    chart: { type: "area", height: 80, sparkline: { enabled: true } },
+    chart: { 
+      type: "area", 
+      height: 120, 
+      sparkline: { enabled: true },
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+      }
+    },
     stroke: { curve: "smooth", width: 2 },
     colors: ["#525ce5"],
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.7,
+        opacityTo: 0.3,
+        stops: [0, 90, 100]
+      }
+    },
     tooltip: {
+      theme: "dark",
       fixed: { enabled: false },
       x: { show: false },
-      y: { title: { formatter: () => "Revenue" } },
+      y: { 
+        title: { formatter: () => "Revenue" },
+        formatter: (val) => `$${Number(val || 0).toLocaleString()}`
+      },
       marker: { show: false },
     },
   },
@@ -24,8 +46,9 @@ const RevenueCard = ({
   endDate: propEnd,
 }) => {
   const [total, setTotal] = useState(0);
-  const [points, setPoints] = useState([]);
+  const [points, setPoints] = useState(defaultChart.series[0].data);
   const [label, setLabel] = useState("All time");
+  const [loading, setLoading] = useState(true);
 
   const computeRangeForLabel = (l) => {
     const now = new Date();
@@ -40,7 +63,9 @@ const RevenueCard = ({
       999
     );
     if (l === "All time") {
-      start = new Date(0);
+      // Use last 90 days instead of from epoch
+      start = new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000);
+      start.setHours(0, 0, 0, 0);
     } else if (l === "Today") {
       start = new Date(
         now.getFullYear(),
@@ -111,30 +136,44 @@ const RevenueCard = ({
 
   const fetchTrend = async (sISO, eISO) => {
     try {
+      setLoading(true);
+      console.log('RevenueCard fetching trend:', { startDate: sISO, endDate: eISO });
       const res = await dashboardAPI.getRevenueTrend({
         startDate: sISO,
         endDate: eISO,
       });
       const payload = res.data || res;
+      console.log('RevenueCard trend response:', payload);
       setTotal(typeof payload.total !== "undefined" ? payload.total : 0);
-      setPoints(Array.isArray(payload.points) ? payload.points : []);
+      const newPoints = Array.isArray(payload.points) && payload.points.length > 0 ? payload.points : defaultChart.series[0].data;
+      console.log('RevenueCard setting points:', newPoints);
+      setPoints(newPoints);
     } catch (err) {
       console.error("Failed to load revenue trend:", err);
       setTotal(0);
-      setPoints([]);
+      setPoints(defaultChart.series[0].data);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    // prefer parent-provided range when available
-    if (propStart && propEnd) {
-      setLabel("Custom");
-      fetchTrend(propStart, propEnd);
-      return;
-    }
-    // otherwise default to All time on mount
-    const r = computeRangeForLabel(label);
-    fetchTrend(r.start, r.end);
+    let mounted = true;
+    const loadData = async () => {
+      // prefer parent-provided range when available
+      if (propStart && propEnd) {
+        setLabel("Custom");
+        await fetchTrend(propStart, propEnd);
+      } else {
+        // otherwise default to All time on mount
+        const r = computeRangeForLabel(label);
+        await fetchTrend(r.start, r.end);
+      }
+    };
+    loadData();
+    return () => {
+      mounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -153,87 +192,89 @@ const RevenueCard = ({
   };
 
   const opts = chartOptions || defaultChart.options;
-  const series =
-    chartSeries ||
-    (points.length ? [{ name: "Revenue", data: points }] : defaultChart.series);
+  const series = chartSeries || [{ name: "Revenue", data: points }];
 
   const displayTotal = `$${Number(total || 0).toLocaleString()}`;
 
+  // Generate a unique key for the chart to force re-render
+  const chartKey = `${points.join("-")}-${loading}`;
+
   return (
-    <div
-      className="card"
-      style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
-    >
-      <div className="card-body">
-        <h4 className="header-title mb-4">Revenue Statistics</h4>
-        <div className="d-flex align-items-center">
-          <h4 className="mb-0">{displayTotal}</h4>
-          <div className="media-body ps-3 ms-auto">
-            <div className="dropdown">
-              <button
-                className="btn btn-light btn-sm dropdown-toggle"
-                type="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                {label}
-                <i className="mdi mdi-chevron-down ms-1" />
-              </button>
-              <ul className="dropdown-menu dropdown-menu-end">
-                <li>
-                  <a
-                    className="dropdown-item"
-                    href="#"
-                    onClick={(e) => handleSelect("All time", e)}
-                  >
-                    All time
-                  </a>
-                </li>
-                <li>
-                  <a
-                    className="dropdown-item"
-                    href="#"
-                    onClick={(e) => handleSelect("Today", e)}
-                  >
-                    Today
-                  </a>
-                </li>
-                <li>
-                  <a
-                    className="dropdown-item"
-                    href="#"
-                    onClick={(e) => handleSelect("Yesterday", e)}
-                  >
-                    Yesterday
-                  </a>
-                </li>
-                <li>
-                  <a
-                    className="dropdown-item"
-                    href="#"
-                    onClick={(e) => handleSelect("Last Week", e)}
-                  >
-                    Last Week
-                  </a>
-                </li>
-                <li>
-                  <a
-                    className="dropdown-item"
-                    href="#"
-                    onClick={(e) => handleSelect("Last Month", e)}
-                  >
-                    Last Month
-                  </a>
-                </li>
-              </ul>
-            </div>
+    <>
+      <h4 className="header-title mb-3">Revenue Statistics</h4>
+      <div className="d-flex align-items-center mb-3">
+        <h4 className="mb-0">{displayTotal}</h4>
+        <div className="media-body ps-3 ms-auto">
+          <div className="dropdown">
+            <button
+              className="btn btn-light btn-sm dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            >
+              {label}
+              <i className="mdi mdi-chevron-down ms-1" />
+            </button>
+            <ul className="dropdown-menu dropdown-menu-end">
+              <li>
+                <a
+                  className="dropdown-item"
+                  href="#"
+                  onClick={(e) => handleSelect("All time", e)}
+                >
+                  All time
+                </a>
+              </li>
+              <li>
+                <a
+                  className="dropdown-item"
+                  href="#"
+                  onClick={(e) => handleSelect("Today", e)}
+                >
+                  Today
+                </a>
+              </li>
+              <li>
+                <a
+                  className="dropdown-item"
+                  href="#"
+                  onClick={(e) => handleSelect("Yesterday", e)}
+                >
+                  Yesterday
+                </a>
+              </li>
+              <li>
+                <a
+                  className="dropdown-item"
+                  href="#"
+                  onClick={(e) => handleSelect("Last Week", e)}
+                >
+                  Last Week
+                </a>
+              </li>
+              <li>
+                <a
+                  className="dropdown-item"
+                  href="#"
+                  onClick={(e) => handleSelect("Last Month", e)}
+                >
+                  Last Month
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
-        <div className="mt-3">
-          <Chart options={opts} series={series} type="area" height={80} />
-        </div>
       </div>
-    </div>
+      <div className="mt-2">
+        <Chart 
+          key={chartKey}
+          options={opts} 
+          series={series} 
+          type="area" 
+          height={100} 
+        />
+      </div>
+    </>
   );
 };
 

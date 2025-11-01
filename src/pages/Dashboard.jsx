@@ -116,6 +116,7 @@ const Dashboard = () => {
 
   const { groupBy, startDate, endDate } = getRangeParams(range);
   const [sellerCount, setSellerCount] = useState(0);
+  const [partsOrders, setPartsOrders] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -125,8 +126,11 @@ const Dashboard = () => {
         const payload = res.data || res;
         if (!mounted) return;
         setSellerCount(payload.sellerCount ?? 0);
+        // Parts orders could come from inventory items or a separate count
+        // For now, using inventoryItems as parts orders count
+        setPartsOrders(payload.inventoryItems ?? 0);
       } catch (err) {
-        console.error("Failed to load seller count:", err);
+        console.error("Failed to load counts:", err);
       }
     };
     fetch();
@@ -158,8 +162,9 @@ const Dashboard = () => {
 
       <div className="container-fluid">
         <div className="page-content-wrapper">
+          {/* Row 1: Scrap Yard Summary - Full Width */}
           <div className="row">
-            <div className="col-xl-8">
+            <div className="col-12">
               <div
                 className="card"
                 style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
@@ -283,110 +288,119 @@ const Dashboard = () => {
                   <div className="clearfix" />
 
                   <div className="row align-items-center">
-                    <div className="col-xl-8">
+                    <div className="col-xl-9">
                       <SummaryChart
                         groupBy={groupBy}
                         startDate={startDate}
                         endDate={endDate}
                       />
                     </div>
-                    <div className="col-xl-4">
+                    <div className="col-xl-3">
                       <InfoCards />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="col-xl-4">
-              <div className="row">
-                <div className="col-xl-6 col-md-6">
-                  <div
-                    className="card"
-                    style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
-                  >
-                    <div className="card-body">
-                      <div className="text-center">
-                        <p className="font-size-16">Parts Orders</p>
-                        <div className="mini-stat-icon mx-auto mb-4 mt-3">
-                          <span className="avatar-title rounded-circle bg-soft-primary">
-                            <i className="mdi mdi-cart-outline text-primary font-size-20" />
-                          </span>
-                        </div>
-                        <h5 className="font-size-22">58</h5>
-                        <p className="text-muted">70% Target</p>
-                        <div className="progress mt-3" style={{ height: 4 }}>
-                          <div
-                            className="progress-bar bg-primary"
-                            role="progressbar"
-                            style={{ width: "70%" }}
-                            aria-valuenow={70}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-xl-6 col-md-6">
-                  <div
-                    className="card"
-                    style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
-                  >
-                    <div className="card-body">
-                      <div className="text-center">
-                        <p className="font-size-16">Sellers</p>
-                        <div className="mini-stat-icon mx-auto mb-4 mt-3">
-                          <span className="avatar-title rounded-circle bg-soft-success">
-                            <i className="mdi mdi-account-outline text-success font-size-20" />
-                          </span>
-                        </div>
-                        <h5 className="font-size-22">{sellerCount}</h5>
-                        <p className="text-muted">80% Target</p>
-                        <div className="progress mt-3" style={{ height: 4 }}>
-                          <div
-                            className="progress-bar bg-success"
-                            role="progressbar"
-                            style={{ width: "80%" }}
-                            aria-valuenow={80}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+          {/* Row 2: Revenue, Earning Goal, Parts Orders & Sellers */}
+          <div className="row">
+            <div className="col-xl-4 col-lg-6 col-md-6">
               <div
                 className="card"
-                style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
+                style={{ backgroundColor: "#1F293D", color: "#D6D9E6", height: "240px" }}
               >
                 <div className="card-body">
                   <RevenueCard />
                 </div>
               </div>
             </div>
+
+            <div className="col-xl-4 col-lg-6 col-md-6">
+              <EarningGoal />
+            </div>
+
+            <div className="col-xl-4 col-lg-12 col-md-12">
+              <div className="row">
+                <div className="col-6">
+                  <div
+                    className="card"
+                    style={{ backgroundColor: "#1F293D", color: "#D6D9E6", height: "240px" }}
+                  >
+                    <div className="card-body py-3">
+                      <div className="text-center">
+                        <p className="font-size-15 mb-2">Parts Orders</p>
+                        <div className="mini-stat-icon mx-auto mb-2">
+                          <span className="avatar-title rounded-circle bg-soft-primary" style={{ width: '45px', height: '45px' }}>
+                            <i className="mdi mdi-cart-outline text-primary font-size-20" />
+                          </span>
+                        </div>
+                        <h5 className="font-size-20 mb-2">{partsOrders}</h5>
+                        <p className="text-muted font-size-12 mb-2">
+                          {partsOrders > 0 ? `${Math.min(Math.round((partsOrders / 100) * 100), 100)}%` : '0%'} Progress
+                        </p>
+                        <div className="progress" style={{ height: 4 }}>
+                          <div
+                            className="progress-bar bg-primary"
+                            role="progressbar"
+                            style={{ width: partsOrders > 0 ? `${Math.min(Math.round((partsOrders / 100) * 100), 100)}%` : "0%" }}
+                            aria-valuenow={partsOrders > 0 ? Math.round((partsOrders / 100) * 100) : 0}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-6">
+                  <div
+                    className="card"
+                    style={{ backgroundColor: "#1F293D", color: "#D6D9E6", height: "240px" }}
+                  >
+                    <div className="card-body py-3">
+                      <div className="text-center">
+                        <p className="font-size-15 mb-2">Sellers</p>
+                        <div className="mini-stat-icon mx-auto mb-2">
+                          <span className="avatar-title rounded-circle bg-soft-success" style={{ width: '45px', height: '45px' }}>
+                            <i className="mdi mdi-account-outline text-success font-size-20" />
+                          </span>
+                        </div>
+                        <h5 className="font-size-20 mb-2">{sellerCount}</h5>
+                        <p className="text-muted font-size-12 mb-2">
+                          {sellerCount > 0 ? `${Math.min(Math.round((sellerCount / 50) * 100), 100)}%` : '0%'} Progress
+                        </p>
+                        <div className="progress" style={{ height: 4 }}>
+                          <div
+                            className="progress-bar bg-success"
+                            role="progressbar"
+                            style={{ width: sellerCount > 0 ? `${Math.min(Math.round((sellerCount / 50) * 100), 100)}%` : "0%" }}
+                            aria-valuenow={sellerCount > 0 ? Math.round((sellerCount / 50) * 100) : 0}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Bottom row */}
+          {/* Row 3: Our Process, Popular Parts, RTX Recycling */}
           <div className="row">
-            {/* Our Process */}
-            <div className="col-xl-4">
+            <div className="col-xl-4 col-lg-4">
               <OurProcess />
             </div>
 
-            {/* Earning Goal */}
-            <div className="col-xl-4">
-              <EarningGoal />
-
+            <div className="col-xl-4 col-lg-4">
               <PopularPartsCarousel />
             </div>
-            {/* RTX Recycling */}
-            <div className="col-xl-4">
+
+            <div className="col-xl-4 col-lg-4">
               <RtxRecycling />
             </div>
           </div>

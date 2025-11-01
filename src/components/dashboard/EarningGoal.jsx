@@ -20,7 +20,7 @@ const defaultListChart1 = {
       },
     },
   },
-  series: [70],
+  series: [0],
 };
 
 const defaultListChart2 = {
@@ -41,30 +41,47 @@ const defaultListChart2 = {
       },
     },
   },
-  series: [80],
+  series: [0],
 };
 
 const EarningGoal = ({ listChart1, listChart2 }) => {
   const [fromScrap, setFromScrap] = useState({
-    amount: 13545.65,
+    amount: 0,
     percentageOfGoal: 70,
   });
-  const [fromJunk, setFromJunk] = useState({
-    amount: 84265.45,
+  const [fromCheckIn, setFromCheckIn] = useState({
+    amount: 0,
     percentageOfGoal: 80,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     const fetchGoal = async () => {
       try {
+        setLoading(true);
         const res = await dashboardAPI.getEarningGoal();
         const payload = res.data || res;
+        console.log('EarningGoal API response:', payload);
         if (!mounted) return;
-        if (payload.fromScrap) setFromScrap(payload.fromScrap);
-        if (payload.fromJunk) setFromJunk(payload.fromJunk);
-      } catch {
-        console.error("Failed to load earning goal");
+        if (payload.fromScrap) {
+          console.log('Setting fromScrap:', payload.fromScrap);
+          setFromScrap({
+            amount: payload.fromScrap.amount || 0,
+            percentageOfGoal: payload.fromScrap.percentageOfGoal || 70
+          });
+        }
+        if (payload.fromCheckIn) {
+          console.log('Setting fromCheckIn:', payload.fromCheckIn);
+          setFromCheckIn({
+            amount: payload.fromCheckIn.amount || 0,
+            percentageOfGoal: payload.fromCheckIn.percentageOfGoal || 80
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load earning goal:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -76,12 +93,19 @@ const EarningGoal = ({ listChart1, listChart2 }) => {
 
   const lc1 = listChart1 || {
     options: defaultListChart1.options,
-    series: [fromScrap.percentageOfGoal || 0],
+    series: [fromScrap.percentageOfGoal],
   };
   const lc2 = listChart2 || {
     options: defaultListChart2.options,
-    series: [fromJunk.percentageOfGoal || 0],
+    series: [fromCheckIn.percentageOfGoal],
   };
+
+  console.log('EarningGoal rendering:', { 
+    fromScrap, 
+    fromCheckIn, 
+    lc1Series: lc1.series, 
+    lc2Series: lc2.series 
+  });
 
   const formatUSD = (v) => {
     try {
@@ -97,37 +121,39 @@ const EarningGoal = ({ listChart1, listChart2 }) => {
   return (
     <div
       className="card"
-      style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
+      style={{ backgroundColor: "#1F293D", color: "#D6D9E6", height: "240px" }}
     >
       <div className="card-body">
-        <h4 className="header-title mb-4">Earning Goal</h4>
-        <div className="mt-2 text-center">
+        <h4 className="header-title mb-2">Earning Goal</h4>
+        <div className="text-center" style={{ marginTop: "10px" }}>
           <div className="row">
             <div className="col-md-6 d-flex flex-column align-items-center">
               <Chart
+                key={`scrap-${fromScrap.percentageOfGoal}-${fromScrap.amount}`}
                 options={lc1.options}
                 series={lc1.series}
                 type="radialBar"
-                width={65}
-                height={65}
+                width={70}
+                height={70}
               />
-              <p className="text-muted mb-2 mt-2 pt-1">From Scrap:</p>
-              <h5 className="font-size-18 mb-1">
+              <p className="text-muted mb-1 mt-2">From Scrap:</p>
+              <h5 className="font-size-16 mb-0">
                 {formatUSD(fromScrap.amount)}
               </h5>
             </div>
 
             <div className="col-md-6 d-flex flex-column align-items-center">
               <Chart
+                key={`checkin-${fromCheckIn.percentageOfGoal}-${fromCheckIn.amount}`}
                 options={lc2.options}
                 series={lc2.series}
                 type="radialBar"
-                width={65}
-                height={65}
+                width={70}
+                height={70}
               />
-              <p className="text-muted mb-2 mt-2 pt-1">From Junk:</p>
-              <h5 className="font-size-18 mb-1">
-                {formatUSD(fromJunk.amount)}
+              <p className="text-muted mb-1 mt-2">From Check-in:</p>
+              <h5 className="font-size-16 mb-0">
+                {formatUSD(fromCheckIn.amount)}
               </h5>
             </div>
           </div>

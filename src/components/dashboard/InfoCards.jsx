@@ -3,25 +3,29 @@ import { dashboardAPI } from "../../utils/api";
 
 const InfoCards = () => {
   const [counts, setCounts] = useState({
-    carIntakes: 2354,
-    inventoryItems: 1598,
-    scrapRecords: 1230,
+    carIntakes: 0,
+    inventoryItems: 0,
+    scrapRecords: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     const fetchCounts = async () => {
       try {
+        setLoading(true);
         const res = await dashboardAPI.getSummaryCounts();
         const payload = res.data || res;
         if (!mounted) return;
         setCounts({
-          carIntakes: payload.carIntakes ?? counts.carIntakes,
-          inventoryItems: payload.inventoryItems ?? counts.inventoryItems,
-          scrapRecords: payload.scrapRecords ?? counts.scrapRecords,
+          carIntakes: payload.carIntakes ?? 0,
+          inventoryItems: payload.inventoryItems ?? 0,
+          scrapRecords: payload.scrapRecords ?? 0,
         });
       } catch (err) {
         console.error("Failed to load summary counts:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -29,7 +33,6 @@ const InfoCards = () => {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -89,8 +92,12 @@ const InfoCards = () => {
         <div
           className="progress-bar bg-primary"
           role="progressbar"
-          style={{ width: "70%" }}
-          aria-valuenow={70}
+          style={{ 
+            width: counts.carIntakes > 0 
+              ? `${Math.min(Math.round((counts.scrapRecords / counts.carIntakes) * 100), 100)}%` 
+              : "0%" 
+          }}
+          aria-valuenow={counts.carIntakes > 0 ? Math.round((counts.scrapRecords / counts.carIntakes) * 100) : 0}
           aria-valuemin={0}
           aria-valuemax={100}
         />
