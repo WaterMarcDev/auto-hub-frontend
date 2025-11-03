@@ -2,6 +2,7 @@ import React from "react";
 import { Form, Button, Row, Col, Typography, Space, Image, Input } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import CameraUpload from "../CameraUpload";
+import { uploadAPI } from "../../utils/api";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -17,6 +18,12 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
         uploaded: true,
         size: uploadResult.size,
       },
+    });
+  };
+
+  const handleRemoveImage = (field) => {
+    updateFormData({
+      [field]: null,
     });
   };
 
@@ -41,21 +48,50 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
           border: "1px solid #6b7280",
         }}
       >
-        <CameraUpload
-          onImageUpload={(result) => handleImageUpload(field, result)}
-          multiple={false}
-          showPreview={true}
-          autoUpload={true}
-          className="car-image-upload"
-        />
-
-        {/* Show upload status */}
-        {formData[field] && formData[field].uploaded && (
-          <div style={{ marginTop: "8px" }}>
+        {/* Show uploaded image with remove button */}
+        {formData[field] && formData[field].uploaded ? (
+          <div>
+            <div style={{ position: "relative", marginBottom: "8px" }}>
+              <Image
+                src={uploadAPI.getImageUrl(formData[field].url)}
+                alt={formData[field].name}
+                style={{
+                  width: "100%",
+                  maxHeight: "300px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                }}
+                preview={{
+                  mask: <div>Click to preview</div>,
+                }}
+              />
+              <Button
+                danger
+                size="small"
+                onClick={() => handleRemoveImage(field)}
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "8px",
+                  zIndex: 1,
+                }}
+                icon={<i className="fas fa-times"></i>}
+              >
+                Remove
+              </Button>
+            </div>
             <Text style={{ color: "#10b981", fontSize: "12px" }}>
               ✓ Uploaded: {formData[field].name}
             </Text>
           </div>
+        ) : (
+          <CameraUpload
+            onImageUpload={(result) => handleImageUpload(field, result)}
+            multiple={false}
+            showPreview={true}
+            autoUpload={true}
+            className="car-image-upload"
+          />
         )}
       </div>
 

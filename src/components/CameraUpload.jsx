@@ -17,21 +17,71 @@ const CameraUpload = ({
   const [error, setError] = useState("");
   const [stream, setStream] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(null);
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState(null);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // Start camera
-  const startCamera = async () => {
-    setError("");
+  // Enumerate available cameras
+  const enumerateCameras = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        console.warn("enumerateDevices not supported");
+        return;
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter((device) => device.kind === "videoinput");
+      setAvailableCameras(videoDevices);
+      
+      // Set default camera (prefer back camera on mobile)
+      if (videoDevices.length > 0 && !selectedCamera) {
+        const backCamera = videoDevices.find(
+          (device) =>
+            device.label.toLowerCase().includes("back") ||
+            device.label.toLowerCase().includes("rear") ||
+            device.label.toLowerCase().includes("environment")
+        );
+        setSelectedCamera(backCamera?.deviceId || videoDevices[0].deviceId);
+      }
+    } catch (err) {
+      console.error("Error enumerating cameras:", err);
+    }
+  };
+
+  // Start camera
+  const startCamera = async (deviceId = null) => {
+    setError("");
+    
+    // Check for mediaDevices support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setError("Camera access is not supported in this browser or requires HTTPS.");
+      return;
+    }
+
+    try {
+      const constraints = {
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: "environment",
         },
-      });
+      };
+
+      if (deviceId) {
+        constraints.video.deviceId = { exact: deviceId };
+      } else if (selectedCamera) {
+        constraints.video.deviceId = { exact: selectedCamera };
+      } else {
+        constraints.video.facingMode = "environment";
+      }
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // After getting permission, enumerate cameras to get labels
+      if (availableCameras.length === 0 || (availableCameras[0] && !availableCameras[0].label)) {
+        await enumerateCameras();
+      }
 
       setStream(mediaStream);
       setIsCamera(true);
@@ -45,6 +95,13 @@ const CameraUpload = ({
       console.error("Error accessing camera:", err);
       setError("Unable to access camera. Please check permissions.");
     }
+  };
+
+  // Switch camera
+  const switchCamera = async (deviceId) => {
+    stopCamera();
+    setSelectedCamera(deviceId);
+    await startCamera(deviceId);
   };
 
   // Stop camera (stable reference)
@@ -119,7 +176,10 @@ const CameraUpload = ({
         setUploadSuccess(result.originalName);
         setUploading(false);
 
-        setTimeout(() => setUploadSuccess(null), 3000);
+        setTimeout(() => {
+          setUploadSuccess(null);
+          setShowModal(false);
+        }, 1000);
         return;
       } catch (err) {
         console.error("Auto-upload error:", err);
@@ -221,8 +281,10 @@ const CameraUpload = ({
   const openModal = () => {
     setShowModal(true);
     setActiveTab("camera");
-    // start camera when modal opens and camera tab active
-    setTimeout(() => startCamera(), 150);
+    // Start camera when modal opens (will trigger permission request)
+    setTimeout(() => {
+      startCamera();
+    }, 150);
   };
 
   const closeModal = () => {
@@ -331,6 +393,33 @@ const CameraUpload = ({
                     className="w-100 rounded"
                     style={{ maxHeight: "400px", objectFit: "cover" }}
                   />
+                  
+                  {/* Camera selection dropdown */}
+                  {availableCameras.length > 1 && (
+                    <div
+                      className="position-absolute top-0 start-0 m-3"
+                      style={{ zIndex: 10 }}
+                    >
+                      <select
+                        className="form-select form-select-sm"
+                        value={selectedCamera || ""}
+                        onChange={(e) => switchCamera(e.target.value)}
+                        style={{
+                          backgroundColor: "rgba(0, 0, 0, 0.6)",
+                          color: "white",
+                          border: "1px solid rgba(255, 255, 255, 0.3)",
+                          maxWidth: "200px",
+                        }}
+                      >
+                        {availableCameras.map((camera, idx) => (
+                          <option key={camera.deviceId} value={camera.deviceId}>
+                            {camera.label || `Camera ${idx + 1}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div className="camera-controls position-absolute bottom-0 start-50 translate-middle-x mb-3">
                     <Button
                       shape="circle"
