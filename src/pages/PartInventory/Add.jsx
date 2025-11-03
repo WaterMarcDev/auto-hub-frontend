@@ -14,8 +14,10 @@ import {
   Input,
   Select,
 } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
 import AddInventoryModal from "../../components/AddInventoryModal";
+import CameraUpload from "../../components/CameraUpload";
 import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
 import PageContentWrapper from "../../components/PageContentWrapper";
@@ -37,6 +39,9 @@ const PartInventoryAdd = () => {
     useState(false);
   const [inventoryRecord, setInventoryRecord] = useState(null);
   const [inventoryParts, setInventoryParts] = useState({});
+  const [partImages, setPartImages] = useState({}); // Store images for each part
+  const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
 
   // Ensure modal preview container is above fixed header/sidebar
   const getPreviewContainer = () => {
@@ -414,6 +419,7 @@ const PartInventoryAdd = () => {
 
     setInventoryRecord(record);
     setInventoryParts(selectedParts);
+    setPartImages({}); // Reset images when opening modal
     setInventoryModalVisible(true);
   };
 
@@ -425,6 +431,50 @@ const PartInventoryAdd = () => {
         [field]: value,
       },
     }));
+  };
+
+  // Handle image upload for parts
+  const handleImageUpload = (partKey, result) => {
+    console.log("Image upload result:", result);
+
+    // Extract the image URL from the result
+    // The backend returns: { imageUrl, filename, originalName, size, mimetype }
+    const imageUrl =
+      result?.imageUrl ||
+      result?.url ||
+      result?.path ||
+      result?.filename ||
+      result;
+
+    console.log("Extracted imageUrl:", imageUrl);
+
+    if (!imageUrl) {
+      message.error("Failed to get image URL from upload response");
+      return;
+    }
+
+    // Replace with single image instead of appending
+    setPartImages((prev) => ({
+      ...prev,
+      [partKey]: imageUrl, // Single image, not an array
+    }));
+
+    message.success("Image uploaded successfully");
+  };
+
+  // Remove image from part
+  const handleRemoveImage = (partKey) => {
+    setPartImages((prev) => ({
+      ...prev,
+      [partKey]: null,
+    }));
+    message.success("Image removed");
+  };
+
+  // Preview image
+  const handlePreviewImage = (url) => {
+    setImagePreviewUrl(url);
+    setImagePreviewVisible(true);
   };
 
   // Editable cell similar to CarDiagnosis to keep local typing state and commit on blur/enter
@@ -474,6 +524,7 @@ const PartInventoryAdd = () => {
       setInventoryModalVisible(false);
       setInventoryRecord(null);
       setInventoryParts({});
+      setPartImages({});
       return;
     }
 
@@ -498,6 +549,7 @@ const PartInventoryAdd = () => {
           year: inventoryRecord?.carDetails?.year || "",
           // partShortName resolved server-side
           color: inventoryRecord?.carDetails?.color || "",
+          image: partImages[p.key] || null, // Include single image
         };
 
         try {
@@ -543,6 +595,7 @@ const PartInventoryAdd = () => {
       setInventoryModalVisible(false);
       setInventoryRecord(null);
       setInventoryParts({});
+      setPartImages({});
     }
   };
 
@@ -849,6 +902,7 @@ const PartInventoryAdd = () => {
                     title: "Dimensions",
                     dataIndex: "dimensions",
                     key: "dimensions",
+                    width: 180,
                     render: (_, record) => {
                       const cur = inventoryParts[record.key] || {};
                       return (
@@ -860,6 +914,80 @@ const PartInventoryAdd = () => {
                           placeholder={`Enter ${record.name} Dimensions`}
                           disabled={false}
                         />
+                      );
+                    },
+                  },
+                  {
+                    title: "Images",
+                    key: "images",
+                    width: 250,
+                    render: (_, record) => {
+                      const imageUrl = partImages[record.key];
+                      const hasImage = !!imageUrl;
+
+                      return (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                          }}
+                        >
+                          {!hasImage && (
+                            <CameraUpload
+                              key={`camera-${record.key}`}
+                              onImageUpload={(result) =>
+                                handleImageUpload(record.key, result)
+                              }
+                              autoUpload={true}
+                              showPreview={false}
+                            />
+                          )}
+                          {hasImage && (
+                            <div
+                              style={{
+                                position: "relative",
+                                width: 60,
+                                height: 60,
+                                border: "1px solid #6b7280",
+                                borderRadius: 4,
+                                overflow: "hidden",
+                              }}
+                            >
+                              <img
+                                src={uploadAPI.getImageUrl(imageUrl)}
+                                alt="Part"
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() =>
+                                  handlePreviewImage(
+                                    uploadAPI.getImageUrl(imageUrl)
+                                  )
+                                }
+                              />
+                              <Button
+                                icon={<DeleteOutlined />}
+                                size="small"
+                                danger
+                                type="text"
+                                onClick={() => handleRemoveImage(record.key)}
+                                style={{
+                                  position: "absolute",
+                                  top: 2,
+                                  right: 2,
+                                  padding: 2,
+                                  minWidth: 20,
+                                  height: 20,
+                                  backgroundColor: "rgba(0,0,0,0.6)",
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
                       );
                     },
                   },
@@ -932,6 +1060,26 @@ const PartInventoryAdd = () => {
                   </div>
                 );
               })()
+            )}
+          </Modal>
+          <Modal
+            open={imagePreviewVisible}
+            title="Image Preview"
+            footer={null}
+            onCancel={() => setImagePreviewVisible(false)}
+            width={800}
+            centered
+          >
+            {imagePreviewUrl && (
+              <img
+                src={imagePreviewUrl}
+                alt="Preview"
+                style={{
+                  width: "100%",
+                  maxHeight: "70vh",
+                  objectFit: "contain",
+                }}
+              />
             )}
           </Modal>
           <AddInventoryModal
