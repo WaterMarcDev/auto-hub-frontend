@@ -10,6 +10,7 @@ import {
   List,
   Card,
   Descriptions,
+  Checkbox,
 } from "antd";
 import SignatureCanvas from "../SignatureCanvas";
 import { customerAPI, checkInAPI, uploadAPI } from "../../utils/api";
@@ -298,6 +299,49 @@ const CreateCheckInModal = ({ open, onClose, onCreated }) => {
             value={form.getFieldValue("employeeSignature")}
             onChange={(val) => form.setFieldsValue({ employeeSignature: val })}
           />
+        </Form.Item>
+
+        {/* Waiver Terms and Conditions */}
+        <div
+          style={{
+            backgroundColor: "#fff8e1",
+            border: "2px solid #ffc107",
+            borderRadius: "8px",
+            padding: "16px",
+            marginBottom: "16px",
+          }}
+        >
+          <h4 style={{ color: "#d84315", marginBottom: "12px", fontWeight: "bold", fontSize: "14px" }}>
+            WAIVER AND LIABILITY RELEASE
+          </h4>
+          <div style={{ lineHeight: "1.6", color: "#424242", fontSize: "13px" }}>
+            <p style={{ marginBottom: "10px" }}>
+              <strong>All parts are sold 'as is,' with no warranties, expressed or implied.</strong> By entering the premises, individuals do so at their own risk and agree to release RTX Management, its employees, and agents from any liability for physical injuries or incidents that may occur while on-site.
+            </p>
+            <p style={{ marginBottom: "10px" }}>
+              Customers further agree to hold RTX Management, its employees, and agents harmless from any liability related to part malfunctions or any incidents involving a vehicle or person after part installation.
+            </p>
+            <p style={{ marginBottom: "0", color: "#d84315", fontWeight: "600" }}>
+              For your safety, closed-toe shoes, shirts, and long pants are required to enter the yard.
+            </p>
+          </div>
+        </div>
+
+        <Form.Item
+          name="agreeToTerms"
+          valuePropName="checked"
+          rules={[
+            {
+              validator: (_, value) =>
+                value
+                  ? Promise.resolve()
+                  : Promise.reject(new Error("You must agree to the terms and conditions to proceed")),
+            },
+          ]}
+        >
+          <Checkbox>
+            <strong>I have read and agree to the above waiver and liability release terms</strong>
+          </Checkbox>
         </Form.Item>
 
         <div style={{ textAlign: "right" }}>

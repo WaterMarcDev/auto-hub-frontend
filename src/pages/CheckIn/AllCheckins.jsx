@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Card, Table, Button, Space, Input, Select, message } from "antd";
+import { Card, Table, Input, Select, message, Tag } from "antd";
 import { checkInAPI } from "../../utils/api";
 import getStatusColor from "../../utils/statusColors";
 import TitleBox from "../../components/TitleBox";
