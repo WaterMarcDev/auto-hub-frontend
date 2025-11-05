@@ -14,7 +14,7 @@ import {
   Input,
   Select,
 } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { DeleteOutlined, SearchOutlined } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI, inventoryAPI } from "../../utils/api";
 import AddInventoryModal from "../../components/AddInventoryModal";
 import CameraUpload from "../../components/CameraUpload";
@@ -30,6 +30,7 @@ const PartInventoryAdd = () => {
     pageSize: 10,
     total: 0,
   });
+  const [searchValue, setSearchValue] = useState("");
 
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
@@ -344,19 +345,20 @@ const PartInventoryAdd = () => {
   );
 
   // Fetch car intakes data
-  const fetchCarIntakes = async () => {
+  const fetchCarIntakes = async (page, limit, search) => {
     setLoading(true);
     try {
       console.log(
         "Fetching car intakes, page:",
-        pagination.current,
+        page || pagination.current,
         "limit:",
-        pagination.pageSize
+        limit || pagination.pageSize
       );
       const res = await carIntakeAPI.getAll({
-        page: pagination.current,
-        limit: pagination.pageSize,
+        page: page || pagination.current,
+        limit: limit || pagination.pageSize,
         status: "payment-done",
+        search: search !== undefined ? search : searchValue,
       });
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
@@ -376,6 +378,11 @@ const PartInventoryAdd = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (value) => {
+    setSearchValue(value);
+    fetchCarIntakes(1, pagination.pageSize, value);
   };
 
   useEffect(() => {
@@ -669,6 +676,41 @@ const PartInventoryAdd = () => {
             </div>
           }
         >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "16px",
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <Space.Compact style={{ flex: 1, maxWidth: 600 }} size="middle">
+              <Input
+                placeholder="Search by VIN, Make, Model, Trim..."
+                value={searchValue}
+                onChange={(e) => {
+                  setSearchValue(e.target.value);
+                  if (!e.target.value) {
+                    handleSearch("");
+                  }
+                }}
+                onPressEnter={() => handleSearch(searchValue)}
+                size="middle"
+                style={{ width: "100%" }}
+              />
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={() => handleSearch(searchValue)}
+                size="middle"
+              >
+                Search
+              </Button>
+            </Space.Compact>
+          </div>
+
           <Table
             columns={displayedColumns}
             dataSource={carIntakes}

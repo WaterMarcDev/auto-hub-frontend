@@ -14,7 +14,7 @@ import {
   Upload,
   Typography,
 } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined, SearchOutlined } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
@@ -27,6 +27,7 @@ const AddScrap = () => {
     pageSize: 10,
     total: 0,
   });
+  const [searchValue, setSearchValue] = useState("");
 
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
@@ -336,13 +337,14 @@ const AddScrap = () => {
     visibleColumns.includes(getColKey(c))
   );
 
-  const fetchCarIntakes = async () => {
+  const fetchCarIntakes = async (page, limit, search) => {
     setLoading(true);
     try {
       const res = await carIntakeAPI.getAll({
-        page: pagination.current,
-        limit: pagination.pageSize,
+        page: page || pagination.current,
+        limit: limit || pagination.pageSize,
         status: "elements-scraped",
+        search: search !== undefined ? search : searchValue,
       });
       const data = res.data || res;
       setCarIntakes(data.carIntakes || data);
@@ -362,6 +364,11 @@ const AddScrap = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (value) => {
+    setSearchValue(value);
+    fetchCarIntakes(1, pagination.pageSize, value);
   };
 
   useEffect(() => {
@@ -586,6 +593,41 @@ const AddScrap = () => {
               </div>
             }
           >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                marginBottom: 16,
+                flexWrap: "wrap",
+              }}
+            >
+              <Space.Compact style={{ flex: 1, maxWidth: 600 }} size="middle">
+                <Input
+                  placeholder="Search by VIN, Make, Model, Trim..."
+                  value={searchValue}
+                  onChange={(e) => {
+                    setSearchValue(e.target.value);
+                    if (!e.target.value) {
+                      handleSearch("");
+                    }
+                  }}
+                  onPressEnter={() => handleSearch(searchValue)}
+                  size="middle"
+                  style={{ width: "100%" }}
+                />
+                <Button
+                  type="primary"
+                  icon={<SearchOutlined />}
+                  onClick={() => handleSearch(searchValue)}
+                  size="middle"
+                >
+                  Search
+                </Button>
+              </Space.Compact>
+            </div>
+
             <Table
               columns={displayedColumns}
               dataSource={carIntakes}
