@@ -599,6 +599,12 @@ const PartInventoryAdd = () => {
     }
   };
 
+  // Determine whether all selected parts are marked as extracted
+  const _partKeys = Object.keys(inventoryParts || {});
+  const allExtracted =
+    _partKeys.length > 0 &&
+    _partKeys.every((k) => !!inventoryParts[k]?.extracted);
+
   return (
     <React.Fragment>
       <TitleBox
@@ -731,6 +737,10 @@ const PartInventoryAdd = () => {
             }
             onCancel={() => setInventoryModalVisible(false)}
             onOk={submitInventory}
+            okButtonProps={{
+              disabled: !allExtracted,
+              className: !allExtracted ? "disabled-ok-btn" : undefined,
+            }}
             width={980}
             centered
             bodyStyle={{ maxHeight: "70vh", overflow: "auto" }}
@@ -1090,6 +1100,19 @@ const PartInventoryAdd = () => {
               fetchCarIntakes();
             }}
           />
+          <style jsx global>{`
+            /* Modal OK button disabled appearance override */
+            .disabled-ok-btn {
+              background-color: #6b7280 !important;
+              border-color: #6b7280 !important;
+              color: rgba(255, 255, 255, 0.9) !important;
+              opacity: 1 !important;
+              box-shadow: none !important;
+            }
+            .disabled-ok-btn[disabled] {
+              pointer-events: none !important;
+            }
+          `}</style>
         </Card>
       </PageContentWrapper>
     </React.Fragment>
