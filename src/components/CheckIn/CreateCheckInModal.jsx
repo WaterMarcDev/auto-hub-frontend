@@ -17,7 +17,7 @@ import { customerAPI, checkInAPI, uploadAPI } from "../../utils/api";
 
 const { Option } = Select;
 
-const CreateCheckInModal = ({ open, onClose, onCreated }) => {
+const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState([]);
@@ -55,9 +55,15 @@ const CreateCheckInModal = ({ open, onClose, onCreated }) => {
   React.useEffect(() => {
     if (open) {
       form.setFieldsValue({ amount: 2 });
+      
+      // Auto-select pre-selected customer if provided
+      if (preSelectedCustomer) {
+        setSelectedCustomer(preSelectedCustomer);
+        form.setFieldsValue({ customer: preSelectedCustomer._id });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, preSelectedCustomer]);
 
   const handleFinish = async (values) => {
     setLoading(true);

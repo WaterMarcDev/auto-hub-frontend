@@ -1,13 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, Steps, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { customerAPI } from "../../utils/api";
 import CustomerInfoStep from "./CustomerInfoStep";
+import CreateCheckInModal from "../../components/CheckIn/CreateCheckInModal";
 
 const { Step } = Steps;
 
 const AddWaiver = () => {
   const navigate = useNavigate();
+  const [checkInModalOpen, setCheckInModalOpen] = useState(false);
+  const [createdCustomer, setCreatedCustomer] = useState(null);
 
   // initial data passed to the step (stateless here)
   const initialData = {
@@ -98,7 +101,8 @@ const AddWaiver = () => {
 
       console.log("Customer created via waiver form:", createdCustomer);
       message.success("Customer created successfully");
-      navigate("/waivers");
+      setCreatedCustomer(createdCustomer);
+      setCheckInModalOpen(true);
     } catch (err) {
       console.error("Error creating waiver/customer:", err);
       const errMsg =
@@ -142,6 +146,21 @@ const AddWaiver = () => {
           </Card>
         </div>
       </div>
+
+      <CreateCheckInModal
+        open={checkInModalOpen}
+        preSelectedCustomer={createdCustomer}
+        onClose={() => {
+          setCheckInModalOpen(false);
+          setCreatedCustomer(null);
+          navigate("/waivers");
+        }}
+        onCreated={() => {
+          setCheckInModalOpen(false);
+          setCreatedCustomer(null);
+          navigate("/checkins");
+        }}
+      />
     </div>
   );
 };
