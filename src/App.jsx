@@ -9,6 +9,7 @@ import {
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/layout/Layout";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Spin } from "antd";
 
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
@@ -218,7 +219,14 @@ function App() {
                     >
                       <Routes>
                         <Route path="/" element={<Dashboard2 />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route 
+                          path="/dashboard" 
+                          element={
+                            <ErrorBoundary>
+                              <Dashboard />
+                            </ErrorBoundary>
+                          } 
+                        />
                         <Route path="/make" element={<Make />} />
                         <Route path="/model" element={<Model />} />
                         <Route path="/trim" element={<Trim />} />

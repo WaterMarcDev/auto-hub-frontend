@@ -267,25 +267,6 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // User Guides - visible for all users
-    items.push({
-      key: "userGuides",
-      icon: <FileProtectOutlined />,
-      label: "User Guides",
-      children: [
-        {
-          key: "/guide/car-intake",
-          icon: <BulletIcon />,
-          label: <Link to="/guide/car-intake">Car Intake Guide</Link>,
-        },
-        {
-          key: "/guide/check-in",
-          icon: <BulletIcon />,
-          label: <Link to="/guide/check-in">Check-In Guide</Link>,
-        },
-      ],
-    });
-
     return items;
   };
 
@@ -317,8 +298,6 @@ const Sidebar = ({ isOpen }) => {
       "/waivers": "waiver",
       "/checkins": "checkin",
       "/checkins/all": "checkin",
-      "/guide/car-intake": "userGuides",
-      "/guide/check-in": "userGuides",
     };
 
     const parentKey = routeMapping[path];

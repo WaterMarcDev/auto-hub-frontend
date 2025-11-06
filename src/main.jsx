@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import React, { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
@@ -22,6 +22,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.documentElement.setAttribute("data-theme", "dark");
   document.body.classList.add("dark-theme");
 });
+
+// Ensure a global React reference exists for libraries that rely on it
+// (some precompiled bundles expect `window.React` / globalThis.React to be present)
+try {
+  if (typeof globalThis !== "undefined") globalThis.React = React;
+  // also set window.React for older environments
+  if (typeof window !== "undefined") window.React = React;
+} catch {
+  // ignore failures in restricted environments
+}
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
