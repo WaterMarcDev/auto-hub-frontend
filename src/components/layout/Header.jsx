@@ -60,6 +60,56 @@ const Header = ({ onMenuToggle }) => {
           )}
         </div>
         <div className="d-flex">
+          {/* Guide Dropdown */}
+          <div className="dropdown d-inline-block me-2">
+            <button
+              type="button"
+              className="btn header-item waves-effect"
+              id="page-header-guide-dropdown"
+              data-bs-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <i className="mdi mdi-book-open-variant font-size-20 text-light"></i>
+              <span className="d-none d-xl-inline-block ms-1 text-light">
+                Guide
+              </span>
+              <i className="mdi mdi-chevron-down d-none d-xl-inline-block text-light ms-1"></i>
+            </button>
+            <div className="dropdown-menu dropdown-menu-end">
+              <h6 className="dropdown-header">User Guides</h6>
+              <button
+                className="dropdown-item"
+                onClick={() => navigate('/guide/car-intake')}
+                style={{
+                  border: "none",
+                  background: "none",
+                  width: "100%",
+                  textAlign: "left",
+                  cursor: "pointer"
+                }}
+              >
+                <i className="mdi mdi-car font-size-16 align-middle me-1"></i>
+                Car Intake Guide
+              </button>
+              <button
+                className="dropdown-item"
+                onClick={() => navigate('/guide/check-in')}
+                style={{
+                  border: "none",
+                  background: "none",
+                  width: "100%",
+                  textAlign: "left",
+                  cursor: "pointer"
+                }}
+              >
+                <i className="mdi mdi-account-check font-size-16 align-middle me-1"></i>
+                Check-In Guide
+              </button>
+            </div>
+          </div>
+
+          {/* User Dropdown */}
           <div className="dropdown d-inline-block">
             <button
               type="button"

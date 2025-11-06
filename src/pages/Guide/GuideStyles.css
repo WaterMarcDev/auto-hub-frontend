@@ -1,0 +1,191 @@
+/* Guide Container Styles */
+.guide-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.guide-card {
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.step-card {
+  margin-bottom: 24px;
+  background: #fafafa;
+  border-left: 4px solid #1890ff;
+  transition: all 0.3s;
+}
+
+.step-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Typography Overrides */
+.guide-card h2 {
+  color: #1890ff;
+  border-bottom: 2px solid #1890ff;
+  padding-bottom: 12px;
+}
+
+.guide-card h3 {
+  color: #262626;
+  margin-top: 32px;
+}
+
+.guide-card h4 {
+  color: #595959;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guide-card h5 {
+  color: #8c8c8c;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+/* List Styles */
+.guide-card ul,
+.guide-card ol {
+  margin-left: 24px;
+  margin-bottom: 16px;
+}
+
+.guide-card li {
+  margin-bottom: 8px;
+  line-height: 1.8;
+}
+
+/* Alert Custom Styles */
+.guide-card .ant-alert {
+  margin-bottom: 16px;
+}
+
+.guide-card .ant-alert-message {
+  font-weight: 600;
+}
+
+/* Tag Styles */
+.guide-card .ant-tag {
+  font-size: 14px;
+  padding: 4px 12px;
+  font-weight: 600;
+}
+
+/* Code and Text Styles */
+.guide-card code {
+  background: #f5f5f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Divider Styles */
+.guide-card .ant-divider {
+  margin: 32px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .guide-container {
+    padding: 0 16px;
+  }
+
+  .guide-card ul,
+  .guide-card ol {
+    margin-left: 16px;
+  }
+
+  .guide-card h2 {
+    font-size: 24px;
+  }
+
+  .guide-card h3 {
+    font-size: 20px;
+  }
+
+  .guide-card h4 {
+    font-size: 18px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .guide-container .page-title-box,
+  .guide-container .breadcrumb {
+    display: none;
+  }
+
+  .step-card {
+    page-break-inside: avoid;
+  }
+
+  .guide-card {
+    box-shadow: none;
+  }
+}
+
+/* Card Hover Effects */
+.guide-card .ant-card {
+  transition: all 0.3s ease;
+}
+
+.guide-card .ant-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Icon Spacing */
+.guide-card .anticon {
+  margin-right: 8px;
+}
+
+/* Example Box Styles - Dark Mode Compatible */
+.guide-card .ant-alert-info {
+  background: rgba(24, 144, 255, 0.1);
+  border: 1px solid rgba(24, 144, 255, 0.3);
+}
+
+.guide-card .ant-alert-success {
+  background: rgba(82, 196, 26, 0.1);
+  border: 1px solid rgba(82, 196, 26, 0.3);
+}
+
+.guide-card .ant-alert-warning {
+  background: rgba(250, 173, 20, 0.1);
+  border: 1px solid rgba(250, 173, 20, 0.3);
+}
+
+.guide-card .ant-alert-error {
+  background: rgba(255, 77, 79, 0.1);
+  border: 1px solid rgba(255, 77, 79, 0.3);
+}
+
+/* Step Card Dark Mode */
+.step-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid #1890ff;
+}
+
+/* Info Cards Dark Mode */
+.guide-card .ant-card {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Typography Dark Mode Adjustments */
+.guide-card h2 {
+  color: #1890ff;
+}
+
+.guide-card h3,
+.guide-card h4,
+.guide-card h5 {
+  color: inherit;
+}
+
+/* Alert Message Color */
+.guide-card .ant-alert-message,
+.guide-card .ant-alert-description {
+  color: inherit;
+}

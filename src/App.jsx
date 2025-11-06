@@ -49,6 +49,8 @@ const WaiverDetails = React.lazy(() =>
 );
 const CheckedInList = React.lazy(() => import("./pages/CheckIn/CheckedInList"));
 const AllCheckins = React.lazy(() => import("./pages/CheckIn/AllCheckins"));
+const CarIntakeGuide = React.lazy(() => import("./pages/Guide/CarIntakeGuide"));
+const CheckInGuide = React.lazy(() => import("./pages/Guide/CheckInGuide"));
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -273,6 +275,10 @@ function App() {
                         />
                         <Route path="/checkins" element={<CheckedInList />} />
                         <Route path="/checkins/all" element={<AllCheckins />} />
+                        
+                        {/* Guide Routes */}
+                        <Route path="/guide/car-intake" element={<CarIntakeGuide />} />
+                        <Route path="/guide/check-in" element={<CheckInGuide />} />
                       </Routes>
                     </Suspense>
                   </Layout>
