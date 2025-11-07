@@ -15,6 +15,7 @@ import OurProcess from "../components/dashboard/OurProcess";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import ComingSoonModal from "../components/ComingSoonModal";
 import CreateCheckInModal from "../components/CheckIn/CreateCheckInModal";
 
@@ -55,6 +56,14 @@ const Dashboard2 = () => {
   const [checkInOpen, setCheckInOpen] = useState(false);
 
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Role checks (mirror Sidebar logic)
+  const userRole = user?.role?.toLowerCase();
+  const isManager = userRole === "manager";
+  const isFrontDesk = userRole === "front_desk";
+  const isAdmin = userRole === "admin";
+  const isStaff = userRole === "staff";
 
   useEffect(() => {
     // fetch makes on mount
@@ -260,237 +269,261 @@ const Dashboard2 = () => {
       <TitleBox title="Home" routes={["Scrap Yard"]} current="Home" />
       <PageContentWrapper>
         <div className="dashboard-cards-grid mb-4">
-          {[
-            {
-              id: "card-1",
-              title: "Dashboard",
-              color: "#ef4444",
-              onClick: () => navigate("/dashboard"),
-            },
-            {
-              id: "card-2",
-              title: "VIN Search",
-              color: "#5ba4e5",
-              onClick: () => {
-                navigate("/car-intake");
+          {(() => {
+            const cards = [
+              {
+                id: "card-1",
+                title: "Dashboard",
+                color: "#ef4444",
+                onClick: () => navigate("/dashboard"),
+                // visible to manager and admin (same as Sidebar)
+                visible: isManager || isAdmin,
               },
-            },
-            {
-              id: "card-3",
-              title: "Seller",
-              color: "#f59e0b",
-              onClick: () => {},
-            },
-            {
-              id: "card-4",
-              title: "Buyer",
-              color: "#06b6d4",
-              onClick: () => {},
-            },
-            {
-              id: "card-5",
-              title: "Search",
-              color: "#10b981",
-              onClick: () => {},
-            },
-            {
-              id: "card-6",
-              title: "Check-In",
-              color: "#525ce5",
-              onClick: () => {
-                setCheckInOpen(true);
+              {
+                id: "card-2",
+                title: "VIN Search",
+                color: "#5ba4e5",
+                onClick: () => {
+                  navigate("/car-intake");
+                },
+                // Car Intake access: admin, manager, staff
+                visible: isAdmin || isManager || isStaff,
               },
-            },
-            {
-              id: "card-7",
-              title: "Check-Out",
-              color: "#23c58f",
-              onClick: () => {
-                navigate("/checkins");
+              {
+                id: "card-3",
+                title: "Seller",
+                color: "#f59e0b",
+                onClick: () => {},
+                // Seller: front desk, admin, manager
+                visible: isFrontDesk || isAdmin || isManager,
               },
-            },
-            {
-              id: "card-8",
-              title: "Waiver Form",
-              color: "#8b5cf6",
-              onClick: () => navigate("/waivers/add"),
-            },
-          ].map((c) => (
-            <div
-              key={c.id}
-              role="button"
-              tabIndex={0}
-              onClick={c.onClick}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: 100,
-                borderRadius: 8,
-                color: "#fff",
-                cursor: "pointer",
-                minWidth: 0,
-                boxSizing: "border-box",
-                backgroundImage: `url('/assets/images/title-img.png')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundColor: c.color,
-                boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-                userSelect: "none",
-              }}
-            >
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 18, fontWeight: 600 }}>{c.title}</div>
-                {c.id === "card-3" && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: "flex",
-                      gap: 10,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Tag
-                      style={{
-                        cursor: "pointer",
-                        padding: "6px 16px",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        borderRadius: 6,
-                        border: "none",
-                        margin: 0,
-                        transition: "all 0.3s ease",
-                      }}
-                      color="#2563eb"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSellerModalOpen(true);
-                      }}
-                    >
-                      Search
-                    </Tag>
-                    <Tag
-                      style={{
-                        cursor: "pointer",
-                        padding: "6px 16px",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        borderRadius: 6,
-                        border: "none",
-                        margin: 0,
-                        transition: "all 0.3s ease",
-                      }}
-                      color="#16a34a"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/seller/register");
-                      }}
-                    >
-                      Register
-                    </Tag>
+              {
+                id: "card-4",
+                title: "Buyer",
+                color: "#06b6d4",
+                onClick: () => {},
+                // Buyer: front desk, admin, manager
+                visible: isFrontDesk || isAdmin || isManager,
+              },
+              {
+                id: "card-5",
+                title: "Search",
+                color: "#10b981",
+                onClick: () => {},
+                // Search (part/car) - restrict to inventory/car roles (admin, manager, staff)
+                visible: isAdmin || isManager || isStaff,
+              },
+              {
+                id: "card-6",
+                title: "Check-In",
+                color: "#525ce5",
+                onClick: () => {
+                  setCheckInOpen(true);
+                },
+                // Check-In: front desk, admin, manager
+                visible: isFrontDesk || isAdmin || isManager,
+              },
+              {
+                id: "card-7",
+                title: "Check-Out",
+                color: "#23c58f",
+                onClick: () => {
+                  navigate("/checkins");
+                },
+                // Check-In lists: front desk, admin, manager
+                visible: isFrontDesk || isAdmin || isManager,
+              },
+              {
+                id: "card-8",
+                title: "Waiver Form",
+                color: "#8b5cf6",
+                onClick: () => navigate("/waivers/add"),
+                // Waiver: front desk, admin, manager
+                visible: isFrontDesk || isAdmin || isManager,
+              },
+            ];
+
+            return cards
+              .filter((c) => c.visible)
+              .map((c) => (
+                <div
+                  key={c.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={c.onClick}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: 100,
+                    borderRadius: 8,
+                    color: "#fff",
+                    cursor: "pointer",
+                    minWidth: 0,
+                    boxSizing: "border-box",
+                    backgroundImage: `url('/assets/images/title-img.png')`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundColor: c.color,
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+                    userSelect: "none",
+                  }}
+                >
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 600 }}>
+                      {c.title}
+                    </div>
+                    {c.id === "card-3" && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          display: "flex",
+                          gap: 10,
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Tag
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 16px",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            borderRadius: 6,
+                            border: "none",
+                            margin: 0,
+                            transition: "all 0.3s ease",
+                          }}
+                          color="#2563eb"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSellerModalOpen(true);
+                          }}
+                        >
+                          Search
+                        </Tag>
+                        <Tag
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 16px",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            borderRadius: 6,
+                            border: "none",
+                            margin: 0,
+                            transition: "all 0.3s ease",
+                          }}
+                          color="#16a34a"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/seller/register");
+                          }}
+                        >
+                          Register
+                        </Tag>
+                      </div>
+                    )}
+                    {c.id === "card-4" && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          display: "flex",
+                          gap: 10,
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Tag
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 16px",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            borderRadius: 6,
+                            border: "none",
+                            margin: 0,
+                            transition: "all 0.3s ease",
+                          }}
+                          color="#2563eb"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBuyerModalOpen(true);
+                          }}
+                        >
+                          Search
+                        </Tag>
+                        <Tag
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 16px",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            borderRadius: 6,
+                            border: "none",
+                            margin: 0,
+                            transition: "all 0.3s ease",
+                          }}
+                          color="#16a34a"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/buyer/register");
+                          }}
+                        >
+                          Register
+                        </Tag>
+                      </div>
+                    )}
+                    {c.id === "card-5" && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          display: "flex",
+                          gap: 10,
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Tag
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 16px",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            borderRadius: 6,
+                            border: "none",
+                            margin: 0,
+                            transition: "all 0.3s ease",
+                          }}
+                          color="#2563eb"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCarSearchOpen(true);
+                          }}
+                        >
+                          Car Search
+                        </Tag>
+                        <Tag
+                          style={{
+                            cursor: "pointer",
+                            padding: "6px 16px",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            borderRadius: 6,
+                            border: "none",
+                            margin: 0,
+                            transition: "all 0.3s ease",
+                          }}
+                          color="#16a34a"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPartSearchOpen(true);
+                          }}
+                        >
+                          Part Search
+                        </Tag>
+                      </div>
+                    )}
                   </div>
-                )}
-                {c.id === "card-4" && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: "flex",
-                      gap: 10,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Tag
-                      style={{
-                        cursor: "pointer",
-                        padding: "6px 16px",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        borderRadius: 6,
-                        border: "none",
-                        margin: 0,
-                        transition: "all 0.3s ease",
-                      }}
-                      color="#2563eb"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setBuyerModalOpen(true);
-                      }}
-                    >
-                      Search
-                    </Tag>
-                    <Tag
-                      style={{
-                        cursor: "pointer",
-                        padding: "6px 16px",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        borderRadius: 6,
-                        border: "none",
-                        margin: 0,
-                        transition: "all 0.3s ease",
-                      }}
-                      color="#16a34a"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate("/buyer/register");
-                      }}
-                    >
-                      Register
-                    </Tag>
-                  </div>
-                )}
-                {c.id === "card-5" && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: "flex",
-                      gap: 10,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Tag
-                      style={{
-                        cursor: "pointer",
-                        padding: "6px 16px",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        borderRadius: 6,
-                        border: "none",
-                        margin: 0,
-                        transition: "all 0.3s ease",
-                      }}
-                      color="#2563eb"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCarSearchOpen(true);
-                      }}
-                    >
-                      Car Search
-                    </Tag>
-                    <Tag
-                      style={{
-                        cursor: "pointer",
-                        padding: "6px 16px",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        borderRadius: 6,
-                        border: "none",
-                        margin: 0,
-                        transition: "all 0.3s ease",
-                      }}
-                      color="#16a34a"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPartSearchOpen(true);
-                      }}
-                    >
-                      Part Search
-                    </Tag>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+                </div>
+              ));
+          })()}
         </div>
         <div className="row">
           {/* Our Process */}
