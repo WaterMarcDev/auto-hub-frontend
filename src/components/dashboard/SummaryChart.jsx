@@ -89,34 +89,25 @@ const SummaryChart = ({
         );
         if (!mounted) return;
         if (Array.isArray(payload.labels) && Array.isArray(payload.series)) {
-          // Format labels based on groupBy
+          // Compute canonical expected labels from startDate/endDate for month/day
+          // to avoid an extra leading/trailing bucket returned by the API.
+          let expectedLabels = null; // canonical labels like 'YYYY-MM' or 'YYYY-MM-DD'
           let displayLabels = payload.labels;
+
+          const pad = (n) => (String(n).length === 1 ? `0${n}` : String(n));
+
           try {
-            if (groupBy === "hour") {
-              // For hourly grouping, show time only in 24-hour format (HH:00)
-              displayLabels = payload.labels.map((lbl) => {
-                // Expecting formats like 'YYYY-MM-DDTHH' or 'YYYY-MM-DDTHH:mm' or ISO strings
-                const m = String(lbl).match(/T?(\d{2})(?::\d{2})?$/);
-                if (m && m[1] !== undefined) return `${m[1]}:00`;
-                // Fallback: parse date and extract hour
-                const d = new Date(lbl);
-                if (!isNaN(d))
-                  return `${String(d.getHours()).padStart(2, "0")}:00`;
-                return lbl;
-              });
-            } else if (groupBy === "day") {
-              // For daily grouping, show day only (1, 2, 3, ...)
-              displayLabels = payload.labels.map((lbl) => {
-                // Expecting format 'YYYY-MM-DD'
-                const m = String(lbl).match(/\d{4}-\d{2}-(\d{2})$/);
-                if (m && m[1] !== undefined) return String(parseInt(m[1], 10));
-                // Fallback: parse date and extract day
-                const d = new Date(lbl);
-                if (!isNaN(d)) return String(d.getDate());
-                return lbl;
-              });
-            } else if (groupBy === "month") {
-              // For monthly grouping (year view), convert labels like '2025-01' to month names
+            if (groupBy === "month" && startDate && endDate) {
+              const start = new Date(startDate);
+              const end = new Date(endDate);
+              const months = [];
+              const cur = new Date(start.getFullYear(), start.getMonth(), 1);
+              while (cur <= end) {
+                months.push(`${cur.getFullYear()}-${pad(cur.getMonth() + 1)}`);
+                cur.setMonth(cur.getMonth() + 1);
+              }
+              expectedLabels = months;
+
               const monthNames = [
                 "Jan",
                 "Feb",
@@ -131,40 +122,90 @@ const SummaryChart = ({
                 "Nov",
                 "Dec",
               ];
-              displayLabels = payload.labels.map((lbl) => {
-                // Expecting format 'YYYY-MM' or 'YYYY-MM-DD' sometimes
+              displayLabels = expectedLabels.map((lbl) => {
                 const m = String(lbl).match(/\d{4}-(\d{2})$/);
                 if (m && m[1] !== undefined) {
                   const mi = parseInt(m[1], 10) - 1;
-                  if (mi >= 0 && mi < 12) return monthNames[mi];
+                  return monthNames[mi] || lbl;
                 }
-                // Fallback: try parsing as date and get month
+                return lbl;
+              });
+            } else if (groupBy === "day" && startDate && endDate) {
+              const start = new Date(startDate);
+              const end = new Date(endDate);
+              const days = [];
+              const cur = new Date(
+                start.getFullYear(),
+                start.getMonth(),
+                start.getDate()
+              );
+              while (cur <= end) {
+                days.push(
+                  `
+                  ${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(
+                    cur.getDate()
+                  )}
+                `.trim()
+                );
+                cur.setDate(cur.getDate() + 1);
+              }
+              expectedLabels = days;
+              displayLabels = expectedLabels.map((lbl) => {
+                const m = String(lbl).match(/\d{4}-\d{2}-(\d{2})$/);
+                if (m && m[1] !== undefined) return String(parseInt(m[1], 10));
+                return lbl;
+              });
+            } else if (groupBy === "hour") {
+              displayLabels = payload.labels.map((lbl) => {
+                const m = String(lbl).match(/T?(\d{2})(?::\d{2})?$/);
+                if (m && m[1] !== undefined) return `${m[1]}:00`;
                 const d = new Date(lbl);
-                if (!isNaN(d)) return monthNames[d.getMonth()];
+                if (!isNaN(d))
+                  return `${String(d.getHours()).padStart(2, "0")}:00`;
                 return lbl;
               });
             }
           } catch (e) {
-            console.warn("Failed to format labels", e);
+            console.warn("Failed to compute expected labels", e);
             displayLabels = payload.labels;
+            expectedLabels = null;
           }
 
-          // normalize series lengths to labels length (pad with zeros)
+          const canonicalLabels = expectedLabels || payload.labels;
+
           const normalizedSeries = (payload.series || []).map((s) => {
-            const data = Array.isArray(s.data) ? s.data.slice() : [];
-            if (data.length < displayLabels.length) {
+            const srcData = Array.isArray(s.data) ? s.data.slice() : [];
+            if (expectedLabels) {
+              const labelToValue = {};
+              (payload.labels || []).forEach((lab, idx) => {
+                labelToValue[String(lab)] =
+                  srcData[idx] !== undefined ? srcData[idx] : 0;
+              });
+              const mapped = canonicalLabels.map((cl) => {
+                if (labelToValue[cl] !== undefined) return labelToValue[cl];
+                const foundKey = Object.keys(labelToValue).find((k) =>
+                  String(k).startsWith(String(cl))
+                );
+                if (foundKey) return labelToValue[foundKey];
+                return 0;
+              });
+              return { name: s.name, data: mapped };
+            }
+
+            const data = srcData;
+            if (data.length < canonicalLabels.length) {
               return {
                 name: s.name,
                 data: [
                   ...data,
-                  ...Array(displayLabels.length - data.length).fill(0),
+                  ...Array(canonicalLabels.length - data.length).fill(0),
                 ],
               };
             }
-            if (data.length > displayLabels.length) {
+            if (data.length > canonicalLabels.length) {
               return {
                 name: s.name,
-                data: data.slice(0, displayLabels.length),
+                data: data.slice(0, canonicalLabels.length),
               };
             }
             return s;
