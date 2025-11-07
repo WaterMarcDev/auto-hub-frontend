@@ -343,186 +343,202 @@ const Dashboard2 = () => {
               },
             ];
 
-            return cards
-              .filter((c) => c.visible)
-              .map((c) => (
-                <div
-                  key={c.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={c.onClick}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: 100,
-                    borderRadius: 8,
-                    color: "#fff",
-                    cursor: "pointer",
-                    minWidth: 0,
-                    boxSizing: "border-box",
-                    backgroundImage: `url('/assets/images/title-img.png')`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundColor: c.color,
-                    boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-                    userSelect: "none",
-                  }}
-                >
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 18, fontWeight: 600 }}>
-                      {c.title}
+            // compute visible cards using the same RBAC flags as Sidebar
+            let visibleCards = cards.filter((c) => c.visible);
+
+            // If user is front desk, enforce a custom ordering:
+            // Waiver Form, Check-In, Check-Out, Seller, Buyer
+            if (isFrontDesk) {
+              const order = [
+                "card-8", // Waiver Form
+                "card-6", // Check-In
+                "card-7", // Check-Out
+                "card-3", // Seller
+                "card-4", // Buyer
+              ];
+              const idx = (id) => {
+                const i = order.indexOf(id);
+                return i === -1 ? 999 : i;
+              };
+              visibleCards.sort((a, b) => idx(a.id) - idx(b.id));
+            }
+
+            return visibleCards.map((c) => (
+              <div
+                key={c.id}
+                role="button"
+                tabIndex={0}
+                onClick={c.onClick}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: 100,
+                  borderRadius: 8,
+                  color: "#fff",
+                  cursor: "pointer",
+                  minWidth: 0,
+                  boxSizing: "border-box",
+                  backgroundImage: `url('/assets/images/title-img.png')`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  backgroundColor: c.color,
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+                  userSelect: "none",
+                }}
+              >
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 18, fontWeight: 600 }}>{c.title}</div>
+                  {c.id === "card-3" && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: "flex",
+                        gap: 10,
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Tag
+                        style={{
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                          transition: "all 0.3s ease",
+                        }}
+                        color="#2563eb"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSellerModalOpen(true);
+                        }}
+                      >
+                        Search
+                      </Tag>
+                      <Tag
+                        style={{
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                          transition: "all 0.3s ease",
+                        }}
+                        color="#16a34a"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/seller/register");
+                        }}
+                      >
+                        Register
+                      </Tag>
                     </div>
-                    {c.id === "card-3" && (
-                      <div
+                  )}
+                  {c.id === "card-4" && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: "flex",
+                        gap: 10,
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Tag
                         style={{
-                          marginTop: 8,
-                          display: "flex",
-                          gap: 10,
-                          justifyContent: "center",
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                          transition: "all 0.3s ease",
+                        }}
+                        color="#2563eb"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBuyerModalOpen(true);
                         }}
                       >
-                        <Tag
-                          style={{
-                            cursor: "pointer",
-                            padding: "6px 16px",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            borderRadius: 6,
-                            border: "none",
-                            margin: 0,
-                            transition: "all 0.3s ease",
-                          }}
-                          color="#2563eb"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSellerModalOpen(true);
-                          }}
-                        >
-                          Search
-                        </Tag>
-                        <Tag
-                          style={{
-                            cursor: "pointer",
-                            padding: "6px 16px",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            borderRadius: 6,
-                            border: "none",
-                            margin: 0,
-                            transition: "all 0.3s ease",
-                          }}
-                          color="#16a34a"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/seller/register");
-                          }}
-                        >
-                          Register
-                        </Tag>
-                      </div>
-                    )}
-                    {c.id === "card-4" && (
-                      <div
+                        Search
+                      </Tag>
+                      <Tag
                         style={{
-                          marginTop: 8,
-                          display: "flex",
-                          gap: 10,
-                          justifyContent: "center",
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                          transition: "all 0.3s ease",
+                        }}
+                        color="#16a34a"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/buyer/register");
                         }}
                       >
-                        <Tag
-                          style={{
-                            cursor: "pointer",
-                            padding: "6px 16px",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            borderRadius: 6,
-                            border: "none",
-                            margin: 0,
-                            transition: "all 0.3s ease",
-                          }}
-                          color="#2563eb"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setBuyerModalOpen(true);
-                          }}
-                        >
-                          Search
-                        </Tag>
-                        <Tag
-                          style={{
-                            cursor: "pointer",
-                            padding: "6px 16px",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            borderRadius: 6,
-                            border: "none",
-                            margin: 0,
-                            transition: "all 0.3s ease",
-                          }}
-                          color="#16a34a"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/buyer/register");
-                          }}
-                        >
-                          Register
-                        </Tag>
-                      </div>
-                    )}
-                    {c.id === "card-5" && (
-                      <div
+                        Register
+                      </Tag>
+                    </div>
+                  )}
+                  {c.id === "card-5" && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: "flex",
+                        gap: 10,
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Tag
                         style={{
-                          marginTop: 8,
-                          display: "flex",
-                          gap: 10,
-                          justifyContent: "center",
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                          transition: "all 0.3s ease",
+                        }}
+                        color="#2563eb"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCarSearchOpen(true);
                         }}
                       >
-                        <Tag
-                          style={{
-                            cursor: "pointer",
-                            padding: "6px 16px",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            borderRadius: 6,
-                            border: "none",
-                            margin: 0,
-                            transition: "all 0.3s ease",
-                          }}
-                          color="#2563eb"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCarSearchOpen(true);
-                          }}
-                        >
-                          Car Search
-                        </Tag>
-                        <Tag
-                          style={{
-                            cursor: "pointer",
-                            padding: "6px 16px",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            borderRadius: 6,
-                            border: "none",
-                            margin: 0,
-                            transition: "all 0.3s ease",
-                          }}
-                          color="#16a34a"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPartSearchOpen(true);
-                          }}
-                        >
-                          Part Search
-                        </Tag>
-                      </div>
-                    )}
-                  </div>
+                        Car Search
+                      </Tag>
+                      <Tag
+                        style={{
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                          transition: "all 0.3s ease",
+                        }}
+                        color="#16a34a"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPartSearchOpen(true);
+                        }}
+                      >
+                        Part Search
+                      </Tag>
+                    </div>
+                  )}
                 </div>
-              ));
+              </div>
+            ));
           })()}
         </div>
         <div className="row">
