@@ -12,11 +12,11 @@ const defaultOptions = {
   plotOptions: {
     bar: { horizontal: false, columnWidth: "20%", endingShape: "rounded" },
   },
-  dataLabels: { 
+  dataLabels: {
     enabled: true,
     style: {
-      colors: ['#ffffff']
-    }
+      colors: ["#ffffff"],
+    },
   },
   xaxis: {
     categories: [
@@ -113,6 +113,34 @@ const SummaryChart = ({
                 // Fallback: parse date and extract day
                 const d = new Date(lbl);
                 if (!isNaN(d)) return String(d.getDate());
+                return lbl;
+              });
+            } else if (groupBy === "month") {
+              // For monthly grouping (year view), convert labels like '2025-01' to month names
+              const monthNames = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+              ];
+              displayLabels = payload.labels.map((lbl) => {
+                // Expecting format 'YYYY-MM' or 'YYYY-MM-DD' sometimes
+                const m = String(lbl).match(/\d{4}-(\d{2})$/);
+                if (m && m[1] !== undefined) {
+                  const mi = parseInt(m[1], 10) - 1;
+                  if (mi >= 0 && mi < 12) return monthNames[mi];
+                }
+                // Fallback: try parsing as date and get month
+                const d = new Date(lbl);
+                if (!isNaN(d)) return monthNames[d.getMonth()];
                 return lbl;
               });
             }

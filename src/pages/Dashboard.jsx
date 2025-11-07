@@ -36,6 +36,41 @@ const Dashboard = () => {
     now.toISOString().slice(0, 10)
   );
 
+  // Helper to display month as 'YYYY Mon' instead of 'YYYY-MM'
+  const getMonthDisplay = (monthStr) => {
+    if (!monthStr) return monthStr;
+    const parts = String(monthStr).split("-");
+    if (parts.length >= 2) {
+      const year = parts[0];
+      const mm = parts[1];
+      const monthIndex = parseInt(mm, 10) - 1;
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      if (!Number.isNaN(monthIndex) && monthIndex >= 0 && monthIndex < 12) {
+        return `${year} ${monthNames[monthIndex]}`;
+      }
+    }
+    // fallback: try parsing as date
+    const d = new Date(monthStr);
+    if (!isNaN(d))
+      return `${d.getFullYear()} ${d.toLocaleString(undefined, {
+        month: "short",
+      })}`;
+    return monthStr;
+  };
+
   const getRangeParams = (r) => {
     let start;
     let end;
@@ -180,7 +215,9 @@ const Dashboard = () => {
                         <p className="mb-1">Year - {selectedYear}</p>
                       )}
                       {range === "Month" && (
-                        <p className="mb-1">Month - {selectedMonth}</p>
+                        <p className="mb-1">
+                          Month - {getMonthDisplay(selectedMonth)}
+                        </p>
                       )}
                       {range === "Week" && (
                         <p className="mb-1">Week - {selectedWeek}</p>
@@ -309,7 +346,11 @@ const Dashboard = () => {
             <div className="col-xl-4 col-lg-6 col-md-6">
               <div
                 className="card"
-                style={{ backgroundColor: "#1F293D", color: "#D6D9E6", height: "240px" }}
+                style={{
+                  backgroundColor: "#1F293D",
+                  color: "#D6D9E6",
+                  height: "240px",
+                }}
               >
                 <div className="card-body">
                   <RevenueCard />
@@ -326,26 +367,51 @@ const Dashboard = () => {
                 <div className="col-6">
                   <div
                     className="card"
-                    style={{ backgroundColor: "#1F293D", color: "#D6D9E6", height: "240px" }}
+                    style={{
+                      backgroundColor: "#1F293D",
+                      color: "#D6D9E6",
+                      height: "240px",
+                    }}
                   >
                     <div className="card-body py-3">
                       <div className="text-center">
                         <p className="font-size-15 mb-2">Parts Orders</p>
                         <div className="mini-stat-icon mx-auto mb-2">
-                          <span className="avatar-title rounded-circle bg-soft-primary" style={{ width: '45px', height: '45px' }}>
+                          <span
+                            className="avatar-title rounded-circle bg-soft-primary"
+                            style={{ width: "45px", height: "45px" }}
+                          >
                             <i className="mdi mdi-cart-outline text-primary font-size-20" />
                           </span>
                         </div>
                         <h5 className="font-size-20 mb-2">{partsOrders}</h5>
                         <p className="text-muted font-size-12 mb-2">
-                          {partsOrders > 0 ? `${Math.min(Math.round((partsOrders / 100) * 100), 100)}%` : '0%'} Progress
+                          {partsOrders > 0
+                            ? `${Math.min(
+                                Math.round((partsOrders / 100) * 100),
+                                100
+                              )}%`
+                            : "0%"}{" "}
+                          Progress
                         </p>
                         <div className="progress" style={{ height: 4 }}>
                           <div
                             className="progress-bar bg-primary"
                             role="progressbar"
-                            style={{ width: partsOrders > 0 ? `${Math.min(Math.round((partsOrders / 100) * 100), 100)}%` : "0%" }}
-                            aria-valuenow={partsOrders > 0 ? Math.round((partsOrders / 100) * 100) : 0}
+                            style={{
+                              width:
+                                partsOrders > 0
+                                  ? `${Math.min(
+                                      Math.round((partsOrders / 100) * 100),
+                                      100
+                                    )}%`
+                                  : "0%",
+                            }}
+                            aria-valuenow={
+                              partsOrders > 0
+                                ? Math.round((partsOrders / 100) * 100)
+                                : 0
+                            }
                             aria-valuemin={0}
                             aria-valuemax={100}
                           />
@@ -358,26 +424,51 @@ const Dashboard = () => {
                 <div className="col-6">
                   <div
                     className="card"
-                    style={{ backgroundColor: "#1F293D", color: "#D6D9E6", height: "240px" }}
+                    style={{
+                      backgroundColor: "#1F293D",
+                      color: "#D6D9E6",
+                      height: "240px",
+                    }}
                   >
                     <div className="card-body py-3">
                       <div className="text-center">
                         <p className="font-size-15 mb-2">Sellers</p>
                         <div className="mini-stat-icon mx-auto mb-2">
-                          <span className="avatar-title rounded-circle bg-soft-success" style={{ width: '45px', height: '45px' }}>
+                          <span
+                            className="avatar-title rounded-circle bg-soft-success"
+                            style={{ width: "45px", height: "45px" }}
+                          >
                             <i className="mdi mdi-account-outline text-success font-size-20" />
                           </span>
                         </div>
                         <h5 className="font-size-20 mb-2">{sellerCount}</h5>
                         <p className="text-muted font-size-12 mb-2">
-                          {sellerCount > 0 ? `${Math.min(Math.round((sellerCount / 50) * 100), 100)}%` : '0%'} Progress
+                          {sellerCount > 0
+                            ? `${Math.min(
+                                Math.round((sellerCount / 50) * 100),
+                                100
+                              )}%`
+                            : "0%"}{" "}
+                          Progress
                         </p>
                         <div className="progress" style={{ height: 4 }}>
                           <div
                             className="progress-bar bg-success"
                             role="progressbar"
-                            style={{ width: sellerCount > 0 ? `${Math.min(Math.round((sellerCount / 50) * 100), 100)}%` : "0%" }}
-                            aria-valuenow={sellerCount > 0 ? Math.round((sellerCount / 50) * 100) : 0}
+                            style={{
+                              width:
+                                sellerCount > 0
+                                  ? `${Math.min(
+                                      Math.round((sellerCount / 50) * 100),
+                                      100
+                                    )}%`
+                                  : "0%",
+                            }}
+                            aria-valuenow={
+                              sellerCount > 0
+                                ? Math.round((sellerCount / 50) * 100)
+                                : 0
+                            }
                             aria-valuemin={0}
                             aria-valuemax={100}
                           />
