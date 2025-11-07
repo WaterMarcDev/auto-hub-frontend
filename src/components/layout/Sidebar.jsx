@@ -35,6 +35,7 @@ const Sidebar = ({ isOpen }) => {
   const isManager = userRole === "manager";
   const isFrontDesk = userRole === "front_desk";
   const isAdmin = userRole === "admin";
+  const isStaff = userRole === "staff";
 
   // Setup menu items based on user role
   const getMenuItems = () => {
@@ -48,21 +49,20 @@ const Sidebar = ({ isOpen }) => {
     });
 
     // Home and Dashboard - visible for Admin and Front Desk
-    if (!isManager) {
-      items.push({
-        key: "/",
-        icon: <HomeOutlined />,
-        label: <Link to="/">Home</Link>,
-      });
+    // Home - visible to all users
+    items.push({
+      key: "/",
+      icon: <HomeOutlined />,
+      label: <Link to="/">Home</Link>,
+    });
+
+    // Master Menu - Only for Admin
+    if (isManager || isAdmin) {
       items.push({
         key: "/dashboard",
         icon: <DashboardOutlined />,
         label: <Link to="/dashboard">Dashboard</Link>,
       });
-    }
-
-    // Master Menu - Only for Admin
-    if (isAdmin) {
       items.push({
         key: "master",
         icon: <AppstoreOutlined />,
@@ -98,26 +98,28 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // Car Intake - visible for Manager, Front Desk, and Admin
-    items.push({
-      key: "carIntake",
-      icon: <CarOutlined />,
-      label: "Car Intake",
-      children: [
-        {
-          key: "/car-intake",
-          icon: <BulletIcon />,
-          label: <Link to="/car-intake">Add New Car</Link>,
-        },
-        {
-          key: "/car-intake-list",
-          icon: <BulletIcon />,
-          label: <Link to="/car-intake-list">Lists</Link>,
-        },
-      ],
-    });
+    if (isAdmin || isManager || isStaff) {
+      items.push({
+        key: "carIntake",
+        icon: <CarOutlined />,
+        label: "Car Intake",
+        children: [
+          {
+            key: "/car-intake",
+            icon: <BulletIcon />,
+            label: <Link to="/car-intake">Add New Car</Link>,
+          },
+          {
+            key: "/car-intake-list",
+            icon: <BulletIcon />,
+            label: <Link to="/car-intake-list">Lists</Link>,
+          },
+        ],
+      });
+    }
 
     // Car Parts Inventory - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin) {
+    if (isAdmin || isManager || isStaff) {
       const carPartsChildren = [];
       if (isAdmin) {
         carPartsChildren.push({
@@ -147,7 +149,7 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // Car Inventory - Only for Admin
-    if (isAdmin) {
+    if (isAdmin || isManager || isStaff) {
       items.push({
         key: "carInventory",
         icon: <InboxOutlined />,
@@ -163,7 +165,7 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // Scrap a Car - Only for Admin
-    if (isAdmin) {
+    if (isAdmin || isManager || isStaff) {
       items.push({
         key: "scrapCar",
         icon: <DeleteOutlined />,
@@ -184,7 +186,7 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // Seller - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin) {
+    if (isFrontDesk || isAdmin || isManager) {
       items.push({
         key: "seller",
         icon: <UserOutlined />,
@@ -205,7 +207,7 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // Check-In - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin) {
+    if (isFrontDesk || isAdmin || isManager) {
       items.push({
         key: "checkin",
         icon: <CarOutlined />,
@@ -226,7 +228,7 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // Buyer - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin) {
+    if (isFrontDesk || isAdmin || isManager) {
       items.push({
         key: "buyer",
         icon: <UserOutlined />,
@@ -247,7 +249,7 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // Waiver - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin) {
+    if (isFrontDesk || isAdmin || isManager) {
       items.push({
         key: "waiver",
         icon: <FileProtectOutlined />,
