@@ -25,12 +25,12 @@ import PageContentWrapper from "../../components/PageContentWrapper";
 
 const SellerList = () => {
   const [sellers, setSellers] = useState([]);
-  const [filteredSellers, setFilteredSellers] = useState([]);
+  // sellers is the current page of sellers from backend
   const [searchValue, setSearchValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 2,
     total: 0,
   });
   const [docModalVisible, setDocModalVisible] = useState(false);
@@ -78,18 +78,31 @@ const SellerList = () => {
   const fetchSellers = async (params = {}) => {
     setLoading(true);
     try {
-      // Use customers endpoint filtered by type to keep single source of truth
+      // Use customers endpoint filtered by type; support server-side search & pagination
+      const page = Number(params.page ?? pagination.page ?? 1);
+      const limit = Number(pagination.limit);
+      const search = params.search ?? searchValue ?? "";
+
+      // Debug: log outgoing request
+      console.debug("fetchSellers request", { page, limit, search });
+
       const res = await customerAPI.getAll({
         type: "seller",
-        page: params.page || pagination.page,
-        limit: params.limit || pagination.limit,
+        page,
+        limit,
+        search,
       });
 
       const data = res.data || res;
+      console.debug("fetchSellers response", data?.pagination);
       const fetchedSellers = data.customers || data.sellers || [];
       setSellers(fetchedSellers);
-      setFilteredSellers(fetchedSellers);
-      if (data.pagination) setPagination(data.pagination);
+
+      setPagination({
+        page,
+        limit,
+        total: Number(data.pagination?.total ?? fetchedSellers.length),
+      });
     } catch (err) {
       console.error(err);
       notificationApi.error({
@@ -101,47 +114,19 @@ const SellerList = () => {
     }
   };
 
-  // Universal search function
+  // Universal search function (server-side)
   const handleSearch = (value) => {
-    const searchValue = value.toLowerCase().trim();
-
-    if (!searchValue) {
-      setFilteredSellers(sellers);
-      return;
-    }
-
-    const filtered = sellers.filter((seller) => {
-      // Search in name (firstName + lastName)
-      const fullName = `${seller.firstName || ""} ${
-        seller.lastName || ""
-      }`.toLowerCase();
-
-      // Search in email
-      const email = (seller.email || "").toLowerCase();
-
-      // Search in mobile number
-      const mobileNo = (seller.mobileNo || "").toLowerCase();
-
-      // Search in description
-      const description = (seller.description || "").toLowerCase();
-
-      return (
-        fullName.includes(searchValue) ||
-        email.includes(searchValue) ||
-        mobileNo.includes(searchValue) ||
-        description.includes(searchValue)
-      );
-    });
-
-    setFilteredSellers(filtered);
+    const trimmed = value.trim();
+    setSearchValue(trimmed);
+    // fetch from server with search applied, reset to page 1
+    fetchSellers({ page: 1, limit: pagination.limit, search: trimmed });
   };
 
   // Clear search
   const handleSearchClear = () => {
     setSearchValue("");
-    setFilteredSellers(sellers);
+    fetchSellers({ page: 1, limit: pagination.limit, search: "" });
   };
-  const INITIAL_LIMIT = 10;
 
   const minWidthForTitle = (title) => {
     if (!title) return 80;
@@ -154,7 +139,12 @@ const SellerList = () => {
     try {
       await customerAPI.delete(id);
       notificationApi.success({ message: "Seller deleted successfully" });
-      fetchSellers();
+      // refetch current page
+      fetchSellers({
+        page: pagination.page,
+        limit: pagination.limit,
+        search: searchValue,
+      });
     } catch (err) {
       console.error(err);
       notificationApi.error({
@@ -168,16 +158,8 @@ const SellerList = () => {
     (async () => {
       setLoading(true);
       try {
-        const res = await customerAPI.getAll({
-          type: "seller",
-          page: 1,
-          limit: INITIAL_LIMIT,
-        });
-        const data = res.data || res;
-        const fetchedSellers = data.customers || data.sellers || [];
-        setSellers(fetchedSellers);
-        setFilteredSellers(fetchedSellers);
-        if (data.pagination) setPagination(data.pagination);
+        // initial fetch uses shared fetchSellers helper
+        await fetchSellers({ page: 1, limit: pagination.limit, search: "" });
       } catch (err) {
         console.error(err);
         notificationApi.error({
@@ -632,7 +614,7 @@ const SellerList = () => {
 
           <Table
             columns={columnsWithMin}
-            dataSource={filteredSellers}
+            dataSource={sellers}
             rowKey={(r) => r._id || r.email}
             loading={loading}
             size="small"
@@ -642,13 +624,13 @@ const SellerList = () => {
             pagination={{
               current: pagination.page,
               pageSize: pagination.limit,
-              total: filteredSellers.length || pagination.total,
+              total: pagination.total,
               showTotal: (total, range) =>
                 `${range[0]}-${range[1]} of ${total} sellers`,
               showSizeChanger: true,
               pageSizeOptions: ["10", "20", "50", "100"],
               onChange: (page, pageSize) =>
-                fetchSellers({ page, limit: pageSize }),
+                fetchSellers({ page, limit: pageSize, search: searchValue }),
             }}
           />
         </Card>
