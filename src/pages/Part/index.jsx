@@ -25,6 +25,7 @@ import PartForm from "./PartForm";
 
 const Part = () => {
   const [parts, setParts] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
   const [pagination, setPagination] = React.useState({
     page: 1,
     limit: 10,
@@ -43,16 +44,26 @@ const Part = () => {
   React.useEffect(() => {
     let cancelled = false;
     const getParts = async () => {
+      setLoading(true);
       const params = {
         page: pagination.page,
         limit: pagination.limit,
       };
       if (search && String(search).trim() !== "") params.search = search.trim();
 
-      const { data } = await partAPI.getAll(params);
-      if (cancelled) return;
-      setParts(data.parts);
-      setPagination(data.pagination);
+      try {
+        const { data } = await partAPI.getAll(params);
+        if (cancelled) return;
+        setParts(data.parts);
+        setPagination(data.pagination);
+      } catch (err) {
+        // surface error via notification system
+        const msg =
+          err.response?.data?.message || err.message || "Failed to fetch";
+        notification.error({ message: "Error", description: msg });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
     getParts();
@@ -98,6 +109,8 @@ const Part = () => {
     {
       title: "Sr. No.",
       key: "srNo",
+      fixed: "left",
+      minWidth: 70,
       render: (text, record, index) =>
         (pagination.page - 1) * pagination.limit + index + 1,
     },
@@ -105,27 +118,31 @@ const Part = () => {
       title: "Part Name",
       dataIndex: "name",
       key: "name",
+      minWidth: 160,
     },
     {
       title: "Short Name",
       dataIndex: "shortName",
       key: "shortName",
+      minWidth: 120,
     },
     {
       title: "Part Unit",
       dataIndex: "unit",
       key: "unit",
+      minWidth: 100,
     },
     {
       title: "Part Weight",
       dataIndex: "weight",
       key: "weight",
+      minWidth: 110,
     },
     {
       title: "Part Dimensions",
       dataIndex: "dimensions",
       key: "dimensions",
-      width: 150,
+      minWidth: 150,
     },
     {
       title: "Image",
@@ -151,16 +168,18 @@ const Part = () => {
           />
         );
       },
+      width: 80,
     },
     {
       title: "Description",
       dataIndex: "description",
       key: "description",
+      minWidth: 200,
     },
     {
       title: "Actions",
       key: "actions",
-      width: 110,
+      width: 140,
       render: (text, record) => (
         <Space size="small">
           <Tooltip title="Edit">
@@ -353,15 +372,22 @@ const Part = () => {
             columns={displayedColumns}
             dataSource={parts}
             rowKey="_id"
-            size="middle"
+            tableLayout="auto"
+            loading={loading}
+            size="small"
             bordered
-            scroll={{ y: 360 }}
+            className="dark-table"
+            sticky
+            scroll={{ y: "calc(100vh - 510px)" }}
             pagination={{
               current: pagination.page,
               pageSize: pagination.limit,
               total: pagination.total,
               showSizeChanger: true,
+              showQuickJumper: true,
               pageSizeOptions: ["10", "20", "50", "100"],
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} items`,
               onChange: (page, limit) => {
                 setPagination({
                   page,
