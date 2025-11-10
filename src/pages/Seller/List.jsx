@@ -30,7 +30,7 @@ const SellerList = () => {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 2,
+    limit: 10,
     total: 0,
   });
   const [docModalVisible, setDocModalVisible] = useState(false);
