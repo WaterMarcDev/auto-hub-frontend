@@ -52,6 +52,10 @@ const CheckedInList = React.lazy(() => import("./pages/CheckIn/CheckedInList"));
 const AllCheckins = React.lazy(() => import("./pages/CheckIn/AllCheckins"));
 const CarIntakeGuide = React.lazy(() => import("./pages/Guide/CarIntakeGuide"));
 const CheckInGuide = React.lazy(() => import("./pages/Guide/CheckInGuide"));
+const AdminGuide = React.lazy(() => import("./pages/Guide/AdminGuide"));
+const ManagerGuide = React.lazy(() => import("./pages/Guide/ManagerGuide"));
+const FrontDeskGuide = React.lazy(() => import("./pages/Guide/FrontDeskGuide"));
+const StaffGuide = React.lazy(() => import("./pages/Guide/StaffGuide"));
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -219,13 +223,13 @@ function App() {
                     >
                       <Routes>
                         <Route path="/" element={<Dashboard2 />} />
-                        <Route 
-                          path="/dashboard" 
+                        <Route
+                          path="/dashboard"
                           element={
                             <ErrorBoundary>
                               <Dashboard />
                             </ErrorBoundary>
-                          } 
+                          }
                         />
                         <Route path="/make" element={<Make />} />
                         <Route path="/model" element={<Model />} />
@@ -283,10 +287,26 @@ function App() {
                         />
                         <Route path="/checkins" element={<CheckedInList />} />
                         <Route path="/checkins/all" element={<AllCheckins />} />
-                        
+
                         {/* Guide Routes */}
-                        <Route path="/guide/car-intake" element={<CarIntakeGuide />} />
-                        <Route path="/guide/check-in" element={<CheckInGuide />} />
+                        <Route
+                          path="/guide/car-intake"
+                          element={<CarIntakeGuide />}
+                        />
+                        <Route
+                          path="/guide/check-in"
+                          element={<CheckInGuide />}
+                        />
+                        <Route path="/guide/admin" element={<AdminGuide />} />
+                        <Route
+                          path="/guide/manager"
+                          element={<ManagerGuide />}
+                        />
+                        <Route
+                          path="/guide/front-desk"
+                          element={<FrontDeskGuide />}
+                        />
+                        <Route path="/guide/staff" element={<StaffGuide />} />
                       </Routes>
                     </Suspense>
                   </Layout>

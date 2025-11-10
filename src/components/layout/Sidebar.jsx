@@ -270,11 +270,11 @@ const Sidebar = ({ isOpen }) => {
     }
 
     // User Guides - visible for all users
-    items.push({
-      key: "userGuides",
-      icon: <FileProtectOutlined />,
-      label: "User Guides",
-      children: [
+    const guideChildren = [];
+
+    // Admin and Manager see all guides
+    if (isAdmin || isManager) {
+      guideChildren.push(
         {
           key: "/guide/car-intake",
           icon: <BulletIcon />,
@@ -285,7 +285,48 @@ const Sidebar = ({ isOpen }) => {
           icon: <BulletIcon />,
           label: <Link to="/guide/check-in">Check-In Guide</Link>,
         },
-      ],
+        {
+          key: "/guide/admin",
+          icon: <BulletIcon />,
+          label: <Link to="/guide/admin">Admin Guide</Link>,
+        },
+        {
+          key: "/guide/manager",
+          icon: <BulletIcon />,
+          label: <Link to="/guide/manager">Manager Guide</Link>,
+        },
+        {
+          key: "/guide/front-desk",
+          icon: <BulletIcon />,
+          label: <Link to="/guide/front-desk">Front Desk Guide</Link>,
+        },
+        {
+          key: "/guide/staff",
+          icon: <BulletIcon />,
+          label: <Link to="/guide/staff">Staff Guide</Link>,
+        }
+      );
+    } else if (isFrontDesk) {
+      // Front Desk sees only their guide
+      guideChildren.push({
+        key: "/guide/front-desk",
+        icon: <BulletIcon />,
+        label: <Link to="/guide/front-desk">Front Desk Guide</Link>,
+      });
+    } else if (isStaff) {
+      // Staff sees only their guide
+      guideChildren.push({
+        key: "/guide/staff",
+        icon: <BulletIcon />,
+        label: <Link to="/guide/staff">Staff Guide</Link>,
+      });
+    }
+
+    items.push({
+      key: "userGuides",
+      icon: <FileProtectOutlined />,
+      label: "User Guides",
+      children: guideChildren,
     });
 
     return items;
@@ -321,8 +362,11 @@ const Sidebar = ({ isOpen }) => {
       "/checkins/all": "checkin",
       "/guide/car-intake": "userGuides",
       "/guide/check-in": "userGuides",
+      "/guide/admin": "userGuides",
+      "/guide/manager": "userGuides",
+      "/guide/front-desk": "userGuides",
+      "/guide/staff": "userGuides",
     };
-
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {
       setOpenKeys([parentKey]);

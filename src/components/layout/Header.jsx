@@ -6,6 +6,13 @@ const Header = ({ onMenuToggle }) => {
   const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
 
+  // Check user roles
+  const userRole = user?.role?.toLowerCase();
+  const isManager = userRole === "manager";
+  const isFrontDesk = userRole === "front_desk";
+  const isAdmin = userRole === "admin";
+  const isStaff = userRole === "staff";
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 1024);
@@ -77,35 +84,140 @@ const Header = ({ onMenuToggle }) => {
               <i className="mdi mdi-chevron-down d-none d-xl-inline-block text-light ms-1"></i>
             </button>
             <div className="dropdown-menu dropdown-menu-end">
-              <h6 className="dropdown-header">User Guides</h6>
-              <button
-                className="dropdown-item"
-                onClick={() => navigate('/guide/car-intake')}
-                style={{
-                  border: "none",
-                  background: "none",
-                  width: "100%",
-                  textAlign: "left",
-                  cursor: "pointer"
-                }}
-              >
-                <i className="mdi mdi-car font-size-16 align-middle me-1"></i>
-                Car Intake Guide
-              </button>
-              <button
-                className="dropdown-item"
-                onClick={() => navigate('/guide/check-in')}
-                style={{
-                  border: "none",
-                  background: "none",
-                  width: "100%",
-                  textAlign: "left",
-                  cursor: "pointer"
-                }}
-              >
-                <i className="mdi mdi-account-check font-size-16 align-middle me-1"></i>
-                Check-In Guide
-              </button>
+              {/* Admin and Manager see all guides */}
+              {(isAdmin || isManager) && (
+                <>
+                  <h6 className="dropdown-header">Process Guides</h6>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/car-intake")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-car font-size-16 align-middle me-1"></i>
+                    Car Intake Guide
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/check-in")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-account-check font-size-16 align-middle me-1"></i>
+                    Check-In Guide
+                  </button>
+                  <div className="dropdown-divider"></div>
+                  <h6 className="dropdown-header">Role-Based Guides</h6>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/admin")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-shield-crown font-size-16 align-middle me-1"></i>
+                    Admin Guide
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/manager")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-account-tie font-size-16 align-middle me-1"></i>
+                    Manager Guide
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/front-desk")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-desk font-size-16 align-middle me-1"></i>
+                    Front Desk Guide
+                  </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/staff")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-account-hard-hat font-size-16 align-middle me-1"></i>
+                    Staff Guide
+                  </button>
+                </>
+              )}
+
+              {/* Front Desk sees only their guide */}
+              {isFrontDesk && (
+                <>
+                  <h6 className="dropdown-header">Your Guide</h6>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/front-desk")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-desk font-size-16 align-middle me-1"></i>
+                    Front Desk Guide
+                  </button>
+                </>
+              )}
+
+              {/* Staff sees only their guide */}
+              {isStaff && (
+                <>
+                  <h6 className="dropdown-header">Your Guide</h6>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/staff")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-account-hard-hat font-size-16 align-middle me-1"></i>
+                    Staff Guide
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
