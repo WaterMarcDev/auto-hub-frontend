@@ -341,11 +341,16 @@ const CarIntakeList = () => {
             View
           </Button>
           <Button
-            type="primary"
+            type={record?.status === "payment-done" ? "default" : "primary"}
             size="small"
             icon={<EditOutlined />}
             onClick={() => navigate(`/car-intake/${record._id}`)}
-            title="Edit"
+            title={
+              record?.status === "payment-done"
+                ? "Cannot edit — payment completed"
+                : "Edit"
+            }
+            disabled={record?.status === "payment-done"}
           />
           <Button
             type="primary"

@@ -49,6 +49,7 @@ const CarIntake = () => {
   const [isVinModalVisible, setIsVinModalVisible] = useState(true);
   const [isLoadingVin, setIsLoadingVin] = useState(false);
   const [vinData, setVinData] = useState(null);
+  const [vinError, setVinError] = useState(null);
   const [stepSaveStatus, setStepSaveStatus] = useState({});
   const [validationModalVisible, setValidationModalVisible] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
@@ -755,6 +756,7 @@ const CarIntake = () => {
   const fetchVinDetails = async (vinNumber) => {
     try {
       setIsLoadingVin(true);
+      setVinError(null);
       const response = await vinAPI.getDetails(vinNumber);
 
       if (response.data && response.data.success) {
@@ -790,6 +792,7 @@ const CarIntake = () => {
         }
 
         message.success("VIN details fetched successfully!");
+        setVinError(null);
         return true;
       }
 
@@ -797,10 +800,9 @@ const CarIntake = () => {
       return false;
     } catch (error) {
       console.error("VIN fetch error:", error);
-      message.error(
-        "Error fetching VIN details: " +
-          (error.response?.data?.error || error.message)
-      );
+      const userMsg = error.response?.data?.error || error.message;
+      message.error("Error fetching VIN details: " + userMsg);
+      setVinError(userMsg);
       return false;
     } finally {
       setIsLoadingVin(false);
@@ -1391,10 +1393,22 @@ const CarIntake = () => {
                 onChange={(e) => {
                   const value = e.target.value.toUpperCase();
                   vinModalForm.setFieldsValue({ vin: value });
+                  // clear any previous VIN error when user edits the field
+                  setVinError(null);
                 }}
               />
             </Form.Item>
           </Form>
+          {vinError && (
+            <div style={{ marginTop: 12 }}>
+              <Alert
+                message={vinError}
+                type="error"
+                showIcon
+                style={{ backgroundColor: "#2b2730", borderRadius: 4 }}
+              />
+            </div>
+          )}
         </div>
       </Modal>
 
