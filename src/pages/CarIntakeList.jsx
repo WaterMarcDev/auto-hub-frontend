@@ -199,8 +199,8 @@ const CarIntakeList = () => {
       minWidth: 100,
       render: (kyc) => {
         if (!kyc) return "N/A";
-        const name = `${kyc.seller.firstName || ""} ${
-          kyc.seller.lastName || ""
+        const name = `${kyc?.seller?.firstName || ""} ${
+          kyc?.seller?.lastName || ""
         }`.trim();
 
         return (
