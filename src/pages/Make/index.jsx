@@ -83,7 +83,7 @@ const Make = () => {
 
   const columns = [
     {
-      title: "Sr. No.",
+      title: "S. No.",
       key: "srNo",
       render: (text, record, index) => index + 1,
     },

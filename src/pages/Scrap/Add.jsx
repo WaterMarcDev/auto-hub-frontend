@@ -51,7 +51,7 @@ const AddScrap = () => {
 
   const allColumns = [
     {
-      title: "Sr. No.",
+      title: "S. No.",
       key: "srNo",
       fixed: "left",
       minWidth: 70,
@@ -157,131 +157,131 @@ const AddScrap = () => {
       minWidth: 180,
       render: (text) => text || "N/A",
     },
-    {
-      title: "Keys",
-      key: "keys",
-      minWidth: 80,
-      render: (_, record) => {
-        const cd = record.carDetails || {};
-        const hasKeys = cd.keys ?? cd.hasKeys ?? false;
-        return (
-          <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
-        );
-      },
-    },
-    {
-      title: "Seller",
-      dataIndex: "seller",
-      key: "sellerName",
-      minWidth: 200,
-      render: (seller) => {
-        if (!seller) return "N/A";
-        const name = `${seller.firstName || ""} ${
-          seller.lastName || ""
-        }`.trim();
+    // {
+    //   title: "Keys",
+    //   key: "keys",
+    //   minWidth: 80,
+    //   render: (_, record) => {
+    //     const cd = record.carDetails || {};
+    //     const hasKeys = cd.keys ?? cd.hasKeys ?? false;
+    //     return (
+    //       <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
+    //     );
+    //   },
+    // },
+    // {
+    //   title: "Seller",
+    //   dataIndex: "seller",
+    //   key: "sellerName",
+    //   minWidth: 200,
+    //   render: (seller) => {
+    //     if (!seller) return "N/A";
+    //     const name = `${seller.firstName || ""} ${
+    //       seller.lastName || ""
+    //     }`.trim();
 
-        return (
-          <div>
-            <div style={{ fontWeight: 600 }}>{name || "N/A"}</div>
-          </div>
-        );
-      },
-    },
-    {
-      title: "Final Price",
-      dataIndex: ["price", "finalPrice"],
-      key: "finalPrice",
-      minWidth: 100,
-      render: (price) => `$${price || "0"}`,
-    },
-    {
-      title: "Documents",
-      key: "documents",
-      minWidth: 160,
-      render: (_, record) => {
-        const docs = record?.kyc?.documents || {};
-        const dl = docs.driversLicense || docs.drivers_license || null;
-        const rc = docs.carRegistration || docs.car_registration || null;
+    //     return (
+    //       <div>
+    //         <div style={{ fontWeight: 600 }}>{name || "N/A"}</div>
+    //       </div>
+    //     );
+    //   },
+    // },
+    // {
+    //   title: "Final Price",
+    //   dataIndex: ["price", "finalPrice"],
+    //   key: "finalPrice",
+    //   minWidth: 100,
+    //   render: (price) => `$${price || "0"}`,
+    // },
+    // {
+    //   title: "Documents",
+    //   key: "documents",
+    //   minWidth: 160,
+    //   render: (_, record) => {
+    //     const docs = record?.kyc?.documents || {};
+    //     const dl = docs.driversLicense || docs.drivers_license || null;
+    //     const rc = docs.carRegistration || docs.car_registration || null;
 
-        const openDoc = (url) => {
-          if (!url) return;
-          const lower = String(url).toLowerCase();
-          const isPdf = lower.endsWith(".pdf");
-          setDocModalIsPdf(isPdf);
-          setDocModalUrl(url);
-          setDocModalVisible(true);
-        };
+    //     const openDoc = (url) => {
+    //       if (!url) return;
+    //       const lower = String(url).toLowerCase();
+    //       const isPdf = lower.endsWith(".pdf");
+    //       setDocModalIsPdf(isPdf);
+    //       setDocModalUrl(url);
+    //       setDocModalVisible(true);
+    //     };
 
-        return (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {dl ? (
-              <Tag
-                color="blue"
-                style={{ cursor: "pointer" }}
-                onClick={() => openDoc(uploadAPI.getImageUrl(dl))}
-              >
-                DL
-              </Tag>
-            ) : null}
-            {rc ? (
-              <Tag
-                color="green"
-                style={{ cursor: "pointer" }}
-                onClick={() => openDoc(uploadAPI.getImageUrl(rc))}
-              >
-                RC
-              </Tag>
-            ) : null}
-            {!dl && !rc ? <Tag color="red">None</Tag> : null}
-          </div>
-        );
-      },
-    },
-    {
-      title: "Paid In",
-      dataIndex: ["payment", "paymentMethod"],
-      key: "paymentMethod",
-      minWidth: 120,
-      render: (method) => <Tag color="green">{method || "N/A"}</Tag>,
-    },
-    {
-      title: "Inventory",
-      dataIndex: "inventoryAdded",
-      key: "inventoryAdded",
-      minWidth: 100,
-      render: (inventoryAdded) => (
-        <Tag color={inventoryAdded ? "green" : "red"}>
-          {inventoryAdded ? "Yes" : "No"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Seller Copy Printed",
-      dataIndex: "sellerCopyPrinted",
-      key: "sellerCopyPrinted",
-      minWidth: 150,
-      render: (printed) => (
-        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
-      ),
-    },
-    {
-      title: "Document Printed",
-      dataIndex: "documentPrinted",
-      key: "documentPrinted",
-      minWidth: 140,
-      render: (printed) => (
-        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
-      ),
-    },
-    {
-      title: "Receipt Printed",
-      dataIndex: "receiptPrinted",
-      key: "receiptPrinted",
-      minWidth: 130,
-      render: (printed) => (
-        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
-      ),
-    },
+    //     return (
+    //       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+    //         {dl ? (
+    //           <Tag
+    //             color="blue"
+    //             style={{ cursor: "pointer" }}
+    //             onClick={() => openDoc(uploadAPI.getImageUrl(dl))}
+    //           >
+    //             DL
+    //           </Tag>
+    //         ) : null}
+    //         {rc ? (
+    //           <Tag
+    //             color="green"
+    //             style={{ cursor: "pointer" }}
+    //             onClick={() => openDoc(uploadAPI.getImageUrl(rc))}
+    //           >
+    //             RC
+    //           </Tag>
+    //         ) : null}
+    //         {!dl && !rc ? <Tag color="red">None</Tag> : null}
+    //       </div>
+    //     );
+    //   },
+    // },
+    // {
+    //   title: "Paid In",
+    //   dataIndex: ["payment", "paymentMethod"],
+    //   key: "paymentMethod",
+    //   minWidth: 120,
+    //   render: (method) => <Tag color="green">{method || "N/A"}</Tag>,
+    // },
+    // {
+    //   title: "Inventory",
+    //   dataIndex: "inventoryAdded",
+    //   key: "inventoryAdded",
+    //   minWidth: 100,
+    //   render: (inventoryAdded) => (
+    //     <Tag color={inventoryAdded ? "green" : "red"}>
+    //       {inventoryAdded ? "Yes" : "No"}
+    //     </Tag>
+    //   ),
+    // },
+    // {
+    //   title: "Seller Copy Printed",
+    //   dataIndex: "sellerCopyPrinted",
+    //   key: "sellerCopyPrinted",
+    //   minWidth: 150,
+    //   render: (printed) => (
+    //     <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
+    //   ),
+    // },
+    // {
+    //   title: "Document Printed",
+    //   dataIndex: "documentPrinted",
+    //   key: "documentPrinted",
+    //   minWidth: 140,
+    //   render: (printed) => (
+    //     <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
+    //   ),
+    // },
+    // {
+    //   title: "Receipt Printed",
+    //   dataIndex: "receiptPrinted",
+    //   key: "receiptPrinted",
+    //   minWidth: 130,
+    //   render: (printed) => (
+    //     <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
+    //   ),
+    // },
     {
       title: "Status",
       dataIndex: "status",
@@ -295,10 +295,12 @@ const AddScrap = () => {
       title: "Action",
       key: "action",
       minWidth: 160,
+      fixed: "right",
       render: (text, record) => (
         <Space>
           <Button
             type="primary"
+            size="small"
             danger
             disabled={record?.status === "scraped"}
             onClick={() => markAsScraped(record)}

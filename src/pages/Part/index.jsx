@@ -107,7 +107,7 @@ const Part = () => {
 
   const columns = [
     {
-      title: "Sr. No.",
+      title: "S. No.",
       key: "srNo",
       fixed: "left",
       minWidth: 70,

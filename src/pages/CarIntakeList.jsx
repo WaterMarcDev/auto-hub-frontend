@@ -64,7 +64,7 @@ const CarIntakeList = () => {
   // Define table columns (allColumns) — these will be filtered by user selection
   const allColumns = [
     {
-      title: "Sr. No.",
+      title: "S. No.",
       key: "srNo",
       fixed: "left",
       minWidth: 70,
@@ -194,13 +194,13 @@ const CarIntakeList = () => {
     },
     {
       title: "Seller",
-      dataIndex: "seller",
+      dataIndex: "kyc",
       key: "sellerName",
       minWidth: 100,
-      render: (seller) => {
-        if (!seller) return "N/A";
-        const name = `${seller.firstName || ""} ${
-          seller.lastName || ""
+      render: (kyc) => {
+        if (!kyc) return "N/A";
+        const name = `${kyc.seller.firstName || ""} ${
+          kyc.seller.lastName || ""
         }`.trim();
 
         return (
@@ -330,6 +330,7 @@ const CarIntakeList = () => {
       title: "Action",
       key: "action",
       minWidth: 160,
+      fixed: "right",
       render: (text, record) => (
         <Space>
           <Button

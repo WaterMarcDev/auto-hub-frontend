@@ -161,52 +161,56 @@ const MasterList = () => {
       />
 
       <PageContentWrapper>
-        <Card>
-          {/* First row: Add Part button and any quick actions */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 12,
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <div style={{ flex: 1 }} />
-            <div>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setAddInventoryModalVisible(true)}
-              >
-                Add Part
-              </Button>
-            </div>
-          </div>
-
-          {/* Second row: search input + filters */}
+        <Card
+          title={<span>Master Parts List</span>}
+          extra={
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setAddInventoryModalVisible(true)}
+            >
+              Add Part
+            </Button>
+          }
+        >
+          {/* Search and filters row */}
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              gap: 12,
-              marginBottom: 12,
+              gap: "16px",
+              marginBottom: 16,
               flexWrap: "wrap",
             }}
           >
-            <Space.Compact style={{ flex: 1, maxWidth: 640 }} size="middle">
+            <Space.Compact style={{ flex: 1, maxWidth: 600 }} size="middle">
               <Input
-                placeholder="Search part name"
+                placeholder="Search part name..."
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  if (!e.target.value) {
+                    setSearch("");
+                    fetchParts(
+                      1,
+                      limit,
+                      "",
+                      selectedMake,
+                      selectedModel,
+                      selectedTrim
+                    );
+                  }
+                }}
                 onPressEnter={handleSearch}
+                size="middle"
                 style={{ width: "100%" }}
               />
               <Button
                 type="primary"
-                onClick={handleSearch}
                 icon={<SearchOutlined />}
+                onClick={handleSearch}
+                size="middle"
               >
                 Search
               </Button>
@@ -295,6 +299,9 @@ const MasterList = () => {
               pageSize: limit,
               total,
               showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} items`,
               onChange: (p, ps) =>
                 fetchParts(
                   p,
@@ -309,57 +316,63 @@ const MasterList = () => {
             tableLayout="auto"
             bordered
             scroll={{
-              y: "calc(100vh - 510px)",
+              y: "calc(100vh - 450px)",
             }}
             columns={[
               {
-                title: "Sr.",
+                title: "S. No.",
                 key: "sr",
-                minWidth: 50,
+                width: 80,
+                minWidth: 80,
+                fixed: "left",
                 render: (_, __, i) => (page - 1) * limit + i + 1,
               },
               {
                 title: "Part Name",
-                minWidth: 150,
                 dataIndex: "partName",
                 key: "partName",
-                render: (text) =>
-                  text
+                minWidth: 150,
+                fixed: "left",
+                render: (text) => {
+                  if (!text) return "N/A";
+                  return text
                     .replace(/([A-Z])/g, " $1")
+                    .replace(/[_-]/g, " ")
                     .replace(/^./, (str) => str.toUpperCase())
-                    .trim(),
+                    .trim();
+                },
               },
               {
                 title: "Make",
-                minWidth: 100,
                 dataIndex: ["make", "name"],
                 key: "make",
+                minWidth: 100,
               },
               {
                 title: "Model",
-                minWidth: 100,
                 dataIndex: ["model", "name"],
                 key: "model",
+                minWidth: 120,
               },
               {
                 title: "Trim",
-                minWidth: 100,
                 dataIndex: ["trim", "name"],
                 key: "trim",
+                minWidth: 100,
               },
-              { title: "Unit", minWidth: 100, dataIndex: "unit", key: "unit" },
+              { title: "Unit", dataIndex: "unit", key: "unit", minWidth: 100 },
               {
                 title: "Quality",
-                minWidth: 100,
                 dataIndex: "quality",
                 key: "quality",
+                minWidth: 100,
               },
               {
                 title: "Cleaned",
                 dataIndex: "cleaned",
                 key: "cleaned",
-                render: (v) => (v ? "Yes" : "No"),
                 minWidth: 100,
+                render: (v) => (v ? "Yes" : "No"),
               },
               {
                 title: "Weight",
@@ -371,7 +384,7 @@ const MasterList = () => {
                 title: "Dimensions",
                 dataIndex: "dimensions",
                 key: "dimensions",
-                minWidth: 100,
+                minWidth: 120,
               },
               {
                 title: "Location",
@@ -379,8 +392,15 @@ const MasterList = () => {
                 key: "location",
                 minWidth: 100,
               },
-              { title: "Tag", dataIndex: "tag", key: "tag", minWidth: 100 },
+              {
+                title: "Tag",
+                dataIndex: "tag",
+                key: "tag",
+                minWidth: 100,
+                fixed: "right",
+              },
             ]}
+            className="dark-table"
           />
         </Card>
 

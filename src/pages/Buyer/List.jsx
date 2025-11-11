@@ -118,7 +118,7 @@ const BuyerList = () => {
 
   const columns = [
     {
-      title: "Sr. No.",
+      title: "S. No.",
       key: "srNo",
       minWidth: 70,
       render: (text, record, index) => {
