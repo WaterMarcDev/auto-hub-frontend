@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Card, Table, Button, Space, Input, Modal, message, Tag } from "antd";
+import { PrinterOutlined } from "@ant-design/icons";
 import { checkInAPI } from "../../utils/api";
 import getStatusColor from "../../utils/statusColors";
 import TitleBox from "../../components/TitleBox";
@@ -91,6 +92,29 @@ const CheckedInList = () => {
     }
   };
 
+  const handlePrintInvoice = (record) => {
+    const url = checkInAPI.printInvoice(record._id);
+    // Create a hidden iframe to load and print the invoice
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow.print();
+      } catch (e) {
+        console.error("Print error:", e);
+        message.error("Failed to open print dialog");
+      }
+    };
+
+    // Clean up iframe after printing
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+  };
+
   const columns = [
     { title: "Token", dataIndex: "checkInToken", key: "token" },
     {
@@ -126,6 +150,14 @@ const CheckedInList = () => {
       key: "action",
       render: (_, rec) => (
         <Space>
+          <Button
+            size="small"
+            icon={<PrinterOutlined />}
+            onClick={() => handlePrintInvoice(rec)}
+            title="Print Invoice"
+          >
+            Invoice
+          </Button>
           <Button size="small" onClick={() => confirmCheckout(rec)}>
             Checkout
           </Button>

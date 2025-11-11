@@ -240,6 +240,11 @@ export const checkInAPI = {
   getAll: (params = {}) => api.get("/checkins", { params }),
   create: (data) => api.post("/checkins", data),
   checkout: (id) => api.post(`/checkins/${id}/checkout`),
+  printInvoice: (id) => {
+    const baseURL =
+      import.meta.env.VITE_API_URL || "http://192.168.1.4:5000/api";
+    return `${baseURL}/checkins/${id}/print-invoice?autoPrint=1`;
+  },
 };
 
 // Dashboard APIs (for charts and counts)

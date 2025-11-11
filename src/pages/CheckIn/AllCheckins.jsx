@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Card, Table, Input, Select, message, Tag } from "antd";
+import { Card, Table, Input, Select, message, Tag, Button, Space } from "antd";
+import { PrinterOutlined } from "@ant-design/icons";
 import { checkInAPI } from "../../utils/api";
 import getStatusColor from "../../utils/statusColors";
 import TitleBox from "../../components/TitleBox";
@@ -59,6 +60,29 @@ const AllCheckins = () => {
     fetchItems({ page: p.current, limit: p.pageSize });
   };
 
+  const handlePrintInvoice = (record) => {
+    const url = checkInAPI.printInvoice(record._id);
+    // Create a hidden iframe to load and print the invoice
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow.print();
+      } catch (e) {
+        console.error("Print error:", e);
+        message.error("Failed to open print dialog");
+      }
+    };
+
+    // Clean up iframe after printing
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+  };
+
   const columns = [
     { title: "Token", dataIndex: "checkInToken", key: "token" },
     {
@@ -94,6 +118,30 @@ const AllCheckins = () => {
       dataIndex: "status",
       key: "status",
       render: (status) => <Tag color={getStatusColor(status)}>{status}</Tag>,
+    },
+    {
+      title: "Invoice Printed",
+      dataIndex: "invoicePrinted",
+      key: "invoicePrinted",
+      render: (printed) => (
+        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, rec) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<PrinterOutlined />}
+            onClick={() => handlePrintInvoice(rec)}
+            title="Print Invoice"
+          >
+            Invoice
+          </Button>
+        </Space>
+      ),
     },
   ];
 
