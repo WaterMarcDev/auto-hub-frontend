@@ -457,6 +457,14 @@ const CarInventoryList = () => {
     );
     if (!entries.length) return message.error("No elements selected");
 
+    // Validate that all selected elements have weight
+    const missingWeight = entries.find(
+      ([, val]) => !val.weight || val.weight.toString().trim() === ""
+    );
+    if (missingWeight) {
+      return message.error("Weight is required for all selected elements");
+    }
+
     setExtractSaving(true);
     try {
       for (const [key, val] of entries) {
@@ -707,18 +715,45 @@ const CarInventoryList = () => {
                         const key = rec._id || rec.name;
                         const val =
                           selectedElementsMap[key]?.weight || rec.weight || "";
+                        const isSelected =
+                          selectedElementsMap[key]?.selected || false;
+                        const isEmpty = !val || val.toString().trim() === "";
+                        const showError = isSelected && isEmpty;
+
                         return (
-                          <Input
-                            type="number"
-                            value={val}
-                            onChange={(e) =>
-                              handleElementFieldChange(
-                                key,
-                                "weight",
-                                e.target.value
-                              )
-                            }
-                          />
+                          <div style={{ position: "relative" }}>
+                            <Input
+                              type="number"
+                              required
+                              value={val}
+                              status={showError ? "error" : ""}
+                              placeholder={
+                                showError ? "Required" : "Enter weight"
+                              }
+                              style={{
+                                borderColor: showError ? "#ff4d4f" : undefined,
+                                borderWidth: showError ? "2px" : undefined,
+                              }}
+                              onChange={(e) =>
+                                handleElementFieldChange(
+                                  key,
+                                  "weight",
+                                  e.target.value
+                                )
+                              }
+                            />
+                            {showError && (
+                              <div
+                                style={{
+                                  color: "#ff4d4f",
+                                  fontSize: "12px",
+                                  marginTop: "2px",
+                                }}
+                              >
+                                Required
+                              </div>
+                            )}
+                          </div>
                         );
                       },
                     },

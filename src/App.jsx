@@ -24,6 +24,7 @@ const Model = React.lazy(() => import("./pages/Model"));
 const Trim = React.lazy(() => import("./pages/Trim"));
 const Part = React.lazy(() => import("./pages/Part"));
 const Element = React.lazy(() => import("./pages/Element"));
+const ElementHub = React.lazy(() => import("./pages/Element/Hub"));
 const PartInventoryAdd = React.lazy(() => import("./pages/PartInventory/Add"));
 const PartInventoryList = React.lazy(() =>
   import("./pages/PartInventory/List")
@@ -235,6 +236,7 @@ function App() {
                         <Route path="/model" element={<Model />} />
                         <Route path="/trim" element={<Trim />} />
                         <Route path="/element" element={<Element />} />
+                        <Route path="/element-hub" element={<ElementHub />} />
                         <Route path="/part" element={<Part />} />
                         <Route path="/car-intake" element={<CarIntake />} />
                         <Route

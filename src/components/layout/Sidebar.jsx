@@ -181,6 +181,11 @@ const Sidebar = ({ isOpen }) => {
             icon: <BulletIcon />,
             label: <Link to="/scrap-list">Scrap Car Lists</Link>,
           },
+          {
+            key: "/element-hub",
+            icon: <BulletIcon />,
+            label: <Link to="/element-hub">Element Hub</Link>,
+          },
         ],
       });
     }
@@ -352,6 +357,7 @@ const Sidebar = ({ isOpen }) => {
       "/car-inventory": "carInventory",
       "/add-scrap": "scrapCar",
       "/scrap-list": "scrapCar",
+      "/element-hub": "scrapCar",
       "/seller/register": "seller",
       "/seller/list": "seller",
       "/buyer/register": "buyer",
