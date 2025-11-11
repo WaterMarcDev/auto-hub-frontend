@@ -660,6 +660,8 @@ const ScrapList = () => {
                   pagination={false}
                   size="small"
                   bordered
+                  sticky={{ offsetHeader: 0 }}
+                  scroll={{ y: "calc(70vh - 200px)" }}
                   columns={[
                     {
                       title: "Element",

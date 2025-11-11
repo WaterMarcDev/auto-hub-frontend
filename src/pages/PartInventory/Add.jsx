@@ -1066,6 +1066,8 @@ const PartInventoryAdd = () => {
                       rowKey="key"
                       className="inventory-diagnosis-table"
                       style={{ border: "1px solid #6b7280" }}
+                      sticky={{ offsetHeader: 0 }}
+                      scroll={{ y: "calc(70vh - 200px)" }}
                       components={{
                         header: {
                           cell: (props) => (

@@ -699,7 +699,8 @@ const SellerList = () => {
             pagination={{ pageSize: 10 }}
             size="small"
             tableLayout="auto"
-            scroll={{ x: 1800 }}
+            sticky={{ offsetHeader: 0 }}
+            scroll={{ x: 1800, y: "calc(70vh - 200px)" }}
             columns={carsColumnsWithMin}
           />
         </div>

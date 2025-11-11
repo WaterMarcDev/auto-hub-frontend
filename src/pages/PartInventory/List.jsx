@@ -627,6 +627,8 @@ const PartInventoryList = () => {
                 pagination={false}
                 size="small"
                 bordered
+                sticky={{ offsetHeader: 0 }}
+                scroll={{ y: "calc(55vh - 150px)" }}
                 columns={[
                   {
                     title: "S. No.",

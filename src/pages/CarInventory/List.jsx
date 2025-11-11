@@ -312,7 +312,11 @@ const CarInventoryList = () => {
       fixed: "right",
       render: (text, record) => (
         <Space>
-          <Button size="small" type="primary" onClick={() => openExtractElementsModal(record)}>
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => openExtractElementsModal(record)}
+          >
             Extract Elements
           </Button>
         </Space>
@@ -659,6 +663,8 @@ const CarInventoryList = () => {
                   pagination={false}
                   size="small"
                   bordered
+                  sticky={{ offsetHeader: 0 }}
+                  scroll={{ y: "calc(70vh - 200px)" }}
                   columns={[
                     {
                       title: "Select",
