@@ -610,98 +610,136 @@ const PartInventoryList = () => {
             ]}
             width={1200}
             centered
-            styles={{
-              body: {
-                minHeight: "400px",
-                maxHeight: "55vh",
-                overflow: "auto",
-              },
+            // Use Antd's bodyStyle to control the modal body layout so the table
+            // can expand and the footer (Close button) sits right below it.
+            bodyStyle={{
+              display: "flex",
+              flexDirection: "column",
+              padding: "16px 24px",
+              gap: 8,
+              maxHeight: "65vh",
             }}
           >
             {viewPartsLoading ? (
               <div>Loading...</div>
             ) : viewPartsData && viewPartsData.length > 0 ? (
-              <Table
-                dataSource={viewPartsData}
-                rowKey={(r, index) => r._id || r.tag || `part-${index}`}
-                pagination={false}
-                size="small"
-                bordered
-                sticky={{ offsetHeader: 0 }}
-                scroll={{ y: "calc(55vh - 150px)" }}
-                columns={[
-                  {
-                    title: "S. No.",
-                    key: "srNo",
-                    width: 80,
-                    render: (text, record, index) => index + 1,
-                  },
-                  {
-                    title: "Part Name",
-                    dataIndex: "partName",
-                    key: "partName",
-                    render: (text) => {
-                      if (!text) return "N/A";
-                      // Convert to proper case (Title Case)
-                      return text
-                        .replace(/([A-Z])/g, " $1")
-                        .replace(/[_-]/g, " ")
-                        .replace(/^./, (str) => str.toUpperCase())
-                        .trim();
+              // Wrap table in a scrollable flex child so it occupies available
+              // modal body space and doesn't leave a large gap before the footer.
+              <div style={{ flex: "1 1 auto", overflow: "auto" }}>
+                <Table
+                  dataSource={viewPartsData}
+                  rowKey={(r, index) => r._id || r.tag || `part-${index}`}
+                  pagination={false}
+                  size="small"
+                  bordered
+                  className="dark-table"
+                  tableLayout="auto"
+                  // modal-appropriate vertical scroll so header stays sticky
+                  scroll={{ y: "calc(65vh - 220px)" }}
+                  sticky={{ offsetHeader: 0 }}
+                  columns={[
+                    {
+                      title: "S. No.",
+                      key: "srNo",
+                      width: 80,
+                      minWidth: 70,
+                      render: (text, record, index) => index + 1,
                     },
-                  },
-                  {
-                    title: "Make",
-                    dataIndex: ["make", "name"],
-                    key: "make",
-                  },
-                  {
-                    title: "Model",
-                    dataIndex: ["model", "name"],
-                    key: "model",
-                  },
-                  {
-                    title: "Trim",
-                    dataIndex: ["trim", "name"],
-                    key: "trim",
-                  },
+                    {
+                      title: "Part Name",
+                      dataIndex: "partName",
+                      key: "partName",
+                      minWidth: 220,
+                      render: (text) => {
+                        if (!text) return "N/A";
+                        // Convert to proper case (Title Case)
+                        return text
+                          .replace(/([A-Z])/g, " $1")
+                          .replace(/[_-]/g, " ")
+                          .replace(/^./, (str) => str.toUpperCase())
+                          .trim();
+                      },
+                    },
+                    {
+                      title: "Make",
+                      dataIndex: ["make", "name"],
+                      key: "make",
+                      minWidth: 140,
+                    },
+                    {
+                      title: "Model",
+                      dataIndex: ["model", "name"],
+                      key: "model",
+                      minWidth: 140,
+                    },
+                    {
+                      title: "Trim",
+                      dataIndex: ["trim", "name"],
+                      key: "trim",
+                      minWidth: 120,
+                    },
 
-                  { title: "Unit", dataIndex: "unit", key: "unit" },
-                  { title: "Quality", dataIndex: "quality", key: "quality" },
-                  {
-                    title: "Cleaned",
-                    dataIndex: "cleaned",
-                    key: "cleaned",
-                    render: (c) => (c ? "Yes" : "No"),
-                  },
-                  { title: "Weight", dataIndex: "weight", key: "weight" },
-                  {
-                    title: "Dimensions",
-                    dataIndex: "dimensions",
-                    key: "dimensions",
-                  },
-                  {
-                    title: "Location",
-                    dataIndex: "location",
-                    key: "location",
-                  },
-                  { title: "Tag", dataIndex: "tag", key: "tag" },
-                  {
-                    title: "Action",
-                    key: "action",
-                    render: (_, part) => (
-                      <Space>
-                        <Button
-                          type="link"
-                          onClick={() => handlePrintTag(part)}
-                        >
-                          Print Tag
-                        </Button>
-                      </Space>
-                    ),
-                  },
-                ]}
-              />
+                    {
+                      title: "Unit",
+                      dataIndex: "unit",
+                      key: "unit",
+                      minWidth: 90,
+                    },
+                    {
+                      title: "Quality",
+                      dataIndex: "quality",
+                      key: "quality",
+                      minWidth: 110,
+                    },
+                    {
+                      title: "Cleaned",
+                      dataIndex: "cleaned",
+                      key: "cleaned",
+                      minWidth: 100,
+                      render: (c) => (c ? "Yes" : "No"),
+                    },
+                    {
+                      title: "Weight",
+                      dataIndex: "weight",
+                      key: "weight",
+                      minWidth: 100,
+                    },
+                    {
+                      title: "Dimensions",
+                      dataIndex: "dimensions",
+                      key: "dimensions",
+                      minWidth: 140,
+                    },
+                    {
+                      title: "Location",
+                      dataIndex: "location",
+                      key: "location",
+                      minWidth: 160,
+                    },
+                    {
+                      title: "Tag",
+                      dataIndex: "tag",
+                      key: "tag",
+                      minWidth: 120,
+                    },
+                    {
+                      title: "Action",
+                      key: "action",
+                      minWidth: 140,
+                      render: (_, part) => (
+                        <Space>
+                          <Button
+                            type="link"
+                            onClick={() => handlePrintTag(part)}
+                          >
+                            Print Tag
+                          </Button>
+                        </Space>
+                      ),
+                    },
+                  ]}
+                />
+              </div>
             ) : (
               <div>No parts found for this VIN.</div>
             )}
