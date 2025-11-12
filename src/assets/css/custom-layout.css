@@ -308,6 +308,17 @@
   color: #f9fafb;
 }
 
+/* VIN link button hover fix: ensure link button text becomes white on hover */
+
+.ant-btn-link:hover,
+.ant-btn-link:focus,
+.ant-btn-link:active,
+.ant-btn-link:hover .ant-btn,
+.ant-btn-link:focus .ant-btn,
+.ant-btn-link:active .ant-btn {
+  color: #ffffff !important;
+}
+
 /* Dashboard Cards Responsive Styles */
 .dashboard-cards-grid {
   display: grid;
