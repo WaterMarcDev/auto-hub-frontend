@@ -80,7 +80,7 @@ const SellerList = () => {
     try {
       // Use customers endpoint filtered by type; support server-side search & pagination
       const page = Number(params.page ?? pagination.page ?? 1);
-      const limit = Number(pagination.limit);
+      const limit = Number(params.limit ?? pagination.limit ?? 10);
       const search = params.search ?? searchValue ?? "";
 
       // Debug: log outgoing request
