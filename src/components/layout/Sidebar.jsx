@@ -121,13 +121,11 @@ const Sidebar = ({ isOpen }) => {
     // Car Parts Inventory - visible for Front Desk and Admin
     if (isAdmin || isManager || isStaff) {
       const carPartsChildren = [];
-      if (isAdmin) {
-        carPartsChildren.push({
-          key: "/add-inventory",
-          icon: <BulletIcon />,
-          label: <Link to="/add-inventory">Add Inventory</Link>,
-        });
-      }
+      carPartsChildren.push({
+        key: "/add-inventory",
+        icon: <BulletIcon />,
+        label: <Link to="/add-inventory">Add Inventory</Link>,
+      });
       carPartsChildren.push({
         key: "/inventory-list",
         icon: <BulletIcon />,
