@@ -1704,6 +1704,111 @@ const CarIntake = () => {
                   }}
                 ></div>
               </div>
+              {/* Car summary shown under the progress bar in a Card */}
+              <Card
+                size="small"
+                bodyStyle={{
+                  background: "linear-gradient(90deg,#071426 0%, #071120 100%)",
+                  display: "flex",
+                  gap: 24,
+                  padding: "14px 18px",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                }}
+                style={{
+                  marginTop: 16,
+                  marginBottom: 16,
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.04)",
+                }}
+              >
+                {/* Left: title */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div>
+                    <div style={{ color: "#9CA3AF", fontSize: 12 }}>
+                      Vehicle Summary
+                    </div>
+                    <div
+                      style={{
+                        color: "#ffffff",
+                        fontSize: 14,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formData.vin || vinData?.vin
+                        ? formData.vin || vinData?.vin
+                        : "No VIN"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: fields grid */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 28,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    marginLeft: 8,
+                  }}
+                >
+                  <div style={{ minWidth: 110 }}>
+                    <div style={{ color: "#9CA3AF", fontSize: 12 }}>Make</div>
+                    <div
+                      style={{
+                        color: "#ffffff",
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formData.make || vinData?.Make || "—"}
+                    </div>
+                  </div>
+
+                  <div style={{ minWidth: 110 }}>
+                    <div style={{ color: "#9CA3AF", fontSize: 12 }}>Model</div>
+                    <div
+                      style={{
+                        color: "#ffffff",
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formData.model || vinData?.Model || "—"}
+                    </div>
+                  </div>
+
+                  <div style={{ minWidth: 110 }}>
+                    <div style={{ color: "#9CA3AF", fontSize: 12 }}>Trim</div>
+                    <div
+                      style={{
+                        color: "#ffffff",
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formData.trim || vinData?.Trim || "—"}
+                    </div>
+                  </div>
+
+                  <div style={{ minWidth: 90 }}>
+                    <div style={{ color: "#9CA3AF", fontSize: 12 }}>Year</div>
+                    <div
+                      style={{
+                        color: "#ffffff",
+                        fontSize: 16,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {formData.year ||
+                        vinData?.ModelYear ||
+                        vinData?.year ||
+                        "—"}
+                    </div>
+                  </div>
+                </div>
+              </Card>
               <div className="tab-content twitter-bs-wizard-tab-content custom-tab-content">
                 <div className="tab-pane active custom-tab-pane">
                   <Form
