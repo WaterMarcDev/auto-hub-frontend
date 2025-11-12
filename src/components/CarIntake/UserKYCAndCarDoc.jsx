@@ -14,6 +14,7 @@ import {
   Avatar,
   Descriptions,
   Modal,
+  Image,
   message,
 } from "antd";
 import { uploadAPI } from "../../utils/api";
@@ -359,6 +360,12 @@ const UserKYCAndCarDoc = ({
     });
   };
 
+  const handleRemoveImage = (field) => {
+    if (!field) return;
+    updateFormData({ [field]: null });
+    if (form && form.setFieldsValue) form.setFieldsValue({ [field]: null });
+  };
+
   // If editing an existing intake and sellerId is present, fetch the customer
   // record so the selected-seller card shows up automatically.
   const sellerIdForFetch = formData && formData.sellerId;
@@ -432,19 +439,50 @@ const UserKYCAndCarDoc = ({
           border: "1px solid #6b7280",
         }}
       >
-        <CameraUpload
-          onImageUpload={(result) => handleImageUpload(field, result)}
-          multiple={false}
-          showPreview
-          autoUpload
-          className="document-upload"
-        />
-        {formData[field] && formData[field].uploaded && (
-          <div style={{ marginTop: 8 }}>
+        {/* Show uploaded image with remove button like CarImages */}
+        {formData[field] && formData[field].uploaded ? (
+          <div>
+            <div style={{ position: "relative", marginBottom: 8 }}>
+              <Image
+                src={uploadAPI.getImageUrl(formData[field].url)}
+                alt={formData[field].name}
+                style={{
+                  width: "100%",
+                  maxHeight: 300,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                }}
+                preview={{
+                  mask: <div>Click to preview</div>,
+                }}
+              />
+              <Button
+                danger
+                size="small"
+                onClick={() => handleRemoveImage(field)}
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "8px",
+                  zIndex: 1,
+                }}
+                icon={<i className="fas fa-times"></i>}
+              >
+                Remove
+              </Button>
+            </div>
             <Text style={{ color: "#10b981", fontSize: 12 }}>
               ✓ Uploaded: {formData[field].name}
             </Text>
           </div>
+        ) : (
+          <CameraUpload
+            onImageUpload={(result) => handleImageUpload(field, result)}
+            multiple={false}
+            showPreview={true}
+            autoUpload={true}
+            className="document-upload"
+          />
         )}
       </div>
       {description && (
