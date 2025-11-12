@@ -749,9 +749,9 @@ const UserKYCAndCarDoc = ({
           </Col>
           <Col span={12}>
             {renderDocumentUploadField(
-              "carRC",
-              "Upload Car RC",
-              "Take a clear photo of the car registration document",
+              "physicalPaper",
+              "Upload Physical Paper",
+              "Take a clear photo of the vehicle's physical registration paper",
               false
             )}
           </Col>

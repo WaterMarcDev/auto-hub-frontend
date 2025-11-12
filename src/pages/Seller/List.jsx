@@ -435,7 +435,7 @@ const SellerList = () => {
       render: (_, record) => {
         const docs = record?.kyc?.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
-        const rc = docs.carRegistration || docs.car_registration || null;
+        const physicalPaper = docs.physicalPaper || docs.physical_paper || null;
         const openDoc = (url) => {
           if (!url) return;
           const lower = String(url).toLowerCase();
@@ -455,16 +455,16 @@ const SellerList = () => {
                 DL
               </Tag>
             ) : null}
-            {rc ? (
+            {physicalPaper ? (
               <Tag
                 color="green"
                 style={{ cursor: "pointer" }}
-                onClick={() => openDoc(uploadAPI.getImageUrl(rc))}
+                onClick={() => openDoc(uploadAPI.getImageUrl(physicalPaper))}
               >
-                RC
+                Physical Paper
               </Tag>
             ) : null}
-            {!dl && !rc ? <Tag color="red">None</Tag> : null}
+            {!dl && !physicalPaper ? <Tag color="red">None</Tag> : null}
           </div>
         );
       },

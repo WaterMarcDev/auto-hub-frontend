@@ -109,7 +109,7 @@ const CarIntake = () => {
     customerEmail: "",
     customerAddress: "",
     dlDocument: null,
-    carRC: null,
+    physicalPaper: null,
     titleCertificate: null,
     sellingDate: dayjs(),
     pickUpType: "You Pull",
@@ -267,11 +267,11 @@ const CarIntake = () => {
               documents.driversLicense = stepData.dlDocument.url;
             }
             if (
-              stepData.carRC &&
-              stepData.carRC.uploaded &&
-              stepData.carRC.url
+              stepData.physicalPaper &&
+              stepData.physicalPaper.uploaded &&
+              stepData.physicalPaper.url
             ) {
-              documents.carRegistration = stepData.carRC.url;
+              documents.physicalPaper = stepData.physicalPaper.url;
             }
             if (
               stepData.titleCertificate &&
@@ -512,11 +512,11 @@ const CarIntake = () => {
             name: docs.driversLicense.split("/").pop(),
           };
         }
-        if (docs.carRegistration) {
-          populated.carRC = {
-            url: docs.carRegistration,
+        if (docs.physicalPaper) {
+          populated.physicalPaper = {
+            url: docs.physicalPaper,
             uploaded: true,
-            name: docs.carRegistration.split("/").pop(),
+            name: docs.physicalPaper.split("/").pop(),
           };
         }
         if (docs.titleCertificate) {
@@ -890,7 +890,7 @@ const CarIntake = () => {
           "email",
           "dlDocument",
           "sellerSignature",
-          "carRC",
+          "physicalPaper",
           "sellingDate",
           "pickUpType",
         ];
@@ -960,7 +960,7 @@ const CarIntake = () => {
       email: "",
       mobileNo: "",
       dlDocument: null,
-      carRC: null,
+      physicalPaper: null,
       titleCertificate: null,
       sellingDate: dayjs(),
       pickUpType: "You Pull",
@@ -1081,8 +1081,12 @@ const CarIntake = () => {
       ) {
         documents.driversLicense = formData.dlDocument.url;
       }
-      if (formData.carRC && formData.carRC.uploaded && formData.carRC.url) {
-        documents.carRegistration = formData.carRC.url;
+      if (
+        formData.physicalPaper &&
+        formData.physicalPaper.uploaded &&
+        formData.physicalPaper.url
+      ) {
+        documents.physicalPaper = formData.physicalPaper.url;
       }
       if (
         formData.titleCertificate &&

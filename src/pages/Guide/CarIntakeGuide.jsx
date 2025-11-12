@@ -371,9 +371,9 @@ const CarIntakeGuide = () => {
                     </ul>
                   </li>
                   <li>
-                    <Text strong>Car Registration</Text>
+                    <Text strong>Physical Paper</Text>
                     <ul>
-                      <li>Current vehicle registration</li>
+                      <li>Current vehicle registration paper</li>
                       <li>Must match the VIN</li>
                     </ul>
                   </li>

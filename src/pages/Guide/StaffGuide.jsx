@@ -320,8 +320,11 @@ const StaffGuide = () => {
                     seller's license, must be readable
                   </li>
                   <li>
-                    <Text strong>Car Registration</Text> - Current registration,
-                    must match VIN
+                    <Text strong>Physical Paper</Text>
+                    <ul>
+                      <li>Current vehicle registration paper</li>
+                      <li>Must match the VIN</li>
+                    </ul>
                   </li>
                   <li>
                     <Text strong>Title Certificate</Text> - Original car title,

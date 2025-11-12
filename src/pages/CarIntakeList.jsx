@@ -225,7 +225,7 @@ const CarIntakeList = () => {
       render: (_, record) => {
         const docs = record?.kyc?.documents || {};
         const dl = docs.driversLicense || docs.drivers_license || null;
-        const rc = docs.carRegistration || docs.car_registration || null;
+        const physicalPaper = docs.physicalPaper || docs.physical_paper || null;
         const tc = docs.titleCertificate || docs.title_certificate || null;
 
         const openDoc = (url) => {
@@ -248,13 +248,13 @@ const CarIntakeList = () => {
                 DL
               </Tag>
             ) : null}
-            {rc ? (
+            {physicalPaper ? (
               <Tag
                 color="green"
                 style={{ cursor: "pointer" }}
-                onClick={() => openDoc(uploadAPI.getImageUrl(rc))}
+                onClick={() => openDoc(uploadAPI.getImageUrl(physicalPaper))}
               >
-                RC
+                Physical Paper
               </Tag>
             ) : null}
             {tc ? (
@@ -266,7 +266,7 @@ const CarIntakeList = () => {
                 TC
               </Tag>
             ) : null}
-            {!dl && !rc && !tc ? <Tag color="red">None</Tag> : null}
+            {!dl && !physicalPaper && !tc ? <Tag color="red">None</Tag> : null}
           </div>
         );
       },
