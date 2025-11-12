@@ -801,6 +801,7 @@ const UserKYCAndCarDoc = ({
                 <Option value="We Pull">We Pull</Option>
                 <Option value="Bulk">Bulk</Option>
                 <Option value="Location">Location</Option>
+                <Option value="Brought In">Brought In</Option>
               </Select>
             </Form.Item>
           </Col>
