@@ -124,6 +124,12 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
                 dropdownStyle={{ backgroundColor: "#374151" }}
                 optionLabelProp="label"
               >
+                <Option value="3" label="3 Cent / Pound">
+                  3 Cent / Pound
+                </Option>
+                <Option value="4" label="4 Cent / Pound">
+                  4 Cent / Pound
+                </Option>
                 <Option value="5" label="5 Cent / Pound">
                   5 Cent / Pound
                 </Option>
