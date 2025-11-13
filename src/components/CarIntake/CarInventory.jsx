@@ -341,7 +341,11 @@ const CarInventory = ({ formData, prevStep }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label={<Text style={{ color: "white" }}>Amount</Text>}>
+            <Form.Item
+              label={
+                <Text style={{ color: "white" }}>Amount Paid to Seller</Text>
+              }
+            >
               <Input
                 value={`$${formData.finalPrice || "0"}`}
                 readOnly
@@ -352,70 +356,6 @@ const CarInventory = ({ formData, prevStep }) => {
                   cursor: "not-allowed",
                 }}
               />
-              {/* Tax summary: use provided taxRate/taxAmount when available, otherwise compute from finalPrice */}
-              <div style={{ marginTop: 8 }}>
-                {(() => {
-                  const gross = Number(
-                    formData.finalPrice || formData.paymentAmount || 0
-                  );
-                  const taxRate =
-                    typeof formData.taxRate === "number"
-                      ? formData.taxRate
-                      : 0.06625;
-                  const taxAmount =
-                    typeof formData.taxAmount === "number"
-                      ? formData.taxAmount
-                      : Number(Math.abs(gross * taxRate).toFixed(2));
-                  const netAmount = Number((gross - taxAmount).toFixed(2));
-                  return (
-                    <Card
-                      size="small"
-                      style={{
-                        backgroundColor: "#111827",
-                        color: "white",
-                        marginTop: 8,
-                      }}
-                    >
-                      <Space direction="vertical" style={{ width: "100%" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Text style={{ color: "#9ca3af" }}>Tax Rate</Text>
-                          <Text style={{ color: "white" }}>
-                            {(taxRate * 100).toFixed(3)}%
-                          </Text>
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <Text style={{ color: "#9ca3af" }}>Tax Amount</Text>
-                          <Text style={{ color: "white" }}>
-                            ${taxAmount.toFixed(2)}
-                          </Text>
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontWeight: 700,
-                          }}
-                        >
-                          <Text style={{ color: "#9ca3af" }}>Net Amount</Text>
-                          <Text style={{ color: "white" }}>
-                            ${netAmount.toFixed(2)}
-                          </Text>
-                        </div>
-                      </Space>
-                    </Card>
-                  );
-                })()}
-              </div>
             </Form.Item>
           </Col>
         </Row>

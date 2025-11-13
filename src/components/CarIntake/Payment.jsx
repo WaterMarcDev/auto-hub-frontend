@@ -26,35 +26,39 @@ const Payment = ({
   nextStep,
   updateFormData,
 }) => {
-  // compute derived tax values from entered amount
-  const grossAmount = useMemo(() => {
+  // finalPrice is the net amount (what seller receives)
+  // We need to calculate the gross amount from net
+  const netAmount = useMemo(() => {
     const v =
       formData.finalPrice ?? formData.paymentAmount ?? formData.paidAmount ?? 0;
     const n = Number(v) || 0;
     return Number(n.toFixed(2));
   }, [formData.finalPrice, formData.paymentAmount, formData.paidAmount]);
 
+  // Calculate gross amount: gross = net / (1 - tax_rate)
+  const grossAmount = useMemo(() => {
+    const gross = netAmount / (1 - TAX_RATE);
+    return Number(gross.toFixed(2));
+  }, [netAmount]);
+
   const taxAmount = useMemo(
-    () => Number(Math.abs(grossAmount * TAX_RATE).toFixed(2)),
-    [grossAmount]
-  );
-  // Payment in car intake uses transaction type 'debit' (tax deducted)
-  const netAmount = useMemo(
-    () => Number((grossAmount - taxAmount).toFixed(2)),
-    [grossAmount, taxAmount]
+    () => Number((grossAmount - netAmount).toFixed(2)),
+    [grossAmount, netAmount]
   );
   const handleInventoryClick = async () => {
     // Save the payment step via saveStep so the backend receives
     // the step payload and status. Then move to the next UI step.
     try {
       if (typeof saveStep === "function") {
-        // Ensure the backend receives the taxRate so Transaction hooks compute/stores tax
+        // Ensure the backend receives the gross amount and tax details
         const stepPayload = {
           ...formData,
-          finalPrice: grossAmount,
-          paymentAmount: grossAmount,
+          finalPrice: netAmount, // what seller receives
+          paymentAmount: grossAmount, // total amount including tax
+          paidAmount: grossAmount, // gross amount to be paid
           taxRate: TAX_RATE,
           taxAmount,
+          netAmount,
         };
         await saveStep(6, stepPayload);
       }
@@ -214,7 +218,11 @@ const Payment = ({
               />
             </Form.Item>
             <Form.Item
-              label={<Text style={{ color: "white" }}>Final Price</Text>}
+              label={
+                <Text style={{ color: "white" }}>
+                  Final Price (Net to Seller)
+                </Text>
+              }
             >
               <Input
                 value={`$${formData.finalPrice || "0"}`}
@@ -262,11 +270,20 @@ const Payment = ({
             <Col span={12}>
               <Form.Item
                 name="finalPrice"
-                label={<Text style={{ color: "white" }}>Amount</Text>}
+                label={
+                  <Text style={{ color: "white" }}>
+                    Final Price (Net to Seller)
+                  </Text>
+                }
                 rules={[{ required: true, message: "Final Price is required" }]}
+                extra={
+                  <Text style={{ color: "#9ca3af", fontSize: "12px" }}>
+                    This is the amount the seller will receive
+                  </Text>
+                }
               >
                 <InputNumber
-                  placeholder="Payment Amount"
+                  placeholder="Net Payment Amount"
                   style={{
                     width: "100%",
                     backgroundColor: "#4b5563",
@@ -301,6 +318,17 @@ const Payment = ({
                         justifyContent: "space-between",
                       }}
                     >
+                      <Text style={{ color: "#9ca3af" }}>Gross Amount</Text>
+                      <Text style={{ color: "white", fontWeight: 500 }}>
+                        ${grossAmount.toFixed(2)}
+                      </Text>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <Text style={{ color: "#9ca3af" }}>Tax Rate</Text>
                       <Text style={{ color: "white" }}>
                         {(TAX_RATE * 100).toFixed(3)}%
@@ -313,8 +341,8 @@ const Payment = ({
                       }}
                     >
                       <Text style={{ color: "#9ca3af" }}>Tax Amount</Text>
-                      <Text style={{ color: "white" }}>
-                        ${taxAmount.toFixed(2)}
+                      <Text style={{ color: "#ef4444" }}>
+                        -${taxAmount.toFixed(2)}
                       </Text>
                     </div>
                     <div
@@ -322,10 +350,12 @@ const Payment = ({
                         display: "flex",
                         justifyContent: "space-between",
                         fontWeight: 700,
+                        paddingTop: "8px",
+                        borderTop: "1px solid #374151",
                       }}
                     >
-                      <Text style={{ color: "#9ca3af" }}>Net Amount</Text>
-                      <Text style={{ color: "white" }}>
+                      <Text style={{ color: "#9ca3af" }}>Net to Seller</Text>
+                      <Text style={{ color: "#10b981", fontWeight: 700 }}>
                         ${netAmount.toFixed(2)}
                       </Text>
                     </div>

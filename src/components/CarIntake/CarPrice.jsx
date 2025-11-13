@@ -9,12 +9,15 @@ import {
   Col,
   Typography,
   Space,
+  Card,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 const { TextArea } = Input;
 const { Text } = Typography;
+
+const TAX_RATE = 0.06625; // 6.625%
 
 const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
   // Calculate actual price whenever weight or rate changes
@@ -80,6 +83,24 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
     formData.finalPrice,
     updateFormData,
   ]);
+
+  // Calculate tax: finalPrice is what seller receives (net amount)
+  // We need to calculate gross amount = net / (1 - tax_rate)
+  const netAmount = React.useMemo(() => {
+    const fp = parseFloat(formData.finalPrice) || 0;
+    return Number(fp.toFixed(2));
+  }, [formData.finalPrice]);
+
+  const grossAmount = React.useMemo(() => {
+    // gross = net / (1 - tax_rate)
+    const gross = netAmount / (1 - TAX_RATE);
+    return Number(gross.toFixed(2));
+  }, [netAmount]);
+
+  const taxAmount = React.useMemo(() => {
+    const tax = grossAmount - netAmount;
+    return Number(tax.toFixed(2));
+  }, [grossAmount, netAmount]);
 
   return (
     <div>
@@ -253,8 +274,18 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
           <Col span={12}>
             <Form.Item
               name="finalPrice"
-              label={<Text style={{ color: "white" }}>Final Price</Text>}
+              label={
+                <Text style={{ color: "white" }}>
+                  Final Price (Amount Seller Receives)
+                </Text>
+              }
               rules={[{ required: true, message: "Final Price is required" }]}
+              extra={
+                <Text style={{ color: "#9ca3af", fontSize: "12px" }}>
+                  This is the net amount the seller will receive after tax
+                  deduction
+                </Text>
+              }
             >
               <InputNumber
                 style={{
@@ -272,7 +303,67 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
               />
             </Form.Item>
           </Col>
-          <Col span={12}>{/* Empty column as in original */}</Col>
+          <Col span={12}>
+            {/* Tax breakdown card */}
+            <div style={{ marginTop: 30 }}>
+              <Card
+                size="small"
+                style={{
+                  backgroundColor: "#1f2937",
+                  borderColor: "#6b7280",
+                }}
+                bodyStyle={{ padding: "12px" }}
+              >
+                <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Text style={{ color: "#9ca3af" }}>Gross Amount:</Text>
+                    <Text style={{ color: "white", fontWeight: 500 }}>
+                      ${grossAmount.toFixed(2)}
+                    </Text>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Text style={{ color: "#9ca3af" }}>
+                      Tax ({(TAX_RATE * 100).toFixed(3)}%):
+                    </Text>
+                    <Text style={{ color: "#ef4444" }}>
+                      -${taxAmount.toFixed(2)}
+                    </Text>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      paddingTop: "8px",
+                      borderTop: "1px solid #6b7280",
+                    }}
+                  >
+                    <Text style={{ color: "#9ca3af", fontWeight: 600 }}>
+                      Net to Seller:
+                    </Text>
+                    <Text
+                      style={{
+                        color: "#10b981",
+                        fontWeight: 700,
+                        fontSize: "16px",
+                      }}
+                    >
+                      ${netAmount.toFixed(2)}
+                    </Text>
+                  </div>
+                </Space>
+              </Card>
+            </div>
+          </Col>
         </Row>
 
         <Row>
