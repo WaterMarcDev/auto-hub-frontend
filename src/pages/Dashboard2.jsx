@@ -237,7 +237,7 @@ const Dashboard2 = () => {
 
   const partColumns = [
     { title: "Part Name", dataIndex: "partName", key: "partName" },
-    { title: "Tag", dataIndex: "tag", key: "tag" },
+    { title: "SKU", dataIndex: "sku", key: "sku" },
     { title: "Make", dataIndex: ["make", "name"], key: "make" },
     { title: "Model", dataIndex: ["model", "name"], key: "model" },
     { title: "Trim", dataIndex: ["trim", "name"], key: "trim" },
@@ -683,7 +683,7 @@ const Dashboard2 = () => {
           <Table
             columns={partColumns}
             dataSource={partResults}
-            rowKey={(r) => r._id || r.tag || `${r.partName}-${Math.random()}`}
+            rowKey={(r) => r._id || r.sku || `${r.partName}-${Math.random()}`}
             pagination={{ pageSize: 10 }}
             locale={{ emptyText: "No parts found" }}
           />

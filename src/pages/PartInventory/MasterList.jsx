@@ -393,9 +393,9 @@ const MasterList = () => {
                 minWidth: 100,
               },
               {
-                title: "Tag",
-                dataIndex: "tag",
-                key: "tag",
+                title: "SKU",
+                dataIndex: "sku",
+                key: "sku",
                 minWidth: 100,
                 fixed: "right",
               },

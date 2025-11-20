@@ -429,7 +429,7 @@ const PartInventoryList = () => {
 
   // Handle Print Tag action: show a small modal indicating the tag is printing
   const handlePrintTag = (part) => {
-    const partName = part?.partName || part?.tag || "Part";
+    const partName = part?.partName || part?.sku || "Part";
     setPrintTagMessage(`${partName} tag is being printed`);
     setPrintTagModalVisible(true);
 
@@ -628,7 +628,7 @@ const PartInventoryList = () => {
               <div style={{ flex: "1 1 auto", overflow: "auto" }}>
                 <Table
                   dataSource={viewPartsData}
-                  rowKey={(r, index) => r._id || r.tag || `part-${index}`}
+                  rowKey={(r, index) => r._id || r.sku || `part-${index}`}
                   pagination={false}
                   size="small"
                   bordered
@@ -717,9 +717,9 @@ const PartInventoryList = () => {
                       minWidth: 160,
                     },
                     {
-                      title: "Tag",
-                      dataIndex: "tag",
-                      key: "tag",
+                      title: "SKU",
+                      dataIndex: "sku",
+                      key: "sku",
                       minWidth: 120,
                     },
                     {
