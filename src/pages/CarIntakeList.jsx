@@ -352,14 +352,14 @@ const CarIntakeList = () => {
             }
             disabled={record?.status === "payment-done"}
           />
-          <Button
+          {/* <Button
             type="primary"
             danger
             size="small"
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record)}
             title="Delete"
-          />
+          /> */}
         </Space>
       ),
     },
@@ -469,10 +469,10 @@ const CarIntakeList = () => {
   };
 
   // Handle actions
-  const handleDelete = () => {
-    // Simple delete without confirmation for now
-    message.info("Delete functionality will be implemented");
-  };
+  // const handleDelete = () => {
+  //   // Simple delete without confirmation for now
+  //   message.info("Delete functionality will be implemented");
+  // };
 
   // Bulk upload handlers
   const handleBulkUploadOpen = () => {
