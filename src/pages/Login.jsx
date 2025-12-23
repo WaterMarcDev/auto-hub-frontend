@@ -13,6 +13,7 @@ const Login = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   // Redirect if already authenticated
@@ -164,24 +165,40 @@ const Login = () => {
                           >
                             Password
                           </label>
-                          <input
-                            type="password"
-                            className="form-control"
-                            id="userpassword"
-                            name="password"
-                            placeholder="Enter password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            disabled={loading}
-                            required
-                            style={{
-                              backgroundColor: "#ffffff",
-                              border: "1px solid #dee2e6",
-                              color: "#495057",
-                            }}
-                          />
+                          <div className="input-group">
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              className="form-control"
+                              id="userpassword"
+                              name="password"
+                              placeholder="Enter password"
+                              value={formData.password}
+                              onChange={handleChange}
+                              disabled={loading}
+                              required
+                              style={{
+                                backgroundColor: "#ffffff",
+                                border: "1px solid #dee2e6",
+                                color: "#495057",
+                              }}
+                            />
+                            <span
+                              className="input-group-text"
+                              style={{
+                                cursor: "pointer",
+                                backgroundColor: "#fff",
+                              }}
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              <i
+                                className={`fa ${
+                                  showPassword ? "fa-eye-slash" : "fa-eye"
+                                }`}
+                              />
+                            </span>
+                          </div>
                         </div>
-                        <div className="mb-3">
+                        <div className="mb-3 d-flex">
                           <div className="form-check">
                             <input
                               type="checkbox"
