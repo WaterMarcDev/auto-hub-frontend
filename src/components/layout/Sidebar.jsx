@@ -137,6 +137,12 @@ const Sidebar = ({ isOpen }) => {
         icon: <BulletIcon />,
         label: <Link to="/inventory-master">Master Parts</Link>,
       });
+      
+      carPartsChildren.push({
+        key: "/inventory-tags",
+        icon: <BulletIcon />,
+        label: <Link to="/inventory-tags">Asset Tags</Link>,
+      });
 
       items.push({
         key: "carPartsInventory",

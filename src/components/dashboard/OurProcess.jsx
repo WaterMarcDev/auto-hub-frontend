@@ -69,7 +69,7 @@ const OurProcess = () => {
               <div className="flex-grow-1">
                 <h5 className="font-size-15 mb-1">Car Details</h5>
                 <p className="text-muted font-size-12 mb-0">
-                  Collect Car Details from Vin Api
+                  Collect Car Details from Vin API
                 </p>
               </div>
             </div>

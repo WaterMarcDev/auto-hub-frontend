@@ -29,6 +29,9 @@ const PartInventoryAdd = React.lazy(() => import("./pages/PartInventory/Add"));
 const PartInventoryList = React.lazy(() =>
   import("./pages/PartInventory/List")
 );
+const AssetTags = React.lazy(() =>
+  import("./pages/AssetTags/List")
+);
 const PartInventoryMaster = React.lazy(() =>
   import("./pages/PartInventory/MasterList")
 );
@@ -260,6 +263,10 @@ function App() {
                         <Route
                           path="/inventory-master"
                           element={<PartInventoryMaster />}
+                        />
+                        <Route
+                          path="/inventory-tags"
+                          element={<AssetTags />}
                         />
                         <Route
                           path="/car-inventory"
