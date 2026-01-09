@@ -58,6 +58,9 @@ const ManagerGuide = React.lazy(() => import("./pages/Guide/ManagerGuide"));
 const FrontDeskGuide = React.lazy(() => import("./pages/Guide/FrontDeskGuide"));
 const StaffGuide = React.lazy(() => import("./pages/Guide/StaffGuide"));
 
+const UserList = React.lazy(() => import("./pages/Users/UserList"));
+const AddUser = React.lazy(() => import("./pages/Users/AddUser"));
+
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
   <div className="page-title-box">
@@ -309,6 +312,11 @@ function App() {
                           element={<FrontDeskGuide />}
                         />
                         <Route path="/guide/staff" element={<StaffGuide />} />
+
+                        {/* User Management */}
+                        <Route path="/users/list" element={<UserList />} />
+                        <Route path="/users/add" element={<AddUser />} />
+                        <Route path="/users/edit/:id" element={<AddUser />} />
                       </Routes>
                     </Suspense>
                   </Layout>
