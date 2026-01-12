@@ -36,6 +36,7 @@ const Sidebar = ({ isOpen }) => {
   const isFrontDesk = userRole === "front_desk";
   const isAdmin = userRole === "admin";
   const isStaff = userRole === "staff";
+  const isScraper = userRole === "scraper";
 
   // Setup menu items based on user role
   const getMenuItems = () => {
@@ -159,6 +160,12 @@ const Sidebar = ({ isOpen }) => {
         label: <Link to="/inventory-master">Master Parts</Link>,
       });
 
+      carPartsChildren.push({
+        key: "/inventory-tags",
+        icon: <BulletIcon />,
+        label: <Link to="/inventory-tags">Asset Tags</Link>,
+      });
+
       items.push({
         key: "carPartsInventory",
         icon: <ToolOutlined />,
@@ -183,8 +190,8 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // Scrap a Car - Only for Admin
-    if (isAdmin || isManager || isStaff) {
+    // Scrap a Car - Only for Admin, Manager, Staff and Scraper
+    if (isAdmin || isManager || isStaff || isScraper) {
       items.push({
         key: "scrapCar",
         icon: <DeleteOutlined />,
@@ -209,8 +216,8 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // Seller - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin || isManager) {
+    // Seller - visible for Front Desk, Scraper and Admin
+    if (isFrontDesk || isScraper || isAdmin || isManager) {
       items.push({
         key: "seller",
         icon: <UserOutlined />,
@@ -230,8 +237,8 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // Check-In - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin || isManager) {
+    // Check-In - visible for Front Desk, Scraper and Admin
+    if (isFrontDesk || isScraper || isAdmin || isManager) {
       items.push({
         key: "checkin",
         icon: <CarOutlined />,
@@ -251,8 +258,8 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // Buyer - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin || isManager) {
+    // Buyer - visible for Front Desk, Scraper and Admin
+    if (isFrontDesk || isScraper || isAdmin || isManager) {
       items.push({
         key: "buyer",
         icon: <UserOutlined />,
@@ -272,8 +279,8 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // Waiver - visible for Front Desk and Admin
-    if (isFrontDesk || isAdmin || isManager) {
+    // Waiver - visible for Front Desk, Scraper and Admin
+    if (isFrontDesk || isScraper || isAdmin || isManager) {
       items.push({
         key: "waiver",
         icon: <FileProtectOutlined />,
@@ -332,6 +339,13 @@ const Sidebar = ({ isOpen }) => {
       );
     } else if (isFrontDesk) {
       // Front Desk sees only their guide
+      guideChildren.push({
+        key: "/guide/front-desk",
+        icon: <BulletIcon />,
+        label: <Link to="/guide/front-desk">Front Desk Guide</Link>,
+      });
+    } else if (isScraper) {
+      // Scraper sees Front Desk guide for now
       guideChildren.push({
         key: "/guide/front-desk",
         icon: <BulletIcon />,
@@ -437,13 +451,13 @@ const Sidebar = ({ isOpen }) => {
               <span className="font-size-13 text-white-50">
                 {user?.role
                   ? user.role
-                      .split("_")
-                      .map(
-                        (part) =>
-                          part.charAt(0).toUpperCase() +
-                          part.slice(1).toLowerCase()
-                      )
-                      .join(" ")
+                    .split("_")
+                    .map(
+                      (part) =>
+                        part.charAt(0).toUpperCase() +
+                        part.slice(1).toLowerCase()
+                    )
+                    .join(" ")
                   : "User"}
               </span>
             </div>

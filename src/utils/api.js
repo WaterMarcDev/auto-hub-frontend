@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://192.168.1.4:5000/api",
+  baseURL: "http://localhost:3000/api",
   timeout: 10000,
   withCredentials: true, // Include cookies for authentication
   headers: {
@@ -118,6 +118,15 @@ export const inventoryAPI = {
   getAll: (params = {}) => api.get("/inventory", { params }),
 };
 
+export const assetTagsAPI = {
+  generate: (data) => api.post("/tags/generate", data),
+  available: (params = {}) => api.get("/tags/available/", { params }),
+  getAll: (params = {}) => api.get("/tags/", { params }),
+  get: (params = {}) => api.get("/tags/${id}", { params }),
+  toggle: (params = {}) => api.patch("/tags/${id}/toggle", { params }),
+  attach: (barcode, data) => api.post(`/tags/${barcode}/attach`, data)
+};
+
 export const elementAPI = {
   getAll: (params = {}) => api.get("/element", { params }),
   getById: (id) => api.get(`/element/${id}`),
@@ -183,7 +192,7 @@ export const uploadAPI = {
     }
 
     const base = (
-      import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+      import.meta.env.VITE_API_URL || "http://localhost:3000/api"
     ).replace(/\/api\/?$/, "");
 
     if (/^\/?api\//i.test(filename)) {
