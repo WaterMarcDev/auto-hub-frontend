@@ -56,6 +56,7 @@ const Sidebar = ({ isOpen }) => {
       label: <Link to="/">Home</Link>,
     });
 
+
     // Master Menu - Only for Admin
     if (isManager || isAdmin) {
       items.push({
@@ -63,6 +64,26 @@ const Sidebar = ({ isOpen }) => {
         icon: <DashboardOutlined />,
         label: <Link to="/dashboard">Dashboard</Link>,
       });
+
+      // User Management - visible for Admin and Manager
+      items.push({
+        key: "userManagement",
+        icon: <UserOutlined />,
+        label: "User Management",
+        children: [
+          {
+            key: "/users/add",
+            icon: <BulletIcon />,
+            label: <Link to="/users/add">Add New User</Link>,
+          },
+          {
+            key: "/users/list",
+            icon: <BulletIcon />,
+            label: <Link to="/users/list">User Lists</Link>,
+          },
+        ],
+      });
+
       items.push({
         key: "master",
         icon: <AppstoreOutlined />,
@@ -347,6 +368,8 @@ const Sidebar = ({ isOpen }) => {
       "/trim": "master",
       "/part": "master",
       "/element": "master",
+      "/users/add": "userManagement",
+      "/users/list": "userManagement",
       "/car-intake": "carIntake",
       "/car-intake-list": "carIntake",
       "/add-inventory": "carPartsInventory",

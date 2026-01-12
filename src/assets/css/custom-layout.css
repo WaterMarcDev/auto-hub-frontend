@@ -453,3 +453,28 @@
 .vertical-menu [data-simplebar] {
   direction: ltr !important;
 }
+
+/* Fix for Input.Password/AffixWrapper double border issue */
+.ant-input-affix-wrapper {
+  background-color: #374151 !important;
+  border: 1px solid #4a5568 !important;
+  color: #d6dae5 !important;
+  border-radius: 0.375rem !important;
+  padding: 4px 11px !important;
+}
+
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: #2b6cb0 !important;
+  box-shadow: 0 0 0 0.2rem rgba(43, 108, 176, 0.25) !important;
+}
+
+.ant-input-affix-wrapper .ant-input {
+  border: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.ant-input-suffix {
+  margin-left: 8px;
+}

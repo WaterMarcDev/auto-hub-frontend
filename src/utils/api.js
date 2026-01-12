@@ -247,6 +247,16 @@ export const checkInAPI = {
   },
 };
 
+export const userAPI = {
+  getAll: (params = {}) => api.get("/users", { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  create: (data) => api.post("/users", data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+  resetPassword: (id, password) =>
+    api.put(`/users/${id}/password`, { password }),
+};
+
 // Dashboard APIs (for charts and counts)
 export const dashboardAPI = {
   getSummary: (params = {}) => api.get("/dashboard/summary", { params }),
