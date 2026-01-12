@@ -199,9 +199,8 @@ const CarIntakeList = () => {
       minWidth: 100,
       render: (kyc) => {
         if (!kyc) return "N/A";
-        const name = `${kyc?.seller?.firstName || ""} ${
-          kyc?.seller?.lastName || ""
-        }`.trim();
+        const name = `${kyc?.seller?.firstName || ""} ${kyc?.seller?.lastName || ""
+          }`.trim();
 
         return (
           <div>
@@ -278,44 +277,7 @@ const CarIntakeList = () => {
       minWidth: 100,
       render: (method) => <Tag color="green">{method || "N/A"}</Tag>,
     },
-    {
-      title: "Inventory",
-      dataIndex: "inventoryAdded",
-      key: "inventoryAdded",
-      minWidth: 100,
-      render: (inventoryAdded) => (
-        <Tag color={inventoryAdded ? "green" : "red"}>
-          {inventoryAdded ? "Yes" : "No"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Seller Copy Printed",
-      dataIndex: "sellerCopyPrinted",
-      key: "sellerCopyPrinted",
-      minWidth: 150,
-      render: (printed) => (
-        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
-      ),
-    },
-    {
-      title: "Document Printed",
-      dataIndex: "documentPrinted",
-      key: "documentPrinted",
-      minWidth: 140,
-      render: (printed) => (
-        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
-      ),
-    },
-    {
-      title: "Receipt Printed",
-      dataIndex: "receiptPrinted",
-      key: "receiptPrinted",
-      minWidth: 130,
-      render: (printed) => (
-        <Tag color={printed ? "blue" : "red"}>{printed ? "Yes" : "No"}</Tag>
-      ),
-    },
+
     {
       title: "Status",
       dataIndex: "status",
@@ -370,8 +332,8 @@ const CarIntakeList = () => {
     col.key
       ? String(col.key)
       : Array.isArray(col.dataIndex)
-      ? String(col.dataIndex[0])
-      : String(col.dataIndex || "");
+        ? String(col.dataIndex[0])
+        : String(col.dataIndex || "");
 
   // State: which columns are currently visible (by key)
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -434,8 +396,7 @@ const CarIntakeList = () => {
         }
       } catch (error) {
         message.error(
-          `Failed to fetch car intakes: ${
-            error.response?.data?.error || error.message
+          `Failed to fetch car intakes: ${error.response?.data?.error || error.message
           }`
         );
       } finally {
@@ -795,39 +756,39 @@ const CarIntakeList = () => {
 
                   {(bulkUploadResult.results.failed.length > 0 ||
                     bulkUploadResult.results.skipped.length > 0) && (
-                    <div style={{ marginTop: 16 }}>
-                      <Typography.Text strong style={{ color: "#e0e0e0" }}>
-                        Details:
-                      </Typography.Text>
-                      <div
-                        style={{
-                          maxHeight: 200,
-                          overflow: "auto",
-                          marginTop: 8,
-                          padding: 8,
-                          background: "#141414",
-                          borderRadius: 4,
-                        }}
-                      >
-                        {bulkUploadResult.results.failed.map((item, index) => (
-                          <div
-                            key={`failed-${index}`}
-                            style={{ marginBottom: 4, color: "#ff7875" }}
-                          >
-                            <strong>Row {item.row}:</strong> {item.reason}
-                          </div>
-                        ))}
-                        {bulkUploadResult.results.skipped.map((item, index) => (
-                          <div
-                            key={`skipped-${index}`}
-                            style={{ marginBottom: 4, color: "#ffc53d" }}
-                          >
-                            <strong>Row {item.row}:</strong> {item.reason}
-                          </div>
-                        ))}
+                      <div style={{ marginTop: 16 }}>
+                        <Typography.Text strong style={{ color: "#e0e0e0" }}>
+                          Details:
+                        </Typography.Text>
+                        <div
+                          style={{
+                            maxHeight: 200,
+                            overflow: "auto",
+                            marginTop: 8,
+                            padding: 8,
+                            background: "#141414",
+                            borderRadius: 4,
+                          }}
+                        >
+                          {bulkUploadResult.results.failed.map((item, index) => (
+                            <div
+                              key={`failed-${index}`}
+                              style={{ marginBottom: 4, color: "#ff7875" }}
+                            >
+                              <strong>Row {item.row}:</strong> {item.reason}
+                            </div>
+                          ))}
+                          {bulkUploadResult.results.skipped.map((item, index) => (
+                            <div
+                              key={`skipped-${index}`}
+                              style={{ marginBottom: 4, color: "#ffc53d" }}
+                            >
+                              <strong>Row {item.row}:</strong> {item.reason}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
             )}

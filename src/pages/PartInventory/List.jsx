@@ -17,8 +17,12 @@ import AddInventoryModal from "../../components/AddInventoryModal";
 import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import { useNavigate } from "react-router-dom";
+
+
 
 const PartInventoryList = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
   const [pagination, setPagination] = useState({
@@ -32,13 +36,13 @@ const PartInventoryList = () => {
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
 
-  const [viewPartsModalVisible, setViewPartsModalVisible] = useState(false);
   const [viewPartsLoading, setViewPartsLoading] = useState(false);
-  const [viewPartsData, setViewPartsData] = useState([]);
+
   const [printTagModalVisible, setPrintTagModalVisible] = useState(false);
   const [printTagMessage, setPrintTagMessage] = useState("");
   const [addInventoryModalVisible, setAddInventoryModalVisible] =
     useState(false);
+  const navigate = useNavigate();
 
   // ...existing code...
 
@@ -317,7 +321,7 @@ const PartInventoryList = () => {
           <Button
             size="small"
             type="primary"
-            onClick={() => openViewPartsModal(record)}
+            onClick={() => OpenViewParts(record)}
           >
             View Parts
           </Button>
@@ -331,8 +335,8 @@ const PartInventoryList = () => {
     col.key
       ? String(col.key)
       : Array.isArray(col.dataIndex)
-      ? String(col.dataIndex[0])
-      : String(col.dataIndex || "");
+        ? String(col.dataIndex[0])
+        : String(col.dataIndex || "");
 
   // State: which columns are currently visible (by key)
   const [visibleColumns, setVisibleColumns] = React.useState(
@@ -378,8 +382,7 @@ const PartInventoryList = () => {
       setCarIntakes(data.carIntakes || data);
     } catch (error) {
       message.error(
-        `Failed to fetch car intakes: ${
-          error.response?.data?.error || error.message
+        `Failed to fetch car intakes: ${error.response?.data?.error || error.message
         }`
       );
     } finally {
@@ -397,34 +400,44 @@ const PartInventoryList = () => {
   }, [pagination.current, pagination.pageSize]);
 
   // View parts by VIN - open modal and fetch inventory items
-  const fetchViewPartsByVIN = async (vin) => {
+  const navigateToParts = async (vin) => {
     if (!vin) return;
     setViewPartsLoading(true);
     try {
       const res = await inventoryAPI.getByVIN(vin);
       const data = res.data || res;
-      setViewPartsData(data.inventoryItems || data);
-      setViewPartsModalVisible(true);
+      const inventoryItems = Array.isArray(data.inventoryItems)
+        ? data.inventoryItems
+        : [];
+      if (inventoryItems.length == 0) {
+        setViewPartsLoading(false);
+        messageApi.warning({
+          content: `No parts found for VIN ${vin}`,
+          duration: 3,
+        });
+        return;
+      }
+      navigate("/inventory/parts", {
+        state: { vin, inventoryItems },
+      })
     } catch (err) {
       console.error("Failed to fetch inventory by VIN", err);
       message.error(
-        `Failed to fetch parts for VIN ${vin}: ${
-          err.response?.data?.message || err.message
+        `Failed to fetch parts for VIN ${vin}: ${err.response?.data?.message || err.message
         }`
       );
-      setViewPartsData([]);
     } finally {
       setViewPartsLoading(false);
     }
   };
 
-  const openViewPartsModal = (record) => {
+  const OpenViewParts = (record) => {
     const vin = record?.vin || record?._id || "";
     if (!vin) {
       message.error("No VIN available for this record");
       return;
     }
-    fetchViewPartsByVIN(vin);
+    navigateToParts(vin);
   };
 
   // Handle Print Tag action: show a small modal indicating the tag is printing
@@ -441,6 +454,7 @@ const PartInventoryList = () => {
 
   return (
     <React.Fragment>
+      {contextHolder}
       <TitleBox
         title="Inventory List"
         routes={["Scrap Yard", "Inventory"]}
@@ -593,155 +607,6 @@ const PartInventoryList = () => {
               )
             ) : (
               <div>No document to preview</div>
-            )}
-          </Modal>
-
-          <Modal
-            open={viewPartsModalVisible}
-            title={`Parts For VIN`}
-            onCancel={() => setViewPartsModalVisible(false)}
-            footer={[
-              <Button
-                key="close"
-                onClick={() => setViewPartsModalVisible(false)}
-              >
-                Close
-              </Button>,
-            ]}
-            width={1200}
-            centered
-            // Use Antd's bodyStyle to control the modal body layout so the table
-            // can expand and the footer (Close button) sits right below it.
-            bodyStyle={{
-              display: "flex",
-              flexDirection: "column",
-              padding: "16px 24px",
-              gap: 8,
-              maxHeight: "65vh",
-            }}
-          >
-            {viewPartsLoading ? (
-              <div>Loading...</div>
-            ) : viewPartsData && viewPartsData.length > 0 ? (
-              // Wrap table in a scrollable flex child so it occupies available
-              // modal body space and doesn't leave a large gap before the footer.
-              <div style={{ flex: "1 1 auto", overflow: "auto" }}>
-                <Table
-                  dataSource={viewPartsData}
-                  rowKey={(r, index) => r._id || r.sku || `part-${index}`}
-                  pagination={false}
-                  size="small"
-                  bordered
-                  className="dark-table"
-                  tableLayout="auto"
-                  // modal-appropriate vertical scroll so header stays sticky
-                  scroll={{ y: "calc(65vh - 220px)" }}
-                  sticky={{ offsetHeader: 0 }}
-                  columns={[
-                    {
-                      title: "S. No.",
-                      key: "srNo",
-                      width: 80,
-                      minWidth: 70,
-                      render: (text, record, index) => index + 1,
-                    },
-                    {
-                      title: "Part Name",
-                      dataIndex: "partName",
-                      key: "partName",
-                      minWidth: 220,
-                      render: (text) => {
-                        if (!text) return "N/A";
-                        // Convert to proper case (Title Case)
-                        return text
-                          .replace(/([A-Z])/g, " $1")
-                          .replace(/[_-]/g, " ")
-                          .replace(/^./, (str) => str.toUpperCase())
-                          .trim();
-                      },
-                    },
-                    {
-                      title: "Make",
-                      dataIndex: ["make", "name"],
-                      key: "make",
-                      minWidth: 140,
-                    },
-                    {
-                      title: "Model",
-                      dataIndex: ["model", "name"],
-                      key: "model",
-                      minWidth: 140,
-                    },
-                    {
-                      title: "Trim",
-                      dataIndex: ["trim", "name"],
-                      key: "trim",
-                      minWidth: 120,
-                    },
-
-                    {
-                      title: "Unit",
-                      dataIndex: "unit",
-                      key: "unit",
-                      minWidth: 90,
-                    },
-                    {
-                      title: "Quality",
-                      dataIndex: "quality",
-                      key: "quality",
-                      minWidth: 110,
-                    },
-                    {
-                      title: "Cleaned",
-                      dataIndex: "cleaned",
-                      key: "cleaned",
-                      minWidth: 100,
-                      render: (c) => (c ? "Yes" : "No"),
-                    },
-                    {
-                      title: "Weight",
-                      dataIndex: "weight",
-                      key: "weight",
-                      minWidth: 100,
-                    },
-                    {
-                      title: "Dimensions",
-                      dataIndex: "dimensions",
-                      key: "dimensions",
-                      minWidth: 140,
-                    },
-                    {
-                      title: "Location",
-                      dataIndex: "location",
-                      key: "location",
-                      minWidth: 160,
-                    },
-                    {
-                      title: "SKU",
-                      dataIndex: "sku",
-                      key: "sku",
-                      minWidth: 120,
-                    },
-                    {
-                      title: "Action",
-                      key: "action",
-                      minWidth: 140,
-                      render: (_, part) => (
-                        <Space>
-                          <Button
-                            type="link"
-                            onClick={() => handlePrintTag(part)}
-                          >
-                            Print Tag
-                          </Button>
-                        </Space>
-                      ),
-                    },
-                  ]}
-                />
-              </div>
-            ) : (
-              <div>No parts found for this VIN.</div>
             )}
           </Modal>
 

@@ -24,7 +24,7 @@ const List = () => {
     const [generateTagsModalVisible, setGenerateTagsModalVisible] = useState(false);
     const [start, setStart] = useState(null);
     const [end, setEnd] = useState(null);
-    const [digits, setDigits] = useState(3);
+    const [digits, setDigits] = useState(10);
     const [viewTagModalVisible, setViewTagModalVisible] = useState(false);
     const [selectedTag, setSelectedTag] = useState(null);
 
@@ -55,7 +55,7 @@ const List = () => {
             const tags = (data.tags || []).map(tag => ({
                 barcodeString: tag.barcodeString,
                 isUsed: tag.isUsed ? "Used" : "Available",
-                partId: tag.partId != null ? tag.partId : "Unassigned",
+                inventoryId: tag.inventoryId != null ? tag.inventoryId : "Unassigned",
                 updatedAt: formatTagDate(tag.updatedAt),
             }));
 
@@ -175,12 +175,6 @@ const List = () => {
                                 fixed: "left",
                                 render: (text, record) => {
                                     if (!text) return "N/A";
-
-                                    const formattedText = text
-                                        .replace(/([A-Z])/g, " $1")
-                                        .replace(/[_-]/g, " ")
-                                        .replace(/^./, (str) => str.toUpperCase())
-                                        .trim();
                                     return (
                                         <span
                                             style={{
@@ -201,7 +195,7 @@ const List = () => {
                                                 setViewTagModalVisible(true);
                                             }}
                                         >
-                                            {formattedText}
+                                            {text}
                                         </span>
                                     );
                                 },
@@ -213,8 +207,8 @@ const List = () => {
                                 minWidth: 50,
                             },
                             {
-                                title: "Part Assigned",
-                                dataIndex: "partId",
+                                title: "Inventory Assigned",
+                                dataIndex: "inventoryId",
                                 key: "partAssigned",
                                 minWidth: 100,
                             },

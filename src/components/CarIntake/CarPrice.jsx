@@ -409,7 +409,7 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
               icon={<ArrowRightOutlined />}
               iconPosition="end"
             >
-              User KYC
+              User Identification
             </Button>
           </div>
         </Form.Item>

@@ -25,11 +25,11 @@ const ViewTagModal = ({ visible, onClose, tag }) => {
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Available">
-                        {tag.isUsed=="Available"?"Yes":"No"}
+                        {tag.isUsed == "Available" ? "Yes" : "No"}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="Part ID">
-                        {tag.partId || '-'}
+                    <Descriptions.Item label="Inventory ID">
+                        {tag.inventoryId || '-'}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Last Updated">

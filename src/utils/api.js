@@ -120,11 +120,11 @@ export const inventoryAPI = {
 
 export const assetTagsAPI = {
   generate: (data) => api.post("/tags/generate", data),
-  available: (vin) => api.get(`/tags/available/${vin}`),
+  available: (params = {}) => api.get("/tags/available/", { params }),
   getAll: (params = {}) => api.get("/tags/", { params }),
   get: (params = {}) => api.get("/tags/${id}", { params }),
   toggle: (params = {}) => api.patch("/tags/${id}/toggle", { params }),
-  attach: (params = {}) => api.get("/tags/${id}/attach", { params })
+  attach: (barcode, data) => api.post(`/tags/${barcode}/attach`, data)
 };
 
 export const elementAPI = {

@@ -313,8 +313,8 @@ const CarIntake = () => {
               stepData.finalPrice !== undefined && stepData.finalPrice !== ""
                 ? parseFloat(stepData.finalPrice)
                 : stepData.paymentAmount !== undefined
-                ? parseFloat(stepData.paymentAmount)
-                : stepData.paidAmount || 0;
+                  ? parseFloat(stepData.paymentAmount)
+                  : stepData.paidAmount || 0;
             const TAX_RATE = 0.06625;
             const _taxAmount = Number(Math.abs(_gross * TAX_RATE).toFixed(2));
 
@@ -681,9 +681,8 @@ const CarIntake = () => {
         type: "number",
         min: 1900,
         max: new Date().getFullYear() + 1,
-        message: `Year must be between 1900 and ${
-          new Date().getFullYear() + 1
-        }`,
+        message: `Year must be between 1900 and ${new Date().getFullYear() + 1
+          }`,
       },
     ],
     make: [
@@ -1170,8 +1169,8 @@ const CarIntake = () => {
         formData.finalPrice !== undefined && formData.finalPrice !== ""
           ? parseFloat(formData.finalPrice)
           : formData.paymentAmount !== undefined
-          ? parseFloat(formData.paymentAmount)
-          : formData.paidAmount;
+            ? parseFloat(formData.paymentAmount)
+            : formData.paidAmount;
 
       // Include tax info so backend can persist transaction tax fields
       const SUBMIT_GROSS = submitData.paidAmount || 0;
@@ -1640,8 +1639,8 @@ const CarIntake = () => {
                   {stepSaveStatus[currentStep]?.status === "saving"
                     ? `Saving step ${currentStep}...`
                     : stepSaveStatus[currentStep]?.status
-                    ? `Status: ${stepSaveStatus[currentStep].status}`
-                    : null}
+                      ? `Status: ${stepSaveStatus[currentStep].status}`
+                      : null}
                 </span>
               </div>
             }
@@ -1680,7 +1679,7 @@ const CarIntake = () => {
                   <div
                     className={`nav-link ${currentStep === 5 ? "active" : ""}`}
                   >
-                    <span className="step-number">05. User KYC & Car Doc</span>
+                    <span className="step-number">05. User Identification & Car Doc</span>
                   </div>
                 </li>
                 <li className="nav-item">

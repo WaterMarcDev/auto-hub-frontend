@@ -403,7 +403,7 @@ const Payment = ({
             color: "white",
           }}
         >
-          User KYC
+          User Identification
         </Button>
         <Button
           type="primary"

@@ -5,7 +5,8 @@ export const ROLES = {
   ADMIN: 'admin',
   MANAGER: 'manager',
   STAFF: 'staff',
-  FRONT_DESK: 'front-desk'
+  FRONT_DESK: 'front-desk',
+  SCRAPER: 'scraper'
 };
 
 // Define permissions for each role
@@ -17,7 +18,7 @@ export const PERMISSIONS = {
     UPDATE: 'check-in:update',
     CHECKOUT: 'check-in:checkout'
   },
-  
+
   // Waiver
   WAIVER: {
     VIEW: 'waiver:view',
@@ -264,6 +265,22 @@ const ROLE_PERMISSIONS = {
     PERMISSIONS.ELEMENT.UPDATE,
     PERMISSIONS.ELEMENT.DELETE,
     PERMISSIONS.DASHBOARD.VIEW
+  ],
+
+  [ROLES.SCRAPER]: [
+    // Scraper permissions (currently same as Front Desk but explicitly defined)
+    PERMISSIONS.CHECK_IN.VIEW,
+    PERMISSIONS.CHECK_IN.CREATE,
+    PERMISSIONS.CHECK_IN.UPDATE,
+    PERMISSIONS.CHECK_IN.CHECKOUT,
+    PERMISSIONS.WAIVER.VIEW,
+    PERMISSIONS.WAIVER.CREATE,
+    PERMISSIONS.DASHBOARD.VIEW,
+    // Added Scrap permissions as requested
+    PERMISSIONS.SCRAP.VIEW,
+    PERMISSIONS.SCRAP.CREATE,
+    PERMISSIONS.SCRAP.UPDATE,
+    PERMISSIONS.SCRAP.DELETE
   ]
 };
 
@@ -280,7 +297,7 @@ export const hasPermission = (user, permission) => {
 
   const userRole = user.role.toLowerCase();
   const rolePermissions = ROLE_PERMISSIONS[userRole] || [];
-  
+
   return rolePermissions.includes(permission);
 };
 
@@ -366,11 +383,11 @@ export const filterMenuByPermissions = (user, menuItems) => {
     if (!item.requiredPermission) {
       return true; // No permission required
     }
-    
+
     if (Array.isArray(item.requiredPermission)) {
       return hasAnyPermission(user, item.requiredPermission);
     }
-    
+
     return hasPermission(user, item.requiredPermission);
   });
 };

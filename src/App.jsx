@@ -26,6 +26,9 @@ const Part = React.lazy(() => import("./pages/Part"));
 const Element = React.lazy(() => import("./pages/Element"));
 const ElementHub = React.lazy(() => import("./pages/Element/Hub"));
 const PartInventoryAdd = React.lazy(() => import("./pages/PartInventory/Add"));
+const AddInventoryPage = React.lazy(() =>
+  import("./pages/PartInventory/AddInventoryPage")
+);
 const PartInventoryList = React.lazy(() =>
   import("./pages/PartInventory/List")
 );
@@ -36,6 +39,7 @@ const PartInventoryMaster = React.lazy(() =>
   import("./pages/PartInventory/MasterList")
 );
 const Dashboard2 = React.lazy(() => import("./pages/Dashboard2"));
+const ViewPartsPage = React.lazy(() => import("./pages/ViewPartsPage"));
 const CarInventoryList = React.lazy(() => import("./pages/CarInventory/List"));
 const AddScrap = React.lazy(() => import("./pages/Scrap/Add"));
 const ScrapList = React.lazy(() => import("./pages/Scrap/List"));
@@ -236,8 +240,10 @@ function App() {
                           }
                         />
                         <Route path="/make" element={<Make />} />
+                        <Route path="/inventory/parts" element={<ViewPartsPage />} />
                         <Route path="/model" element={<Model />} />
                         <Route path="/trim" element={<Trim />} />
+                        <Route path="/inventory/add" element={<AddInventoryPage />} />
                         <Route path="/element" element={<Element />} />
                         <Route path="/element-hub" element={<ElementHub />} />
                         <Route path="/part" element={<Part />} />
