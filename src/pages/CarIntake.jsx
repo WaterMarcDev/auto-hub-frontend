@@ -728,7 +728,9 @@ const CarIntake = () => {
       },
     ],
     email: [{ type: "email", message: "Invalid email format" }],
-    dlDocument: [{ required: true, message: "Driver's License is required" }],
+    dlDocument: [
+      // { required: true, message: "Driver's License is required" } // Made optional, handled by custom check
+    ],
 
     // Step 6: Payment
     paidTo: [{ required: true, message: "Payment Method is required" }],
@@ -887,9 +889,9 @@ const CarIntake = () => {
           "lastName",
           "mobileNo",
           "email",
-          "dlDocument",
+          // "dlDocument",
           "sellerSignature",
-          "physicalPaper",
+          // "physicalPaper",
           "sellingDate",
           "pickUpType",
         ];
@@ -981,6 +983,22 @@ const CarIntake = () => {
     const stepFields = getStepFields(currentStep);
 
     try {
+      // Custom validation for Step 5: At least one document required
+      if (currentStep === 5) {
+        if (
+          !formData.dlDocument &&
+          !formData.physicalPaper &&
+          !formData.titleCertificate &&
+          (!formData.documents || Object.keys(formData.documents).length === 0)
+        ) {
+          const errorMsg =
+            "At least one document (DL, Physical Paper, or Title Certificate) is required.";
+          setValidationErrors([{ field: "documents", message: errorMsg }]);
+          setValidationModalVisible(true);
+          return;
+        }
+      }
+
       await form.validateFields(stepFields);
 
       // Force immediate save when moving to next step
@@ -1024,6 +1042,24 @@ const CarIntake = () => {
         ...getStepFields(5),
         ...getStepFields(6),
       ];
+
+      // Custom validation for Step 5: At least one document required
+      if (
+        !formData.dlDocument &&
+        !formData.physicalPaper &&
+        !formData.titleCertificate &&
+        (!formData.documents || Object.keys(formData.documents).length === 0)
+      ) {
+        setValidationErrors([
+          {
+            field: "documents",
+            message:
+              "At least one document (DL, Physical Paper, or Title Certificate) is required.",
+          },
+        ]);
+        setValidationModalVisible(true);
+        return;
+      }
 
       await form.validateFields(requiredStepFields);
 
@@ -1293,14 +1329,12 @@ const CarIntake = () => {
         );
       case 6:
         return (
-          <Payment
+          <CarInventory
             formData={formData}
-            updateFormData={updateFormData}
-            nextStep={nextStep}
             prevStep={prevStep}
+            handleSubmit={handleSubmit}
             form={form}
-            validationRules={validationRules}
-            saveStep={saveStep}
+            id={serverId} // Pass serverId for printing
           />
         );
       case 7:
@@ -1310,6 +1344,7 @@ const CarIntake = () => {
             prevStep={prevStep}
             handleSubmit={handleSubmit}
             form={form}
+            id={serverId} // Pass serverId for printing
           />
         );
       default:

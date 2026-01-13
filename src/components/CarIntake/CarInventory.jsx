@@ -25,7 +25,7 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const CarInventory = ({ formData, prevStep }) => {
+const CarInventory = ({ formData, prevStep, id }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -60,6 +60,7 @@ const CarInventory = ({ formData, prevStep }) => {
         ).replace(/\/api\/?$/, "");
         // Determine car intake id: prefer formData._id or formData.id, otherwise try to parse from the URL
         const carId =
+          id || // prioritize calling prop
           formData?._id ||
           formData?.id ||
           (() => {
@@ -74,10 +75,7 @@ const CarInventory = ({ formData, prevStep }) => {
           })();
 
         if (!carId) {
-          showModal(
-            "Print Error",
-            "Unable to determine Car Intake id for printing."
-          );
+          message.error("Unable to determine Car Intake id for printing.");
           return;
         }
 
@@ -134,7 +132,7 @@ const CarInventory = ({ formData, prevStep }) => {
         }, 2000);
       } catch (err) {
         console.error(err);
-        // message.error(err.message || "Failed to print slip");
+        message.error(err.message || "Failed to print slip");
       }
     })();
   };
@@ -148,6 +146,7 @@ const CarInventory = ({ formData, prevStep }) => {
         ).replace(/\/api\/?$/, "");
         // Determine car intake id: prefer formData._id or formData.id, otherwise try to parse from the URL
         const carId =
+          id || // prioritize calling prop
           formData?._id ||
           formData?.id ||
           (() => {
@@ -162,10 +161,7 @@ const CarInventory = ({ formData, prevStep }) => {
           })();
 
         if (!carId) {
-          showModal(
-            "Print Error",
-            "Unable to determine Car Intake id for printing."
-          );
+          message.error("Unable to determine Car Intake id for printing.");
           return;
         }
 
@@ -174,7 +170,7 @@ const CarInventory = ({ formData, prevStep }) => {
         const res = await fetch(url, { credentials: "include" });
         if (!res.ok) {
           if (res.status === 404) {
-            showModal("Print Error", "Car intake not found.");
+            message.error("Car intake not found.");
             return;
           }
           throw new Error(`Failed to load documents: ${res.status}`);
@@ -228,8 +224,7 @@ const CarInventory = ({ formData, prevStep }) => {
         }, 2000);
       } catch (err) {
         console.error(err);
-        showModal(
-          "Print Error",
+        message.error(
           err.message || "Failed to print documents. Please try again."
         );
       }

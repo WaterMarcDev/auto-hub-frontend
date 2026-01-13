@@ -66,24 +66,7 @@ const Sidebar = ({ isOpen }) => {
         label: <Link to="/dashboard">Dashboard</Link>,
       });
 
-      // User Management - visible for Admin and Manager
-      items.push({
-        key: "userManagement",
-        icon: <UserOutlined />,
-        label: "User Management",
-        children: [
-          {
-            key: "/users/add",
-            icon: <BulletIcon />,
-            label: <Link to="/users/add">Add New User</Link>,
-          },
-          {
-            key: "/users/list",
-            icon: <BulletIcon />,
-            label: <Link to="/users/list">User Lists</Link>,
-          },
-        ],
-      });
+      /* User Management moved to bottom as per request */
 
       items.push({
         key: "master",
@@ -295,6 +278,27 @@ const Sidebar = ({ isOpen }) => {
             key: "/waivers",
             icon: <BulletIcon />,
             label: <Link to="/waivers">Lists</Link>,
+          },
+        ],
+      });
+    }
+
+    // User Management - visible for Admin and Manager (Moved to second last)
+    if (isManager || isAdmin) {
+      items.push({
+        key: "userManagement",
+        icon: <UserOutlined />,
+        label: "User Management",
+        children: [
+          {
+            key: "/users/add",
+            icon: <BulletIcon />,
+            label: <Link to="/users/add">Add New User</Link>,
+          },
+          {
+            key: "/users/list",
+            icon: <BulletIcon />,
+            label: <Link to="/users/list">User Lists</Link>,
           },
         ],
       });
