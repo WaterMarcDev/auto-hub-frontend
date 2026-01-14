@@ -19,7 +19,13 @@ const { Text } = Typography;
 
 const TAX_RATE = 0.06625; // 6.625%
 
-const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
+const CarPrice = ({
+  formData,
+  updateFormData,
+  nextStep,
+  prevStep,
+  validationRules,
+}) => {
   // Calculate actual price whenever weight or rate changes
   React.useEffect(() => {
     const weight = parseFloat(formData.actualWeight) || 0;
@@ -198,7 +204,12 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
             <Form.Item
               name="ourPrice"
               label={<Text style={{ color: "white" }}>Our Price</Text>}
-              rules={[{ required: true, message: "Our Price is required" }]}
+              rules={
+                validationRules?.ourPrice || [
+                  { required: true, message: "Our Price is required" },
+                ]
+              }
+              dependencies={["customerPrice"]}
             >
               <InputNumber
                 style={{
@@ -223,9 +234,11 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
             <Form.Item
               name="customerPrice"
               label={<Text style={{ color: "white" }}>Customer Price</Text>}
-              rules={[
-                { required: true, message: "Customer Price is required" },
-              ]}
+              rules={
+                validationRules?.customerPrice || [
+                  { required: true, message: "Customer Price is required" },
+                ]
+              }
             >
               <InputNumber
                 style={{

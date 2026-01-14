@@ -723,6 +723,32 @@ const CarIntake = () => {
         : []),
     ],
 
+    ourPrice: [
+      { required: true, message: "Our Price is required" },
+      { type: "number", min: 0, message: "Our Price must be 0 or greater" },
+      ({ getFieldValue }) => ({
+        validator(_, value) {
+          if (
+            !value ||
+            !getFieldValue("customerPrice") ||
+            value <= getFieldValue("customerPrice")
+          ) {
+            return Promise.resolve();
+          }
+          return Promise.reject(
+            new Error("Our Price cannot be greater than Customer Price!")
+          );
+        },
+      }),
+    ],
+    customerPrice: [
+      { required: true, message: "Customer Price is required" },
+      {
+        type: "number",
+        min: 0,
+        message: "Customer Price must be 0 or greater",
+      },
+    ],
     rate: [{ required: true, message: "Rate is required" }],
     finalPrice: [
       { required: true, message: "Final Price is required" },
