@@ -122,7 +122,7 @@ const CarPrice = ({
           <Col span={12}>
             <Form.Item
               name="actualWeight"
-              label={<Text style={{ color: "white" }}>Weight</Text>}
+              label={<Text style={{ color: "white" }}>Weight (lbs)</Text>}
               extra={formData.weight}
               rules={[{ required: true, message: "Weight is required" }]}
             >
@@ -268,11 +268,38 @@ const CarPrice = ({
                 style={{ width: "100%" }}
                 dropdownStyle={{ backgroundColor: "#374151" }}
               >
-                {NEGOTIATION_OPTIONS.map((opt) => (
-                  <Option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </Option>
-                ))}
+                {NEGOTIATION_OPTIONS.map((opt) => {
+                  // Logic to disable options that exceed Customer Price
+                  let isDisabled = false;
+                  const our = parseFloat(formData.ourPrice) || 0;
+                  const cust = parseFloat(formData.customerPrice);
+
+                  if (opt.value === "In Between") {
+                    // "In Between" is already safe by definition (average), but check just in case our price is somehow > customer price
+                    if (!isNaN(cust) && (our + cust) / 2 > cust) isDisabled = true;
+                  } else {
+                    const pct = parseFloat(opt.value);
+                    if (!isNaN(pct) && !isNaN(cust)) {
+                      const calculatedFinal = our * (1 + pct / 100);
+                      if (calculatedFinal > cust) isDisabled = true;
+                    }
+                  }
+
+                  return (
+                    <Option
+                      key={opt.value}
+                      value={opt.value}
+                      disabled={isDisabled}
+                      style={{
+                        color: isDisabled ? "#9ca3af" : "inherit",
+                        opacity: isDisabled ? 0.5 : 1,
+                        cursor: isDisabled ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {opt.label}
+                    </Option>
+                  );
+                })}
               </Select>
             </Form.Item>
           </Col>

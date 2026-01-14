@@ -755,6 +755,17 @@ const CarIntake = () => {
     finalPrice: [
       { required: true, message: "Final Price is required" },
       { type: "number", min: 0, message: "Final Price must be 0 or greater" },
+      ({ getFieldValue }) => ({
+        validator(_, value) {
+          const cust = getFieldValue("customerPrice");
+          if (!value || isNaN(cust) || value <= cust) {
+            return Promise.resolve();
+          }
+          return Promise.reject(
+            new Error("Final Price cannot be greater than Customer Price!")
+          );
+        },
+      }),
     ],
 
     // Step 5: KYC
