@@ -12,6 +12,7 @@ import {
   Card,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { NEGOTIATION_OPTIONS } from "./intakeConstants";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -19,7 +20,13 @@ const { Text } = Typography;
 
 const TAX_RATE = 0.06625; // 6.625%
 
-const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
+const CarPrice = ({
+  formData,
+  updateFormData,
+  nextStep,
+  prevStep,
+  validationRules,
+}) => {
   // Calculate actual price whenever weight or rate changes
   React.useEffect(() => {
     const weight = parseFloat(formData.actualWeight) || 0;
@@ -115,7 +122,7 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
           <Col span={12}>
             <Form.Item
               name="actualWeight"
-              label={<Text style={{ color: "white" }}>Weight</Text>}
+              label={<Text style={{ color: "white" }}>Weight (lbs)</Text>}
               extra={formData.weight}
               rules={[{ required: true, message: "Weight is required" }]}
             >
@@ -198,7 +205,12 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
             <Form.Item
               name="ourPrice"
               label={<Text style={{ color: "white" }}>Our Price</Text>}
-              rules={[{ required: true, message: "Our Price is required" }]}
+              rules={
+                validationRules?.ourPrice || [
+                  { required: true, message: "Our Price is required" },
+                ]
+              }
+              dependencies={["customerPrice"]}
             >
               <InputNumber
                 style={{
@@ -223,9 +235,11 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
             <Form.Item
               name="customerPrice"
               label={<Text style={{ color: "white" }}>Customer Price</Text>}
-              rules={[
-                { required: true, message: "Customer Price is required" },
-              ]}
+              rules={
+                validationRules?.customerPrice || [
+                  { required: true, message: "Customer Price is required" },
+                ]
+              }
             >
               <InputNumber
                 style={{
@@ -254,17 +268,38 @@ const CarPrice = ({ formData, updateFormData, nextStep, prevStep }) => {
                 style={{ width: "100%" }}
                 dropdownStyle={{ backgroundColor: "#374151" }}
               >
-                <Option value="0">0% More</Option>
-                <Option value="In Between">In Between</Option>
-                <Option value="10">10% More</Option>
-                <Option value="20">20% More</Option>
-                <Option value="25">25% More</Option>
-                <Option value="30">30% More</Option>
-                <Option value="40">40% More</Option>
-                <Option value="50">50% More</Option>
-                <Option value="60">60% More</Option>
-                <Option value="70">70% More</Option>
-                <Option value="75">75% More</Option>
+                {NEGOTIATION_OPTIONS.map((opt) => {
+                  // Logic to disable options that exceed Customer Price
+                  let isDisabled = false;
+                  const our = parseFloat(formData.ourPrice) || 0;
+                  const cust = parseFloat(formData.customerPrice);
+
+                  if (opt.value === "In Between") {
+                    // "In Between" is already safe by definition (average), but check just in case our price is somehow > customer price
+                    if (!isNaN(cust) && (our + cust) / 2 > cust) isDisabled = true;
+                  } else {
+                    const pct = parseFloat(opt.value);
+                    if (!isNaN(pct) && !isNaN(cust)) {
+                      const calculatedFinal = our * (1 + pct / 100);
+                      if (calculatedFinal > cust) isDisabled = true;
+                    }
+                  }
+
+                  return (
+                    <Option
+                      key={opt.value}
+                      value={opt.value}
+                      disabled={isDisabled}
+                      style={{
+                        color: isDisabled ? "#9ca3af" : "inherit",
+                        opacity: isDisabled ? 0.5 : 1,
+                        cursor: isDisabled ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {opt.label}
+                    </Option>
+                  );
+                })}
               </Select>
             </Form.Item>
           </Col>
