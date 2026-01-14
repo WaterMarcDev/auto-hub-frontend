@@ -20,7 +20,6 @@ const SellerRegister = () => {
 
       // Build customer payload and call customers endpoint
       const customerPayload = {
-        type: "seller",
         firstName: values.firstName,
         lastName: values.lastName,
         mobileNo: values.mobileNo,

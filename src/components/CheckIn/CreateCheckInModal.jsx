@@ -55,7 +55,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
   React.useEffect(() => {
     if (open) {
       form.setFieldsValue({ amount: 2 });
-      
+
       // Auto-select pre-selected customer if provided
       if (preSelectedCustomer) {
         setSelectedCustomer(preSelectedCustomer);
@@ -70,6 +70,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
     try {
       const payload = {
         customer: values.customer,
+        type: values.type,
         transaction: {
           amount: values.amount,
           paymentMethod: values.paymentMethod,
@@ -147,15 +148,13 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
                   >
                     <div>
                       <div style={{ fontWeight: 600 }}>
-                        {`${item.firstName || ""} ${
-                          item.lastName || ""
-                        }`.trim() ||
+                        {`${item.firstName || ""} ${item.lastName || ""
+                          }`.trim() ||
                           item.email ||
                           item.mobileNo}
                       </div>
                       <div style={{ fontSize: 12, color: "#999" }}>
-                        {item.email || "N/A"} • {item.mobileNo || "N/A"} •{" "}
-                        {item.type || "N/A"}
+                        {item.email || "N/A"} • {item.mobileNo || "N/A"}
                       </div>
                     </div>
                     <div>
@@ -205,18 +204,14 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
           >
             <Descriptions column={1} bordered size="small">
               <Descriptions.Item label="Name">
-                {`${selectedCustomer.firstName || ""} ${
-                  selectedCustomer.lastName || ""
-                }`.trim()}
+                {`${selectedCustomer.firstName || ""} ${selectedCustomer.lastName || ""
+                  }`.trim()}
               </Descriptions.Item>
               <Descriptions.Item label="Email">
                 {selectedCustomer.email || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Mobile">
                 {selectedCustomer.mobileNo || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Type">
-                {selectedCustomer.type || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="ID Proof">
                 {selectedCustomer.idProofImage ? (
@@ -266,6 +261,18 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
             </Descriptions>
           </Card>
         ) : null}
+
+        <Form.Item
+          name="type"
+          label="Type"
+          rules={[{ required: true, message: "Please select type" }]}
+        >
+          <Select placeholder="Select type">
+            <Option value="seller">Seller</Option>
+            <Option value="buyer">Buyer</Option>
+            <Option value="both">Both</Option>
+          </Select>
+        </Form.Item>
 
         <Form.Item
           name="paymentMethod"
