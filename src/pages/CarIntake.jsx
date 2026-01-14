@@ -1032,7 +1032,15 @@ const CarIntake = () => {
 
     setFormData(initial);
     form.setFieldsValue(initial);
+    vinModalForm.resetFields();
+    setServerId(null);
+    setVinData(null);
+    setIsVinModalVisible(true);
     setCurrentStep(1);
+    // If we are on an edit route (/car-intake/:id), navigate to base route
+    if (params?.id) {
+      navigate("/car-intake");
+    }
   };
 
   const nextStep = async () => {
@@ -1404,6 +1412,7 @@ const CarIntake = () => {
             handleSubmit={handleSubmit}
             form={form}
             id={serverId} // Pass serverId for printing
+            clearForm={clearForm}
           />
         );
       default:
