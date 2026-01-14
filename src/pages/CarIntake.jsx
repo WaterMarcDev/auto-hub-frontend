@@ -1375,12 +1375,14 @@ const CarIntake = () => {
         );
       case 6:
         return (
-          <CarInventory
+          <Payment
             formData={formData}
+            updateFormData={updateFormData}
+            nextStep={nextStep}
             prevStep={prevStep}
-            handleSubmit={handleSubmit}
             form={form}
-            id={serverId} // Pass serverId for printing
+            validationRules={validationRules}
+            saveStep={saveStep}
           />
         );
       case 7:
