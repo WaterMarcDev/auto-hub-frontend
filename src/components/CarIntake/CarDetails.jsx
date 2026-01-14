@@ -15,7 +15,7 @@ import { ArrowRightOutlined } from "@ant-design/icons";
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const CarDetails = ({ nextStep, vinData, form }) => {
+const CarDetails = ({ nextStep, vinData, form, validationRules }) => {
   // Check if field should be disabled (populated by VIN data)
   const isVinField = (fieldName) => {
     const vinFields = [
@@ -39,7 +39,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="vin"
             label={<Text style={{ color: "white" }}>Enter VIN No.</Text>}
-            rules={[{ required: true, message: "VIN Number is required" }]}
+            rules={validationRules?.vin || [{ required: true, message: "VIN Number is required" }]}
           >
             <Input
               placeholder="Enter VIN No."
@@ -57,7 +57,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="year"
             label={<Text style={{ color: "white" }}>Year</Text>}
-            rules={[{ required: true, message: "Year is required" }]}
+            rules={validationRules?.year || [{ required: true, message: "Year is required" }]}
           >
             <InputNumber
               placeholder="Please Enter Car Manufacturing Year"
@@ -80,7 +80,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="make"
             label={<Text style={{ color: "white" }}>Make</Text>}
-            rules={[{ required: true, message: "Make is required" }]}
+            rules={validationRules?.make || [{ required: true, message: "Make is required" }]}
           >
             <Input
               placeholder="Please Enter Car Make"
@@ -98,7 +98,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="model"
             label={<Text style={{ color: "white" }}>Model</Text>}
-            rules={[{ required: true, message: "Model is required" }]}
+            rules={validationRules?.model || [{ required: true, message: "Model is required" }]}
           >
             <Input
               placeholder="Please Enter Car Model"
@@ -118,7 +118,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="trim"
             label={<Text style={{ color: "white" }}>Trim</Text>}
-            rules={[{ required: true, message: "Trim is required" }]}
+            rules={validationRules?.trim || [{ required: true, message: "Trim is required" }]}
           >
             <Input
               placeholder="Please Enter Car Trim"
@@ -136,7 +136,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="color"
             label={<Text style={{ color: "white" }}>Color</Text>}
-            rules={[{ required: true, message: "Color is required" }]}
+            rules={validationRules?.color || [{ required: true, message: "Color is required" }]}
           >
             <Input
               placeholder="Please Enter Car Color"
@@ -154,7 +154,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="bodyClass"
             label={<Text style={{ color: "white" }}>Body Class</Text>}
-            rules={[{ required: true, message: "Body Class is required" }]}
+            rules={validationRules?.bodyClass || [{ required: true, message: "Body Class is required" }]}
           >
             <Input
               placeholder="Please Enter Body Class"
@@ -224,7 +224,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="drive"
             label={<Text style={{ color: "white" }}>Drive</Text>}
-            rules={[{ required: true, message: "Drive is required" }]}
+            rules={validationRules?.drive || [{ required: true, message: "Drive is required" }]}
           >
             <Radio.Group
               disabled={isVinField("drive")}
@@ -259,7 +259,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="transmission"
             label={<Text style={{ color: "white" }}>Transmission</Text>}
-            rules={[{ required: true, message: "Transmission is required" }]}
+            rules={validationRules?.transmission || [{ required: true, message: "Transmission is required" }]}
           >
             <Radio.Group
               disabled={isVinField("transmission")}
@@ -286,7 +286,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="scrapYardName"
             label={<Text style={{ color: "white" }}>Where</Text>}
-            rules={[{ required: true, message: "Scrap Yard Name is required" }]}
+            rules={validationRules?.scrapYardName || [{ required: true, message: "Scrap Yard Name is required" }]}
           >
             <Input
               placeholder="Please Enter Scrap Yard Name"
@@ -302,7 +302,7 @@ const CarDetails = ({ nextStep, vinData, form }) => {
           <Form.Item
             name="scrapYardLocation"
             label={<Text style={{ color: "white" }}>Location</Text>}
-            rules={[{ required: true, message: "Location is required" }]}
+            rules={validationRules?.scrapYardLocation || [{ required: true, message: "Location is required" }]}
           >
             <Input
               placeholder="Please Enter Scrap Yard Location"
@@ -360,16 +360,30 @@ const CarDetails = ({ nextStep, vinData, form }) => {
         <Col span={12}>
           <Form.Item
             name="weight"
-            label={<Text style={{ color: "white" }}>Weight</Text>}
-            rules={[{ required: true, message: "Weight is required" }]}
+            label={<Text style={{ color: "white" }}>Weight (lbs)</Text>}
+            rules={validationRules?.weight || [{ required: true, message: "Weight is required" }]}
+            help={
+              vinData?.weightMin || vinData?.weightMax ? (
+                <span style={{ color: "#9ca3af", fontSize: "12px" }}>
+                  Expected range:{" "}
+                  {vinData.weightMin ? `${vinData.weightMin}` : "0"} -{" "}
+                  {vinData.weightMax
+                    ? `${vinData.weightMax}`
+                    : "No Limit"}{" "}
+                  lbs
+                </span>
+              ) : null
+            }
           >
-            <Input
+            <InputNumber
               placeholder="Enter Car Weight"
               style={{
+                width: "100%",
                 backgroundColor: "#4b5563",
                 borderColor: "#6b7280",
                 color: "white",
               }}
+              addonAfter="lbs"
             />
           </Form.Item>
         </Col>

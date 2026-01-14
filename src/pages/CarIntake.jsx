@@ -703,6 +703,24 @@ const CarIntake = () => {
     weight: [
       { required: true, message: "Weight is required" },
       { type: "number", min: 1, message: "Weight must be greater than 0" },
+      ...(vinData?.weightMin
+        ? [
+            {
+              type: "number",
+              min: vinData.weightMin,
+              message: `Weight must be at least ${vinData.weightMin} lbs for this vehicle class`,
+            },
+          ]
+        : []),
+      ...(vinData?.weightMax
+        ? [
+            {
+              type: "number",
+              max: vinData.weightMax,
+              message: `Weight must be at most ${vinData.weightMax} lbs for this vehicle class`,
+            },
+          ]
+        : []),
     ],
 
     rate: [{ required: true, message: "Rate is required" }],
