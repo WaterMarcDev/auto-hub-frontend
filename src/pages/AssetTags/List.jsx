@@ -33,6 +33,15 @@ const List = () => {
         setSearch(searchInput);
     };
 
+    function toTitleFromCamelCase(input) {
+        if (input == null) return "";
+
+        return String(input)
+            .replace(/([a-z])([A-Z])/g, "$1 $2")
+            .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
+
     const formatTagDate = (date) => {
         if (!date) return "";
         const d = new Date(date);
@@ -52,12 +61,31 @@ const List = () => {
             const res = await assetTagsAPI.getAll(params);
             const data = res.data || res;
 
-            const tags = (data.tags || []).map(tag => ({
-                barcodeString: tag.barcodeString,
-                isUsed: tag.isUsed ? "Used" : "Available",
-                inventoryId: tag.inventoryId != null ? tag.inventoryId : "Unassigned",
-                updatedAt: formatTagDate(tag.updatedAt),
-            }));
+            const tags = (data.tags || []).map(tag => {
+                let inventoryDisplay = "Unassigned";
+
+                if (tag.inventoryId && typeof tag.inventoryId === 'object') {
+                    const inv = tag.inventoryId;
+                    const parts = [
+                        toTitleFromCamelCase(inv.partName),
+                        inv.make?.name,
+                        inv.model?.name,
+                        inv.trim?.name,
+                        inv.year
+                    ].filter(Boolean);
+
+                    if (parts.length > 0) {
+                        inventoryDisplay = parts.join(' - ');
+                    }
+                }
+
+                return {
+                    barcodeString: tag.barcodeString,
+                    isUsed: tag.isUsed ? "Used" : "Available",
+                    inventoryId: inventoryDisplay,
+                    updatedAt: formatTagDate(tag.updatedAt),
+                };
+            });
 
             setTags(tags);
 

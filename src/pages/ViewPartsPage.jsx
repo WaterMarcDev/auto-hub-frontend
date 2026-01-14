@@ -130,15 +130,17 @@ const ViewPartsPage = () => {
                                 render: (t) => <div style={{ minWidth: 120 }}>{t}</div>,
                             },
                             {
-                                title: "Action",
+                                title: "Barcode",
+                                dataIndex: "barcodeString",
                                 fixed: "right",
-                                width: 100,
-                                render: (_, part) => (
-                                    <Button type="link" onClick={() => handlePrintTag(part)}>
-                                        Print Tag
-                                    </Button>
+                                width: 150,
+                                render: (barcode) => (
+                                    <div style={{ minWidth: 100 }}>
+                                        {barcode || "Unassigned"}
+                                    </div>
                                 ),
                             },
+
                         ]}
                     />
                 </Card>
