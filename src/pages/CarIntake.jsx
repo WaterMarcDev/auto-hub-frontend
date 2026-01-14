@@ -482,7 +482,9 @@ const CarIntake = () => {
           car.price.actualWeight ??
           populated.actualWeight ??
           formData.actualWeight;
-        populated.rate = car.price.ratePerPound ?? formData.rate;
+        populated.rate = car.price.ratePerPound
+          ? String(car.price.ratePerPound)
+          : formData.rate;
         populated.actualPrice = car.price.actualPrice ?? formData.actualPrice;
         populated.ourPrice = car.price.ourPrice ?? formData.ourPrice;
         populated.customerPrice =
