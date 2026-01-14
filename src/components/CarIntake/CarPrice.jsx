@@ -12,6 +12,7 @@ import {
   Card,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { NEGOTIATION_OPTIONS } from "./intakeConstants";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -267,17 +268,11 @@ const CarPrice = ({
                 style={{ width: "100%" }}
                 dropdownStyle={{ backgroundColor: "#374151" }}
               >
-                <Option value="0">0% More</Option>
-                <Option value="In Between">In Between</Option>
-                <Option value="10">10% More</Option>
-                <Option value="20">20% More</Option>
-                <Option value="25">25% More</Option>
-                <Option value="30">30% More</Option>
-                <Option value="40">40% More</Option>
-                <Option value="50">50% More</Option>
-                <Option value="60">60% More</Option>
-                <Option value="70">70% More</Option>
-                <Option value="75">75% More</Option>
+                {NEGOTIATION_OPTIONS.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
+                ))}
               </Select>
             </Form.Item>
           </Col>
