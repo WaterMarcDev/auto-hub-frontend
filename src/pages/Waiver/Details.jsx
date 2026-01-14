@@ -88,20 +88,6 @@ const WaiverDetails = () => {
 
           <Card title="Customer Information" style={{ marginBottom: 16 }}>
             <Descriptions bordered column={2}>
-              <Descriptions.Item label="Type">
-                <Tag
-                  color={
-                    customer.type === "seller" ||
-                    customer.customerType === "seller"
-                      ? "blue"
-                      : "green"
-                  }
-                >
-                  {(customer.type || customer.customerType || "")
-                    .toString()
-                    .toUpperCase() || "-"}
-                </Tag>
-              </Descriptions.Item>
               <Descriptions.Item label="Created Date">
                 {customer.createdAt
                   ? dayjs(customer.createdAt).format("MMMM DD, YYYY hh:mm A")

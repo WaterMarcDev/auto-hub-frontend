@@ -87,7 +87,6 @@ const SellerList = () => {
       console.debug("fetchSellers request", { page, limit, search });
 
       const res = await customerAPI.getAll({
-        type: "seller",
         page,
         limit,
         search,
@@ -679,9 +678,8 @@ const SellerList = () => {
       <Modal
         title={
           carsModalSeller
-            ? `${carsModalSeller.firstName || ""} ${
-                carsModalSeller.lastName || ""
-              } — Cars Sold`
+            ? `${carsModalSeller.firstName || ""} ${carsModalSeller.lastName || ""
+            } — Cars Sold`
             : "Cars Sold"
         }
         open={carsModalVisible}

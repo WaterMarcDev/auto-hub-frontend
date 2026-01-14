@@ -64,7 +64,6 @@ const BuyerRegister = () => {
       } else {
         // Create customer record (no separate buyer entity)
         const customerPayload = {
-          type: "buyer",
           firstName: values.firstName,
           lastName: values.lastName,
           mobileNo: values.mobileNo,

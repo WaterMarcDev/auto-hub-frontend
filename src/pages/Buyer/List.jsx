@@ -41,7 +41,6 @@ const BuyerList = () => {
     setLoading(true);
     try {
       const res = await customerAPI.getAll({
-        type: "buyer",
         page: params.page || 1,
         limit: params.limit || 10,
         search: params.search || "",

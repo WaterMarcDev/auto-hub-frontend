@@ -175,7 +175,6 @@ const Dashboard2 = () => {
     setLoadingSellers(true);
     try {
       const res = await customerAPI.getAll({
-        type: "seller",
         search: q,
         page: 1,
         limit: 50,
@@ -206,7 +205,6 @@ const Dashboard2 = () => {
     setLoadingBuyers(true);
     try {
       const res = await customerAPI.getAll({
-        type: "buyer",
         search: q,
         page: 1,
         limit: 50,
@@ -293,7 +291,7 @@ const Dashboard2 = () => {
                 id: "card-3",
                 title: "Seller",
                 color: "#f59e0b",
-                onClick: () => {},
+                onClick: () => { },
                 // Seller: front desk, admin, manager
                 visible: isFrontDesk || isAdmin || isManager,
               },
@@ -301,7 +299,7 @@ const Dashboard2 = () => {
                 id: "card-4",
                 title: "Buyer",
                 color: "#06b6d4",
-                onClick: () => {},
+                onClick: () => { },
                 // Buyer: front desk, admin, manager
                 visible: isFrontDesk || isAdmin || isManager,
               },
@@ -309,7 +307,7 @@ const Dashboard2 = () => {
                 id: "card-5",
                 title: "Search",
                 color: "#10b981",
-                onClick: () => {},
+                onClick: () => { },
                 // Search (part/car) - restrict to inventory/car roles (admin, manager, staff)
                 visible: isAdmin || isManager || isStaff,
               },
