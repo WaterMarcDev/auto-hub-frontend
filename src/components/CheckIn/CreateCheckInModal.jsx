@@ -291,7 +291,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
 
         <Form.Item
           name="amount"
-          label="Amount"
+          label="Amount ($)"
           rules={[{ required: true, message: "Please enter amount" }]}
         >
           <Input type="number" />

@@ -199,22 +199,22 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // Seller - visible for Front Desk, Scraper and Admin
+    // Customer - visible for Front Desk, Scraper and Admin
     if (isFrontDesk || isScraper || isAdmin || isManager) {
       items.push({
-        key: "seller",
+        key: "customer",
         icon: <UserOutlined />,
-        label: "Seller",
+        label: "Customer",
         children: [
           {
-            key: "/seller/register",
+            key: "/customer/register",
             icon: <BulletIcon />,
-            label: <Link to="/seller/register">Add New Seller</Link>,
+            label: <Link to="/customer/register">Add New Customer</Link>,
           },
           {
-            key: "/seller/list",
+            key: "/customer/list",
             icon: <BulletIcon />,
-            label: <Link to="/seller/list">Seller Lists</Link>,
+            label: <Link to="/customer/list">Customer Lists</Link>,
           },
         ],
       });
@@ -241,26 +241,6 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
-    // Buyer - visible for Front Desk, Scraper and Admin
-    if (isFrontDesk || isScraper || isAdmin || isManager) {
-      items.push({
-        key: "buyer",
-        icon: <UserOutlined />,
-        label: "Buyer",
-        children: [
-          {
-            key: "/buyer/register",
-            icon: <BulletIcon />,
-            label: <Link to="/buyer/register">Add New Buyer</Link>,
-          },
-          {
-            key: "/buyer/list",
-            icon: <BulletIcon />,
-            label: <Link to="/buyer/list">Buyer Lists</Link>,
-          },
-        ],
-      });
-    }
 
     // Waiver - visible for Front Desk, Scraper and Admin
     if (isFrontDesk || isScraper || isAdmin || isManager) {
@@ -397,10 +377,12 @@ const Sidebar = ({ isOpen }) => {
       "/add-scrap": "scrapCar",
       "/scrap-list": "scrapCar",
       "/element-hub": "scrapCar",
-      "/seller/register": "seller",
-      "/seller/list": "seller",
-      "/buyer/register": "buyer",
-      "/buyer/list": "buyer",
+      "/customer/register": "customer",
+      "/customer/list": "customer",
+      "/seller/register": "customer",
+      "/seller/list": "customer",
+      "/buyer/register": "customer",
+      "/buyer/list": "customer",
       "/waivers/add": "waiver",
       "/waivers": "waiver",
       "/checkins": "checkin",

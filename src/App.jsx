@@ -64,6 +64,8 @@ const AdminGuide = React.lazy(() => import("./pages/Guide/AdminGuide"));
 const ManagerGuide = React.lazy(() => import("./pages/Guide/ManagerGuide"));
 const FrontDeskGuide = React.lazy(() => import("./pages/Guide/FrontDeskGuide"));
 const StaffGuide = React.lazy(() => import("./pages/Guide/StaffGuide"));
+const CustomerRegister = React.lazy(() => import("./pages/Customer/Register"));
+const CustomerList = React.lazy(() => import("./pages/Customer/List"));
 
 const UserList = React.lazy(() => import("./pages/Users/UserList"));
 const AddUser = React.lazy(() => import("./pages/Users/AddUser"));
@@ -283,19 +285,25 @@ function App() {
                         />
                         <Route path="/add-scrap" element={<AddScrap />} />
                         <Route path="/scrap-list" element={<ScrapList />} />
-                        <Route path="/seller/list" element={<SellerList />} />
+                        <Route path="/customer/list" element={<CustomerList />} />
+                        <Route
+                          path="/customer/register"
+                          element={<CustomerRegister />}
+                        />
+                        {/* Legacy Routes - redirected to Customer */}
+                        <Route path="/seller/list" element={<CustomerList />} />
                         <Route
                           path="/seller/register"
-                          element={<SellerRegister />}
+                          element={<CustomerRegister />}
                         />
-                        <Route path="/buyer/list" element={<BuyerList />} />
+                        <Route path="/buyer/list" element={<CustomerList />} />
                         <Route
                           path="/buyer/register"
-                          element={<BuyerRegister />}
+                          element={<CustomerRegister />}
                         />
                         <Route
                           path="/buyer/edit/:id"
-                          element={<BuyerRegister />}
+                          element={<CustomerRegister />}
                         />
                         <Route path="/waivers" element={<WaiverList />} />
                         <Route path="/waivers/add" element={<AddWaiver />} />

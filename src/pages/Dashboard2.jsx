@@ -37,20 +37,14 @@ const Dashboard2 = () => {
   const [partResults, setPartResults] = useState([]);
   const [loadingParts, setLoadingParts] = useState(false);
 
-  // Seller search
-  const [sellerQuery, setSellerQuery] = useState("");
-  const [sellerResults, setSellerResults] = useState([]);
-  const [loadingSellers, setLoadingSellers] = useState(false);
-
-  // Buyer search
-  const [buyerQuery, setBuyerQuery] = useState("");
-  const [buyerResults, setBuyerResults] = useState([]);
-  const [loadingBuyers, setLoadingBuyers] = useState(false);
+  // Customer search
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customerResults, setCustomerResults] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
 
   const [comingOpen, setComingOpen] = useState(false);
   const [comingFeature, _setComingFeature] = useState("");
-  const [sellerModalOpen, setSellerModalOpen] = useState(false);
-  const [buyerModalOpen, setBuyerModalOpen] = useState(false);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [carSearchOpen, setCarSearchOpen] = useState(false);
   const [partSearchOpen, setPartSearchOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
@@ -166,13 +160,13 @@ const Dashboard2 = () => {
     setPartResults([]);
   };
 
-  const searchSellers = async (opts = {}) => {
-    const q = (opts.query ?? sellerQuery ?? "").trim();
+  const searchCustomers = async (opts = {}) => {
+    const q = (opts.query ?? customerQuery ?? "").trim();
     if (!q || q.length < 2) {
-      message.info("Enter at least 2 characters to search sellers");
+      message.info("Enter at least 2 characters to search customers");
       return;
     }
-    setLoadingSellers(true);
+    setLoadingCustomers(true);
     try {
       const res = await customerAPI.getAll({
         search: q,
@@ -180,50 +174,19 @@ const Dashboard2 = () => {
         limit: 50,
       });
       const data = res.data || res;
-      const results = data.customers || data.sellers || data;
-      setSellerResults(results || []);
+      setCustomerResults(data.customers || []);
     } catch (err) {
       message.error(
-        `Seller search failed: ${err.response?.data?.error || err.message}`
+        `Customer search failed: ${err.response?.data?.error || err.message}`
       );
     } finally {
-      setLoadingSellers(false);
+      setLoadingCustomers(false);
     }
   };
 
-  const clearSellers = () => {
-    setSellerQuery("");
-    setSellerResults([]);
-  };
-
-  const searchBuyers = async (opts = {}) => {
-    const q = (opts.query ?? buyerQuery ?? "").trim();
-    if (!q || q.length < 2) {
-      message.info("Enter at least 2 characters to search buyers");
-      return;
-    }
-    setLoadingBuyers(true);
-    try {
-      const res = await customerAPI.getAll({
-        search: q,
-        page: 1,
-        limit: 50,
-      });
-      const data = res.data || res;
-      const results = data.customers || data.buyers || data;
-      setBuyerResults(results || []);
-    } catch (err) {
-      message.error(
-        `Buyer search failed: ${err.response?.data?.error || err.message}`
-      );
-    } finally {
-      setLoadingBuyers(false);
-    }
-  };
-
-  const clearBuyers = () => {
-    setBuyerQuery("");
-    setBuyerResults([]);
+  const clearCustomers = () => {
+    setCustomerQuery("");
+    setCustomerResults([]);
   };
 
   const carColumns = [
@@ -242,17 +205,7 @@ const Dashboard2 = () => {
     { title: "Quantity", dataIndex: "quantity", key: "quantity" },
   ];
 
-  const sellerColumns = [
-    {
-      title: "Name",
-      key: "name",
-      render: (_, r) => `${r.firstName || ""} ${r.lastName || ""}`,
-    },
-    { title: "Email", dataIndex: "email", key: "email" },
-    { title: "Phone", dataIndex: "mobileNo", key: "mobileNo" },
-  ];
-
-  const buyerColumns = [
+  const customerColumns = [
     {
       title: "Name",
       key: "name",
@@ -289,18 +242,10 @@ const Dashboard2 = () => {
               },
               {
                 id: "card-3",
-                title: "Seller",
+                title: "Customer",
                 color: "#f59e0b",
                 onClick: () => { },
-                // Seller: front desk, admin, manager
-                visible: isFrontDesk || isAdmin || isManager,
-              },
-              {
-                id: "card-4",
-                title: "Buyer",
-                color: "#06b6d4",
-                onClick: () => { },
-                // Buyer: front desk, admin, manager
+                // Customer: front desk, admin, manager
                 visible: isFrontDesk || isAdmin || isManager,
               },
               {
@@ -351,8 +296,7 @@ const Dashboard2 = () => {
                 "card-8", // Waiver Form
                 "card-6", // Check-In
                 "card-7", // Check-Out
-                "card-3", // Seller
-                "card-4", // Buyer
+                "card-3", // Customer
               ];
               const idx = (id) => {
                 const i = order.indexOf(id);
@@ -410,7 +354,7 @@ const Dashboard2 = () => {
                         color="#2563eb"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSellerModalOpen(true);
+                          setCustomerModalOpen(true);
                         }}
                       >
                         Search
@@ -429,56 +373,7 @@ const Dashboard2 = () => {
                         color="#16a34a"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate("/seller/register");
-                        }}
-                      >
-                        Register
-                      </Tag>
-                    </div>
-                  )}
-                  {c.id === "card-4" && (
-                    <div
-                      style={{
-                        marginTop: 8,
-                        display: "flex",
-                        gap: 10,
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Tag
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 16px",
-                          fontSize: 13,
-                          fontWeight: 500,
-                          borderRadius: 6,
-                          border: "none",
-                          margin: 0,
-                          transition: "all 0.3s ease",
-                        }}
-                        color="#2563eb"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setBuyerModalOpen(true);
-                        }}
-                      >
-                        Search
-                      </Tag>
-                      <Tag
-                        style={{
-                          cursor: "pointer",
-                          padding: "6px 16px",
-                          fontSize: 13,
-                          fontWeight: 500,
-                          borderRadius: 6,
-                          border: "none",
-                          margin: 0,
-                          transition: "all 0.3s ease",
-                        }}
-                        color="#16a34a"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate("/buyer/register");
+                          navigate("/customer/register");
                         }}
                       >
                         Register
@@ -687,13 +582,13 @@ const Dashboard2 = () => {
           />
         </Modal>
 
-        {/* Seller Search Modal - Independent */}
+        {/* Customer Search Modal - Independent */}
         <Modal
-          open={sellerModalOpen}
-          onCancel={() => setSellerModalOpen(false)}
+          open={customerModalOpen}
+          onCancel={() => setCustomerModalOpen(false)}
           width="80%"
           footer={null}
-          title="Search Seller"
+          title="Search Customer"
         >
           <div
             style={{
@@ -705,73 +600,29 @@ const Dashboard2 = () => {
             }}
           >
             <Input
-              placeholder="Search seller by name / email / phone"
-              value={sellerQuery}
-              onChange={(e) => setSellerQuery(e.target.value)}
-              onPressEnter={searchSellers}
+              placeholder="Search customer by name / email / phone"
+              value={customerQuery}
+              onChange={(e) => setCustomerQuery(e.target.value)}
+              onPressEnter={searchCustomers}
               style={{ width: "100%" }}
             />
             <Button
               icon={<SearchOutlined />}
-              loading={loadingSellers}
-              onClick={searchSellers}
+              loading={loadingCustomers}
+              onClick={searchCustomers}
             >
               Search
             </Button>
-            <Button onClick={clearSellers} style={{ marginLeft: 8 }}>
+            <Button onClick={clearCustomers} style={{ marginLeft: 8 }}>
               Clear
             </Button>
           </div>
           <Table
-            columns={sellerColumns}
-            dataSource={sellerResults}
+            columns={customerColumns}
+            dataSource={customerResults}
             rowKey={(r) => r._id || r.email}
             pagination={{ pageSize: 10 }}
-            locale={{ emptyText: "No sellers found" }}
-          />
-        </Modal>
-
-        {/* Buyer Search Modal - Independent */}
-        <Modal
-          open={buyerModalOpen}
-          onCancel={() => setBuyerModalOpen(false)}
-          width="80%"
-          footer={null}
-          title="Search Buyer"
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
-              marginBottom: 12,
-              gap: 8,
-            }}
-          >
-            <Input
-              placeholder="Search buyer by name / email / phone"
-              value={buyerQuery}
-              onChange={(e) => setBuyerQuery(e.target.value)}
-              onPressEnter={searchBuyers}
-              style={{ width: "100%" }}
-            />
-            <Button
-              icon={<SearchOutlined />}
-              loading={loadingBuyers}
-              onClick={searchBuyers}
-            >
-              Search
-            </Button>
-            <Button onClick={clearBuyers} style={{ marginLeft: 8 }}>
-              Clear
-            </Button>
-          </div>
-          <Table
-            columns={buyerColumns}
-            dataSource={buyerResults}
-            rowKey={(r) => r._id || r.email}
-            pagination={{ pageSize: 10 }}
-            locale={{ emptyText: "No buyers found" }}
+            locale={{ emptyText: "No customers found" }}
           />
         </Modal>
       </PageContentWrapper>
