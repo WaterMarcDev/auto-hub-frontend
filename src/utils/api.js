@@ -266,6 +266,11 @@ export const userAPI = {
     api.put(`/users/${id}/password`, { password }),
 };
 
+export const entryFeeAPI = {
+  get: () => api.get("/entry-fee"),
+  update: (data) => api.put("/entry-fee", data),
+};
+
 // Dashboard APIs (for charts and counts)
 export const dashboardAPI = {
   getSummary: (params = {}) => api.get("/dashboard/summary", { params }),
