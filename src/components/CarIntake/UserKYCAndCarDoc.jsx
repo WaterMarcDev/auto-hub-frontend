@@ -29,6 +29,7 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 import CameraUpload from "../CameraUpload";
+import { getNegotiationLabel } from "./intakeConstants";
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -1122,7 +1123,7 @@ const UserKYCAndCarDoc = ({
               label={<Text style={{ color: "white" }}>Negotiate To</Text>}
             >
               <Input
-                value={formData.negotiateTo || "Not selected"}
+                value={getNegotiationLabel(formData.negotiateTo)}
                 readOnly
                 style={{
                   backgroundColor: "#4b5563",

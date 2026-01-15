@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getNegotiationLabel } from "./intakeConstants";
 import {
   Form,
   Input,
@@ -25,7 +26,7 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
-const CarInventory = ({ formData, prevStep, id }) => {
+const CarInventory = ({ formData, prevStep, id, clearForm }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({
     title: "",
@@ -383,7 +384,7 @@ const CarInventory = ({ formData, prevStep, id }) => {
               label={<Text style={{ color: "white" }}>Negotiate To</Text>}
             >
               <Input
-                value={formData.negotiateTo || "Not selected"}
+                value={getNegotiationLabel(formData.negotiateTo)}
                 readOnly
                 style={{
                   backgroundColor: "#4b5563",
@@ -489,15 +490,23 @@ const CarInventory = ({ formData, prevStep, id }) => {
         <div className="d-flex gap-3">
           <Button
             size="large"
+            type="primary"
             icon={<PrinterOutlined />}
             onClick={openPrintAllDocuments}
-            style={{
-              backgroundColor: "#8b5cf6",
-              borderColor: "#8b5cf6",
-              color: "white",
-            }}
           >
             Print documents
+          </Button>
+          <Button
+            size="large"
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              if (typeof clearForm === "function") {
+                clearForm();
+              }
+            }}
+          >
+            Add new car
           </Button>
         </div>
       </div>

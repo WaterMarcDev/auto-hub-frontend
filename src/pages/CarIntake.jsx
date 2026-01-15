@@ -482,7 +482,9 @@ const CarIntake = () => {
           car.price.actualWeight ??
           populated.actualWeight ??
           formData.actualWeight;
-        populated.rate = car.price.ratePerPound ?? formData.rate;
+        populated.rate = car.price.ratePerPound
+          ? String(car.price.ratePerPound)
+          : formData.rate;
         populated.actualPrice = car.price.actualPrice ?? formData.actualPrice;
         populated.ourPrice = car.price.ourPrice ?? formData.ourPrice;
         populated.customerPrice =
@@ -703,12 +705,67 @@ const CarIntake = () => {
     weight: [
       { required: true, message: "Weight is required" },
       { type: "number", min: 1, message: "Weight must be greater than 0" },
+      ...(vinData?.weightMin
+        ? [
+            {
+              type: "number",
+              min: vinData.weightMin,
+              message: `Weight must be at least ${vinData.weightMin} lbs for this vehicle class`,
+            },
+          ]
+        : []),
+      ...(vinData?.weightMax
+        ? [
+            {
+              type: "number",
+              max: vinData.weightMax,
+              message: `Weight must be at most ${vinData.weightMax} lbs for this vehicle class`,
+            },
+          ]
+        : []),
     ],
 
+    ourPrice: [
+      { required: true, message: "Our Price is required" },
+      { type: "number", min: 0, message: "Our Price must be 0 or greater" },
+      ({ getFieldValue }) => ({
+        validator(_, value) {
+          if (
+            !value ||
+            !getFieldValue("customerPrice") ||
+            value <= getFieldValue("customerPrice")
+          ) {
+            return Promise.resolve();
+          }
+          return Promise.reject(
+            new Error("Our Price cannot be greater than Customer Price!")
+          );
+        },
+      }),
+    ],
+    customerPrice: [
+      { required: true, message: "Customer Price is required" },
+      {
+        type: "number",
+        min: 0,
+        message: "Customer Price must be 0 or greater",
+      },
+    ],
     rate: [{ required: true, message: "Rate is required" }],
     finalPrice: [
       { required: true, message: "Final Price is required" },
       { type: "number", min: 0, message: "Final Price must be 0 or greater" },
+      ({ getFieldValue }) => ({
+        validator(_, value) {
+          const cust = getFieldValue("customerPrice");
+          if (!value || isNaN(cust) || value <= cust) {
+            return Promise.resolve();
+          }
+          return Promise.reject(
+            new Error("Final Price cannot be greater than Customer Price!")
+          );
+        },
+      }),
     ],
 
     // Step 5: KYC
@@ -975,7 +1032,15 @@ const CarIntake = () => {
 
     setFormData(initial);
     form.setFieldsValue(initial);
+    vinModalForm.resetFields();
+    setServerId(null);
+    setVinData(null);
+    setIsVinModalVisible(true);
     setCurrentStep(1);
+    // If we are on an edit route (/car-intake/:id), navigate to base route
+    if (params?.id) {
+      navigate("/car-intake");
+    }
   };
 
   const nextStep = async () => {
@@ -1329,12 +1394,14 @@ const CarIntake = () => {
         );
       case 6:
         return (
-          <CarInventory
+          <Payment
             formData={formData}
+            updateFormData={updateFormData}
+            nextStep={nextStep}
             prevStep={prevStep}
-            handleSubmit={handleSubmit}
             form={form}
-            id={serverId} // Pass serverId for printing
+            validationRules={validationRules}
+            saveStep={saveStep}
           />
         );
       case 7:
@@ -1345,6 +1412,7 @@ const CarIntake = () => {
             handleSubmit={handleSubmit}
             form={form}
             id={serverId} // Pass serverId for printing
+            clearForm={clearForm}
           />
         );
       default:
