@@ -19,7 +19,7 @@ import {
   PrinterOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { carIntakeAPI, uploadAPI } from "../utils/api";
+import { carIntakeAPI, uploadAPI, makeAPI } from "../utils/api";
 import getStatusColor from "../utils/statusColors";
 
 const CarIntakeDetails = () => {
@@ -27,6 +27,7 @@ const CarIntakeDetails = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [car, setCar] = useState(null);
+  const [makesList, setMakesList] = useState([]);
   const [transaction, setTransaction] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({ title: "", message: "" });
@@ -73,7 +74,20 @@ const CarIntakeDetails = () => {
       }
     };
 
+    const fetchMakes = async () => {
+      try {
+        const res = await makeAPI.getAll({ limit: 1000 });
+        const makes = res?.data?.makes || res?.data || [];
+        if (Array.isArray(makes)) {
+          setMakesList(makes);
+        }
+      } catch (e) {
+        console.warn("Failed to load makes list:", e);
+      }
+    };
+
     fetchData();
+    fetchMakes();
   }, [id]);
 
   // Ensure preview container has higher z-index than sidebar (e.g. 999)
@@ -272,6 +286,33 @@ const CarIntakeDetails = () => {
                       Dimensions: {val.dimensions}
                     </div>
                   ) : null}
+                  {val?.fitment &&
+                    Array.isArray(val.fitment) &&
+                    val.fitment.length > 0 && (
+                      <div style={{ color: "#9ca3af", fontSize: 12, marginTop: 4 }}>
+                        <div>Fitment:</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 2 }}>
+                          {val.fitment.map((fitId) => {
+                            const make = makesList.find((m) => m._id === fitId);
+                            return (
+                              <Tag
+                                key={fitId}
+                                size="small"
+                                style={{
+                                  fontSize: "10px",
+                                  margin: 0,
+                                  backgroundColor: "#374151",
+                                  color: "#cbd5e1",
+                                  borderColor: "#4b5563",
+                                }}
+                              >
+                                {make ? make.name : fitId}
+                              </Tag>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                 </div>
                 <Tag color={val?.selected ? "green" : "default"}>
                   {val?.selected ? "Selected" : "No"}

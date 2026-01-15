@@ -13,13 +13,33 @@ import {
   Table,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
-import { partAPI } from "../../utils/api";
+import { partAPI, makeAPI } from "../../utils/api";
 
 const { Text } = Typography;
 const { Option } = Select;
 
 const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
   const [partsList, setPartsList] = useState([]);
+  const [makesList, setMakesList] = useState([]);
+
+  // Fetch 'makes' list for fitment dropdown
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await makeAPI.getAll({ limit: 1000 });
+        const makes = res?.data?.makes || res?.data || [];
+        if (mounted && Array.isArray(makes)) {
+          setMakesList(makes);
+        }
+      } catch (e) {
+        console.warn("Failed to load makes list:", e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Fetch master parts list from backend
   useEffect(() => {
@@ -327,6 +347,32 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           disabled={getPartData(record.key, "selected") !== true}
           placeholder={`Enter ${record.name} Dimensions`}
         />
+      ),
+    },
+    {
+      title: <Text style={{ color: "white", fontWeight: "bold" }}>Fitment</Text>,
+      dataIndex: "fitment",
+      key: "fitment",
+      width: 250,
+      render: (_, record) => (
+        <Select
+          mode="multiple"
+          allowClear
+          showSearch
+          placeholder="Select Make(s)"
+          value={getPartData(record.key, "fitment") || []}
+          onChange={(value) => updatePartData(record.key, "fitment", value)}
+          disabled={getPartData(record.key, "selected") !== true}
+          style={{ width: "100%" }}
+          dropdownStyle={{ backgroundColor: "#374151" }}
+          optionFilterProp="children"
+        >
+          {makesList.map((make) => (
+            <Option key={make._id} value={make._id}>
+              {make.name}
+            </Option>
+          ))}
+        </Select>
       ),
     },
   ];
