@@ -11,6 +11,7 @@ import {
   DeleteOutlined,
   UserOutlined,
   FileProtectOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
@@ -304,6 +305,15 @@ const Sidebar = ({ isOpen }) => {
       });
     }
 
+    // System Settings - Only for Admin
+    if (isAdmin) {
+      items.push({
+        key: "/entry-fee",
+        icon: <SettingOutlined />,
+        label: <Link to="/entry-fee">Entry Fee Settings</Link>,
+      });
+    }
+
     // User Guides - visible for all users
     const guideChildren = [];
 
@@ -411,6 +421,7 @@ const Sidebar = ({ isOpen }) => {
       "/guide/manager": "userGuides",
       "/guide/front-desk": "userGuides",
       "/guide/staff": "userGuides",
+      "/entry-fee": "entryFee",
     };
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {
