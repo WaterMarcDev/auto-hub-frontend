@@ -26,6 +26,8 @@ const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
 
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
 const CarInventory = ({ formData, prevStep, id, clearForm }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({
@@ -57,7 +59,7 @@ const CarInventory = ({ formData, prevStep, id, clearForm }) => {
     (async () => {
       try {
         const base = (
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+          VITE_API_URL || "http://192.168.1.4:5000/api"
         ).replace(/\/api\/?$/, "");
         // Determine car intake id: prefer formData._id or formData.id, otherwise try to parse from the URL
         const carId =
@@ -143,7 +145,7 @@ const CarInventory = ({ formData, prevStep, id, clearForm }) => {
     (async () => {
       try {
         const base = (
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+          VITE_API_URL || "http://192.168.1.4:5000/api"
         ).replace(/\/api\/?$/, "");
         // Determine car intake id: prefer formData._id or formData.id, otherwise try to parse from the URL
         const carId =
@@ -520,10 +522,10 @@ const CarInventory = ({ formData, prevStep, id, clearForm }) => {
         footer={
           modalContent?.status === "success"
             ? [
-                <Button key="ok" type="primary" onClick={handleModalClose}>
-                  OK
-                </Button>,
-              ]
+              <Button key="ok" type="primary" onClick={handleModalClose}>
+                OK
+              </Button>,
+            ]
             : null
         }
       >

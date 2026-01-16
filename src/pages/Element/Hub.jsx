@@ -22,6 +22,8 @@ import { customerAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
 const Hub = () => {
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -41,7 +43,7 @@ const Hub = () => {
   const [api, contextHolder] = notification.useNotification();
 
   const handlePrintInvoice = (record) => {
-    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    const baseURL = VITE_API_URL || "http://192.168.1.4:5000/api";
     const url = `${baseURL}/element-hub/history/${record._id}/print-invoice?autoPrint=1`;
 
     // Create a hidden iframe to load and print the invoice
@@ -491,9 +493,8 @@ const Hub = () => {
                   type: "number",
                   min: 0.01,
                   max: selected?.totalWeight,
-                  message: `Amount must be between 0.01 and ${
-                    selected?.totalWeight || 0
-                  }`,
+                  message: `Amount must be between 0.01 and ${selected?.totalWeight || 0
+                    }`,
                 },
               ]}
             >

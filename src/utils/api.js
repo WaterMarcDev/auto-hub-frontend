@@ -1,8 +1,10 @@
 import axios from "axios";
 
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: "http://localhost:3000/api",
+  baseURL: VITE_API_URL,
   timeout: 10000,
   withCredentials: true, // Include cookies for authentication
   headers: {
@@ -191,9 +193,10 @@ export const uploadAPI = {
       // Not a full URL
     }
 
-    const base = (
-      import.meta.env.VITE_API_URL || "http://localhost:3000/api"
-    ).replace(/\/api\/?$/, "");
+    const base = (VITE_API_URL || "http://192.168.1.4:5000/api").replace(
+      /\/api\/?$/,
+      ""
+    );
 
     if (/^\/?api\//i.test(filename)) {
       const cleaned = filename.replace(/^\/?api\//i, "");
@@ -250,8 +253,7 @@ export const checkInAPI = {
   create: (data) => api.post("/checkins", data),
   checkout: (id) => api.post(`/checkins/${id}/checkout`),
   printInvoice: (id) => {
-    const baseURL =
-      import.meta.env.VITE_API_URL || "http://192.168.1.4:5000/api";
+    const baseURL = VITE_API_URL || "http://192.168.1.4:5000/api";
     return `${baseURL}/checkins/${id}/print-invoice?autoPrint=1`;
   },
 };

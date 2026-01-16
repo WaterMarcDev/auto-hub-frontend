@@ -1,5 +1,5 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = VITE_API_URL || "http://192.168.1.4:5000/api";
 
 class ElementHubService {
   static async getHubItems() {
