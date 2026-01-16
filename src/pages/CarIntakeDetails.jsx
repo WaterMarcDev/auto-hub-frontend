@@ -22,6 +22,8 @@ import {
 import { carIntakeAPI, uploadAPI, makeAPI } from "../utils/api";
 import getStatusColor from "../utils/statusColors";
 
+const VITE_API_URL = import.meta.env.VITE_API_URL;
+
 const CarIntakeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -66,8 +68,8 @@ const CarIntakeDetails = () => {
       } catch (err) {
         message.error(
           err.response?.data?.error ||
-            err.message ||
-            "Failed to fetch car intake"
+          err.message ||
+          "Failed to fetch car intake"
         );
       } finally {
         setLoading(false);
@@ -340,14 +342,14 @@ const CarIntakeDetails = () => {
       transaction && typeof transaction.taxAmount === "number"
         ? Number(transaction.taxAmount)
         : Math.round((Math.abs(rawAmount) * usedRate + Number.EPSILON) * 100) /
-          100;
+        100;
 
     const netAmt =
       transaction && typeof transaction.netAmount === "number"
         ? Number(transaction.netAmount)
         : transaction?.type === "debit"
-        ? Math.round((rawAmount - taxAmt + Number.EPSILON) * 100) / 100
-        : Math.round((rawAmount + taxAmt + Number.EPSILON) * 100) / 100;
+          ? Math.round((rawAmount - taxAmt + Number.EPSILON) * 100) / 100
+          : Math.round((rawAmount + taxAmt + Number.EPSILON) * 100) / 100;
 
     const fmt = (v) => `$${(Number(v) || 0).toFixed(2)}`;
 
@@ -375,8 +377,8 @@ const CarIntakeDetails = () => {
                 transaction?.status === "completed"
                   ? "green"
                   : transaction?.status === "pending"
-                  ? "orange"
-                  : "default"
+                    ? "orange"
+                    : "default"
               }
             >
               {transaction?.status || "N/A"}
@@ -416,7 +418,7 @@ const CarIntakeDetails = () => {
     (async () => {
       try {
         const base = (
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+          VITE_API_URL || "http://192.168.1.4:5000/api"
         ).replace(/\/api\/?$/, "");
         const url = `${base}/api/car-intake/${id}/print-payment`;
 
@@ -481,7 +483,7 @@ const CarIntakeDetails = () => {
     (async () => {
       try {
         const base = (
-          import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+          VITE_API_URL || "http://192.168.1.4:5000/api"
         ).replace(/\/api\/?$/, "");
         const url = `${base}/api/car-intake/${id}/print-all-documents`;
 
@@ -564,9 +566,8 @@ const CarIntakeDetails = () => {
       <div className="container-fluid">
         <div className="page-content-wrapper">
           <Card
-            title={`${car?.vin || "-"} ${
-              car?.carDetails?.make ? `• ${car?.carDetails?.make}` : ""
-            }`}
+            title={`${car?.vin || "-"} ${car?.carDetails?.make ? `• ${car?.carDetails?.make}` : ""
+              }`}
             extra={
               <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
                 Back
@@ -579,13 +580,11 @@ const CarIntakeDetails = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Intake By">
                 {(car?.createdBy &&
-                  `${
-                    car?.createdBy?.first_name ||
+                  `${car?.createdBy?.first_name ||
                     car?.createdBy?.firstName ||
                     ""
-                  } ${
-                    car?.createdBy?.last_name || car?.createdBy?.lastName || ""
-                  }`.trim()) ||
+                    } ${car?.createdBy?.last_name || car?.createdBy?.lastName || ""
+                    }`.trim()) ||
                   "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Make">
@@ -646,8 +645,7 @@ const CarIntakeDetails = () => {
 
               <Descriptions.Item label="Seller Name">
                 {car?.kyc?.seller
-                  ? `${car?.kyc?.seller?.firstName || ""} ${
-                      car?.kyc?.seller?.lastName || ""
+                  ? `${car?.kyc?.seller?.firstName || ""} ${car?.kyc?.seller?.lastName || ""
                     }`.trim() || "N/A"
                   : "N/A"}
               </Descriptions.Item>
@@ -747,10 +745,10 @@ const ActionModal = ({ visible, content, onClose }) => {
       footer={
         status === "success"
           ? [
-              <Button key="ok" type="primary" onClick={onClose}>
-                OK
-              </Button>,
-            ]
+            <Button key="ok" type="primary" onClick={onClose}>
+              OK
+            </Button>,
+          ]
           : null
       }
     >
