@@ -114,8 +114,9 @@
 /* Print Styles */
 @media print {
   .guide-container .page-title-box,
-  .guide-container .breadcrumb {
-    display: none;
+  .guide-container .breadcrumb,
+  .pdf-hide {
+    display: none !important;
   }
 
   .step-card {

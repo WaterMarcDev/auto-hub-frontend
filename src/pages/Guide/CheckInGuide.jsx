@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Card, Typography, Divider, Tag, Alert } from "antd";
+import GuidePDFPreview from "../../components/Guide/GuidePDFPreview";
 import "./GuideStyles.css";
 
 const { Title, Paragraph, Text } = Typography;
 
 const CheckInGuide = () => {
+  const guideRef = useRef(null);
+
   return (
     <div className="guide-container">
       <div className="page-title-box">
@@ -25,427 +28,274 @@ const CheckInGuide = () => {
       <div className="container-fluid">
         <div className="page-content-wrapper">
           <Card className="guide-card">
-            <Typography>
-              <Title level={2}>Customer Check-In Process</Title>
-              <Paragraph>
-                <Text strong>Welcome!</Text> This guide will help you learn how to check in customers when they arrive at our facility.
-              </Paragraph>
+            {/* PDF Download Button */}
+            <GuidePDFPreview
+              contentRef={guideRef}
+              title="Customer Check-In User Guide"
+              buttonText="Download PDF"
+            />
 
-              <Alert
-                message="What is Customer Check-In?"
-                description="Check-In is how we track customers entering our facility. Every customer must check in before browsing parts or conducting business. The system creates a unique token for each visit and records payment."
-                type="info"
-                icon={<span />}
-                
-                style={{ marginBottom: 24 }}
-              />
-
-              <Divider />
-
-              <Title level={3}>When to Use Check-In</Title>
-              <Paragraph>
-                Use Check-In when:
-                <ul>
-                  <li>A customer arrives to browse parts</li>
-                  <li>A buyer comes to pick up purchased items</li>
-                  <li>Anyone needs to enter the secure area</li>
-                  <li>A seller returns for any reason</li>
-                </ul>
-              </Paragraph>
-
-              <Divider />
-
-              <Title level={3}>Step-by-Step: Checking In a Customer</Title>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="green">Step 1</Tag> Create/Select Customer
-                </Title>
-
-                <Title level={5}>For New Customers:</Title>
-                <ol>
-                  <li>Click "Create Waiver" or "Add Customer"</li>
-                  <li>Fill in customer information:
-                    <ul>
-                      <li><Text strong>First Name</Text> (required)</li>
-                      <li><Text strong>Last Name</Text> (required)</li>
-                      <li><Text strong>Email</Text> (optional but recommended)</li>
-                      <li><Text strong>Phone Number</Text> (optional but recommended)</li>
-                    </ul>
-                  </li>
-                </ol>
-
-                <Title level={5}>For Returning Customers:</Title>
-                <ol>
-                  <li>Click "Select Existing Customer"</li>
-                  <li>Search by name, email, or phone</li>
-                  <li>Select the customer from the list</li>
-                </ol>
-
-                <Alert
-                  message={<><span>✓</span> Tip</>}
-                  description="Always search for the customer first to avoid creating duplicate records!"
-                  type="success"
-                  
-                />
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="green">Step 2</Tag> Verify Identity
-                </Title>
-
-                <Title level={5}>ID Verification:</Title>
-                <ol>
-                  <li><Text strong>Ask for ID</Text> - Request government-issued ID</li>
-                  <li><Text strong>ID Type</Text> - Select type from dropdown:
-                    <ul>
-                      <li>Driver's License</li>
-                      <li>State ID</li>
-                      <li>Passport</li>
-                      <li>Other</li>
-                    </ul>
-                  </li>
-                  <li><Text strong>ID Number</Text> - Enter the ID number</li>
-                  <li><Text strong>Upload ID Photo</Text>:
-                    <ul>
-                      <li>Click "Upload ID"</li>
-                      <li>Take photo of the ID or select file</li>
-                      <li>Make sure photo is clear</li>
-                    </ul>
-                  </li>
-                </ol>
-
-                <Title level={5}>Signature:</Title>
-                <ol>
-                  <li>Ask customer to sign</li>
-                  <li>They can sign on tablet/signature pad</li>
-                  <li>Or upload a signature image</li>
-                </ol>
-
-                <Alert
-                  message={<><span /> Important</>}
-                  description={
-                    <ul style={{ marginBottom: 0 }}>
-                      <li>Always verify the ID matches the customer</li>
-                      <li>Photo should be clear enough to read</li>
-                      <li>Keep signature on file</li>
-                    </ul>
-                  }
-                  type="warning"
-                  
-                />
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="green">Step 3</Tag> Process Check-In
-                </Title>
+            {/* Guide Content */}
+            <div ref={guideRef}>
+              <Typography>
+                <Title level={2}>Customer Check-In Process</Title>
                 <Paragraph>
-                  After customer information is saved, the Check-In popup opens automatically.
+                  <Text strong>Welcome!</Text> This guide shows how to check in
+                  and check out customers.
                 </Paragraph>
 
-                <Title level={5}>Entry Information:</Title>
-                <ol>
-                  <li>
-                    <Text strong>Number of Additional Persons</Text>
-                    <ul>
-                      <li>How many people are with the customer?</li>
-                      <li>Enter "0" if customer is alone</li>
-                      <li>Enter "1" if customer has 1 person with them</li>
-                      <li>The display shows as "1 + X" (customer + additional)</li>
-                    </ul>
-                  </li>
-                  <li>
-                    <Text strong>Entry Fee/Payment:</Text>
-                    <ul>
-                      <li><Text strong>Amount</Text> (required) - Enter the entry fee
-                        <ul>
-                          <li>Usually a set amount (e.g., $10, $25)</li>
-                          <li>Check current entry fee policy</li>
-                        </ul>
-                      </li>
-                      <li><Text strong>Payment Method</Text> (required) - How they're paying
-                        <ul>
-                          <li>Cash, Card, Check, etc.</li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
-                  <li>
-                    <Text strong>Employee Signature</Text>
-                    <ul>
-                      <li>Your signature authorizing entry</li>
-                      <li>Sign on pad or upload signature</li>
-                    </ul>
-                  </li>
-                </ol>
-
-                <Title level={5}>How to Complete Check-In:</Title>
-                <ol>
-                  <li>Enter all required information</li>
-                  <li>Verify the amount paid</li>
-                  <li>Sign as the authorizing employee</li>
-                  <li>Click "Check In" button</li>
-                </ol>
-
-                <Paragraph>
-                  <Text strong>What Happens:</Text>
-                  <ul>
-                    <li>System creates a check-in record</li>
-                    <li>Generates a unique 6-character token</li>
-                    <li>Records entry time</li>
-                    <li>Processes payment transaction</li>
-                    <li>Customer status set to "Checked In"</li>
-                  </ul>
-                </Paragraph>
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="green">Step 4</Tag> Give Customer Their Token
-                </Title>
-
                 <Alert
-                  message="The Token"
-                  description="A unique 6-character code (e.g., 'A7K9M2') that identifies the customer during their visit. They'll need it for check-out."
+                  message="What is Check-In?"
+                  description="Check-In tracks who enters our building. Every customer must check in before going inside. They get a token and must check out when leaving."
                   type="info"
-                  
-                  style={{ marginBottom: 16 }}
+                  style={{ marginBottom: 24 }}
                 />
 
-                <Title level={5}>What to Do:</Title>
-                <ol>
-                  <li>Show customer their token on screen</li>
-                  <li>Write token on a badge or card</li>
-                  <li>Give badge to customer</li>
-                  <li>Ask customer to keep it until check-out</li>
-                  <li>Optional: Print a receipt with the token</li>
-                </ol>
+                <Divider />
 
-                <Card style={{ backgroundColor: 'rgba(24, 144, 255, 0.1)', border: '1px solid rgba(24, 144, 255, 0.3)' }}>
+                {/* When to Use */}
+                <Title level={3}>When to Check In</Title>
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <ul>
+                    <li>Customer comes to browse parts</li>
+                    <li>Buyer comes to pick up items</li>
+                    <li>Anyone needs to enter secure area</li>
+                    <li>Seller returns for any reason</li>
+                  </ul>
+                  <Alert
+                    message="Rule"
+                    description="Everyone must check in. No exceptions."
+                    type="warning"
+                    style={{ marginTop: 12 }}
+                  />
+                </Card>
+
+                <Divider />
+
+                {/* Check-In Steps */}
+                <Title level={3}>How to Check In a Customer</Title>
+
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="green">Step 1</Tag> Create or Find Customer
+                  </Title>
+                  <Title level={5}>New Customer:</Title>
+                  <ol>
+                    <li>Click "Waiver Form" → "Fill Waiver Form"</li>
+                    <li>Enter first name</li>
+                    <li>Enter last name</li>
+                    <li>Enter phone (if given)</li>
+                    <li>Enter email (if given)</li>
+                  </ol>
+                  <Title level={5}>Returning Customer:</Title>
+                  <ol>
+                    <li>Click "Select Existing Customer"</li>
+                    <li>Search by name or phone</li>
+                    <li>Click to select</li>
+                  </ol>
+                  <Alert
+                    message="Tip"
+                    description="Always search first to avoid duplicates!"
+                    type="success"
+                    style={{ marginTop: 12 }}
+                  />
+                </Card>
+
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="green">Step 2</Tag> Verify ID
+                  </Title>
+                  <ol>
+                    <li>Ask for government ID</li>
+                    <li>Select ID type (Driver License, State ID, etc.)</li>
+                    <li>Enter ID number</li>
+                    <li>Click "Upload ID"</li>
+                    <li>Take clear photo of ID</li>
+                  </ol>
+                </Card>
+
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="green">Step 3</Tag> Get Signature
+                  </Title>
+                  <ol>
+                    <li>Ask customer to sign</li>
+                    <li>Customer signs on screen or pad</li>
+                    <li>Make sure signature is visible</li>
+                  </ol>
+                </Card>
+
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="green">Step 4</Tag> Fill Check-In Details
+                  </Title>
+                  <Paragraph>Popup appears after saving waiver.</Paragraph>
+                  <ul>
+                    <li>
+                      <Text strong>Number of People</Text> - How many with them?
+                      (0 if alone)
+                    </li>
+                    <li>
+                      <Text strong>Entry Fee</Text> - Amount to pay (usually $10
+                      or $25)
+                    </li>
+                    <li>
+                      <Text strong>Payment Method</Text> - Cash, Card, or Check
+                    </li>
+                    <li>
+                      <Text strong>Your Signature</Text> - You sign to authorize
+                    </li>
+                  </ul>
+                  <Paragraph>Click "Check In" button.</Paragraph>
+                </Card>
+
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="green">Step 5</Tag> Give Token
+                  </Title>
                   <Paragraph>
-                    <Text strong>Tell the Customer:</Text>
-                    <ul style={{ marginBottom: 0 }}>
-                      <li>"Your check-in token is <Text code>[TOKEN]</Text>"</li>
-                      <li>"Please keep this token with you"</li>
-                      <li>"You'll need it when you check out"</li>
-                      <li>"Present this at the counter when you're ready to leave"</li>
-                    </ul>
+                    System shows 6-character token (like "A7K9M2")
+                  </Paragraph>
+                  <ol>
+                    <li>Write token on badge</li>
+                    <li>Give badge to customer</li>
+                    <li>Tell them: "Keep this. You need it to leave."</li>
+                  </ol>
+                </Card>
+
+                <Divider />
+
+                {/* Check-Out */}
+                <Title level={3}>How to Check Out a Customer</Title>
+
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="orange">Step 1</Tag> Ask for Token
+                  </Title>
+                  <Paragraph>
+                    Say: "May I have your token please?"
                   </Paragraph>
                 </Card>
-              </Card>
 
-              <Divider />
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="orange">Step 2</Tag> Find Customer
+                  </Title>
+                  <Title level={5}>By Token:</Title>
+                  <ol>
+                    <li>Go to "Check-In" → "All Check-Ins"</li>
+                    <li>Type token in search</li>
+                    <li>Click on customer</li>
+                  </ol>
+                  <Title level={5}>By Name:</Title>
+                  <ol>
+                    <li>Go to "Check-In" → "All Check-Ins"</li>
+                    <li>Type name in search</li>
+                    <li>Find one that says "Checked In"</li>
+                    <li>Click on customer</li>
+                  </ol>
+                </Card>
 
-              <Title level={3}>Checking Out a Customer</Title>
-              <Paragraph>
-                When a customer is ready to leave:
-              </Paragraph>
-
-              <Card style={{ marginBottom: 24 }}>
-                <Title level={4}>Finding the Customer</Title>
-
-                <Title level={5}>Method 1 - By Token:</Title>
-                <ol>
-                  <li>Ask customer for their token</li>
-                  <li>Go to "All Check-Ins" or "Checked In List"</li>
-                  <li>Type the token in the search box</li>
-                  <li>Find the matching record</li>
-                </ol>
-
-                <Title level={5}>Method 2 - By Name:</Title>
-                <ol>
-                  <li>Ask customer's name</li>
-                  <li>Search by first or last name</li>
-                  <li>Look for records with status "Checked In"</li>
-                  <li>Verify it's the right person</li>
-                </ol>
-
-                <Title level={4}>Processing Check-Out</Title>
-                <ol>
-                  <li>Click on the customer's record</li>
-                  <li>Click "Check Out" button</li>
-                  <li>Confirm the action</li>
-                  <li>System records:
-                    <ul>
-                      <li>Check-out time</li>
-                      <li>Your name (who processed it)</li>
-                      <li>Total visit duration</li>
-                    </ul>
-                  </li>
-                  <li>Status changes to "Checked Out"</li>
-                  <li>Customer can leave facility</li>
-                </ol>
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="orange">Step 3</Tag> Check Out
+                  </Title>
+                  <ol>
+                    <li>Click "Check Out" button</li>
+                    <li>Click "Yes" to confirm</li>
+                    <li>Say: "You're all set. Have a nice day!"</li>
+                  </ol>
+                </Card>
 
                 <Alert
-                  message={<><span /> Important</>}
-                  description={
-                    <ul style={{ marginBottom: 0 }}>
-                      <li>Always verify customer identity</li>
-                      <li>Check if they purchased anything (handle separately)</li>
-                      <li>Update any notes if needed</li>
-                    </ul>
-                  }
+                  message="Lost Token?"
+                  description="Ask for name. Search by name. Check their ID to verify. Then check them out."
                   type="info"
-                  
-                />
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Common Tasks</Title>
-
-              <Card style={{ marginBottom: 24 }}>
-                <Title level={4}>Searching for Check-Ins</Title>
-                <ol>
-                  <li>Go to "All Check-Ins"</li>
-                  <li>Use search box to find by:
-                    <ul>
-                      <li>Token</li>
-                      <li>Customer name</li>
-                      <li>Email</li>
-                      <li>Phone</li>
-                    </ul>
-                  </li>
-                  <li>Filter by status:
-                    <ul>
-                      <li>Checked In (currently in facility)</li>
-                      <li>Checked Out (completed visits)</li>
-                    </ul>
-                  </li>
-                </ol>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Best Practices</Title>
-
-              <Card>
-                <Title level={5}>
-                  <span style={{ color: '#52c41a' }} /> DO:
-                </Title>
-                <ul>
-                  <li>Always verify customer ID</li>
-                  <li>Collect payment before issuing token</li>
-                  <li>Write token clearly on badge</li>
-                  <li>Remind customer to keep their token</li>
-                  <li>Check out customers promptly when they're ready</li>
-                  <li>Search for customer before creating duplicate</li>
-                </ul>
-
-                <Title level={5}>
-                  <span style={{ color: '#ff4d4f' }} /> DON'T:
-                </Title>
-                <ul>
-                  <li>Allow entry without check-in</li>
-                  <li>Lose or misplace tokens</li>
-                  <li>Forget to check out customers (they'll show as still in facility)</li>
-                  <li>Skip ID verification</li>
-                  <li>Check in without payment</li>
-                </ul>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Troubleshooting</Title>
-
-              <Card style={{ marginBottom: 16 }}>
-                <Alert
-                  message="Cannot Find Customer"
-                  description={
-                    <>
-                      <Text strong>Solution:</Text>
-                      <ol>
-                        <li>Try searching by different fields (name, email, phone)</li>
-                        <li>Check spelling - try variations of name</li>
-                        <li>Ask customer for any previous receipts or tokens</li>
-                        <li>If truly new, create a new customer record</li>
-                      </ol>
-                    </>
-                  }
-                  type="warning"
-                  style={{ marginBottom: 16 }}
+                  style={{ marginBottom: 24 }}
                 />
 
-                <Alert
-                  message="Customer Still Shows 'Checked In'"
-                  description={
-                    <>
-                      <Text strong>Solution:</Text>
-                      <ol>
-                        <li>Find the customer's check-in record</li>
-                        <li>Manually check them out</li>
-                        <li>Note the time they actually left</li>
-                        <li>This happens if check-out was forgotten</li>
-                      </ol>
-                    </>
-                  }
-                  type="warning"
-                  style={{ marginBottom: 16 }}
-                />
+                <Divider />
 
-                <Alert
-                  message="Token Lost"
-                  description={
-                    <>
-                      <Text strong>Solution:</Text>
-                      <ol>
-                        <li>Ask for customer's name</li>
-                        <li>Search in check-in list</li>
-                        <li>Find records with status "Checked In"</li>
-                        <li>Verify customer identity (ask for ID if needed)</li>
-                        <li>Process check-out once verified</li>
-                      </ol>
-                    </>
-                  }
-                  type="warning"
-                />
-              </Card>
+                {/* Quick Reference */}
+                <Title level={3}>Quick Reference</Title>
+                
+                <Card
+                  style={{
+                    backgroundColor: "rgba(82, 196, 26, 0.1)",
+                    border: "1px solid rgba(82, 196, 26, 0.3)",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Title level={5}>Check-In (Quick):</Title>
+                  <ol>
+                    <li>Fill waiver → Name, contact</li>
+                    <li>Take ID photo</li>
+                    <li>Get signature</li>
+                    <li>Enter fee and payment</li>
+                    <li>Give token to customer</li>
+                  </ol>
+                </Card>
 
-              <Divider />
+                <Card
+                  style={{
+                    backgroundColor: "rgba(250, 173, 20, 0.1)",
+                    border: "1px solid rgba(250, 173, 20, 0.3)",
+                  }}
+                >
+                  <Title level={5}>Check-Out (Quick):</Title>
+                  <ol>
+                    <li>Get token</li>
+                    <li>Search by token or name</li>
+                    <li>Click "Check Out"</li>
+                    <li>Confirm</li>
+                  </ol>
+                </Card>
 
-              <Title level={3}>Quick Reference</Title>
+                <Divider />
 
-              <Card style={{ backgroundColor: 'rgba(82, 196, 26, 0.1)', border: '1px solid rgba(82, 196, 26, 0.3)' }}>
-                <Title level={4}>Check-In Quick Steps</Title>
-                <ol>
-                  <li><span style={{ color: '#52c41a' }} /> Create/Select customer → Name and contact</li>
-                  <li><span style={{ color: '#52c41a' }} /> Verify ID → Upload photo of ID</li>
-                  <li><span style={{ color: '#52c41a' }} /> Get signature → Customer signs</li>
-                  <li><span style={{ color: '#52c41a' }} /> Enter payment → Entry fee amount and method</li>
-                  <li><span style={{ color: '#52c41a' }} /> Generate token → 6-character code</li>
-                  <li><span style={{ color: '#52c41a' }} /> Give token to customer → Badge or receipt</li>
-                </ol>
-              </Card>
-
-              <Card style={{ backgroundColor: 'rgba(250, 173, 20, 0.1)', border: '1px solid rgba(250, 173, 20, 0.3)', marginTop: 16 }}>
-                <Title level={4}>Check-Out Quick Steps</Title>
-                <ol>
-                  <li><span style={{ color: '#faad14' }} /> Get token from customer</li>
-                  <li><span style={{ color: '#faad14' }} /> Search by token or name</li>
-                  <li><span style={{ color: '#faad14' }} /> Click "Check Out"</li>
-                  <li><span style={{ color: '#faad14' }} /> Confirm action</li>
-                  <li><span style={{ color: '#faad14' }} /> Customer may leave</li>
-                </ol>
-              </Card>
-
-              <Divider />
-
-              <Card style={{ backgroundColor: 'rgba(24, 144, 255, 0.1)', border: '1px solid rgba(24, 144, 255, 0.3)' }}>
-                <Title level={4}>Need Help?</Title>
-                <Paragraph>
+                {/* Tips */}
+                <Title level={3}>Tips</Title>
+                <Card>
+                  <Title level={5}>
+                    <span style={{ color: "#52c41a" }}>✓</span> DO:
+                  </Title>
                   <ul>
-                    <li><Text strong>Ask a Supervisor</Text> - For policy questions or complex situations</li>
-                    <li><Text strong>Contact IT Support</Text> - For technical issues</li>
-                    <li><Text strong>Ask Colleagues</Text> - They may have encountered the same issue</li>
+                    <li>Always verify ID</li>
+                    <li>Collect payment first</li>
+                    <li>Write token clearly</li>
+                    <li>Remind them to keep token</li>
+                    <li>Check out promptly</li>
                   </ul>
-                </Paragraph>
-                <Paragraph>
-                  <Text strong>Remember:</Text> Be accurate, be professional, verify identity, and always collect payment before issuing tokens!
-                </Paragraph>
-              </Card>
-            </Typography>
+
+                  <Title level={5}>
+                    <span style={{ color: "#ff4d4f" }}>✗</span> DON'T:
+                  </Title>
+                  <ul>
+                    <li>Let anyone in without check-in</li>
+                    <li>Skip ID verification</li>
+                    <li>Forget to check out customers</li>
+                    <li>Check in without payment</li>
+                  </ul>
+                </Card>
+
+                <Divider />
+
+                <Card
+                  style={{ background: "#f0f5ff", border: "1px solid #adc6ff" }}
+                >
+                  <Title level={4}>Need Help?</Title>
+                  <ul>
+                    <li>Ask your supervisor</li>
+                    <li>Call IT Support</li>
+                  </ul>
+                  <Paragraph>
+                    <Text strong>
+                      Be accurate, be friendly, verify identity!
+                    </Text>
+                  </Paragraph>
+                </Card>
+              </Typography>
+            </div>
           </Card>
         </div>
       </div>
