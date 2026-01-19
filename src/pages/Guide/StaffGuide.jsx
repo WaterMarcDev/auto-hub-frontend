@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Card, Typography, Divider, Tag, Alert } from "antd";
+import GuidePDFPreview from "../../components/Guide/GuidePDFPreview";
 import "./GuideStyles.css";
 
 const { Title, Paragraph, Text } = Typography;
 
 const StaffGuide = () => {
+  const guideRef = useRef(null);
+
   return (
     <div className="guide-container">
       <div className="page-title-box">
@@ -25,623 +28,415 @@ const StaffGuide = () => {
       <div className="container-fluid">
         <div className="page-content-wrapper">
           <Card className="guide-card">
-            <Typography>
-              <Title level={2}>User Guide for Staff Members</Title>
-              <Paragraph>
-                <Text strong>Welcome to AutoHub!</Text> This guide will help you
-                use the AutoHub Dashboard system in your daily work as a Staff
-                member.
-              </Paragraph>
+            {/* PDF Download Button */}
+            <GuidePDFPreview
+              contentRef={guideRef}
+              title="Staff Member User Guide"
+              buttonText="Download PDF"
+            />
 
-              <Alert
-                message="Your Role"
-                description="As a Staff member, you handle the core operations of our business: processing car intakes when we buy vehicles, managing car inventory, managing parts inventory, processing scrap cars, and keeping accurate records. You are essential to our operations!"
-                type="info"
-                style={{ marginBottom: 24 }}
-              />
-
-              <Divider />
-
-              <Title level={3}>What You Can Do</Title>
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>✓ You Have Access To</Title>
-                <ul>
-                  <li>
-                    <Text strong>Dashboard</Text> - See your work overview
-                  </li>
-                  <li>
-                    <Text strong>Car Intake</Text> - Add and manage cars we
-                    purchase
-                  </li>
-                  <li>
-                    <Text strong>Car Inventory</Text> - Track cars in our
-                    inventory
-                  </li>
-                  <li>
-                    <Text strong>Parts Inventory</Text> - Manage car parts
-                  </li>
-                  <li>
-                    <Text strong>Scrap Management</Text> - Process cars for
-                    scrapping
-                  </li>
-                  <li>
-                    <Text strong>User Guides</Text> - Help when you need it
-                  </li>
-                </ul>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Car Intake Process</Title>
-              <Paragraph>
-                This is your main job! When someone sells us a car, you process
-                it.
-              </Paragraph>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>Overview: 7 Steps</Title>
-                <ol>
-                  <li>
-                    <Tag color="blue">Step 0</Tag> Enter VIN
-                  </li>
-                  <li>
-                    <Tag color="blue">Step 1</Tag> Car Details
-                  </li>
-                  <li>
-                    <Tag color="blue">Step 2</Tag> Car Images (12 photos)
-                  </li>
-                  <li>
-                    <Tag color="blue">Step 3</Tag> Parts Assessment
-                  </li>
-                  <li>
-                    <Tag color="blue">Step 4</Tag> Pricing
-                  </li>
-                  <li>
-                    <Tag color="blue">Step 5</Tag> Documents (KYC)
-                  </li>
-                  <li>
-                    <Tag color="blue">Step 6</Tag> Payment
-                  </li>
-                </ol>
+            {/* Guide Content */}
+            <div ref={guideRef}>
+              <Typography>
+                <Title level={2}>Staff Member User Guide</Title>
+                <Paragraph>
+                  <Text strong>Welcome to AutoHub!</Text> This guide will help
+                  you do your job. It is written in simple words.
+                </Paragraph>
 
                 <Alert
-                  message="Detailed Guide Available"
-                  description='For complete step-by-step instructions on Car Intake, see the "Car Intake Guide" in the Guide menu.'
+                  message="Your Job"
+                  description="You handle cars. Your job is to: Add new cars when people sell them to us, Take photos, Check car parts, Set prices, Handle payment, and Keep track of inventory."
                   type="info"
-                  style={{ marginTop: 16 }}
+                  style={{ marginBottom: 24 }}
                 />
-              </Card>
 
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="blue">Step 0</Tag> Enter the VIN
-                </Title>
-                <Paragraph>
-                  <Text strong>VIN = Vehicle Identification Number</Text> (17
-                  characters, no spaces)
-                </Paragraph>
+                <Divider />
 
-                <Paragraph>
-                  <Text strong>Where to find it:</Text>
-                </Paragraph>
-                <ul>
-                  <li>Driver's side dashboard (through windshield)</li>
-                  <li>Driver's side door jamb</li>
-                  <li>On the title or registration</li>
-                </ul>
-
-                <Paragraph>
-                  <Text strong>What to do:</Text>
-                </Paragraph>
-                <ol>
-                  <li>Click "Car Intake" → "Add New Car"</li>
-                  <li>A popup appears asking for VIN</li>
-                  <li>Type the 17-character VIN</li>
-                  <li>Click "Fetch VIN"</li>
-                  <li>The system fills in car details automatically!</li>
-                </ol>
-
-                <Paragraph>
-                  <Text strong>If VIN doesn't work:</Text> Click "Skip" and
-                  you'll enter details manually.
-                </Paragraph>
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="blue">Step 1</Tag> Car Details
-                </Title>
-                <Paragraph>Fill in information about the vehicle.</Paragraph>
-
-                <Title level={5}>Required Information:</Title>
-                <ul>
-                  <li>Year (e.g., 2015)</li>
-                  <li>Make (e.g., Toyota)</li>
-                  <li>Model (e.g., Camry)</li>
-                  <li>Trim (e.g., LE, XLE)</li>
-                  <li>Color</li>
-                </ul>
-
-                <Title level={5}>Additional Information:</Title>
-                <ul>
-                  <li>Body type (Sedan, SUV, Truck)</li>
-                  <li>Transmission (Automatic or Manual)</li>
-                  <li>Drive (2WD, 4WD, AWD, FWD)</li>
-                  <li>Fuel Type</li>
-                  <li>Keys available? (Yes/No)</li>
-                  <li>Scrap Yard Name (usually "RTX")</li>
-                  <li>Scrap Yard Location (usually "New Jersey")</li>
-                </ul>
-
-                <Paragraph>
-                  When done: Review everything and click "Next" or "Save"
-                </Paragraph>
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="blue">Step 2</Tag> Car Images
-                </Title>
-                <Paragraph>
-                  Take <Text strong>12 photos</Text> of the vehicle.
-                </Paragraph>
-
-                <Title level={5}>8 General Photos:</Title>
-                <ol>
-                  <li>Front view</li>
-                  <li>Back view</li>
-                  <li>Driver side</li>
-                  <li>Passenger side</li>
-                  <li>Front driver corner</li>
-                  <li>Front passenger corner</li>
-                  <li>Rear driver corner</li>
-                  <li>Rear passenger corner</li>
-                </ol>
-
-                <Title level={5}>4 Specific Photos:</Title>
-                <ol start={9}>
-                  <li>Engine bay (open hood)</li>
-                  <li>Trunk/Boot (open trunk)</li>
-                  <li>Below vehicle (underneath)</li>
-                  <li>Full vehicle (entire car in frame)</li>
-                </ol>
-
-                <Alert
-                  message="✓ Tips for Good Photos"
-                  description={
-                    <ul style={{ marginBottom: 0 }}>
-                      <li>Use good lighting</li>
-                      <li>Make sure car is visible</li>
-                      <li>Clear and focused</li>
-                      <li>Show any damage</li>
-                    </ul>
-                  }
-                  type="success"
-                  style={{ marginTop: 12 }}
-                />
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="blue">Step 3</Tag> Parts Assessment
-                </Title>
-                <Paragraph>
-                  Check which parts are available and working.
-                </Paragraph>
-
-                <Title level={5}>Parts to Check:</Title>
-                <ul>
-                  <li>Engine, Transmission, Radiator</li>
-                  <li>Doors (4), Hood, Trunk</li>
-                  <li>Bumpers (2), Fenders</li>
-                  <li>Headlights, Taillights</li>
-                  <li>Seats, Dashboard, Steering Wheel</li>
-                  <li>Wheels (4), Tires</li>
-                  <li>Windows, Mirrors</li>
-                  <li>Radio, AC unit</li>
-                </ul>
-
-                <Paragraph>
-                  <Text strong>What to do:</Text>
-                </Paragraph>
-                <ol>
-                  <li>Walk around the car</li>
-                  <li>Check each part</li>
-                  <li>If part is good, check the box</li>
-                  <li>Enter quantity (usually "1")</li>
-                  <li>Add notes about condition</li>
-                </ol>
-
-                <Paragraph>
-                  <Text strong>Example:</Text>
-                </Paragraph>
-                <ul>
-                  <li>✓ Engine - Qty: 1 - "Runs well"</li>
-                  <li>✓ Front Bumper - Qty: 1 - "Small dent on right"</li>
-                  <li>✗ Rear Bumper - (too damaged)</li>
-                </ul>
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="blue">Step 4</Tag> Pricing
-                </Title>
-                <Paragraph>Determine how much we'll pay for the car.</Paragraph>
-
-                <Title level={5}>Method 1: By Weight</Title>
-                <ol>
-                  <li>Weigh the car</li>
-                  <li>Enter weight in pounds</li>
-                  <li>Enter rate per pound (usually $6)</li>
-                  <li>System calculates price automatically</li>
-                </ol>
-
-                <Title level={5}>Method 2: By Value</Title>
-                <ol>
-                  <li>Assess car's condition</li>
-                  <li>Check similar cars</li>
-                  <li>Enter our price</li>
-                  <li>Set customer price</li>
-                  <li>Set negotiate price</li>
-                  <li>Enter final agreed price</li>
-                </ol>
-
-                <Title level={5}>Pricing Fields:</Title>
-                <ul>
-                  <li>Actual Weight</li>
-                  <li>Rate Per Pound</li>
-                  <li>Actual Price (auto-calculated)</li>
-                  <li>Our Price</li>
-                  <li>Customer Price</li>
-                  <li>Negotiate To</li>
-                  <li>Final Price</li>
-                </ul>
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="blue">Step 5</Tag> Documents (KYC)
-                </Title>
-                <Paragraph>
-                  Collect legal documents and seller information.
-                </Paragraph>
-
-                <Title level={5}>Seller Information:</Title>
-                <ul>
-                  <li>Select the seller (customer)</li>
-                  <li>Selling date (today)</li>
-                  <li>Pickup type (You Pull, We Pull, Bulk, Location)</li>
-                </ul>
-
-                <Title level={5}>Required Documents (Upload 3):</Title>
-                <ol>
-                  <li>
-                    <Text strong>Driver's License</Text> - Clear photo of
-                    seller's license, must be readable
-                  </li>
-                  <li>
-                    <Text strong>Physical Paper</Text>
-                    <ul>
-                      <li>Current vehicle registration paper</li>
-                      <li>Must match the VIN</li>
-                    </ul>
-                  </li>
-                  <li>
-                    <Text strong>Title Certificate</Text> - Original car title,
-                    signed by owner
-                  </li>
-                </ol>
-
-                <Alert
-                  message="Important Checks"
-                  description={
-                    <ul style={{ marginBottom: 0 }}>
-                      <li>All documents match seller's name</li>
-                      <li>VIN on registration matches car</li>
-                      <li>Title is clear (no liens)</li>
-                    </ul>
-                  }
-                  type="warning"
-                  style={{ marginTop: 12 }}
-                />
-              </Card>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>
-                  <Tag color="blue">Step 6</Tag> Payment
-                </Title>
-                <Paragraph>Process payment to the seller.</Paragraph>
-
-                <Title level={5}>What to enter:</Title>
-                <ol>
-                  <li>Payment method (Cash, Check, Bank Transfer)</li>
-                  <li>Amount paid (should match Final Price from Step 4)</li>
-                  <li>Payment notes (e.g., "Check #12345")</li>
-                </ol>
-
-                <Title level={5}>When done:</Title>
-                <ol>
-                  <li>Click "Submit" or "Complete"</li>
-                  <li>System creates record</li>
-                  <li>
-                    <Text strong>Print payment slip</Text>
-                  </li>
-                  <li>Give copy to seller</li>
-                  <li>Keep copy for records</li>
-                </ol>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Managing Car Inventory</Title>
-
-              <Card style={{ marginBottom: 24 }}>
-                <Paragraph>View and manage cars in inventory.</Paragraph>
-                <Paragraph>
-                  <Text strong>Access:</Text> Click "Car Inventory" in left menu
-                </Paragraph>
-
-                <Title level={5}>What you can do:</Title>
-                <ul>
-                  <li>View all cars in inventory</li>
-                  <li>Search for specific cars</li>
-                  <li>Filter by make, model, year</li>
-                  <li>Update car information</li>
-                  <li>See car status</li>
-                </ul>
-
-                <Title level={5}>Finding a car:</Title>
-                <ol>
-                  <li>Click "Car Inventory Lists"</li>
-                  <li>Use search box (VIN, make, model)</li>
-                  <li>Click on car to see details</li>
-                </ol>
-
-                <Title level={5}>Updating car info:</Title>
-                <ol>
-                  <li>Find the car</li>
-                  <li>Click "Edit"</li>
-                  <li>Update information</li>
-                  <li>Click "Save"</li>
-                </ol>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Managing Parts Inventory</Title>
-
-              <Card style={{ marginBottom: 24 }}>
-                <Paragraph>Manage individual car parts in inventory.</Paragraph>
-                <Paragraph>
-                  <Text strong>Access:</Text> Click "Parts Inventory" in left
-                  menu
-                </Paragraph>
-
-                <Title level={5}>Add New Inventory:</Title>
-                <ol>
-                  <li>Click "Add Inventory"</li>
-                  <li>Select the car</li>
-                  <li>Select parts to add</li>
-                  <li>Enter quantities</li>
-                  <li>Add notes</li>
-                  <li>Save</li>
-                </ol>
-
-                <Title level={5}>View Inventory:</Title>
-                <ol>
-                  <li>Click "Inventory Lists"</li>
-                  <li>See all parts</li>
-                  <li>Search or filter</li>
-                  <li>Update as needed</li>
-                </ol>
-
-                <Title level={5}>Master Parts:</Title>
-                <ol>
-                  <li>Click "Master Parts"</li>
-                  <li>See parts by category</li>
-                  <li>Check availability</li>
-                  <li>Update status</li>
-                </ol>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Scrap Management</Title>
-
-              <Card className="step-card" style={{ marginBottom: 24 }}>
-                <Title level={4}>When to scrap a car</Title>
-                <ul>
-                  <li>Car is beyond repair</li>
-                  <li>Only good for parts</li>
-                  <li>Customer wants car scrapped</li>
-                  <li>End of life vehicle</li>
-                </ul>
-
-                <Title level={4}>How to add a scrap car</Title>
-                <ol>
-                  <li>Click "Scrap Car" in left menu</li>
-                  <li>Click "Add New"</li>
-                  <li>
-                    Select or enter car details (VIN, Make, Model, Year,
-                    Condition, Scrap yard info)
-                  </li>
-                  <li>
-                    Enter scrap details (Scrap elements, Weight, Scrap value,
-                    Date)
-                  </li>
-                  <li>Upload any required documents</li>
-                  <li>Save the record</li>
-                </ol>
-
-                <Title level={4}>View scrap lists</Title>
-                <ol>
-                  <li>Click "Scrap Lists"</li>
-                  <li>See all scrapped cars</li>
-                  <li>Search or filter</li>
-                  <li>Generate reports</li>
-                </ol>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Tips for Success</Title>
-
-              <Card>
-                <Title level={5}>
-                  <span style={{ color: "#52c41a" }}>✓</span> DO:
-                </Title>
-                <ul>
-                  <li>
-                    <Text strong>Start with VIN</Text> - It fills in most
-                    details
-                  </li>
-                  <li>
-                    <Text strong>Take clear photos</Text> - Good lighting,
-                    focused
-                  </li>
-                  <li>
-                    <Text strong>Be thorough</Text> - Check all parts carefully
-                  </li>
-                  <li>
-                    <Text strong>Double-check documents</Text> - Accuracy
-                    matters
-                  </li>
-                  <li>
-                    <Text strong>Save often</Text> - After each step
-                  </li>
-                  <li>
-                    <Text strong>Print payment slip</Text> - Give to seller
-                  </li>
-                </ul>
-
-                <Title level={5}>
-                  <span style={{ color: "#ff4d4f" }}>✗</span> DON'T:
-                </Title>
-                <ul>
-                  <li>
-                    <Text strong>Skip required fields</Text>
-                  </li>
-                  <li>
-                    <Text strong>Guess at information</Text> - Ask instead
-                  </li>
-                  <li>
-                    <Text strong>Accept bad documents</Text> - Must be clear and
-                    valid
-                  </li>
-                  <li>
-                    <Text strong>Rush the process</Text> - Take time to be
-                    accurate
-                  </li>
-                  <li>
-                    <Text strong>Forget payment slip</Text> - Seller needs it
-                  </li>
-                </ul>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Quality Checklist</Title>
-
-              <Card style={{ marginBottom: 24 }}>
-                <Paragraph>Before completing a car intake:</Paragraph>
-                <ul>
-                  <li>VIN entered correctly</li>
-                  <li>All car details complete</li>
-                  <li>All 12 photos uploaded and clear</li>
-                  <li>Parts assessment complete</li>
-                  <li>Price calculated and agreed</li>
-                  <li>All 3 documents uploaded and verified</li>
-                  <li>Payment processed correctly</li>
-                  <li>Payment slip printed and given to seller</li>
-                </ul>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Daily Workflow</Title>
-
-              <Card style={{ marginBottom: 24 }}>
-                <Paragraph>
-                  <Text strong>Starting Your Day:</Text>
-                </Paragraph>
-                <ul>
-                  <li>Log in to system</li>
-                  <li>Check for pending work</li>
-                  <li>Review any notes</li>
-                  <li>Prepare workspace</li>
-                </ul>
-
-                <Paragraph>
-                  <Text strong>During Your Shift:</Text>
-                </Paragraph>
-                <ul>
-                  <li>Process car intakes</li>
-                  <li>Update inventory</li>
-                  <li>Check parts</li>
-                  <li>Process scrap as needed</li>
-                  <li>Keep records accurate</li>
-                </ul>
-
-                <Paragraph>
-                  <Text strong>Ending Your Day:</Text>
-                </Paragraph>
-                <ul>
-                  <li>Complete any pending work</li>
-                  <li>Update status of cars</li>
-                  <li>Leave notes for next shift</li>
-                  <li>Log out</li>
-                </ul>
-              </Card>
-
-              <Divider />
-
-              <Title level={3}>Your Responsibilities</Title>
-
-              <Card style={{ marginBottom: 24 }}>
-                <Paragraph>
-                  As a Staff member, you are responsible for:
-                </Paragraph>
-                <ul>
-                  <li>✓ Accurate car intake processing</li>
-                  <li>✓ Proper photo documentation</li>
-                  <li>✓ Thorough parts assessment</li>
-                  <li>✓ Fair and accurate pricing</li>
-                  <li>✓ Document verification</li>
-                  <li>✓ Correct payment processing</li>
-                  <li>✓ Inventory management</li>
-                  <li>✓ Maintaining quality standards</li>
-                  <li>✓ Following all procedures</li>
-                  <li>✓ Keeping records up to date</li>
-                </ul>
-              </Card>
-
-              <Divider />
-
-              <Card
-                style={{ background: "#f0f5ff", border: "1px solid #adc6ff" }}
-              >
-                <Title level={4}>You're an important part of our team!</Title>
-                <Paragraph>
-                  Your work in car intake and inventory management keeps our
-                  business running smoothly. Take pride in doing it well!
-                </Paragraph>
-                <Paragraph>
-                  <Text strong>Remember:</Text>
+                {/* What You Can Do */}
+                <Title level={3}>What You Can Do</Title>
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>✓ Your Access</Title>
                   <ul>
-                    <li>Quality over speed</li>
-                    <li>Accuracy is essential</li>
-                    <li>Ask when unsure</li>
-                    <li>Document everything</li>
-                    <li>Customer service matters</li>
+                    <li>
+                      <Text strong>Car Intake</Text> - Add new cars we buy
+                    </li>
+                    <li>
+                      <Text strong>Car Inventory</Text> - See all cars we have
+                    </li>
+                    <li>
+                      <Text strong>Parts Inventory</Text> - Manage car parts
+                    </li>
+                    <li>
+                      <Text strong>Scrap</Text> - Handle scrap cars
+                    </li>
+                    <li>
+                      <Text strong>User Guides</Text> - Help documents like this
+                    </li>
                   </ul>
-                </Paragraph>
+                </Card>
+
+                <Divider />
+
+                {/* Car Intake Process */}
+                <Title level={3}>How to Add a New Car (Car Intake)</Title>
                 <Paragraph>
-                  <Text strong>Need Help?</Text> Click "Guide" in top bar, check
-                  User Guides menu, ask your supervisor, call IT Support, or
-                  review this guide.
+                  This is your main job. Do this when someone sells us a car.
                 </Paragraph>
-              </Card>
-            </Typography>
+
+                <Alert
+                  message="7 Steps Total"
+                  description="Adding a car has 7 steps. Follow each step carefully."
+                  type="info"
+                  style={{ marginBottom: 24 }}
+                />
+
+                {/* Step 0 */}
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="blue">Step 0</Tag> Enter the VIN
+                  </Title>
+                  <Paragraph>
+                    <Text strong>What is VIN?</Text> A 17-character code found on
+                    every car. It is like the car's ID number.
+                  </Paragraph>
+                  <Paragraph>
+                    <Text strong>Where to Find It:</Text>
+                  </Paragraph>
+                  <ul>
+                    <li>On the dashboard (driver's side, look through the window)</li>
+                    <li>On the driver's door frame</li>
+                    <li>On the car title paper</li>
+                  </ul>
+                  <Paragraph>
+                    <Text strong>What to Do:</Text>
+                  </Paragraph>
+                  <ol>
+                    <li>Click "Car Intake" → "Add New Car"</li>
+                    <li>Type the 17-character VIN</li>
+                    <li>Click "Fetch VIN"</li>
+                    <li>The system will fill in car details automatically</li>
+                  </ol>
+                  <Alert
+                    message="If VIN doesn't work"
+                    description="Click 'Skip' and type the car details yourself."
+                    type="warning"
+                    style={{ marginTop: 12 }}
+                  />
+                </Card>
+
+                {/* Step 1 */}
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="blue">Step 1</Tag> Car Details
+                  </Title>
+                  <Paragraph>Fill in information about the car:</Paragraph>
+                  <Title level={5}>Required (Must Fill):</Title>
+                  <ul>
+                    <li><Text strong>Year</Text> - Example: 2015</li>
+                    <li><Text strong>Make</Text> - Example: Toyota, Ford, Honda</li>
+                    <li><Text strong>Model</Text> - Example: Camry, F-150, Civic</li>
+                    <li><Text strong>Trim</Text> - Example: LE, XLE, Sport</li>
+                    <li><Text strong>Color</Text> - The car's color</li>
+                  </ul>
+                  <Title level={5}>Additional (Fill if you know):</Title>
+                  <ul>
+                    <li>Body type (Sedan, SUV, Truck)</li>
+                    <li>Transmission (Automatic or Manual)</li>
+                    <li>Drive (2WD, 4WD, AWD)</li>
+                    <li>Fuel Type</li>
+                    <li>Does it have keys? (Yes/No)</li>
+                  </ul>
+                  <Paragraph>Click "Next" when done.</Paragraph>
+                </Card>
+
+                {/* Step 2 */}
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="blue">Step 2</Tag> Car Photos (12 Photos)
+                  </Title>
+                  <Paragraph>
+                    Take <Text strong>12 photos</Text> of the car.
+                  </Paragraph>
+                  <Title level={5}>8 General Photos:</Title>
+                  <ol>
+                    <li>Front of car</li>
+                    <li>Back of car</li>
+                    <li>Driver side</li>
+                    <li>Passenger side</li>
+                    <li>Front driver corner</li>
+                    <li>Front passenger corner</li>
+                    <li>Back driver corner</li>
+                    <li>Back passenger corner</li>
+                  </ol>
+                  <Title level={5}>4 Special Photos:</Title>
+                  <ol start={9}>
+                    <li>Engine (open the hood)</li>
+                    <li>Trunk (open the trunk)</li>
+                    <li>Under the car</li>
+                    <li>Full car in one photo</li>
+                  </ol>
+                  <Alert
+                    message="Tips for Good Photos"
+                    description={
+                      <ul style={{ marginBottom: 0 }}>
+                        <li>Good lighting</li>
+                        <li>Clear and focused</li>
+                        <li>Show any damage</li>
+                      </ul>
+                    }
+                    type="success"
+                  />
+                </Card>
+
+                {/* Step 3 */}
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="blue">Step 3</Tag> Check Car Parts
+                  </Title>
+                  <Paragraph>Check which parts are good and usable.</Paragraph>
+                  <Title level={5}>Parts to Check:</Title>
+                  <ul>
+                    <li>Engine, Transmission, Radiator</li>
+                    <li>4 Doors, Hood, Trunk</li>
+                    <li>Front and Back Bumpers</li>
+                    <li>Headlights and Taillights</li>
+                    <li>Seats, Dashboard, Steering Wheel</li>
+                    <li>4 Wheels and Tires</li>
+                    <li>Windows and Mirrors</li>
+                    <li>Radio, AC Unit</li>
+                  </ul>
+                  <Paragraph>
+                    <Text strong>What to Do:</Text>
+                  </Paragraph>
+                  <ol>
+                    <li>Walk around the car</li>
+                    <li>Check each part</li>
+                    <li>If part is good, check the box</li>
+                    <li>Enter quantity (usually 1)</li>
+                    <li>Add notes about condition</li>
+                  </ol>
+                </Card>
+
+                {/* Step 4 */}
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="blue">Step 4</Tag> Set the Price
+                  </Title>
+                  <Paragraph>Decide how much to pay for the car.</Paragraph>
+                  <Title level={5}>Fill In:</Title>
+                  <ul>
+                    <li><Text strong>Actual Weight</Text> - Car weight in pounds</li>
+                    <li><Text strong>Rate Per Pound</Text> - Usually $6</li>
+                    <li><Text strong>Actual Price</Text> - System calculates this</li>
+                    <li><Text strong>Our Price</Text> - What we think it's worth</li>
+                    <li><Text strong>Customer Price</Text> - What customer wants</li>
+                    <li><Text strong>Negotiate To</Text> - Lowest we can pay</li>
+                    <li><Text strong>Final Price</Text> - Agreed price</li>
+                  </ul>
+                </Card>
+
+                {/* Step 5 */}
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="blue">Step 5</Tag> Documents and Seller Info
+                  </Title>
+                  <Paragraph>Collect papers and seller information.</Paragraph>
+                  <Title level={5}>Select the Seller:</Title>
+                  <ul>
+                    <li>Choose existing seller from list, OR</li>
+                    <li>Seller info is already in waiver</li>
+                  </ul>
+                  <Title level={5}>Upload 3 Documents:</Title>
+                  <ol>
+                    <li>
+                      <Text strong>Title Certificate</Text> - The car title paper (REQUIRED)
+                    </li>
+                    <li>
+                      <Text strong>Driver's License</Text> - Photo of seller's license
+                    </li>
+                    <li>
+                      <Text strong>Physical Paper</Text> - Registration paper
+                    </li>
+                  </ol>
+                  <Title level={5}>Also Fill:</Title>
+                  <ul>
+                    <li>Selling Date (today)</li>
+                    <li>Pickup Type (You Pull, We Pull, Bulk, Location)</li>
+                    <li>Get seller's signature</li>
+                  </ul>
+                  <Alert
+                    message="Important"
+                    description="Title Certificate is required. Cannot continue without it."
+                    type="warning"
+                    style={{ marginTop: 12 }}
+                  />
+                </Card>
+
+                {/* Step 6 */}
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Title level={4}>
+                    <Tag color="blue">Step 6</Tag> Payment
+                  </Title>
+                  <Paragraph>Pay the seller for their car.</Paragraph>
+                  <Title level={5}>Fill In:</Title>
+                  <ol>
+                    <li><Text strong>Payment Method</Text> - Cash, Check, or Bank Transfer</li>
+                    <li><Text strong>Amount</Text> - Should match Final Price from Step 4</li>
+                    <li><Text strong>Notes</Text> - Add any notes (like check number)</li>
+                  </ol>
+                  <Title level={5}>After Clicking Submit:</Title>
+                  <ol>
+                    <li>Click "Print Documents" to see print preview</li>
+                    <li>Review the documents</li>
+                    <li>Print them</li>
+                    <li>Give copy to seller</li>
+                    <li>Keep copy for records</li>
+                  </ol>
+                  <Alert
+                    message="Print Documents"
+                    description="This will show payment slip plus all uploaded documents (Title Certificate, Driver's License, Physical Paper) on separate pages."
+                    type="info"
+                    style={{ marginTop: 12 }}
+                  />
+                </Card>
+
+                <Divider />
+
+                {/* Car Inventory */}
+                <Title level={3}>Car Inventory</Title>
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Paragraph>View and manage all cars we have.</Paragraph>
+                  <Title level={5}>What You Can Do:</Title>
+                  <ul>
+                    <li>View all cars</li>
+                    <li>Search by VIN, make, or model</li>
+                    <li>See car details</li>
+                    <li>Update car information</li>
+                  </ul>
+                  <Title level={5}>How to Find a Car:</Title>
+                  <ol>
+                    <li>Click "Car Inventory" in menu</li>
+                    <li>Type in search box</li>
+                    <li>Click on the car you want</li>
+                  </ol>
+                </Card>
+
+                <Divider />
+
+                {/* Parts Inventory */}
+                <Title level={3}>Parts Inventory</Title>
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Paragraph>Manage car parts separately.</Paragraph>
+                  <Title level={5}>Add New Inventory:</Title>
+                  <ol>
+                    <li>Click "Car Parts Inventory" → "Add Inventory"</li>
+                    <li>Select the car</li>
+                    <li>Select parts to add</li>
+                    <li>Enter quantities</li>
+                    <li>Save</li>
+                  </ol>
+                  <Title level={5}>View Parts:</Title>
+                  <ol>
+                    <li>Click "Inventory Lists"</li>
+                    <li>Search or filter</li>
+                    <li>Click to see details</li>
+                  </ol>
+                </Card>
+
+                <Divider />
+
+                {/* Scrap */}
+                <Title level={3}>Scrap Cars</Title>
+                <Card className="step-card" style={{ marginBottom: 24 }}>
+                  <Paragraph>Handle cars that will be scrapped.</Paragraph>
+                  <Title level={5}>When to Scrap:</Title>
+                  <ul>
+                    <li>Car is too damaged</li>
+                    <li>Only good for metal</li>
+                    <li>End of life vehicle</li>
+                  </ul>
+                  <Title level={5}>How to Add Scrap:</Title>
+                  <ol>
+                    <li>Click "Scrap a Car" → "Add New"</li>
+                    <li>Select car or enter details</li>
+                    <li>Enter scrap info (weight, value)</li>
+                    <li>Save</li>
+                  </ol>
+                </Card>
+
+                <Divider />
+
+                {/* Tips */}
+                <Title level={3}>Tips for Doing a Good Job</Title>
+                <Card>
+                  <Title level={5}>
+                    <span style={{ color: "#52c41a" }}>✓</span> DO:
+                  </Title>
+                  <ul>
+                    <li>Always start with VIN - it fills in details automatically</li>
+                    <li>Take clear photos</li>
+                    <li>Check all parts carefully</li>
+                    <li>Double-check documents</li>
+                    <li>Save after each step</li>
+                    <li>Print payment slip for seller</li>
+                  </ul>
+
+                  <Title level={5}>
+                    <span style={{ color: "#ff4d4f" }}>✗</span> DON'T:
+                  </Title>
+                  <ul>
+                    <li>Skip required fields</li>
+                    <li>Guess at information - ask instead</li>
+                    <li>Accept unclear documents</li>
+                    <li>Rush the process</li>
+                    <li>Forget to give seller payment slip</li>
+                  </ul>
+                </Card>
+
+                <Divider />
+
+                {/* Quick Reference */}
+                <Title level={3}>Quick Reference - Car Intake</Title>
+                <Card
+                  style={{
+                    backgroundColor: "rgba(82, 196, 26, 0.1)",
+                    border: "1px solid rgba(82, 196, 26, 0.3)",
+                  }}
+                >
+                  <ol>
+                    <li>Step 0: Enter VIN → Fetch car details</li>
+                    <li>Step 1: Fill car details → Year, Make, Model</li>
+                    <li>Step 2: Take 12 photos</li>
+                    <li>Step 3: Check parts</li>
+                    <li>Step 4: Set price</li>
+                    <li>Step 5: Upload documents + seller signature</li>
+                    <li>Step 6: Payment → Print documents for seller</li>
+                  </ol>
+                </Card>
+
+                <Divider />
+
+                <Card
+                  style={{ background: "#f0f5ff", border: "1px solid #adc6ff" }}
+                >
+                  <Title level={4}>Need Help?</Title>
+                  <Paragraph>
+                    <ul>
+                      <li>Ask your supervisor</li>
+                      <li>Call IT Support</li>
+                      <li>Read this guide again</li>
+                    </ul>
+                  </Paragraph>
+                  <Paragraph>
+                    <Text strong>
+                      You are important to our team. Your work keeps the
+                      business running!
+                    </Text>
+                  </Paragraph>
+                </Card>
+              </Typography>
+            </div>
           </Card>
         </div>
       </div>
