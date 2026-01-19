@@ -1829,22 +1829,35 @@ const CarIntake = () => {
                   border: "1px solid rgba(255,255,255,0.04)",
                 }}
               >
-                {/* Left: title */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div>
-                    <div style={{ color: "#9CA3AF", fontSize: 12 }}>
-                      Vehicle Summary
-                    </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+                  <div style={{ minWidth: 150 }}>
                     <div
                       style={{
-                        color: "#ffffff",
-                        fontSize: 14,
-                        fontWeight: 700,
+                        color: "#9CA3AF",
+                        fontSize: 16,
+                        fontWeight: 800,
                       }}
                     >
-                      {formData.vin || vinData?.vin
-                        ? formData.vin || vinData?.vin
-                        : "No VIN"}
+                      Vehicle Summary
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div>
+                      <div style={{ color: "#9CA3AF", fontSize: 12 }}>
+                        VIN Number
+                      </div>
+                      <div
+                        style={{
+                          color: "#ffffff",
+                          fontSize: 14,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {formData.vin || vinData?.vin
+                          ? formData.vin || vinData?.vin
+                          : "No VIN"}
+                      </div>
                     </div>
                   </div>
                 </div>
