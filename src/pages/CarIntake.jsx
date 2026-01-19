@@ -1048,17 +1048,17 @@ const CarIntake = () => {
     const stepFields = getStepFields(currentStep);
 
     try {
-      // Custom validation for Step 5: At least one document required
+      // Custom validation for Step 5: Title Certificate is mandatory
       if (currentStep === 5) {
-        if (
-          !formData.dlDocument &&
-          !formData.physicalPaper &&
-          !formData.titleCertificate &&
-          (!formData.documents || Object.keys(formData.documents).length === 0)
-        ) {
-          const errorMsg =
-            "At least one document (DL, Physical Paper, or Title Certificate) is required.";
-          setValidationErrors([{ field: "documents", message: errorMsg }]);
+        const hasTitleCertificate =
+          formData.titleCertificate ||
+          (formData.documents && formData.documents.titleCertificate);
+
+        if (!hasTitleCertificate) {
+          const errorMsg = "Title Certificate is required.";
+          setValidationErrors([
+            { field: "titleCertificate", message: errorMsg },
+          ]);
           setValidationModalVisible(true);
           return;
         }
@@ -1108,18 +1108,16 @@ const CarIntake = () => {
         ...getStepFields(6),
       ];
 
-      // Custom validation for Step 5: At least one document required
-      if (
-        !formData.dlDocument &&
-        !formData.physicalPaper &&
-        !formData.titleCertificate &&
-        (!formData.documents || Object.keys(formData.documents).length === 0)
-      ) {
+      // Custom validation for Step 5: Title Certificate is mandatory
+      const hasTitleCertificate =
+        formData.titleCertificate ||
+        (formData.documents && formData.documents.titleCertificate);
+
+      if (!hasTitleCertificate) {
         setValidationErrors([
           {
-            field: "documents",
-            message:
-              "At least one document (DL, Physical Paper, or Title Certificate) is required.",
+            field: "titleCertificate",
+            message: "Title Certificate is required.",
           },
         ]);
         setValidationModalVisible(true);
