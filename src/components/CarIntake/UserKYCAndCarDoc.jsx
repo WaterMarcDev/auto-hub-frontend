@@ -764,7 +764,7 @@ const UserKYCAndCarDoc = ({
               "titleCertificate",
               "Upload Title Certificate",
               "Take a clear photo of the vehicle title certificate",
-              false
+              true
             )}
           </Col>
         </Row>

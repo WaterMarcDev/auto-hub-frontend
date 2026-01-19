@@ -1048,17 +1048,17 @@ const CarIntake = () => {
     const stepFields = getStepFields(currentStep);
 
     try {
-      // Custom validation for Step 5: At least one document required
+      // Custom validation for Step 5: Title Certificate is mandatory
       if (currentStep === 5) {
-        if (
-          !formData.dlDocument &&
-          !formData.physicalPaper &&
-          !formData.titleCertificate &&
-          (!formData.documents || Object.keys(formData.documents).length === 0)
-        ) {
-          const errorMsg =
-            "At least one document (DL, Physical Paper, or Title Certificate) is required.";
-          setValidationErrors([{ field: "documents", message: errorMsg }]);
+        const hasTitleCertificate =
+          formData.titleCertificate ||
+          (formData.documents && formData.documents.titleCertificate);
+
+        if (!hasTitleCertificate) {
+          const errorMsg = "Title Certificate is required.";
+          setValidationErrors([
+            { field: "titleCertificate", message: errorMsg },
+          ]);
           setValidationModalVisible(true);
           return;
         }
@@ -1108,18 +1108,16 @@ const CarIntake = () => {
         ...getStepFields(6),
       ];
 
-      // Custom validation for Step 5: At least one document required
-      if (
-        !formData.dlDocument &&
-        !formData.physicalPaper &&
-        !formData.titleCertificate &&
-        (!formData.documents || Object.keys(formData.documents).length === 0)
-      ) {
+      // Custom validation for Step 5: Title Certificate is mandatory
+      const hasTitleCertificate =
+        formData.titleCertificate ||
+        (formData.documents && formData.documents.titleCertificate);
+
+      if (!hasTitleCertificate) {
         setValidationErrors([
           {
-            field: "documents",
-            message:
-              "At least one document (DL, Physical Paper, or Title Certificate) is required.",
+            field: "titleCertificate",
+            message: "Title Certificate is required.",
           },
         ]);
         setValidationModalVisible(true);
@@ -1829,22 +1827,35 @@ const CarIntake = () => {
                   border: "1px solid rgba(255,255,255,0.04)",
                 }}
               >
-                {/* Left: title */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div>
-                    <div style={{ color: "#9CA3AF", fontSize: 12 }}>
-                      Vehicle Summary
-                    </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+                  <div style={{ minWidth: 150 }}>
                     <div
                       style={{
-                        color: "#ffffff",
-                        fontSize: 14,
-                        fontWeight: 700,
+                        color: "#9CA3AF",
+                        fontSize: 16,
+                        fontWeight: 800,
                       }}
                     >
-                      {formData.vin || vinData?.vin
-                        ? formData.vin || vinData?.vin
-                        : "No VIN"}
+                      Vehicle Summary
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div>
+                      <div style={{ color: "#9CA3AF", fontSize: 12 }}>
+                        VIN Number
+                      </div>
+                      <div
+                        style={{
+                          color: "#ffffff",
+                          fontSize: 14,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {formData.vin || vinData?.vin
+                          ? formData.vin || vinData?.vin
+                          : "No VIN"}
+                      </div>
                     </div>
                   </div>
                 </div>
