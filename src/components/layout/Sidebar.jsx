@@ -293,6 +293,13 @@ const Sidebar = ({ isOpen }) => {
         label: <Link to="/entry-fee">Entry Fee Settings</Link>,
       });
     }
+    // Error Codes - Visible to all users
+    items.push({
+      key: "/error-codes",
+      icon: <FileProtectOutlined />,
+      label: <Link to="/error-codes">Error Codes</Link>,
+    });
+
 
     // User Guides - visible for all users
     const guideChildren = [];
