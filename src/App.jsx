@@ -70,6 +70,7 @@ const CustomerList = React.lazy(() => import("./pages/Customer/List"));
 const UserList = React.lazy(() => import("./pages/Users/UserList"));
 const AddUser = React.lazy(() => import("./pages/Users/AddUser"));
 const EntryFeeSetting = React.lazy(() => import("./pages/Admin/EntryFeeSetting"));
+const ErrorCodes = React.lazy(() => import("./pages/ErrorCodes"));
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -340,6 +341,7 @@ function App() {
                         <Route path="/users/add" element={<AddUser />} />
                         <Route path="/users/edit/:id" element={<AddUser />} />
                         <Route path="/entry-fee" element={<EntryFeeSetting />} />
+                        <Route path="/error-codes" element={<ErrorCodes />} />
                       </Routes>
                     </Suspense>
                   </Layout>
