@@ -16,10 +16,20 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and load remembered email
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/");
+    }
+
+    // Load saved email if exists
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
+    if (rememberedEmail) {
+      setFormData((prev) => ({
+        ...prev,
+        email: rememberedEmail,
+        rememberMe: true,
+      }));
     }
   }, [isAuthenticated, navigate]);
 
@@ -42,9 +52,20 @@ const Login = () => {
     setError("");
 
     try {
-      const result = await login(formData.email, formData.password);
+      const result = await login(
+        formData.email,
+        formData.password,
+        formData.rememberMe
+      );
 
       if (result.success) {
+        // Handle "Remember Me" localStorage
+        if (formData.rememberMe) {
+          localStorage.setItem("rememberedEmail", formData.email);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+        }
+
         // Redirect to home
         navigate("/");
       } else {

@@ -50,9 +50,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, [checkAuthStatus]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     try {
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login({ email, password, rememberMe });
       setUser(response.data.user);
       setIsAuthenticated(true);
       return { success: true, user: response.data.user };
