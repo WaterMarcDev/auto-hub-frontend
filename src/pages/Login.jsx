@@ -133,10 +133,10 @@ const Login = () => {
                         <div className="mb-3">
                           <label
                             htmlFor="email"
-                            // style={{
-                            //   color: "black !important",
-                            //   fontWeight: "500",
-                            // }}
+                          // style={{
+                          //   color: "black !important",
+                          //   fontWeight: "500",
+                          // }}
                           >
                             Email
                           </label>
@@ -191,9 +191,8 @@ const Login = () => {
                               onClick={() => setShowPassword(!showPassword)}
                             >
                               <i
-                                className={`fa ${
-                                  showPassword ? "fa-eye-slash" : "fa-eye"
-                                }`}
+                                className={`fa ${showPassword ? "fa-eye-slash" : "fa-eye"
+                                  }`}
                               />
                             </span>
                           </div>
@@ -234,27 +233,11 @@ const Login = () => {
                             {loading ? "Logging In..." : "Log In"}
                           </button>
                         </div>
-                        <div className="mt-4 text-center">
-                          <Link
-                            to="/auth-recoverpw"
-                            style={{ color: "#6c757d", textDecoration: "none" }}
-                          >
-                            <i className="mdi mdi-lock me-1"></i> Forgot your
-                            password?
-                          </Link>
-                        </div>
                       </form>
                     </div>
                   </div>
                 </div>
                 <div className="mt-5 text-center text-white">
-                  <p>
-                    Don't have an account ?
-                    <Link to="/auth-register" className="fw-bold text-white">
-                      {" "}
-                      Register
-                    </Link>
-                  </p>
                   <p>
                     © {new Date().getFullYear()} © Copyright Scrap Yard, All
                     Right Reserverd. Developed by WaterMarc | For Support Email
