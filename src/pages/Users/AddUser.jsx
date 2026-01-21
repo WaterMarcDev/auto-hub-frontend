@@ -145,6 +145,7 @@ const AddUser = () => {
                     <Option value="manager">Manager</Option>
                     <Option value="staff">Staff</Option>
                     <Option value="front_desk">Front Desk</Option>
+                    <Option value="scraper">Scraper</Option>
                   </Select>
                 </Form.Item>
               </div>
