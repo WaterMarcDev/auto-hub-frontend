@@ -76,11 +76,33 @@ const UserList = () => {
       title: "Role",
       dataIndex: "role",
       key: "role",
-      render: (role) => (
-        <Tag color={role === "admin" ? "red" : role === "manager" ? "blue" : "green"}>
-          {role.toUpperCase()}
-        </Tag>
-      ),
+      render: (role) => {
+        let color = "default";
+        switch (role) {
+          case "admin":
+            color = "red";
+            break;
+          case "manager":
+            color = "blue";
+            break;
+          case "staff":
+            color = "green";
+            break;
+          case "front_desk":
+            color = "cyan";
+            break;
+          case "scraper":
+            color = "orange";
+            break;
+          default:
+            color = "default";
+        }
+        return (
+          <Tag color={color}>
+            {role.toUpperCase()}
+          </Tag>
+        );
+      },
     },
     {
       title: "Created At",
