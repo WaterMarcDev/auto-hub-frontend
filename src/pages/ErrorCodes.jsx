@@ -2,6 +2,22 @@ import React, { useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { errorCodes } from "../data/ErrorCodesData";
+import {
+    Table,
+    Card,
+    Input,
+    Select,
+    Button,
+    Tag,
+    Typography,
+    Space
+} from "antd";
+import { SearchOutlined, FilePdfOutlined } from "@ant-design/icons";
+import TitleBox from "../components/TitleBox";
+import PageContentWrapper from "../components/PageContentWrapper";
+
+const { Option } = Select;
+const { Title } = Typography;
 
 const ErrorCodes = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -10,10 +26,12 @@ const ErrorCodes = () => {
     const roles = ["All", "Admin", "Inventory Manager", "Staff", "Sales", "Inventory"];
 
     const filteredErrors = errorCodes.filter((error) => {
+        const term = searchTerm.toLowerCase();
         const matchesSearch =
-            error.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            error.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            error.meaning.toLowerCase().includes(searchTerm.toLowerCase());
+            error.code.toLowerCase().includes(term) ||
+            (error.simpleCode && error.simpleCode.toLowerCase().includes(term)) ||
+            error.message.toLowerCase().includes(term) ||
+            error.meaning.toLowerCase().includes(term);
         const matchesRole =
             selectedRole === "All" ||
             error.role.includes(selectedRole) ||
@@ -21,6 +39,52 @@ const ErrorCodes = () => {
 
         return matchesSearch && matchesRole;
     });
+
+    const columns = [
+        {
+            title: "Simple Code",
+            dataIndex: "simpleCode",
+            key: "simpleCode",
+            width: 120,
+            render: (text) => <Tag color="blue" style={{ fontSize: '14px', padding: '4px 8px' }}>{text || "N/A"}</Tag>,
+        },
+        {
+            title: "Technical Code",
+            dataIndex: "code",
+            key: "code",
+            width: 120,
+            render: (text) => <Tag color="volcano">{text}</Tag>,
+        },
+        {
+            title: "Error Message",
+            dataIndex: "message",
+            key: "message",
+            width: 200,
+            render: (text) => <strong>{text}</strong>,
+        },
+        {
+            title: "Context",
+            dataIndex: "context",
+            key: "context",
+            width: 150,
+        },
+        {
+            title: "Target Role",
+            dataIndex: "role",
+            key: "role",
+            width: 150,
+        },
+        {
+            title: "Layman Meaning",
+            dataIndex: "meaning",
+            key: "meaning",
+        },
+        {
+            title: "Resolution / Action",
+            dataIndex: "resolution",
+            key: "resolution",
+        }
+    ];
 
     const generatePDF = () => {
         const doc = new jsPDF();
@@ -31,11 +95,12 @@ const ErrorCodes = () => {
         doc.setFontSize(11);
         doc.text("Generated on: " + new Date().toLocaleDateString(), 14, 30);
 
-        const tableColumn = ["Code", "Message", "Context", "Role", "Meaning", "Resolution"];
+        const tableColumn = ["Simple Code", "Tech Code", "Message", "Context", "Role", "Meaning", "Resolution"];
         const tableRows = [];
 
         filteredErrors.forEach((error) => {
             const errorData = [
+                error.simpleCode || "-",
                 error.code,
                 error.message,
                 error.context,
@@ -53,11 +118,12 @@ const ErrorCodes = () => {
             styles: { fontSize: 8, cellPadding: 2 },
             columnStyles: {
                 0: { cellWidth: 20 },
-                1: { cellWidth: 30 },
-                2: { cellWidth: 25 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 30 },
                 3: { cellWidth: 20 },
-                4: { cellWidth: 40 },
-                5: { cellWidth: 45 },
+                4: { cellWidth: 20 },
+                5: { cellWidth: 35 },
+                6: { cellWidth: 40 },
             },
         });
 
@@ -65,92 +131,54 @@ const ErrorCodes = () => {
     };
 
     return (
-        <div className="page-content">
-            <div className="container-fluid">
-                <div className="row">
-                    <div className="col-12">
-                        <div className="page-title-box d-flex align-items-center justify-content-between">
-                            <h4 className="mb-0 font-size-18">Error Codes Manual</h4>
-                        </div>
-                    </div>
-                </div>
+        <div>
+            <TitleBox
+                title="Error Codes Manual"
+                routes={["Home", "Error Codes"]}
+                current={"Error Codes Manual"}
+            />
 
-                <div className="row">
-                    <div className="col-12">
-                        <div className="card">
-                            <div className="card-body">
-                                <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                                    <div className="d-flex gap-3 flex-grow-1">
-                                        <input
-                                            type="text"
-                                            placeholder="Search by code, message, or meaning..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="form-control"
-                                            style={{ maxWidth: "300px" }}
-                                        />
-                                        <select
-                                            value={selectedRole}
-                                            onChange={(e) => setSelectedRole(e.target.value)}
-                                            className="form-select"
-                                            style={{ maxWidth: "200px" }}
-                                        >
-                                            {roles.map((role) => (
-                                                <option key={role} value={role}>
-                                                    {role}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <button className="btn btn-primary" onClick={generatePDF}>
-                                        <i className="bx bxs-file-pdf font-size-16 align-middle me-2"></i>{" "}
-                                        Download Manual (PDF)
-                                    </button>
-                                </div>
-
-                                <div className="table-responsive">
-                                    <table className="table table-striped mb-0">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th>Code</th>
-                                                <th>Error Message</th>
-                                                <th>Context</th>
-                                                <th>Target Role</th>
-                                                <th>Layman Meaning</th>
-                                                <th>Resolution / Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredErrors.length > 0 ? (
-                                                filteredErrors.map((error, index) => (
-                                                    <tr key={index}>
-                                                        <td>
-                                                            <span className="badge bg-danger text-white font-size-12">
-                                                                {error.code}
-                                                            </span>
-                                                        </td>
-                                                        <td className="fw-bold">{error.message}</td>
-                                                        <td>{error.context}</td>
-                                                        <td>{error.role}</td>
-                                                        <td>{error.meaning}</td>
-                                                        <td>{error.resolution}</td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan="6" className="text-center py-4">
-                                                        No error codes found matching criteria.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+            <PageContentWrapper>
+                <Card title="System Error Codes">
+                    <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                        <Space wrap>
+                            <Input
+                                placeholder="Search by code, message..."
+                                prefix={<SearchOutlined />}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ width: 300 }}
+                            />
+                            <Select
+                                defaultValue="All"
+                                value={selectedRole}
+                                onChange={setSelectedRole}
+                                style={{ width: 200 }}
+                            >
+                                {roles.map((role) => (
+                                    <Option key={role} value={role}>{role}</Option>
+                                ))}
+                            </Select>
+                        </Space>
+                        <Button
+                            type="primary"
+                            icon={<FilePdfOutlined />}
+                            onClick={generatePDF}
+                        >
+                            Download Manual (PDF)
+                        </Button>
                     </div>
-                </div>
-            </div>
+
+                    <Table
+                        columns={columns}
+                        dataSource={filteredErrors}
+                        rowKey="code"
+                        pagination={{ pageSize: 10 }}
+                        className="dark-table"
+                        scroll={{ x: 1000 }}
+                    />
+                </Card>
+            </PageContentWrapper>
         </div>
     );
 };
