@@ -1,4 +1,6 @@
 import axios from "axios";
+import { getSimplifiedErrorString } from "./errorHandler";
+
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -23,12 +25,27 @@ api.interceptors.request.use(
   }
 );
 
+
 // Response interceptor
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
+    // augment error object with simplified message
+    const simplifiedMsg = getSimplifiedErrorString(error);
+
+    // Override the message property so generic catches display it
+    error.message = simplifiedMsg;
+    // Also try to override response data error if it exists, to support components reading from there
+    if (error.response && error.response.data) {
+      if (error.response.data.error) {
+        error.response.data.error = simplifiedMsg;
+      } else if (error.response.data.message) {
+        error.response.data.message = simplifiedMsg;
+      }
+    }
+
     console.error("Response error:", error.response?.data || error.message);
 
     // Handle authentication errors

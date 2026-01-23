@@ -2,6 +2,7 @@ export const errorCodes = [
     // --- Authentication & Access ---
     {
         code: "AUTH-001",
+        simpleCode: "error-001",
         message: "Invalid credentials",
         context: "Login Page",
         role: "All Roles",
@@ -10,6 +11,7 @@ export const errorCodes = [
     },
     {
         code: "AUTH-002",
+        simpleCode: "error-002",
         message: "User not found",
         context: "Login / User Management",
         role: "Admin",
@@ -18,6 +20,7 @@ export const errorCodes = [
     },
     {
         code: "AUTH-003",
+        simpleCode: "error-003",
         message: "Token expired / Session expired",
         context: "Any Page",
         role: "All Roles",
@@ -26,6 +29,7 @@ export const errorCodes = [
     },
     {
         code: "AUTH-004",
+        simpleCode: "error-004",
         message: "Access Denied / Forbidden",
         context: "Restricted Pages (e.g., Admin Dashboard)",
         role: "Staff / User",
@@ -36,6 +40,7 @@ export const errorCodes = [
     // --- Inventory & Parts ---
     {
         code: "INV-001",
+        simpleCode: "error-005",
         message: "VIN already exists",
         context: "Car Intake / Inventory",
         role: "Inventory Manager",
@@ -44,6 +49,7 @@ export const errorCodes = [
     },
     {
         code: "INV-002",
+        simpleCode: "error-006",
         message: "Part not found",
         context: "Part Search",
         role: "Sales / Inventory",
@@ -52,6 +58,7 @@ export const errorCodes = [
     },
     {
         code: "INV-003",
+        simpleCode: "error-007",
         message: "Inventory limit reached",
         context: "Adding Inventory",
         role: "Inventory Manager",
@@ -62,6 +69,7 @@ export const errorCodes = [
     // --- Network & System ---
     {
         code: "SYS-001",
+        simpleCode: "error-008",
         message: "Network Error / Failed to fetch",
         context: "Any Page",
         role: "All Roles",
@@ -70,6 +78,7 @@ export const errorCodes = [
     },
     {
         code: "SYS-002",
+        simpleCode: "error-009",
         message: "500 Internal Server Error",
         context: "Any Action",
         role: "All Roles",
@@ -78,6 +87,7 @@ export const errorCodes = [
     },
     {
         code: "SYS-003",
+        simpleCode: "error-010",
         message: "Loading timeout",
         context: "Dashboard / Large Lists",
         role: "All Roles",
@@ -88,6 +98,7 @@ export const errorCodes = [
     // --- Forms & Validation ---
     {
         code: "VAL-001",
+        simpleCode: "error-011",
         message: "Field is required",
         context: "Forms (Intake, User Creation)",
         role: "All Roles",
@@ -96,6 +107,7 @@ export const errorCodes = [
     },
     {
         code: "VAL-002",
+        simpleCode: "error-012",
         message: "Invalid email format",
         context: "User Forms / Client Forms",
         role: "All Roles",
@@ -104,6 +116,7 @@ export const errorCodes = [
     },
     {
         code: "VAL-003",
+        simpleCode: "error-013",
         message: "Passwords do not match",
         context: "Change Password / Register",
         role: "All Roles",
@@ -114,6 +127,7 @@ export const errorCodes = [
     // --- Uploads ---
     {
         code: "UPL-001",
+        simpleCode: "error-014",
         message: "File too large",
         context: "Image Upload",
         role: "Inventory Manager",
@@ -122,6 +136,7 @@ export const errorCodes = [
     },
     {
         code: "UPL-002",
+        simpleCode: "error-015",
         message: "Unsupported file type",
         context: "Image Upload",
         role: "Inventory Manager",
