@@ -14,7 +14,7 @@ const JunkCarRequests = () => {
 
     const fetchJunkCars = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/junk-car");
+            const res = await fetch(`${process.env.VITE_API_URL}/junk-car`);
             const data = await res.json();
             setJunkCars(data.data || []);
         } catch (error) {
@@ -28,7 +28,7 @@ const JunkCarRequests = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            await fetch(`http://localhost:5000/api/junk-car/${id}/status`, {
+            await fetch(`${process.env.VITE_API_URL}/junk-car/${id}/status`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
