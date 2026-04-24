@@ -31,22 +31,15 @@ const JunkCarRequests = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            const token = localStorage.getItem("token");    // added by shiva
+            
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car/${id}/status`, {
+            await fetch(`${import.meta.env.VITE_API_URL}/junk-car/${id}/status`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,    // added by shiva
                 },
                 body: JSON.stringify({ status }),
             });
-            // added by shiva
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.message || "Failed to update");
-            // end here
-            
             fetchJunkCars();
         } catch (error) {
             console.error(error);
