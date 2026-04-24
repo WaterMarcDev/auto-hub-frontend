@@ -15,6 +15,9 @@ const JunkCarRequests = () => {
     const fetchJunkCars = async () => {
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`);
+            headers: {
+                Authorization: `Bearer ${token}`
+            }    // added by shiva
             const data = await res.json();
             setJunkCars(data.data || []);
         } catch (error) {
@@ -28,13 +31,22 @@ const JunkCarRequests = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            await fetch(`${import.meta.env.VITE_API_URL}/junk-car/${id}/status`, {
+            const token = localStorage.getItem("token");    // added by shiva
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car/${id}/status`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,    // added by shiva
                 },
                 body: JSON.stringify({ status }),
             });
+            // added by shiva
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.message || "Failed to update");
+            // end here
+            
             fetchJunkCars();
         } catch (error) {
             console.error(error);
