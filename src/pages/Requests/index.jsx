@@ -97,7 +97,7 @@ const Requests = () => {
             const data = await res.json();
             setJunkCars(data.data || []);
         } catch (error) {
-            console.error("Error fetching junk cars:", error);
+            console.error("Error fetching junk cars : ", error);
         }
     }; //end here
 
