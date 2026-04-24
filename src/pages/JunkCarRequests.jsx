@@ -14,10 +14,17 @@ const JunkCarRequests = () => {
 
     const fetchJunkCars = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`);
-            headers: {
-                Authorization: `Bearer ${token}`
-            }    // added by shiva
+            const token = localStorage.getItem("token");
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },    // added by shiva
+                }
+            );
+            
+            
             const data = await res.json();
             setJunkCars(data.data || []);
         } catch (error) {
