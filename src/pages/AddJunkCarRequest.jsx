@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import JunkCarRequest from "../components/JunkCarRequest";
 
 const AddJunkCarRequest = (props) => {
-    // const navigate = useNavigate();
+    // const navigate = useNavigate();  // added by shiva
 
     return(
         <div

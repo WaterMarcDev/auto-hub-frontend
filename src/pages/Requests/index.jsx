@@ -82,7 +82,7 @@ const Requests = () => {
 
     const fetchRequests = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_KEY}/part-request`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`);
             const data = await res.json();
             setRequests(data.data || []);
         } catch (error) {
@@ -93,7 +93,7 @@ const Requests = () => {
     //Fetch Junk Car API - shiva
     const fetchJunkCars = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_KEY}/junk-car`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`);
             const data = await res.json();
             setJunkCars(data.data || []);
         } catch (error) {
@@ -109,7 +109,7 @@ const Requests = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            await fetch(`${import.meta.env.VITE_API_KEY}/part-request/${id}`, {
+            await fetch(`${import.meta.env.VITE_API_URL}/part-request/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

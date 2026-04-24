@@ -13,7 +13,7 @@ const AddPartRequest = () => {
         try {
             setLoading(true);
 
-            const res = await fetch(`${import.meta.env.VITE_API_KEY}/part-request`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
