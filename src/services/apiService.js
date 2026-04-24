@@ -92,6 +92,22 @@ class CarIntakeService {
     return data;
   }
 
+  //Delete Junk Request by shiva
+  static async deletePartRequest(id) {
+    const response = await fetch(`${API_BASE_URL}/part-request/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Delete failed");
+    }
+
+    return data; //end here
+  }
+
   // Get car intake statistics
   static async getCarIntakeStats() {
     const response = await fetch(`${API_BASE_URL}/car-intake/stats`, {
