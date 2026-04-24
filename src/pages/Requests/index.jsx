@@ -82,7 +82,7 @@ const Requests = () => {
 
     const fetchRequests = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/part-request");
+            const res = await fetch(`${process.env.VITE_API_URL}/part-request`);
             const data = await res.json();
             setRequests(data.data || []);
         } catch (error) {
@@ -93,7 +93,7 @@ const Requests = () => {
     //Fetch Junk Car API - shiva
     const fetchJunkCars = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/junk-car");
+            const res = await fetch(`${process.env.VITE_API_URL}/junk-car`);
             const data = await res.json();
             setJunkCars(data.data || []);
         } catch (error) {
@@ -109,7 +109,7 @@ const Requests = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            await fetch(`http://localhost:5000/api/part-request/${id}`, {
+            await fetch(`${process.env.VITE_API_URL}/part-request/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
