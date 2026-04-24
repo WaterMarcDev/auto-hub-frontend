@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import dayjs from "dayjs";
 import { carIntakeAPI, vinAPI } from "../utils/api";
-import { Form, message, Alert, Card, Modal, Input, Button, Spin } from "antd";
+import { Form, message, Alert, Card, Modal, Input, Button, Spin, Checkbox } from "antd";   // checkbox added by shiva
 import { useNavigate, useParams } from "react-router-dom";
 import CarDetails from "../components/CarIntake/CarDetails";
 import CarImages from "../components/CarIntake/CarImages";
@@ -50,12 +50,16 @@ const CarIntake = () => {
   const [isLoadingVin, setIsLoadingVin] = useState(false);
   const [vinData, setVinData] = useState(null);
   const [vinError, setVinError] = useState(null);
+  const [allowShortVin, setAllowShortVin] = useState(false);   // added by shiva
+  const [manualVinMode, setManualVinMode] = useState(false);   // added by shiva
+  const [messageApi, contextHolder] = message.useMessage();    // added by shiva
   const [stepSaveStatus, setStepSaveStatus] = useState({});
   const [validationModalVisible, setValidationModalVisible] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [formData, setFormData] = useState({
     // Step 1: Car Details - matching original template
     vin: "",
+    manualVinMode: false,    // added by shiva
     year: "",
     make: "",
     model: "",
@@ -194,7 +198,27 @@ const CarIntake = () => {
             dimensions: stepData.dimensions,
             weight: stepData.weight,
             description: stepData.description,
+
+            manualVinMode: manualVinMode  // added by shiva
           };
+
+          // added by shiva
+          if (manualVinMode) {
+            payload.year = Number(payload.year) || "UNKNOWN";
+            payload.make = payload.make || "UNKNOWN";
+            payload.model = payload.model || "UNKNOWN";
+            payload.trim = payload.trim || "N/A";
+            payload.color = payload.color || "N/A";
+            payload.bodyClass = payload.bodyClass || "N/A";
+            payload.chassisNo = payload.chassisNo || "N/A";
+            payload.engineVariant = payload.engineVariant || "N/A";
+            payload.drive = payload.drive || "Unknown";
+            payload.transmission = payload.transmission || "Unknown";
+            payload.scrapYardName = payload.scrapYardName || "RTX";
+            payload.scrapYardLocation = payload.scrapYardLocation || "New Jersey";
+            payload.fuelType = payload.fuelType || "Unknown";
+            payload.weight = payload.weight || "Unknown";
+          }
 
           // include step status so backend can accept/override it
           if (STEP_STATUS_MAP[step]) payload.status = STEP_STATUS_MAP[step];
@@ -225,6 +249,8 @@ const CarIntake = () => {
               weight: stepData.weight,
               dimensions: stepData.dimensions,
               description: stepData.description,
+
+              manualVinMode: manualVinMode   // added by shiva
             };
           } else if (step === 2) {
             payload = { carImages: stepData.carImages || stepData };
@@ -354,7 +380,7 @@ const CarIntake = () => {
         return false;
       }
     },
-    [serverId, setCurrentStep]
+    [serverId, setCurrentStep, manualVinMode] 
   );
 
   // No auto-save debounce used; saves happen only on explicit actions
@@ -849,17 +875,17 @@ const CarIntake = () => {
           setCurrentStep(getStepForStatus(car.status));
         }
 
-        message.success("VIN details fetched successfully!");
+        messageApi.success("VIN details fetched successfully!");    // messageApi by shiva
         setVinError(null);
         return true;
       }
 
-      message.error("Failed to fetch VIN details");
+      messageApi.error("Failed to fetch VIN details");              // messageApi.error by shiva
       return false;
     } catch (error) {
       console.error("VIN fetch error:", error);
       const userMsg = error.response?.data?.error || error.message;
-      message.error("Error fetching VIN details: " + userMsg);
+      messageApi.error("Error fetching VIN details: " + userMsg);       // messageApi.error by shiva
       setVinError(userMsg);
       return false;
     } finally {
@@ -867,23 +893,62 @@ const CarIntake = () => {
     }
   };
 
-  // VIN Modal handlers
+  // VIN Modal handlers for Manual Vin
+  
+  // added by shiva
   const handleVinModalOk = async () => {
     try {
       const values = await vinModalForm.validateFields();
-      const { vin } = values;
+      const vin = values.vin?.trim().toUpperCase();   // added by shiva
+      // const { vin } = values;
+      
+      // If checkbox checked and Manual short VIN mode
+      if (allowShortVin && vin.length < 17) {
+        updateFormData({ vin });
+        form.setFieldsValue({ vin });
+
+        setManualVinMode(true);  // added by shiva
+        setVinData(null);
+        setVinError(null);
+        setIsVinModalVisible(false);
+        messageApi.success("Manual VIN mode enabled.");   // messageApi by shiva
+        return;
+      }
+
+      // Normal VIN flow
       const success = await fetchVinDetails(vin);
 
       if (success) {
-        // Bind VIN into form so it appears in the VIN field
         updateFormData({ vin });
         form.setFieldsValue({ vin });
+
+        setManualVinMode(false);
+        setVinError(null);    // added by shiva
         setIsVinModalVisible(false);
-        message.success("VIN number set and details loaded successfully!");
+
+        messageApi.success("VIN loaded successfully!");     // messageApi.success by shiva
       }
+
     } catch (errorInfo) {
       console.warn("VIN validation failed:", errorInfo);
     }
+    // end here
+
+    // try {
+    //   const values = await vinModalForm.validateFields();
+    //   const { vin } = values;
+    //   const success = await fetchVinDetails(vin);
+
+    //   if (success) {
+    //     // Bind VIN into form so it appears in the VIN field
+    //     updateFormData({ vin });
+    //     form.setFieldsValue({ vin });
+    //     setIsVinModalVisible(false);
+    //     message.success("VIN number set and details loaded successfully!");
+    //   }
+    // } catch (errorInfo) {
+    //   console.warn("VIN validation failed:", errorInfo);
+    // }
   };
 
   const navigate = useNavigate();
@@ -896,6 +961,27 @@ const CarIntake = () => {
   const getStepFields = (step) => {
     switch (step) {
       case 1: // CarDetails - all required fields
+
+      if (manualVinMode) {
+        return [
+          "vin",
+          "year",
+          "make",
+          "model",
+          "trim",
+          "color",
+          "bodyClass",
+          // "engineVariant",
+          "drive",
+          "transmission",
+          // "scrapYardName",
+          // "scrapYardLocation",
+          "fuelType",
+          // "hasKeys",
+          "weight",
+          // "dimensions"
+        ];
+      }
         return [
           "vin",
           "year",
@@ -953,7 +1039,13 @@ const CarIntake = () => {
           "pickUpType",
         ];
       case 6: // Payment - all required fields
+      // added by shiva
+      if (manualVinMode) {
         return ["paidTo", "finalPrice"];
+      }
+
+      return ["paidTo", "finalPrice"];  
+      // end here
       default:
         return [];
     }
@@ -1036,6 +1128,10 @@ const CarIntake = () => {
     setServerId(null);
     setVinData(null);
     setIsVinModalVisible(true);
+    // added by shiva
+    setManualVinMode(false);
+    setAllowShortVin(false);
+    // end here
     setCurrentStep(1);
     // If we are on an edit route (/car-intake/:id), navigate to base route
     if (params?.id) {
@@ -1049,12 +1145,12 @@ const CarIntake = () => {
 
     try {
       // Custom validation for Step 5: Title Certificate is mandatory
-      if (currentStep === 5) {
+      if (currentStep === 5 && !manualVinMode) {          // added by shiva
         const hasTitleCertificate =
           formData.titleCertificate ||
           (formData.documents && formData.documents.titleCertificate);
 
-        if (!hasTitleCertificate) {
+        if (!hasTitleCertificate && !manualVinMode) {    // added by shiva
           const errorMsg = "Title Certificate is required.";
           setValidationErrors([
             { field: "titleCertificate", message: errorMsg },
@@ -1067,13 +1163,34 @@ const CarIntake = () => {
       await form.validateFields(stepFields);
 
       // Force immediate save when moving to next step
+      // added by shiva
       try {
-        await saveStep(currentStep, formData);
-      } catch (e) {
-        // ignore save errors while moving forward
-        console.error("Step save error on nextStep:", e);
-      }
+        const shouldSave = true;
+          // currentStep !== 1 ||
+          // !manualVinMode ||
+          // (manualVinMode && formData.sellerId);
 
+        if (shouldSave) {
+          await saveStep(currentStep, formData);
+        }
+      } catch (error) {
+        console.error("Auto-save step error:", error.response?.data || error)   // added by shiva      }
+      }
+      if (manualVinMode && currentStep === 1) {
+        setVinData({
+          vin: formData.vin,
+          Make: formData.make,
+          Model: formData.model,
+          Trim: formData.trim,
+          ModelYear: formData.year,
+          BodyClass: formData.bodyClass,
+          DriveType: formData.drive,
+          TransmissionStyle: formData.transmission,
+          FuelTypePrimary: formData.fuelType,
+        });
+      }
+      // end here 
+      
       if (currentStep < 7) {
         setCurrentStep(currentStep + 1);
       }
@@ -1216,6 +1333,8 @@ const CarIntake = () => {
         dimensions: formData.dimensions,
         description: formData.description,
 
+        manualVinMode: manualVinMode,   // added by shiva
+
         // Images
         carImages: carImages,
         imageDescription: formData.imageDescription,
@@ -1301,7 +1420,7 @@ const CarIntake = () => {
       }
 
       if (response.status === 201 || response.status === 200) {
-        message.success("Car intake created successfully!");
+        messageApi.success("Car intake created successfully!");   // messageApi.success by shiva
         showAlert("success", "Car intake created successfully!");
         // Clear form and go back to step 1
         setTimeout(() => {
@@ -1327,7 +1446,7 @@ const CarIntake = () => {
         setValidationModalVisible(true);
       } else {
         // Show other errors using message and alert
-        message.error(`Error submitting form: ${error.message}`);
+        messageApi.error(`Error submitting form: ${error.message}`);   // by shiva
         showAlert("danger", `Error submitting form: ${error.message}`);
       }
     }
@@ -1428,6 +1547,10 @@ const CarIntake = () => {
 
   return (
     <>
+    {/* added by shiva */}
+      {contextHolder} 
+    {/* end here */}
+    
       <Modal
         title="Enter VIN Number"
         open={isVinModalVisible}
@@ -1472,11 +1595,30 @@ const CarIntake = () => {
               name="vin"
               rules={[
                 { required: true, message: "Please enter the VIN number!" },
+                
+                //checkbox Added by shiva
                 {
-                  min: 17,
-                  max: 17,
-                  message: "VIN must be exactly 17 characters!",
+                  validator: (_, value) => {
+                    if (!value) return Promise.resolve();
+
+                    if (!allowShortVin && value.length !== 17) {
+                      return Promise.reject("VIN must be exactly 17 characters!");
+                    }
+
+                    if (allowShortVin && value.length > 17) {
+                      return Promise.reject("VIN cannot exceed 17 characters!");
+                    }
+
+                    return Promise.resolve();
+                  },
                 },
+                // end here
+
+                // {
+                //   min: 17,
+                //   max: 17,
+                //   message: "VIN must be exactly 17 characters!",
+                // },
                 {
                   pattern: /^[A-HJ-NPR-Z0-9]+$/i,
                   message: "Invalid VIN format!",
@@ -1502,6 +1644,22 @@ const CarIntake = () => {
                 }}
               />
             </Form.Item>
+
+             {/* added by shiva */}
+            <Form.Item style={{ marginTop: -8 }}>
+              <Checkbox
+                checked={allowShortVin}
+                onChange={(e) => {
+                  setAllowShortVin(e.target.checked);
+                  vinModalForm.validateFields(["vin"]);
+                }}
+                style={{ color: "#d1d5db" }}
+              >
+                VIN is less than 17 digits
+              </Checkbox>
+            </Form.Item>
+            {/* end here */}
+
           </Form>
           {vinError && (
             <div style={{ marginTop: 12 }}>
@@ -1701,6 +1859,19 @@ const CarIntake = () => {
         </div>
       )}
 
+      {/* Added by shiva */}
+      {/* Manual VIN Alert */}
+      {manualVinMode && (
+        <div style={{ padding: "16px" }}>
+          <Alert
+            type="warning"
+            message="Manual VIN Mode Active - Vehicle data must be entered manually."
+            showIcon
+          />
+        </div>
+      )}
+      {/* end here */}
+
       {/* start page title */}
       <div className="page-title-box">
         <div className="container-fluid">
@@ -1710,11 +1881,13 @@ const CarIntake = () => {
                 <h4>Car Intake</h4>
                 <ol className="breadcrumb m-0">
                   <li className="breadcrumb-item">
-                    <a href="javascript: void(0);">Scrap Yard</a>
+                    {/* added by shiva */}
+                    <span>Scrap Yard</span>    
                   </li>
                   <li className="breadcrumb-item">
-                    <a href="javascript: void(0);">Car Intake</a>
+                    <span>Car Intake</span>
                   </li>
+                  {/* end here */}
                   <li className="breadcrumb-item active">Add New Car</li>
                 </ol>
               </div>
@@ -1811,14 +1984,16 @@ const CarIntake = () => {
               {/* Car summary shown under the progress bar in a Card */}
               <Card
                 size="small"
-                bodyStyle={{
-                  background: "linear-gradient(90deg,#071426 0%, #071120 100%)",
-                  display: "flex",
-                  gap: 24,
-                  padding: "14px 18px",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
+                styles={{
+                  body: {
+                    background: "linear-gradient(90deg,#071426 0%, #071120 100%)",
+                    display: "flex",
+                    gap: 24,
+                    padding: "14px 18px",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                  }
                 }}
                 style={{
                   marginTop: 16,

@@ -40,6 +40,11 @@ body {
   min-height: 0; /* Important for flex overflow */
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   padding: 0 !important; /* Remove default padding */
+
+  /* by shiva */
+  padding-top: 80px;
+  padding-bottom: 20px;
+  /* end here */
 }
 
 /* Add proper spacing to content area */
@@ -48,23 +53,8 @@ body {
   padding-right: 24px;
 }
 
-/* Custom scrollbar styling */
-.page-content::-webkit-scrollbar {
-  width: 8px;
-}
+/* Adjust Part Request based on navbar height - shiva */
 
-.page-content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.page-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-}
-
-.page-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
 
 /* Custom scrollbar styling */
 .page-content::-webkit-scrollbar {
@@ -83,3 +73,37 @@ body {
 .page-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* Custom scrollbar styling */
+.page-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.page-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.page-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.page-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+
+/* Added by shiva */
+.requests-page .ant-table,
+.requests-page .ant-table-container {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.requests-page .ant-table-thead > tr > th,
+.requests-page .ant-table-tbody > tr > td {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+
+
+/* end here */

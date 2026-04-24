@@ -11,6 +11,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/layout/Layout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Spin } from "antd";
+import Requests from "./pages/Requests";
+import AddPartRequest from "./pages/AddPartRequest";
+import JunkCarRequests from "./pages/JunkCarRequests";
+import AddJunkCarRequest from "./pages/AddJunkCarRequest";
 
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const CarIntake = React.lazy(() => import("./pages/CarIntake"));
@@ -255,6 +259,13 @@ function App() {
                         <Route path="/element-hub" element={<ElementHub />} />
                         <Route path="/part" element={<Part />} />
                         <Route path="/car-intake" element={<CarIntake />} />
+                        {/* By Shiva */}
+                        <Route path="/part-requests" element={<Requests />} />  
+                        <Route path="/add-part-request" element={<AddPartRequest />} />
+                        <Route path="/junk-car-requests" element={<JunkCarRequests />} />
+                        <Route path="/add-junk-car-request" element={<AddJunkCarRequest />} />
+                        {/* end here  */}
+
                         <Route
                           path="/car-intake-list"
                           element={<CarIntakeList />}

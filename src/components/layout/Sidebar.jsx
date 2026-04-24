@@ -26,6 +26,8 @@ const BulletIcon = () => (
 );
 
 const Sidebar = ({ isOpen }) => {
+  // console.log("Sidebar Loaded");
+
   const location = useLocation();
   const { user } = useAuth();
   const [openKeys, setOpenKeys] = useState([]);
@@ -156,6 +158,49 @@ const Sidebar = ({ isOpen }) => {
         label: "Car Parts Inventory",
         children: carPartsChildren,
       });
+
+      
+      // Add Requests Module here - Shiva
+      items.push({
+        key: "/partRequests",
+        icon: <InboxOutlined />,
+        label: "Part Requests",
+        children: [
+          {
+            key: "/part-requests",
+            icon: <BulletIcon />,
+            label: <Link to="/part-requests">Part Request Lists</Link>,
+          },
+
+          // Add Part Request
+          // {
+          //   key: "/add-part-request",
+          //   icon: <BulletIcon />,
+          //   label: <Link to="/add-part-request">Add Part Request</Link>,
+          // },
+        ],
+      });   // end here
+
+      // Add Junk Car module - shiva
+      items.push({
+        key: "/junkCarRequests",
+        icon: <DeleteOutlined />,
+        label: "Junk Car Requests",
+        children: [
+          {
+            key: "/junk-car-requests",
+            icon: <BulletIcon />,
+            label: <Link to="/junk-car-requests">Junk Car Lists</Link>,
+          },
+          // {
+          //   key: "/add-junk-car-request",
+          //   icon: <BulletIcon />,
+          //   label: <Link to="/add-junk-car-request">Add Junk Car</Link>,
+          // },
+        ],
+      });
+
+
     }
 
     // Car Inventory - Only for Admin
@@ -172,6 +217,7 @@ const Sidebar = ({ isOpen }) => {
           },
         ],
       });
+      
     }
 
     // Scrap a Car - Only for Admin, Manager, Staff and Scraper
@@ -367,7 +413,6 @@ const Sidebar = ({ isOpen }) => {
       label: "User Guides",
       children: guideChildren,
     });
-
     return items;
   };
 
