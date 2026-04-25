@@ -31,7 +31,8 @@ const AddJunkCarRequest = (props) => {
                     </Button>
                 }
             >
-                <JunkCarRequest onSuccess={() => {}} />
+                {/* added by shiva -> () => {}} to props.onSuccess */}
+                <JunkCarRequest onSuccess={props.onSuccess} />    
             </div>
         </div>
     );

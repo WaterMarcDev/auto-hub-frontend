@@ -38,12 +38,13 @@ const JunkCarRequests = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            
+            const token = localStorage.getItem("token")  // addded by shiva
 
             await fetch(`${import.meta.env.VITE_API_URL}/junk-car/${id}/status`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,     // added by shiva
                 },
                 body: JSON.stringify({ status }),
             });

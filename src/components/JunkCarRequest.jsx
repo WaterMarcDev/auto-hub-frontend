@@ -5,7 +5,7 @@ const JunkCarRequest = (props) => {
     
     const handleSubmit = async (values) => {
         try {
-            const res = await fetch("/api/junk-car", {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`, {   // added by shiva (from "/api/junk-car")
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
