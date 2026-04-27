@@ -125,8 +125,19 @@ const AddPartRequest = () => {
                         {/* Year */}
                         <Form.Item 
                             label="Year" 
-                            name="year">
-                            <Input placeholder="Enter year (e.g. 2015)" />
+                            name="year"
+                            rules={[
+                                {
+                                    pattern: /^\d{4}$/,
+                                    message: "Enter valid 4 digit year",
+                                },
+                            ]}
+                        >
+                            <Input 
+                                placeholder="Enter year (e.g. 2015)" 
+                                maxLength={4}
+                                type="number"
+                            />
                         </Form.Item>
 
                         {/* Condition */}

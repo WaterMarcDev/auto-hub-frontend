@@ -136,7 +136,7 @@ const JunkCarRequests = () => {
                 }}
                 footer={null}
                 width={800}
-                destroyOnHidden
+                destroyOnClose    // added by shiva from destroyOnHidden to 
                 styles={{ body: { padding: 20 } }}
             >
                 <AddJunkCarRequest

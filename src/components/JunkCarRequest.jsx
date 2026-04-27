@@ -10,7 +10,11 @@ const JunkCarRequest = (props) => {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(values),
+                body: JSON.stringify({
+                    ...values,
+                    year: values.year ? parseInt(values.year) : null
+                }),
+                
             });
 
             const data = await res.json();
@@ -84,9 +88,20 @@ const JunkCarRequest = (props) => {
                         <Form.Item
                             name="year"
                             label="Year"
-                            rules={[]}
+                            rules={[
+                                
+                                {
+                                    pattern: /^\d{4}$/,
+                                    message: "Enter valid 4 digit year",
+                                },
+                                
+                            ]}
                         >
-                            <Input placeholder="e.g. 2013" />
+                            <Input 
+                                type="number"               // added by shiva
+                                placeholder="e.g. 2013"
+                                maxLength={4}
+                             />
                         </Form.Item>
                     </Col>
 
