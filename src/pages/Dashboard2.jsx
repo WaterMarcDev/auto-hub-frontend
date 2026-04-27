@@ -248,6 +248,15 @@ const Dashboard2 = () => {
                 // Customer: front desk, admin, manager
                 visible: isFrontDesk || isAdmin || isManager,
               },
+              // Added by shiva
+              {
+                id: "card-4",
+                title: "Requests",
+                color: "#f97316",
+                onClick: () => {},
+                visible: isAdmin || isManager || isStaff,
+              },
+              //end here
               {
                 id: "card-5",
                 title: "Search",
@@ -380,6 +389,57 @@ const Dashboard2 = () => {
                       </Tag>
                     </div>
                   )}
+
+                  {/* Added by shiva */}
+                  {c.id === "card-4" && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: "flex",
+                        gap: 10,
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Tag
+                        style={{
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                        }}
+                        color="#2563eb"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/part-requests");
+                        }}
+                      >
+                        Part
+                      </Tag>
+
+                      <Tag
+                        style={{
+                          cursor: "pointer",
+                          padding: "6px 16px",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          borderRadius: 6,
+                          border: "none",
+                          margin: 0,
+                        }}
+                        color="#16a34a"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/junk-car-requests");
+                        }}
+                      >
+                        Junk
+                      </Tag>
+                    </div>
+                  )}
+
                   {c.id === "card-5" && (
                     <div
                       style={{
