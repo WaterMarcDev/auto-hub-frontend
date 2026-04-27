@@ -69,6 +69,28 @@ const Sidebar = ({ isOpen }) => {
         label: <Link to="/dashboard">Dashboard</Link>,
       });
 
+      // added by shiva
+      // Requests: Part Request and Junk Car Request combined
+      items.push({
+        key: "requests",
+        icon: <InboxOutlined />,
+        label: "Requests",
+        children: [
+          {
+            key: "/part-requests",
+            icon: <BulletIcon />,
+            label: <Link to="/part-requests">Part Requests</Link>,
+          },
+          {
+            key: "/junk-car-requests",
+            icon: <BulletIcon />,
+            label: <Link to="/junk-car-requests">Junk Car Requests</Link>,
+          },
+        ],
+      });
+      //end here
+      
+
       /* User Management moved to bottom as per request */
 
       items.push({
@@ -159,46 +181,49 @@ const Sidebar = ({ isOpen }) => {
         children: carPartsChildren,
       });
 
+
+      
+
       
       // Add Requests Module here - Shiva
-      items.push({
-        key: "/partRequests",
-        icon: <InboxOutlined />,
-        label: "Part Requests",
-        children: [
-          {
-            key: "/part-requests",
-            icon: <BulletIcon />,
-            label: <Link to="/part-requests">Part Request Lists</Link>,
-          },
+      // items.push({
+      //   key: "/partRequests",
+      //   icon: <InboxOutlined />,
+      //   label: "Part Requests",
+      //   children: [
+      //     {
+      //       key: "/part-requests",
+      //       icon: <BulletIcon />,
+      //       label: <Link to="/part-requests">Part Request Lists</Link>,
+      //     },
 
-          // Add Part Request
-          // {
-          //   key: "/add-part-request",
-          //   icon: <BulletIcon />,
-          //   label: <Link to="/add-part-request">Add Part Request</Link>,
-          // },
-        ],
-      });   // end here
+      //     // Add Part Request
+      //     // {
+      //     //   key: "/add-part-request",
+      //     //   icon: <BulletIcon />,
+      //     //   label: <Link to="/add-part-request">Add Part Request</Link>,
+      //     // },
+      //   ],
+      // });   // end here
 
       // Add Junk Car module - shiva
-      items.push({
-        key: "/junkCarRequests",
-        icon: <DeleteOutlined />,
-        label: "Junk Car Requests",
-        children: [
-          {
-            key: "/junk-car-requests",
-            icon: <BulletIcon />,
-            label: <Link to="/junk-car-requests">Junk Car Lists</Link>,
-          },
-          // {
-          //   key: "/add-junk-car-request",
-          //   icon: <BulletIcon />,
-          //   label: <Link to="/add-junk-car-request">Add Junk Car</Link>,
-          // },
-        ],
-      });
+      // items.push({
+      //   key: "/junkCarRequests",
+      //   icon: <DeleteOutlined />,
+      //   label: "Junk Car Requests",
+      //   children: [
+      //     {
+      //       key: "/junk-car-requests",
+      //       icon: <BulletIcon />,
+      //       label: <Link to="/junk-car-requests">Junk Car Lists</Link>,
+      //     },
+      //     // {
+      //     //   key: "/add-junk-car-request",
+      //     //   icon: <BulletIcon />,
+      //     //   label: <Link to="/add-junk-car-request">Add Junk Car</Link>,
+      //     // },
+      //   ],
+      // });
 
 
     }
@@ -456,6 +481,8 @@ const Sidebar = ({ isOpen }) => {
       "/guide/front-desk": "userGuides",
       "/guide/staff": "userGuides",
       "/entry-fee": "entryFee",
+      "/part-requests": "requests",       // added by shiva
+      "/junk-car-requests": "requests",   // added by shiva
     };
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {
