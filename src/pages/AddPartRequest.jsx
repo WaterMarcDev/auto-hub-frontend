@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, Input, Button, Form, message, Select } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,64 @@ const AddPartRequest = () => {
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+
+    // Added by shiva
+    const [parts, setParts] = useState([]);
+
+    useEffect(() => {
+        setParts([
+            "Wiring Harness",
+            "Fuel Tank",
+            "Steering",
+            "Dashboard (Complete)",
+            "Windscreen (Windshield)",
+            "Coolant Bottle (Reservoir)",
+            "Radiator",
+            "Fuel Pump",
+            "Latches",
+            "Trunk Gate",
+            "Transmission",
+            "Window Switches",
+            "Fuse Box",
+            "Battery",
+            "Air Intake Manifold",
+            "Alternator",
+            "AC Compressor",
+            "Tyre",
+            "Rims",
+            "Odometer (Cluster)",
+            "Rear / Back Seat",
+            "Co-Passenger Seat",
+            "Driver Seat",
+            "Right Side Mirror",
+            "Left Side Mirror",
+            "Rear Left Door",
+            "Rear Right Door",
+            "Front Right Door",
+            "Front Left Door",
+            "Hood",
+            "Right Headlights",
+            "Left Headlights",
+            "Right Fender",
+            "Left Fender",
+            "Rear Bumper",
+            "Engine",
+            "Brake Disc",
+            "Base Chassis Plate",
+            "Brake Drum",
+            "Chassis",
+            "Engine Control Module",
+            "Floor Carpet",
+            "Foot Rest",
+            "Front Bumper",
+            "Heated Seats",
+            "Heated Side Mirrors",
+            "Heated Steering",
+            "Heated Windshield",
+            "Rear Windshield"
+        ].sort((a, b) => a.localeCompare(b)));
+    }, []);
+    //end here
 
     const handleSubmit = async (values) => {
         try {
@@ -20,6 +78,11 @@ const AddPartRequest = () => {
                 },
                 body: JSON.stringify({
                     ...values,
+                    // Added by shiva
+                    partName: Array.isArray(values.partName)
+                        ? values.partName.join(", ")  // we can also do this | -> Engine|Alternator
+                        : values.partName,
+                    // end here
                     source: "crm",
                 }),
             });
@@ -105,7 +168,24 @@ const AddPartRequest = () => {
                                 { required: true, message: "Part name required" }
                             ]}
                         >
-                            <Input placeholder="Enter part name" />
+                            {/* Added by shiva */}
+                            <Select
+                                showSearch
+                                mode="tags"
+                                placeholder="Search part name"
+                                optionFilterProp="children"
+                                filterOption={(input, option) =>
+                                    option?.children?.toLowerCase().includes(input.toLowerCase())
+                                }
+                            >
+                                {parts.map((part) => (
+                                    <Select.Option key={part} value={part}>
+                                        {part}
+                                    </Select.Option>
+                                ))}                            
+                            </Select>
+                            {/* end here */}
+                            {/* <Input placeholder="Enter part name" /> */}
                         </Form.Item>
 
                         {/* Make */}
