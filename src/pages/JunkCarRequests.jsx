@@ -68,10 +68,22 @@ const JunkCarRequests = () => {
             dataIndex: "phone",
         },
         {
-            title: "Vehicle",
-            render: (_, record) =>
-                `${record.make} ${record.model} ${record.year}`,
+            title: "Make",
+            dataIndex: "make",
         },
+        {
+            title: "Model",
+            dataIndex: "model",
+        },
+        {
+            title: "Year",
+            dataIndex: "year"
+        },
+        // {
+        //     title: "Vehicle",
+        //     render: (_, record) =>
+        //         `${record.make} ${record.model} ${record.year}`,
+        // },
         {
             title: "VIN / Engine",
             render: (_, record) => record.engineOrVin || "none",

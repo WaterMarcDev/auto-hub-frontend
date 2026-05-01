@@ -129,10 +129,22 @@ const Requests = () => {
             dataIndex: "name",
         },
         {
-            title: "Vehicle",
-            render: (_, record) =>
-                `${record.make} ${record.model} ${record.year}`,
+            title: "Make",
+            dataIndex: "make",
         },
+        {
+            title: "Model",
+            dataIndex: "model",
+        },
+        {
+            title: "Year",
+            dataIndex: "year"
+        },
+        // {
+        //     title: "Vehicle",
+        //     render: (_, record) =>
+        //         `${record.make} ${record.model} ${record.year}`,
+        // },
         {
             title: "Part Name",
             dataIndex: "partName",
