@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Tag } from "antd";
+import { Card, Table } from "antd";
 import { Button } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -7,8 +7,8 @@ import { Input, Select, Row, Col, message, Popconfirm } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { DeleteOutlined } from "@ant-design/icons";
 import { CarIntakeService } from "../../services/apiService";
-import { Tabs } from "antd";
-import axios from "axios";
+// import { Tabs } from "antd";
+// import axios from "axios";
 
 const { Option } = Select;
 
@@ -19,6 +19,7 @@ const Requests = () => {
     const [search, setSearch] = useState("");
     const [searched, setSearched] = useState("");
     const [status, setStatus] = useState(null);
+    const [sourceFilter, setSourceFilter] = useState("");  // added by shiva for Search by source
     const [filteredRequests, setFilteredRequests] = useState([]);
     const [noResults, setNoResults] = useState(false);
     const [junkCars, setJunkCars] = useState([]);
@@ -39,7 +40,7 @@ const Requests = () => {
                 item.make?.toLowerCase().includes(searchText) ||
                 item.model?.toLowerCase().includes(searchText) ||
                 item.partName?.toLowerCase().includes(searchText) ||
-                item.year?.toLowerCase().includes(searchText) 
+                item.year?.toLowerCase().includes(searchText)
             );
         });
         setFilteredRequests(filtered);
@@ -77,7 +78,7 @@ const Requests = () => {
 
         setFilteredRequests(filtered);
         setSearched(true);
-    };  
+    };
     //end here
 
     const fetchRequests = async () => {
@@ -123,7 +124,63 @@ const Requests = () => {
         }
     };
 
+    // Source by shiva
+    const updateSource = async (id, source) => {
+        try {
+
+            await fetch(
+                `${import.meta.env.VITE_API_URL}/part-request/${id}/source`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ source }),
+                }
+            );
+
+            fetchRequests();
+
+        } catch (error) {
+
+            console.error("Error updating source:", error);
+        }
+    };
+
+    // Update Remark by shiva
+    const updateRemark = async (id, remark) => {
+
+        try {
+
+            await fetch(
+                `${import.meta.env.VITE_API_URL}/part-request/${id}/remark`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ remark }),
+                }
+            );
+
+            fetchRequests();
+
+        } catch (error) {
+
+            console.error(
+                "Remark update failed:",
+                error
+            );
+        }
+    };
+    // end here
+
     const columns = [
+        {
+            title: "Date",
+            render: (_, record) =>
+                new Date(record.createdAt).toLocaleDateString(),
+        },
         {
             title: "Name",
             dataIndex: "name",
@@ -158,25 +215,68 @@ const Requests = () => {
             dataIndex: "phone",
         },
         {
-            title: "Status",
+            title: "Remark",
+            dataIndex: "remark",
+            key: "remark",
+            width: 240,
+
+            render: (_, record) => (
+
+                <Input.TextArea
+                    defaultValue={record.remark}
+                    autoSize={{
+                        minRows: 1,
+                        maxRows: 2,
+                    }}
+                    placeholder="Add remark..."
+                    disabled={
+                        record.status?.toLowerCase() ===
+                        "completed"
+                    }
+                    style={{
+                        fontSize: "12px",
+                        resize: "none",
+                    }}
+                    onBlur={(e) =>
+                        updateRemark(
+                            record._id,
+                            e.target.value
+                        )
+                    }
+                />
+            ),
+        },
+        {
+            title: "Source",
             render: (_, record) => (
                 <Select
-                    value={record.status}
-                    onChange={(value) => 
-                        updateStatus(record._id, value)
+                    value={record.source || "Online"}
+                    onChange={(value) =>
+                        updateSource(record._id, value)
                     }
-                    style={{ width: 150 }}
+                    style={{ width: 130 }}
                 >
-                <Option value="Pending">Pending</Option>
-                <Option value="In Progress">In Progress</Option>
-                <Option value="Completed">Completed</Option>
+                    <Option value="Online">Online</Option>
+                    <Option value="Offline">Offline</Option>
                 </Select>
             ),
         },
         {
-            title: "Date",
-            render: (_, record) =>
-                new Date(record.createdAt).toLocaleDateString(),
+            title: "Status",
+            render: (_, record) => (
+                <Select
+                    value={record.status}
+                    onChange={(value) =>
+                        updateStatus(record._id, value)
+                    }
+                    style={{ width: 150 }}
+                >
+                    <Option value="Pending">Pending</Option>
+                    <Option value="In Progress">In Progress</Option>
+                    <Option value="Completed">Completed</Option>
+                    <Option value="Rejected">Rejected</Option>
+                </Select>
+            ),
         },
         {
             title: "Action",
@@ -201,13 +301,13 @@ const Requests = () => {
     ];
 
     return (
-        <div 
+        <div
             className="requests-page"
             style={{
                 paddingTop: "20px",
                 paddingBottom: "90px"
             }}>
-            <Card 
+            <Card
                 title="Part Requests"
                 extra={
                     <div style={{ display: "flex", gap: "10px" }}>
@@ -228,18 +328,18 @@ const Requests = () => {
                 }
             >
 
-            {/* Add Search + Filter Here -> by shiva*/} 
+                {/* Add Search + Filter Here -> by shiva*/}
 
-            <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+                <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
 
-                <Col xs={24} sm={12} md={8}>
-                    <Input
-                        placeholder="Search by Name, Email..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        onPressEnter={handleSearch}
-                        size="large"
-                    />
+                    <Col xs={24} sm={12} md={8}>
+                        <Input
+                            placeholder="Search by Name, Email..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            onPressEnter={handleSearch}
+                            size="large"
+                        />
                     </Col>
 
                     <Col xs={24} sm={12} md={4}>
@@ -265,81 +365,134 @@ const Requests = () => {
                             options={[
                                 { value: "pending", label: "Pending" },
                                 { value: "in progress", label: "In Progress" },
-                                { value: "completed", label: "Completed" }
+                                { value: "completed", label: "Completed" },
+                                { value: "rejected", label: "Rejected" }
                             ]}
                         />
                     </Col>
-            </Row>
 
-            {noResults && (
-                <div style={{
-                    textAlign: "center",
-                    marginBottom: 10,
-                    color: "#999",
-                    fontWeight: 500
-                }}>
-                    Item not found
-                </div>
-            )}
-        <Table
-            columns={columns}
-            dataSource={searched ? filteredRequests : requests}
-            rowKey="_id"
-            bordered
-            scroll={{ x: "max-content" }}
-            locale={{
-                emptyText: searched ? "Item not found" : "No data"
-            }}
-            
-        />
-        </Card>
-    </div>
+                    {/* Search dropdopwn for Source */}
+                    <Col xs={24} sm={12} md={6}>
+                        <Select
+                            placeholder="Filter by Source"
+                            value={sourceFilter || undefined}
+                            onChange={(value) => {
+
+                                setSourceFilter(value || "");
+
+                                if (!value) {
+
+                                    setFilteredRequests([]);
+                                    setSearched(false);
+                                    return;
+                                }
+
+                                const filtered = requests.filter(
+                                    (item) =>
+                                        item.source === value
+                                );
+
+                                setFilteredRequests(filtered);
+                                setSearched(true);
+                            }}
+                            allowClear
+                            size="large"
+                            style={{ width: "100%" }}
+                            options={[
+                                {
+                                    value: "Online",
+                                    label: "Online"
+                                },
+                                {
+                                    value: "Offline",
+                                    label: "Offline"
+                                }
+                            ]}
+                        />
+                    </Col>
+                    {/* end here */}
+                </Row>
+
+                {noResults && (
+                    <div style={{
+                        textAlign: "center",
+                        marginBottom: 10,
+                        color: "#999",
+                        fontWeight: 500
+                    }}>
+                        Item not found
+                    </div>
+                )}
+                <Table
+                    columns={columns}
+                    dataSource={searched ? filteredRequests : requests}
+                    rowKey="_id"
+                    rowClassName={(record) => {
+
+                        if (
+                            record.status?.toLowerCase() ===
+                            "completed"
+                        ) {
+                            return "completed-row";
+                        }
+
+                        return "";
+                    }}
+                    bordered
+                    scroll={{ x: "max-content" }}
+                    locale={{
+                        emptyText: searched ? "Item not found" : "No data"
+                    }}
+
+                />
+            </Card>
+        </div>
     );
 
     // return (
     //     <div style={{ padding: "20px" }}>
     //         <h1>Part Requests</h1>
 
-//             <table border="1" cellPadding="10" style={{ width: "100%" }}>
-//                 <thead>
-//                     <tr>
-//                         <th>Name</th>
-//                         <th>Vehicle</th>
-//                         <th>Part</th>
-//                         <th>Status</th>
-//                         <th>Date</th>
-//                     </tr>
-//                 </thead>
+    //             <table border="1" cellPadding="10" style={{ width: "100%" }}>
+    //                 <thead>
+    //                     <tr>
+    //                         <th>Name</th>
+    //                         <th>Vehicle</th>
+    //                         <th>Part</th>
+    //                         <th>Status</th>
+    //                         <th>Date</th>
+    //                     </tr>
+    //                 </thead>
 
-//                 <tbody>
-//                     {requests.map((req) => (
-//                         <tr key={req._id}>
-//                             <td>{req.name}</td>
-//                             <td>{req.make} {req.model} {req.year}</td>
-//                             <td>{req.partName}</td>
+    //                 <tbody>
+    //                     {requests.map((req) => (
+    //                         <tr key={req._id}>
+    //                             <td>{req.name}</td>
+    //                             <td>{req.make} {req.model} {req.year}</td>
+    //                             <td>{req.partName}</td>
 
-//                             <td>
-//                                 <select
-//                                     value={req.status}
-//                                     onChange={(e) => 
-//                                         updateStatus(req._id, e.target.value)
-//                                     }
-//                                 >
-//                                     <option value="Pending">Pending</option>
-//                                     <option value="In Progress">In Progress</option>
-//                                     <option value="Completed">Completed</option>
-//                                 </select>
-//                             </td>
+    //                             <td>
+    //                                 <select
+    //                                     value={req.status}
+    //                                     onChange={(e) => 
+    //                                         updateStatus(req._id, e.target.value)
+    //                                     }
+    //                                 >
+    //                                     <option value="Pending">Pending</option>
+    //                                     <option value="In Progress">In Progress</option>
+    //                                     <option value="Completed">Completed</option>
+    //                                 </select>
+    //                             </td>
 
-//                             <td>
-//                                 {new Date(req.createdAt).toLocaleDateString()}
-//                             </td>
-//                         </tr>
-//                     ))}
-//                 </tbody>
-//             </table>
-//         </div>
-//     );
+    //                             <td>
+    //                                 {new Date(req.createdAt).toLocaleDateString()}
+    //                             </td>
+    //                         </tr>
+    //                     ))}
+    //                 </tbody>
+    //             </table>
+    //         </div>
+    //     );
 };
 
 export default Requests;

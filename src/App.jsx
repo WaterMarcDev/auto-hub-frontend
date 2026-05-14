@@ -15,6 +15,7 @@ import Requests from "./pages/Requests";
 import AddPartRequest from "./pages/AddPartRequest";
 import JunkCarRequests from "./pages/JunkCarRequests";
 import AddJunkCarRequest from "./pages/AddJunkCarRequest";
+import Inbox from "./pages/Inbox";                               //added by shiva
 
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const CarIntake = React.lazy(() => import("./pages/CarIntake"));
@@ -262,6 +263,7 @@ function App() {
                         {/* By Shiva */}
                         <Route path="/part-requests" element={<Requests />} />  
                         <Route path="/add-part-request" element={<AddPartRequest />} />
+                        <Route path="/inbox" element={<Inbox />} />
                         <Route path="/junk-car-requests" element={<JunkCarRequests />} />
                         <Route path="/add-junk-car-request" element={<AddJunkCarRequest />} />
                         {/* end here  */}
