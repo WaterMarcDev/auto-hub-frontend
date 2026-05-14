@@ -1,60 +1,161 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Select, Button } from "antd";
+import { Card, Table, Select, Button, Input } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import AddJunkCarRequest from "./AddJunkCarRequest";
 import { Modal } from "antd";
+import api from "../utils/api";    // by shiva
 
 const { Option } = Select;
 
 const JunkCarRequests = () => {
-    const [junkCars, setJunkCars] =useState([]);
+    const [junkCars, setJunkCars] = useState([]);
+    const [staffUsers, setStaffUsers] = useState([]);    // by shiva
+    const [handledByFilter, setHandledByFilter] = useState("");   // by shiva
+    const [sourceFilter, setSourceFilter] = useState("");            // by shiva
+    const [statusFilter, setStatusFilter] = useState("");             // by shiva
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);  // by shiva
 
     const fetchJunkCars = async () => {
         try {
-            const token = localStorage.getItem("token");
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },    // added by shiva
-                }
-            );
-            
-            
-            const data = await res.json();
-            setJunkCars(data.data || []);
+            const res = await api.get("/junk-car");
+
+            setJunkCars(res.data.data || []);
+
         } catch (error) {
+
             console.error(error);
         }
     };
 
+    // Fetch Staff Users by shiva
+    const fetchStaffUsers = async () => {
+        try {
+
+            const res = await api.get("/users/staff");
+
+            setStaffUsers(res.data.data || []);
+
+            console.log("STAFF USERS:", res.data);    // temp debug by shiva
+
+        } catch (error) {
+
+            console.error("Error fetching staff users:", error);
+        }
+    };
+    // end here
+
     useEffect(() => {
         fetchJunkCars();
+
+        fetchStaffUsers();
+        //     const user = JSON.parse(localStorage.getItem("user"));
+
+        //     console.log("LOGGED USER:", user);    // temp debug by shiva
+
+        //     if (
+        //         user?.role?.toLowerCase() === "admin" ||
+        //         user?.role?.toLowerCase() === "manager"
+        //     ) {
+        //         fetchStaffUsers();
+        //     }    // added by shiva
     }, []);
 
     const updateStatus = async (id, status) => {
         try {
-            const token = localStorage.getItem("token")  // addded by shiva
 
-            await fetch(`${import.meta.env.VITE_API_URL}/junk-car/${id}/status`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,     // added by shiva
-                },
-                body: JSON.stringify({ status }),
-            });
+            await api.patch(
+                `/junk-car/${id}/status`,
+                { status }
+            );
+
             fetchJunkCars();
+
         } catch (error) {
+
             console.error(error);
         }
     };
 
+    const updatePaymentStatus = async (id, paymentStatus) => {
+        try {
+
+            await api.patch(
+                `/junk-car/${id}/payment-status`,
+                { paymentStatus }
+            );
+
+            fetchJunkCars();
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+
+    // added by shiva Source Field
+    const updateSource = async (id, source) => {
+        try {
+
+            await api.patch(
+                `/junk-car/${id}/source`,
+                { source }
+            );
+
+            fetchJunkCars();
+
+        } catch (error) {
+
+            console.error(error);
+        }
+    };
+    // end here
+
+    // AssignStaff logic by shiva
+    const assignStaff = async (id, assignedTo) => {
+        try {
+
+            await api.patch(
+                `/junk-car/${id}/assign`,
+                { assignedTo }
+            );
+
+            fetchJunkCars();
+
+        } catch (error) {
+
+            console.error("Error assigning staff:", error);
+        }
+    };
+    // end here
+
+    // Remark logic by shiva
+    const updateRemark = async (id, remark) => {
+        try {
+
+            await api.patch(
+                `/junk-car/${id}/remark`,
+                { remark }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Remark update failed:",
+                error
+            );
+        }
+    };
+    // end here
+
     const columns = [
+        {
+            title: "Date",
+            render: (_, record) =>
+                new Date(record.createdAt).toLocaleDateString(),
+        },
         {
             title: "Name",
             dataIndex: "name",
@@ -88,6 +189,39 @@ const JunkCarRequests = () => {
             title: "VIN / Engine",
             render: (_, record) => record.engineOrVin || "none",
         },
+
+        {
+            title: "Remark",
+            dataIndex: "remark",
+            key: "remark",
+            width: 240,
+
+            render: (_, record) => (
+
+                <Input.TextArea
+                    defaultValue={record.remark}
+                    autoSize={{
+                        minRows: 1,
+                        maxRows: 2,
+                    }}
+                    placeholder="Add remark..."
+                    disabled={
+                        record.status === "completed"
+                    }
+                    style={{
+                        fontSize: "12px",
+                        resize: "none",
+                    }}
+                    onBlur={(e) =>
+                        updateRemark(
+                            record._id,
+                            e.target.value
+                        )
+                    }
+                />
+            ),
+        },
+
         {
             title: "Status",
             render: (_, record) => (
@@ -102,6 +236,79 @@ const JunkCarRequests = () => {
                     <Option value="pending">Pending</Option>
                     <Option value="in progress">In Progress</Option>
                     <Option value="completed">Completed</Option>
+                </Select>
+            ),
+        },
+        {
+            title: "Source",
+            render: (_, record) => (
+                <Select
+                    placeholder="Source"
+                    value={record.source || "Online"}
+                    onChange={(value) =>
+                        updateSource(record._id, value)
+                    }
+                    style={{ width: 130 }}
+                >
+                    <Option value="Online">Online</Option>
+                    <Option value="Offline">Offline</Option>
+                </Select>
+            ),
+        },
+        {
+            title: "Handled By",
+            render: (_, record) => {
+
+                const assignedStaff =
+                    record.assignedTo &&
+                        typeof record.assignedTo === "object" &&
+                        record.assignedTo.first_name
+                        ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
+                        : "Unassigned";
+
+                return (
+                    <Select
+                        defaultValue={
+                            record.assignedTo &&
+                                typeof record.assignedTo === "object" &&
+                                record.assignedTo.first_name
+                                ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
+                                : undefined
+                        }
+                        placeholder={assignedStaff}
+                        onChange={(value) =>
+                            assignStaff(record._id, value)
+                        }
+                        style={{ width: 180 }}
+                        disabled={record.status === "completed"}
+                    >
+                        {staffUsers.map((staff) => (
+                            <Option
+                                key={staff._id}
+                                value={staff._id}
+                            >
+                                {staff.first_name} {staff.last_name}
+                            </Option>
+                        ))}
+                    </Select>
+                );
+            },
+        },
+        {
+            title: "Payment",
+            render: (_, record) => (
+                <Select
+                    placeholder="Payment"
+                    value={record.paymentStatus || "Not Paid"}
+                    onChange={(value) =>
+                        updatePaymentStatus(record._id, value)
+                    }
+                    style={{ width: 150 }}
+                >
+                    <Option value="Not Paid">Not Paid</Option>
+                    <Option value="Cash">Cash</Option>
+                    <Option value="Online">Online</Option>
+
                 </Select>
             ),
         },
@@ -129,10 +336,126 @@ const JunkCarRequests = () => {
                     </div>
                 }
             >
+                {/* HandledByFilter by shiva */}
+                <div 
+                    style={{ 
+                        marginBottom: 20,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "12px",
+                        alignItems: "center",
+                    }}
+                >
+
+                    <Select
+                        placeholder="Filter by Staff"
+                        style={{ width: 220 }}
+                        allowClear
+                        onChange={(value) =>
+                            setHandledByFilter(value || "")
+                        }
+                    >
+
+                        {staffUsers.map((staff) => (
+                            <Option
+                                key={staff._id}
+                                value={staff._id}
+                            >
+                                {staff.first_name} {staff.last_name}
+                            </Option>
+                        ))}
+                    </Select>
+
+                    {/* Search by source added by shiva */}
+                    <Select
+                        placeholder="Filter by Source"
+                        style={{
+                            width: 180,
+                            // marginLeft: 10,
+                        }}
+                        allowClear
+                        onChange={(value) =>
+                            setSourceFilter(value || "")
+                        }
+                    >
+                        <Option value="Online">
+                            Online
+                        </Option>
+
+                        <Option value="Offline">
+                            Offline
+                        </Option>
+                    </Select>
+
+                    {/* Search by Status : added by shiva*/}
+                    <Select
+                        placeholder="Filter by Status"
+                        style={{
+                            width: 180,
+                            // marginLeft: 10,
+                        }}
+                        allowClear
+                        onChange={(value) =>
+                            setStatusFilter(value || "")
+                        }
+                    >
+                        <Option value="pending">
+                            Pending
+                        </Option>
+
+                        <Option value="in progress">
+                            In Progress
+                        </Option>
+
+                        <Option value="completed">
+                            Completed
+                        </Option>
+
+                        <Option value="rejected">
+                            Rejected
+                        </Option>
+                    </Select>
+
+                </div>
+
                 <Table
                     columns={columns}
-                    dataSource={junkCars}
+                    dataSource={
+                        junkCars.filter((car) => {
+
+                            const handledMatch =
+                                !handledByFilter ||
+                                (
+                                    car.assignedTo &&
+                                    typeof car.assignedTo === "object" &&
+                                    car.assignedTo._id === handledByFilter
+                                );
+
+                            const sourceMatch =
+                                !sourceFilter ||
+                                car.source === sourceFilter;
+
+                            const statusMatch = 
+                                !statusFilter ||
+                                car.status?.toLowerCase() ===
+                                statusFilter.toLowerCase();
+
+                            return handledMatch && sourceMatch && statusMatch;
+                        })
+                    }
                     rowKey="_id"
+                    rowClassName={(record) => {
+
+                        if (record.status === "completed") {
+                            return "completed-row";
+                        }
+
+                        if (record.status === "pending") {
+                            return "new-request-row";
+                        }
+
+                        return "";
+                    }}
                     bordered
                     scroll={{ x: "max-content" }}
                 />
@@ -148,7 +471,7 @@ const JunkCarRequests = () => {
                 }}
                 footer={null}
                 width={800}
-                destroyOnClose    // added by shiva from destroyOnHidden to 
+                destroyOnHidden    // added by shiva from close  to destroyOnHidden 
                 styles={{ body: { padding: 20 } }}
             >
                 <AddJunkCarRequest

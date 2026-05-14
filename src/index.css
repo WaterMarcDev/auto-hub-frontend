@@ -104,6 +104,21 @@ body {
   border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
+.pending-row td {
+    background-color: #fafafa !important;
+    font-weight: 500;
+}
 
+.completed-row {
+    opacity: 0.7;
+}
 
+.pending-row td {
+    background-color: #fafafa !important;
+    font-weight: 500;
+}
+
+.completed-row {
+    opacity: 0.7;
+}
 /* end here */

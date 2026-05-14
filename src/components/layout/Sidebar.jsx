@@ -25,7 +25,7 @@ const BulletIcon = () => (
   />
 );
 
-const Sidebar = ({ isOpen }) => {
+const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) => {
   // console.log("Sidebar Loaded");
 
   const location = useLocation();
@@ -79,13 +79,87 @@ const Sidebar = ({ isOpen }) => {
           {
             key: "/part-requests",
             icon: <BulletIcon />,
-            label: <Link to="/part-requests">Part Requests</Link>,
+            label: (
+              <Link 
+                to="/part-requests"
+                style={{ flex: 1 }}
+              >
+                Part Requests
+
+                {partRequestCount > 0 && (
+                  <span
+                    style={{
+                      background: "#3b82f6",
+                      color: "#fff",
+                      borderRadius: "999px",
+                      padding: "2px 8px",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      marginLeft: "8px",
+                    }}
+                  >
+                    {partRequestCount}
+                  </span>
+                )}
+              </Link>
+            ),
           },
           {
             key: "/junk-car-requests",
             icon: <BulletIcon />,
-            label: <Link to="/junk-car-requests">Junk Car Requests</Link>,
+            label: (
+              <Link 
+                to="/junk-car-requests"
+                style={{ flex: 1 }}
+              >
+                Junk Car Requests
+                
+                {junkRequestCount > 0 && (
+                  <span
+                    style={{
+                      background: "#3b82f6",
+                      color: "#fff",
+                      borderRadius: "999px",
+                      padding: "2px 8px",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      marginLeft: "8px",
+                    }}
+                  >
+                    {junkRequestCount}
+                  </span>
+                )}
+              </Link>
+            ),
           },
+          // added by shiva Inbox
+          {
+            key: "/inbox",
+            icon: <BulletIcon />,
+            label: (
+            // <div style={{
+            //   alignItems: "center",
+            // }}>
+            <Link to="/inbox" style={{ flex: 1 }}>
+              Inbox
+            {unreadCount > 0 && (
+              <span style={{
+                background: "#3b82f6",
+                color: "#fff",
+                borderRadius: "999px",
+                padding: "2px 8px",
+                fontSize: "11px",
+                fontWeight: "600",
+                marginLeft: "8px"
+              }}>
+                {unreadCount}
+              </span>
+            )}
+            </Link>
+            // </div>
+            ),
+          }
+          // end here
         ],
       });
       //end here
@@ -233,7 +307,7 @@ const Sidebar = ({ isOpen }) => {
       items.push({
         key: "carInventory",
         icon: <InboxOutlined />,
-        label: "Car Inventory",
+        label: "Car Inventory for Scrap",
         children: [
           {
             key: "/car-inventory",
@@ -483,6 +557,7 @@ const Sidebar = ({ isOpen }) => {
       "/entry-fee": "entryFee",
       "/part-requests": "requests",       // added by shiva
       "/junk-car-requests": "requests",   // added by shiva
+      "/inbox": "requests",               // added by shiva
     };
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {
