@@ -20,6 +20,7 @@ import Inbox from "./pages/Inbox";                               //added by shiv
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const CarIntake = React.lazy(() => import("./pages/CarIntake"));
 const CarIntakeList = React.lazy(() => import("./pages/CarIntakeList"));
+const ReadyToScrapList = React.lazy(() => import("./pages/ReadyToScrapList"));      //Added by shiva
 const CarIntakeDetails = React.lazy(() => import("./pages/CarIntakeDetails"));
 const Login = React.lazy(() => import("./pages/Login"));
 
@@ -272,6 +273,14 @@ function App() {
                           path="/car-intake-list"
                           element={<CarIntakeList />}
                         />
+
+                        {/* ReadyToScrap Route by shiva */}
+                        <Route
+                          path="/ready-to-scrap"
+                        element={<ReadyToScrapList />}
+                        />
+                        {/* end here */}
+                        
                         {/* Keep details on a specific details route, and use /car-intake/:id for edit (reuse form) */}
                         <Route path="/car-intake/:id" element={<CarIntake />} />
                         <Route

@@ -332,6 +332,15 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
             label: <Link to="/add-scrap">Add New</Link>,
           },
           {
+            key: "/ready-to-scrap",
+            icon: <BulletIcon />,
+            label: (
+              <Link to="/ready-to-scrap">
+                Ready To Scrap
+              </Link>
+            ),
+          },
+          {
             key: "/scrap-list",
             icon: <BulletIcon />,
             label: <Link to="/scrap-list">Scrap Car Lists</Link>,

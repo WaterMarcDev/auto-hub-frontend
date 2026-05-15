@@ -22,13 +22,13 @@ import {
   UploadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import api, { carIntakeAPI, uploadAPI } from "../utils/api";     // added api by shiva
+import api, { carIntakeAPI, uploadAPI } from "../utils/api";
 import getStatusColor from "../utils/statusColors";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
 import PageContentWrapper from "../components/PageContentWrapper";
 
-const CarIntakeList = () => {
+const ReadyToScrapList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
   const [pagination, setPagination] = useState({
@@ -36,6 +36,13 @@ const CarIntakeList = () => {
     pageSize: 10,
     total: 0,
   });
+
+  // Remarks state for Move To Scrapped action by shiva
+  const [remarkModalVisible, setRemarkModalVisible] = useState(false);
+  const [selectedCarId, setSelectedCarId] = useState(null);
+  const [scrapRemark, setScrapRemark] = useState("");
+  // end here
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState(null);
   const navigate = useNavigate();
@@ -289,6 +296,29 @@ const CarIntakeList = () => {
       },
     },
     {
+      title: "Scrapped By",
+      key: "scrappedBy",
+      minWidth: 140,
+      render: (_, record) => {
+        if (!record.scrapedBy) return "-";
+
+        return `${record.scrapedBy.first_name || ""} ${
+          record.scrapedBy.last_name || ""
+        }`;
+      },
+    },
+    {
+      title: "Scrap Date",
+      dataIndex: "scrapDate",
+      key: "scrapDate",
+      minWidth: 180,
+      render: (date) => {
+        if (!date) return "-";
+
+        return new Date(date).toLocaleString();
+      },
+    },
+    {
       title: "Action",
       key: "action",
       minWidth: 160,
@@ -315,16 +345,18 @@ const CarIntakeList = () => {
             disabled={record?.status === "payment-done"}
           />
 
-          {/* Ready To Scrap Button by shiva */}
+          {/* Move To Scrapped by shiva */}
           <Button
-            type="primary"
+            danger
             size="small"
-            style={{ background: "#fa8c16" }}
-            onClick={() => handleMoveToReadyToScrap(record._id)}
-            >
-              Ready To Scrap
-            </Button>
-            {/* end here */}
+            onClick={() => {
+              setSelectedCarId(record._id);
+              setRemarkModalVisible(true);
+            }}
+            // onClick={() => handleMoveToScrapped(record._id)}
+          >
+            Move To Scrapped
+          </Button>
 
           {/* <Button
             type="primary"
@@ -371,22 +403,30 @@ const CarIntakeList = () => {
 
   // `minWidth` is handled via CSS with tableLayout="auto" elsewhere; keep columns as-is
 
-  // handleMoveToReadyToScrap function by shiva
-  const handleMoveToReadyToScrap = async (id) => {
+  // handleMoveToScrapped function by shiva
+  const handleMoveToScrapped = async (id) => {
 
     try {
 
-      await api.patch(`/car-intake/${id}/ready-to-scrap`);   //added by shiva
+      await api.patch(`/car-intake/${selectedCarId}/move-to-scrapped`,
+        {
+          scrapRemarks: scrapRemark,
+        }
+      );
 
-      message.success("Car moved to Ready To Scrap");
+      message.success("Car moved to Scrapped");
+
+      setRemarkModalVisible(false);
+      setScrapRemark("");
+      setSelectedCarId(null);
 
       fetchCarIntakes();
     } catch (error) {
-      console.error("Ready To Scrap Error:", error);
+      console.error("Move To Scrapped Error:", error);
 
       message.error(
         error.response?.data?.message ||
-        "Failed to move car to Ready To Scrap"
+        "Failed to move car to Scrapped"
       );
     }
   };
@@ -413,15 +453,15 @@ const CarIntakeList = () => {
         const data = res.data || res;
 
 
-        // filter frontend display by shiva
+        // FILTER ONLY READY-TO-SCRAP CARS by shiva
         const filteredCars = (data.carIntakes || data).filter(
-          (item) => item.status != "ready-to-scrap"
+          (item) => item.status === "ready-to-scrap"
         );
         setCarIntakes(filteredCars);
         // setCarIntakes(data.carIntakes || data);   // original line
         // end here
 
-
+        
         // Update pagination info if available from backend
         if (data.pagination) {
           setPagination({
@@ -539,7 +579,7 @@ const CarIntakeList = () => {
   return (
     <div>
       <TitleBox
-        title="Car Intake Lists"
+        title="Ready To Scrap"
         routes={["Scrap Yard", "Car Intake"]}
         current={"Car Intake Lists"}
       />
@@ -836,10 +876,31 @@ const CarIntakeList = () => {
               </div>
             )}
           </Modal>
+
+          {/* Remark Modal by shiva */}
+          <Modal
+            open={remarkModalVisible}
+            title="Scrap Remarks"
+            onCancel={() => {
+              setRemarkModalVisible(false);
+              setScrapRemark("");
+              setSelectedCarId(null);
+            }}
+            onOk={handleMoveToScrapped}
+            okText="Move To Scrapped"
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="Enter scrap remarks..."
+              value={scrapRemark}
+              onChange={(e) => setScrapRemark(e.target.value)}
+            />
+          </Modal>
+          {/* end here */}
         </Card>
       </PageContentWrapper>
     </div>
   );
 };
 
-export default CarIntakeList;
+export default ReadyToScrapList;
