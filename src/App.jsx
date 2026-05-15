@@ -15,10 +15,12 @@ import Requests from "./pages/Requests";
 import AddPartRequest from "./pages/AddPartRequest";
 import JunkCarRequests from "./pages/JunkCarRequests";
 import AddJunkCarRequest from "./pages/AddJunkCarRequest";
+import Inbox from "./pages/Inbox";                               //added by shiva
 
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const CarIntake = React.lazy(() => import("./pages/CarIntake"));
 const CarIntakeList = React.lazy(() => import("./pages/CarIntakeList"));
+const ReadyToScrapList = React.lazy(() => import("./pages/ReadyToScrapList"));      //Added by shiva
 const CarIntakeDetails = React.lazy(() => import("./pages/CarIntakeDetails"));
 const Login = React.lazy(() => import("./pages/Login"));
 
@@ -262,6 +264,7 @@ function App() {
                         {/* By Shiva */}
                         <Route path="/part-requests" element={<Requests />} />  
                         <Route path="/add-part-request" element={<AddPartRequest />} />
+                        <Route path="/inbox" element={<Inbox />} />
                         <Route path="/junk-car-requests" element={<JunkCarRequests />} />
                         <Route path="/add-junk-car-request" element={<AddJunkCarRequest />} />
                         {/* end here  */}
@@ -270,6 +273,14 @@ function App() {
                           path="/car-intake-list"
                           element={<CarIntakeList />}
                         />
+
+                        {/* ReadyToScrap Route by shiva */}
+                        <Route
+                          path="/ready-to-scrap"
+                        element={<ReadyToScrapList />}
+                        />
+                        {/* end here */}
+                        
                         {/* Keep details on a specific details route, and use /car-intake/:id for edit (reuse form) */}
                         <Route path="/car-intake/:id" element={<CarIntake />} />
                         <Route

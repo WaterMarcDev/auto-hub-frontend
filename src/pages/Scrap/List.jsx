@@ -308,6 +308,36 @@ const ScrapList = () => {
       ),
     },
     {
+      title: "Scrapped By",
+      key: "scrappedBy",
+      minWidth: 140,
+      render: (_, record) => {
+        if (!record.scrapedBy) return "-";
+
+        return `${record.scrapedBy.first_name || ""} ${
+          record.scrapedBy.last_name || ""
+        }`;
+      },
+    },
+    {
+      title: "Remarks",
+      dataIndex: "scrapRemarks",
+      key: "scrapRemarks",
+      minWidth: 220,
+      render: (text) => text || "-",
+    },
+    {
+      title: "Scrap Date",
+      dataIndex: "scrapDate",
+      key: "scrapDate",
+      minWidth: 180,
+      render: (date) => {
+        if (!date) return "-";
+
+        return new Date(date).toLocaleString();
+      },
+    },
+    {
       title: "Action",
       key: "action",
       minWidth: 160,
