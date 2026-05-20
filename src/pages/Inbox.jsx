@@ -980,90 +980,91 @@ Thank you for reaching out.
                                                             />
 
                                                             {/* Attachment Preview */}
-                                                            {msg.body?.includes("📎") && (
+                                                            {/* Attachments */}
+                                                            {msg.attachments?.length > 0 && (
 
                                                                 <div
                                                                     style={{
                                                                         marginTop: "10px",
                                                                         display: "flex",
                                                                         flexDirection: "column",
-                                                                        gap: "8px"
+                                                                        gap: "10px"
                                                                     }}
                                                                 >
-                                                                    {msg.body
-                                                                        .split("\n")
-                                                                        .filter(line =>
-                                                                            line.trim().startsWith("📎")
-                                                                        )
-                                                                        .map((line, index) => (
+
+                                                                    {msg.attachments.map((file, i) => (
+
+                                                                        <div key={i}>
+
+                                                                            {/* IMAGE PREVIEW */}
+                                                                            {/\.(jpg|jpeg|png|gif|webp)$/i.test(file.filename) ? (
 
                                                                             <div
-                                                                                key={index}
                                                                                 style={{
-                                                                                    background: "rgba(255,255,255,0.08)",
-                                                                                    padding: "8px 10px",
-                                                                                    borderRadius: "8px",
-                                                                                    fontSize: "13px",
-                                                                                    display: "inline-block",
+                                                                                    background: "rgba(255,255,255,0.04)",
+                                                                                    padding: "8px",
+                                                                                    borderRadius: "16px",
+                                                                                    marginTop: "10px",
                                                                                     width: "fit-content"
                                                                                 }}
                                                                             >
-                                                                                {(() => {
+                                                                               <img
+                                                                                    src={file.url}
+                                                                                    alt={file.filename}
 
-                                                                                    const parts =
-                                                                                        line.replace("📎 ", "")
-                                                                                            .split("|||");
+                                                                                    onClick={() => {
 
-                                                                                    const filename =
-                                                                                        parts[0];
+                                                                                        setPreviewUrl(file.url);
 
-                                                                                    const url =
-                                                                                        parts[1];
+                                                                                        setPreviewFileName(
+                                                                                            file.filename
+                                                                                        );
 
-                                                                                    return (
+                                                                                        setPreviewOpen(true);
+                                                                                    }}
 
-                                                                                        <div
-                                                                                            onClick={() => {
-
-                                                                                                setPreviewUrl(url);
-
-                                                                                                setPreviewFileName(filename);
-
-                                                                                                setPreviewOpen(true);
-                                                                                            }}
-
-                                                                                            style={{
-                                                                                                color: "#fff",
-                                                                                                textDecoration: "none",
-
-                                                                                                display: "flex",
-                                                                                                alignItems: "center",
-                                                                                                gap: "8px",
-
-                                                                                                whiteSpace: "nowrap",
-                                                                                                overflow: "hidden",
-                                                                                                textOverflow: "ellipsis",
-
-                                                                                                maxWidth: "260px",
-                                                                                                cursor: "pointer"
-                                                                                            }}
-                                                                                        >
-                                                                                            <span>📎</span>
-
-                                                                                            <span
-                                                                                                style={{
-                                                                                                    overflow: "hidden",
-                                                                                                    textOverflow: "ellipsis"
-                                                                                                }}
-                                                                                            >
-                                                                                                {filename}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    );
-                                                                                })()}
-                                                                                {/* {line} */}
+                                                                                    style={{
+                                                                                        width: "220px",
+                                                                                        maxWidth: "100%",
+                                                                                        borderRadius: "14px",
+                                                                                        cursor: "pointer",
+                                                                                        marginTop: "12px",
+                                                                                        objectFit: "cover",
+                                                                                        border: "1px solid rgba(255,255,255,0.08)",
+                                                                                        boxShadow: "0 4px 12px rgba(0,0,0,0,0.18)",
+                                                                                        display: "block"
+                                                                                    }}
+                                                                                /> 
                                                                             </div>
-                                                                        ))}
+
+                                                                                
+
+                                                                            ) : (
+
+                                                                                /* FILE ATTACHMENT */
+                                                                                <a
+                                                                                    href={file.url}
+                                                                                    target="_blank"
+                                                                                    rel="noreferrer"
+
+                                                                                    style={{
+                                                                                        color: "#fff",
+                                                                                        textDecoration: "none",
+                                                                                        display: "inline-flex",
+                                                                                        alignItems: "center",
+                                                                                        gap: "8px",
+                                                                                        background: "rgba(255,255,255,0.08)",
+                                                                                        padding: "8px 12px",
+                                                                                        borderRadius: "8px",
+                                                                                        marginTop: "6px"
+                                                                                    }}
+                                                                                >
+                                                                                    📎 {file.filename}
+                                                                                </a>
+                                                                            )}
+
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
                                                             )}
                                                         </>
