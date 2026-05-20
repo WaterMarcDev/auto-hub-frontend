@@ -267,7 +267,7 @@ export default function Inbox() {
 
     // Real Time UPDATE by shiva
     useEffect(() => {
-        const socket = io(API_URL.replace("/api", ""));
+        const socket = io(import.meta.env.VITE_SOCKET_URL);
 
         socket.on("new_email", (data) => {
             const newEmail = data.email || data;
