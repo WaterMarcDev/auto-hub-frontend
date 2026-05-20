@@ -26,23 +26,63 @@ const Requests = () => {
 
     // Filter requests based on search and status by shiva
     const handleSearch = () => {
+
+        // If empty search then show warning
+        if (!search.trim()) {
+            setFilteredRequests([]);
+            setSearched(false);
+
+            return;
+        }
+        // end here
+        
         // if (filteredRequests.length === 0) {
         //     message.warning("Item not found")
         // }
 
-        const searchText = search.toLowerCase();
+        const searchText = search.trim().toLowerCase();
+
+        // const filtered = requests.filter((item) => {
+        //     return (
+        //         item.name?.toLowerCase().includes(searchText) ||
+        //         item.email?.toLowerCase().includes(searchText) ||
+        //         item.phone?.toLowerCase().includes(searchText) ||
+        //         item.make?.toLowerCase().includes(searchText) ||
+        //         item.model?.toLowerCase().includes(searchText) ||
+        //         item.partName?.toLowerCase().includes(searchText) ||
+        //         String(item.year || "").toLowerCase().includes(searchText)
+        //     );
+        // });
+
+        // Filtered by search bar added by shiva
 
         const filtered = requests.filter((item) => {
-            return (
-                item.name?.toLowerCase().includes(searchText) ||
-                item.email?.toLowerCase().includes(searchText) ||
-                item.phone?.toLowerCase().includes(searchText) ||
-                item.make?.toLowerCase().includes(searchText) ||
-                item.model?.toLowerCase().includes(searchText) ||
-                item.partName?.toLowerCase().includes(searchText) ||
-                item.year?.toLowerCase().includes(searchText)
-            );
+
+            return [
+                item.createdAt
+                    ? new Date(item.createdAt)
+                        .toLocaleDateString()
+                    : "",
+                item.name,
+                item.make,
+                item.date,
+                item.model,
+                item.year,
+                item.partName,
+                item.email,
+                item.phone,
+                item.remark,
+                item.source,
+                item.status
+            ]
+
+                .some((field) =>
+                    String(field || "")
+                        .toLowerCase()
+                        .includes(searchText)
+                );
         });
+        // end here
         setFilteredRequests(filtered);
         setSearched(true);
     };
