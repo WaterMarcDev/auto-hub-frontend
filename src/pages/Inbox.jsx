@@ -1009,12 +1009,12 @@ Thank you for reaching out.
                                                                                 }}
                                                                             >
                                                                                <img
-                                                                                    src={file.url}
+                                                                                    src={`${API_URL}${file.url}`}
                                                                                     alt={file.filename}
 
                                                                                     onClick={() => {
 
-                                                                                        setPreviewUrl(file.url);
+                                                                                        setPreviewUrl(`${API_URL}${file.url}`);
 
                                                                                         setPreviewFileName(
                                                                                             file.filename
@@ -1043,7 +1043,7 @@ Thank you for reaching out.
 
                                                                                 /* FILE ATTACHMENT */
                                                                                 <a
-                                                                                    href={file.url}
+                                                                                    href={`${API_URL}${file.url}`}
                                                                                     target="_blank"
                                                                                     rel="noreferrer"
 
