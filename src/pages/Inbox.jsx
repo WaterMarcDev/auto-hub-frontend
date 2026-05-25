@@ -93,13 +93,22 @@ export default function Inbox() {
 
     // Live-safe attachment URL helper by shiva
     const getAttachmentUrl = (file) => {
-        if (file.url?.startsWith("http")) {
+        // Full valid URL
+        if (
+            file.url &&
+            file.url.startsWith("http") &&
+            !file.url.includes("undefined")
+        ) {
             return file.url;
         }
-        if (file.url) {
-            return `https://api.autohubexpress.us${file.url}`;
-        }
-        return `https://api.autohubexpress.us/uploads/${file.filename}`;
+
+        // Proper relative uploads path
+        if (
+            file.url &&
+            file.url.startsWith("/uploads")
+        ) {
+            return `https://api.autohubexpress.us/uploads/${file.filename}`;
+        };
     };
     // end here
 
