@@ -59,10 +59,18 @@ export default function Inbox() {
     const [forwardAttachments, setForwardAttachments] = useState([]);
     // end here
 
+    // Preview States
+    const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+
+    const [selectedImage, setSelectedImage] = useState("");
+
+    const [selectedImageName, setSelectedImageName] = useState("");
+    // end here
+
     // Preview open inside CRM by shiva
-    const [previewOpen, setPreviewOpen] = useState(false);
-    const [previewUrl, setPreviewUrl] = useState("");
-    const [previewFileName, setPreviewFileName] = useState("");
+    // const [previewOpen, setPreviewOpen] = useState(false);
+    // const [previewUrl, setPreviewUrl] = useState("");
+    // const [previewFileName, setPreviewFileName] = useState("");
     // end here
 
     // end here
@@ -82,6 +90,19 @@ export default function Inbox() {
     const currentEmails = filteredEmails.slice(indexOfFirstEmail, indexOfLastEmail);
 
     const totalPages = Math.ceil(filteredEmails.length / emailsPerPage);
+
+    // Live-safe attachment URL helper by shiva
+    const getAttachmentUrl = (file) => {
+        if (file.url?.startsWith("http")) {
+            return file.url;
+        }
+        if (file.url) {
+            return `https://api.autohubexpress.us${file.url}`;
+        }
+        return `https://api.autohubexpress.us/uploads/${file.filename}`;
+    };
+    // end here
+
 
     // Forward Mail Function by shiva
     const handleForwardMail = async () => {
@@ -997,7 +1018,7 @@ Thank you for reaching out.
                                                                         <div key={i}>
 
                                                                             {/* IMAGE PREVIEW */}
-                                                                            {/\.(jpg|jpeg|png|gif|webp)$/i.test(file.filename) ? (
+                                                                            {file.filename?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
 
                                                                             <div
                                                                                 style={{
@@ -1008,7 +1029,49 @@ Thank you for reaching out.
                                                                                     width: "fit-content"
                                                                                 }}
                                                                             >
-                                                                               <img
+                                                                                {/* To preview the image added by shiva */}
+                                                                                <img
+                                                                                    src={getAttachmentUrl(file)}
+                                                                                    alt={file.filename}
+
+                                                                                    onClick={() => {
+                                                                                        setSelectedImage(
+                                                                                            getAttachmentUrl(file)
+                                                                                        );
+
+                                                                                        setSelectedImageName(
+                                                                                            file.filename
+                                                                                        );
+
+                                                                                        setImagePreviewOpen(true);
+                                                                                    }}
+
+                                                                                    style={{
+                                                                                        width: "220px",
+                                                                                        maxWidth: "100%",
+                                                                                        borderRadius: "14px",
+                                                                                        cursor: "pointer",
+                                                                                        marginTop: "12px",
+                                                                                        objectFit: "cover",
+                                                                                        border: "1px solid rgba(255,255,255,0.08)",
+                                                                                        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+                                                                                        display: "block",
+                                                                                        transition: "0.2s ease"
+                                                                                    }}
+
+                                                                                    onMouseEnter={(e) => {
+                                                                                        e.currentTarget.style.opacity = "0.9";
+                                                                                    }}
+
+                                                                                    onMouseLeave={(e) => {
+                                                                                        e.currentTarget.style.opacity = "1";
+                                                                                    }}
+                                                                                />
+                                                                                {/* end here */}
+
+
+
+                                                                               {/* <img
                                                                                     src={
                                                                                         file.url
                                                                                             ? (
@@ -1020,24 +1083,24 @@ Thank you for reaching out.
                                                                                     }
                                                                                     alt={file.filename}
 
-                                                                                    onClick={() => {
+                                                                                    // onClick={() => {
 
-                                                                                        const imageUrl = file.url
-                                                                                            ? (
-                                                                                                file.url?.startsWith("http")
-                                                                                                ? file.url
-                                                                                                : `https://api.autohubexpress.us${file.url}`
-                                                                                            )
-                                                                                            : `https://api.autohubexpress.us/uploads/${file.filename}`;
+                                                                                    //     const imageUrl = file.url
+                                                                                    //         ? (
+                                                                                    //             file.url?.startsWith("http")
+                                                                                    //             ? file.url
+                                                                                    //             : `https://api.autohubexpress.us${file.url}`
+                                                                                    //         )
+                                                                                    //         : `https://api.autohubexpress.us/uploads/${file.filename}`;
 
-                                                                                        setPreviewUrl(imageUrl);
+                                                                                    //     setPreviewUrl(imageUrl);
 
-                                                                                        setPreviewFileName(
-                                                                                            file.filename
-                                                                                        );
+                                                                                    //     setPreviewFileName(
+                                                                                    //         file.filename
+                                                                                    //     );
 
-                                                                                        setPreviewOpen(true);
-                                                                                    }}
+                                                                                    //     setPreviewOpen(true);
+                                                                                    // }}
 
                                                                                     style={{
                                                                                         width: "220px",
@@ -1047,10 +1110,10 @@ Thank you for reaching out.
                                                                                         marginTop: "12px",
                                                                                         objectFit: "cover",
                                                                                         border: "1px solid rgba(255,255,255,0.08)",
-                                                                                        boxShadow: "0 4px 12px rgba(0,0,0,0,0.18)",
+                                                                                        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
                                                                                         display: "block"
                                                                                     }}
-                                                                                /> 
+                                                                                />  */}
                                                                             </div>
 
                                                                                 
@@ -1767,7 +1830,7 @@ Thank you for reaching out.
                 </Modal>
                 {/* end here */}
             </div>
-            <Modal
+            {/* <Modal
                 open={previewOpen}
 
                 footer={null}
@@ -1842,6 +1905,49 @@ Thank you for reaching out.
 
                     </div>
                 )}
+            </Modal> */}
+
+            {/* Modal for preview by shiva */}
+            <Modal
+                open={imagePreviewOpen}
+                footer={null}
+                onCancel={() => {
+                    setImagePreviewOpen(false);
+                    setSelectedImage("");
+                    setSelectedImageName("");
+                }}
+
+                centered
+                width="75%"
+                bodyStyle={{
+                    background: "#0f172a",
+                    padding: "18px",
+                    borderRadius: "16px"
+                }}
+            >
+                <div
+                    style={{
+                        color: "#e2e8f0",
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        marginBottom: "14px",
+                        wordBreak: "break-word"
+                    }}
+                >
+                    {selectedImageName}
+                </div>
+
+                <img
+                    src={selectedImage}
+                    alt="preview"
+                    style={{
+                        width: "100%",
+                        maxHeight: "80vh",
+                        objectFit: "contain",
+                        borderRadius: "12px",
+                        background: "#020617"
+                    }}
+                />
             </Modal>
         </>
 
