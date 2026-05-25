@@ -1009,12 +1009,20 @@ Thank you for reaching out.
                                                                                 }}
                                                                             >
                                                                                <img
-                                                                                    src={`${API_URL}${file.url}`}
+                                                                                    src={
+                                                                                        file.url?.startsWith("http")
+                                                                                            ? file.url
+                                                                                            : `https://api.autohubexpress.us${file.url}`
+                                                                                    }
                                                                                     alt={file.filename}
 
                                                                                     onClick={() => {
 
-                                                                                        setPreviewUrl(`${API_URL}${file.url}`);
+                                                                                        setPreviewUrl(
+                                                                                            file.url?.startsWith("http")
+                                                                                                ? file.url
+                                                                                                : `https://api.autohubexpress.us${file.url}`
+                                                                                        );
 
                                                                                         setPreviewFileName(
                                                                                             file.filename
@@ -1043,7 +1051,11 @@ Thank you for reaching out.
 
                                                                                 /* FILE ATTACHMENT */
                                                                                 <a
-                                                                                    href={`${API_URL}${file.url}`}
+                                                                                    href={
+                                                                                        file.url?.startsWith("http")
+                                                                                            ? file.url
+                                                                                            : `https://api.autohubexpress.us${file.url}`
+                                                                                    }
                                                                                     target="_blank"
                                                                                     rel="noreferrer"
 
