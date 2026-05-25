@@ -1010,19 +1010,27 @@ Thank you for reaching out.
                                                                             >
                                                                                <img
                                                                                     src={
-                                                                                        file.url?.startsWith("http")
-                                                                                            ? file.url
-                                                                                            : `https://api.autohubexpress.us${file.url}`
+                                                                                        file.url
+                                                                                            ? (
+                                                                                                file.url.startsWith("http")
+                                                                                                    ? file.url
+                                                                                                    : `https://api.autohubexpress.us${file.url}`
+                                                                                            )
+                                                                                            : `https://api.autohubexpress.us/uploads/${file.filename}`
                                                                                     }
                                                                                     alt={file.filename}
 
                                                                                     onClick={() => {
 
-                                                                                        setPreviewUrl(
-                                                                                            file.url?.startsWith("http")
+                                                                                        const imageUrl = file.url
+                                                                                            ? (
+                                                                                                file.url?.startsWith("http")
                                                                                                 ? file.url
                                                                                                 : `https://api.autohubexpress.us${file.url}`
-                                                                                        );
+                                                                                            )
+                                                                                            : `https://api.autohubexpress.us/uploads/${file.filename}`;
+
+                                                                                        setPreviewUrl(imageUrl);
 
                                                                                         setPreviewFileName(
                                                                                             file.filename
@@ -1052,9 +1060,13 @@ Thank you for reaching out.
                                                                                 /* FILE ATTACHMENT */
                                                                                 <a
                                                                                     href={
-                                                                                        file.url?.startsWith("http")
-                                                                                            ? file.url
-                                                                                            : `https://api.autohubexpress.us${file.url}`
+                                                                                        file.url
+                                                                                            ? (
+                                                                                                file.url?.startsWith("http")
+                                                                                                    ? file.url
+                                                                                                    : `https://api.autohubexpress.us${file.url}`
+                                                                                                )
+                                                                                                : `https://api.autohubexpress.us/uploads/${file.filename}`
                                                                                     }
                                                                                     target="_blank"
                                                                                     rel="noreferrer"
