@@ -109,6 +109,9 @@ export default function Inbox() {
         ) {
             return `https://api.autohubexpress.us/uploads/${file.filename}`;
         };
+
+        // fallback using filename
+        return `https://api.autohubexpress.us/uploads/${file.filename}`;
     };
     // end here
 
