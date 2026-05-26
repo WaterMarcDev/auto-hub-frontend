@@ -9,9 +9,37 @@ const cleanBody = (html) => {
     if (!html) return "";
 
     return html
-        .replace(/On .*wrote:/gi, "")   // remove "On Wed..."
-        .replace(/>.*$/gm, "")          // remove quoted lines
-        .trim();
+
+    // remove reply headers
+    .replace(/On .*wrote:/gi, "")
+
+    // remove quoted lines
+    .replace(/>.*$/gm, "")
+
+    // remove unsubscribe/footer blocks
+    .replace(/You've received this email because[\s\S]*/gi, "")
+
+    .replace(/If you feel you received it by mistake[\s\S]*/gi, "")
+
+    // remove Wix tracking/browser links only
+    .replace(/Click on the link below to open the message in a browser: [\s\S]*?(?=<|$)/gi, "")
+
+    // remove tracking/browser links
+    // .replace(/https?:\/\/[^\s]+/gi, "")
+
+    // fix broken encoding characters
+    .replace(/�/g, "-")
+
+    // remove extra empty lines
+    .replace(/\n\s*\n/g, "\n")
+
+    .trim();
+    // if (!html) return "";
+
+    // return html
+    //     .replace(/On .*wrote:/gi, "")   // remove "On Wed..."
+    //     .replace(/>.*$/gm, "")          // remove quoted lines
+    //     .trim();
 };
 
 // formatTime function by shiva
