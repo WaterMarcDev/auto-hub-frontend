@@ -125,11 +125,11 @@ export default function Inbox() {
         ) {
             return file.url;
         }
-              
+
 
         // fallback for old records
         if (
-            file?.filename && 
+            file?.filename &&
             typeof file.filename === "string"
         ) {
             return `https://api.autohubexpress.us/uploads/${file.filename}`;
@@ -140,7 +140,7 @@ export default function Inbox() {
     };
     // end here
 
-    
+
 
 
     // Forward Mail Function by shiva
@@ -325,7 +325,7 @@ export default function Inbox() {
     // Real Time UPDATE by shiva
     useEffect(() => {
         const socket = io(
-            import.meta.env.VITE_SOCKET_URL || 
+            import.meta.env.VITE_SOCKET_URL ||
             "https://api.autohubexpress.us"
         );
 
@@ -337,7 +337,7 @@ export default function Inbox() {
 
             // update thread if open
             if (
-                selectedEmailRef.current && 
+                selectedEmailRef.current &&
                 newEmail.thread_id === selectedEmailRef.current.thread_id
             ) {
                 setThread(prev => {
@@ -374,6 +374,7 @@ export default function Inbox() {
                 .email-html-body img {
                     width: 100% !important;
                     max-width: 100% !important;
+                    height: auto !important;
                     border-radius: 12px;
                     margin-top: 14px;
                     display: block;
@@ -392,6 +393,7 @@ export default function Inbox() {
                 .email-html-body a {
                     color: #60a5fa;
                     word-break: break-word;
+                    display: inline-block;
                 }
                 `}
             </style>
@@ -855,6 +857,12 @@ Thank you for reaching out.
                                 {(Array.isArray(thread) ? thread : []).map((msg) => {
                                     const isYou = msg.sender_email.includes("autohubexpress");
 
+                                    const isHtmlEmail =
+                                        msg.body?.includes("<img") ||
+                                        msg.body?.includes("<table") ||
+                                        msg.body?.includes("<html") ||
+                                        msg.body?.includes("<div");    //Some ecommerce emails only use nested <div> layouts.
+
                                     return (
                                         <div
                                             key={msg._id}
@@ -889,20 +897,32 @@ Thank you for reaching out.
 
                                             {/* Message */}
                                             <div
-                                                style={{
-                                                    display: "inline-block",
-                                                    padding: "12px 16px",
-                                                    borderRadius: "16px",
-                                                    background: isYou ? "#3b82f6" : "#1e293b",
-                                                    color: "#f8fafc",
-                                                    maxWidth: "75%",
-                                                    fontSize: "14px",
-                                                    lineHeight: "1.6",
+                                                style={
+                                                    isHtmlEmail
+                                                        ? {
+                                                            background: "#1e293b",
+                                                            padding: "18px",
+                                                            borderRadius: "16px",
+                                                            marginTop: "10px",
+                                                            overflowX: "auto",
+                                                            width: "100%",
+                                                            maxWidth: "100%"
+                                                        }
+                                                        : {
+                                                            display: "inline-block",
+                                                            padding: "12px 16px",
+                                                            borderRadius: "16px",
+                                                            background: isYou ? "#3b82f6" : "#1e293b",
+                                                            color: "#f8fafc",
+                                                            maxWidth: "75%",
+                                                            fontSize: "14px",
+                                                            lineHeight: "1.6",
+                                                            textAlign: "left",
+                                                            whiteSpace: "pre-wrap",
+                                                            wordBreak: "break-word"
+                                                        }
+                                                }
 
-                                                    textAlign: "left",
-                                                    whiteSpace: "pre-wrap",
-                                                    wordBreak: "break-word"
-                                                }}
                                             // dangerouslySetInnerHTML={{ __html: cleanBody(msg.body) }}
                                             >
                                                 {/^Fwd(\[\d+\])?/i.test(msg.subject)
@@ -1099,57 +1119,57 @@ Thank you for reaching out.
                                                                             {/* IMAGE PREVIEW */}
                                                                             {file.filename?.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) ? (
 
-                                                                            <div
-                                                                                style={{
-                                                                                    background: "rgba(255,255,255,0.04)",
-                                                                                    padding: "8px",
-                                                                                    borderRadius: "16px",
-                                                                                    marginTop: "10px",
-                                                                                    width: "fit-content"
-                                                                                }}
-                                                                            >
-                                                                                {/* To preview the image added by shiva */}
-                                                                                <img
-                                                                                    src={getImageUrl(file)}
-                                                                                    alt={file.originalname || file.filename}
-
-                                                                                    onClick={() => {
-
-                                                                                        setPreviewImage(
-                                                                                            getImageUrl(file)
-                                                                                        );
-
-                                                                                        setPreviewTitle(
-                                                                                            file.originalname || file.filename
-                                                                                        );
-
-                                                                                        setPreviewOpen(true);
-                                                                                    }}
-
-                                                                                    onError={(e) => {
-                                                                                        console.log("BROKEN IMAGE:", getImageUrl(file));
-
-                                                                                        e.currentTarget.src=
-                                                                                            "https://placehold.co/300x200?text=Image+Not+Found";
-                                                                                    }}
-
+                                                                                <div
                                                                                     style={{
-                                                                                        width: "220px",
-                                                                                        maxWidth: "100%",
-                                                                                        borderRadius: "14px",
-                                                                                        cursor: "pointer",
-                                                                                        marginTop: "12px",
-                                                                                        objectFit: "cover",
-                                                                                        border: "1px solid rgba(255,255,255,0.08)",
-                                                                                        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-                                                                                        display: "block",
-                                                                                        transition: "0.2s ease"
+                                                                                        background: "rgba(255,255,255,0.04)",
+                                                                                        padding: "8px",
+                                                                                        borderRadius: "16px",
+                                                                                        marginTop: "10px",
+                                                                                        width: "fit-content"
                                                                                     }}
-                                                                                />
-                                                                                {/* end here */}
-                                                                            </div>
+                                                                                >
+                                                                                    {/* To preview the image added by shiva */}
+                                                                                    <img
+                                                                                        src={getImageUrl(file)}
+                                                                                        alt={file.originalname || file.filename}
 
-                                                                                
+                                                                                        onClick={() => {
+
+                                                                                            setPreviewImage(
+                                                                                                getImageUrl(file)
+                                                                                            );
+
+                                                                                            setPreviewTitle(
+                                                                                                file.originalname || file.filename
+                                                                                            );
+
+                                                                                            setPreviewOpen(true);
+                                                                                        }}
+
+                                                                                        onError={(e) => {
+                                                                                            console.log("BROKEN IMAGE:", getImageUrl(file));
+
+                                                                                            e.currentTarget.src =
+                                                                                                "https://placehold.co/300x200?text=Image+Not+Found";
+                                                                                        }}
+
+                                                                                        style={{
+                                                                                            width: "220px",
+                                                                                            maxWidth: "100%",
+                                                                                            borderRadius: "14px",
+                                                                                            cursor: "pointer",
+                                                                                            marginTop: "12px",
+                                                                                            objectFit: "cover",
+                                                                                            border: "1px solid rgba(255,255,255,0.08)",
+                                                                                            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+                                                                                            display: "block",
+                                                                                            transition: "0.2s ease"
+                                                                                        }}
+                                                                                    />
+                                                                                    {/* end here */}
+                                                                                </div>
+
+
 
                                                                             ) : (
 
@@ -1180,7 +1200,7 @@ Thank you for reaching out.
                                                                 </div>
                                                             )}
 
-                                                            
+
                                                         </>
                                                     )}
                                             </div>
@@ -1604,7 +1624,7 @@ Thank you for reaching out.
                         setForwardAttachments([]);
                         setForwardEmail("");
                         setForwardMessage("");
-                    
+
                     }}
                     onOk={handleForwardMail}
                     confirmLoading={isForwarding}
@@ -1912,7 +1932,7 @@ Thank you for reaching out.
                     }}
                 />
             </Modal>
-            
+
         </>
 
     );
