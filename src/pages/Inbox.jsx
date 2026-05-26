@@ -88,12 +88,26 @@ export default function Inbox() {
     const getImageUrl = (file) => {
 
         // use backend URL directly if exists
-        if (file?.url) {
+        if (file?.url &&
+            typeof file.url === "string" &&
+            file.url.startsWith("http") &&
+            !file.url.includes("undefined") &&
+            !file.url.includes("null")
+        ) {
             return file.url;
         }
+              
 
         // fallback for old records
-        return `https://api.autohubexpress.us/uploads/${file.filename}`;
+        if (
+            file?.filename && 
+            typeof file.filename === "string"
+        ) {
+            return `https://api.autohubexpress.us/uploads/${file.filename}`;
+        }
+
+        // final fallback
+        return "https://placehold.co/300x200?text=No+Image";
     };
     // end here
 
@@ -105,30 +119,26 @@ export default function Inbox() {
 
         if (!forwardEmail.trim()) {
 
-            // Email validation by shiva
-            const emailRegex =
-                /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-            if (
-                !emailRegex.test(
-                    forwardEmail
-                )
-            ) {
-
-                message.warning(
-                    "Enter valid email"
-                );
-
-                return;
-            }
-            // end here
-
             message.warning(
                 "Enter recipient email"
             );
 
             return;
         }
+
+        // Email validation by shiva
+        const emailRegex =
+            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (!emailRegex.test(forwardEmail)) {
+
+            message.warning(
+                "Enter valid email"
+            );
+
+            return
+        }
+        // end here
 
         if (isForwarding) return;
 
@@ -213,6 +223,7 @@ export default function Inbox() {
 
             setForwardEmail("");
             setForwardMessage("");
+            setForwardAttachments([]);  // clear forward attachments after success
 
         } catch (err) {
 
@@ -284,7 +295,10 @@ export default function Inbox() {
 
     // Real Time UPDATE by shiva
     useEffect(() => {
-        const socket = io(import.meta.env.VITE_SOCKET_URL);
+        const socket = io(
+            import.meta.env.VITE_SOCKET_URL || 
+            "https://api.autohubexpress.us"
+        );
 
         socket.on("new_email", (data) => {
             const newEmail = data.email || data;
@@ -1015,7 +1029,7 @@ Thank you for reaching out.
 
 
                                                                             {/* IMAGE PREVIEW */}
-                                                                            {file.filename?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                                                            {file.filename?.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) ? (
 
                                                                             <div
                                                                                 style={{
@@ -1517,9 +1531,13 @@ Thank you for reaching out.
                     open={forwardModalOpen}
                     okText="Send Forward"
                     cancelText="Cancel"
-                    onCancel={() =>
-                        setForwardModalOpen(false)
-                    }
+                    onCancel={() => {
+                        setForwardModalOpen(false);
+                        setForwardAttachments([]);
+                        setForwardEmail("");
+                        setForwardMessage("");
+                    
+                    }}
                     onOk={handleForwardMail}
                     confirmLoading={isForwarding}
                 // onOk={async () => {
