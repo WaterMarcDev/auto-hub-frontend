@@ -371,9 +371,32 @@ export default function Inbox() {
                         transform: rotate(360deg);
                     }
                 }
+                .email-html-body img {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    border-radius: 12px;
+                    margin-top: 14px;
+                    display: block;
+                    object-fit: contain;
+                }
+                
+                .email-html-body table {
+                    width: 100% !important;
+                }
+                
+                .email-html-body {
+                    overflow-x: auto;
+                    line-height: 1.7;
+                }
+                
+                .email-html-body a {
+                    color: #60a5fa;
+                    word-break: break-word;
+                }
                 `}
             </style>
             {/* end here */}
+
             <div style={{ padding: "16px", color: "#cbd5e1", paddingBottom: "80px", minHeight: "100vh", }}>
 
                 <div
@@ -1047,6 +1070,8 @@ Thank you for reaching out.
                                                         <>
                                                             {/* Existing HTML Rendering */}
                                                             <div
+                                                                className="email-html-body"
+
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: cleanBody(msg.body)
                                                                         .replace(/📎.*$/gm, "")
