@@ -59,21 +59,14 @@ export default function Inbox() {
     const [forwardAttachments, setForwardAttachments] = useState([]);
     // end here
 
-    // Preview States
-    const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+    // Image preview states
+    const [previewOpen, setPreviewOpen] = useState(false);
 
-    const [selectedImage, setSelectedImage] = useState("");
+    const [previewImage, setPreviewImage] = useState("");
 
-    const [selectedImageName, setSelectedImageName] = useState("");
+    const [previewTitle, setPreviewTitle] = useState("");
     // end here
 
-    // Preview open inside CRM by shiva
-    // const [previewOpen, setPreviewOpen] = useState(false);
-    // const [previewUrl, setPreviewUrl] = useState("");
-    // const [previewFileName, setPreviewFileName] = useState("");
-    // end here
-
-    // end here
     const { message } = App.useApp();   // added by shiva
     const emailsPerPage = 20;
 
@@ -91,11 +84,20 @@ export default function Inbox() {
 
     const totalPages = Math.ceil(filteredEmails.length / emailsPerPage);
 
-    // Live-safe attachment URL helper by shiva
-    const getAttachmentUrl = (file) => {
+    // Safe attachment image URL by shiva
+    const getImageUrl = (file) => {
+
+        // use backend URL directly if exists
+        if (file?.url) {
+            return file.url;
+        }
+
+        // fallback for old records
         return `https://api.autohubexpress.us/uploads/${file.filename}`;
     };
     // end here
+
+    
 
 
     // Forward Mail Function by shiva
@@ -1011,6 +1013,7 @@ Thank you for reaching out.
 
                                                                         <div key={i}>
 
+
                                                                             {/* IMAGE PREVIEW */}
                                                                             {file.filename?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
 
@@ -1025,19 +1028,27 @@ Thank you for reaching out.
                                                                             >
                                                                                 {/* To preview the image added by shiva */}
                                                                                 <img
-                                                                                    src={getAttachmentUrl(file)}
-                                                                                    alt={file.filename}
+                                                                                    src={getImageUrl(file)}
+                                                                                    alt={file.originalname || file.filename}
 
                                                                                     onClick={() => {
-                                                                                        setSelectedImage(
-                                                                                            getAttachmentUrl(file)
+
+                                                                                        setPreviewImage(
+                                                                                            getImageUrl(file)
                                                                                         );
 
-                                                                                        setSelectedImageName(
-                                                                                            file.filename
+                                                                                        setPreviewTitle(
+                                                                                            file.originalname || file.filename
                                                                                         );
 
-                                                                                        setImagePreviewOpen(true);
+                                                                                        setPreviewOpen(true);
+                                                                                    }}
+
+                                                                                    onError={(e) => {
+                                                                                        console.log("BROKEN IMAGE:", getImageUrl(file));
+
+                                                                                        e.currentTarget.src=
+                                                                                            "https://placehold.co/300x200?text=Image+Not+Found";
                                                                                     }}
 
                                                                                     style={{
@@ -1052,62 +1063,8 @@ Thank you for reaching out.
                                                                                         display: "block",
                                                                                         transition: "0.2s ease"
                                                                                     }}
-
-                                                                                    onMouseEnter={(e) => {
-                                                                                        e.currentTarget.style.opacity = "0.9";
-                                                                                    }}
-
-                                                                                    onMouseLeave={(e) => {
-                                                                                        e.currentTarget.style.opacity = "1";
-                                                                                    }}
                                                                                 />
                                                                                 {/* end here */}
-
-
-
-                                                                               {/* <img
-                                                                                    src={
-                                                                                        file.url
-                                                                                            ? (
-                                                                                                file.url.startsWith("http")
-                                                                                                    ? file.url
-                                                                                                    : `https://api.autohubexpress.us${file.url}`
-                                                                                            )
-                                                                                            : `https://api.autohubexpress.us/uploads/${file.filename}`
-                                                                                    }
-                                                                                    alt={file.filename}
-
-                                                                                    // onClick={() => {
-
-                                                                                    //     const imageUrl = file.url
-                                                                                    //         ? (
-                                                                                    //             file.url?.startsWith("http")
-                                                                                    //             ? file.url
-                                                                                    //             : `https://api.autohubexpress.us${file.url}`
-                                                                                    //         )
-                                                                                    //         : `https://api.autohubexpress.us/uploads/${file.filename}`;
-
-                                                                                    //     setPreviewUrl(imageUrl);
-
-                                                                                    //     setPreviewFileName(
-                                                                                    //         file.filename
-                                                                                    //     );
-
-                                                                                    //     setPreviewOpen(true);
-                                                                                    // }}
-
-                                                                                    style={{
-                                                                                        width: "220px",
-                                                                                        maxWidth: "100%",
-                                                                                        borderRadius: "14px",
-                                                                                        cursor: "pointer",
-                                                                                        marginTop: "12px",
-                                                                                        objectFit: "cover",
-                                                                                        border: "1px solid rgba(255,255,255,0.08)",
-                                                                                        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-                                                                                        display: "block"
-                                                                                    }}
-                                                                                />  */}
                                                                             </div>
 
                                                                                 
@@ -1116,15 +1073,7 @@ Thank you for reaching out.
 
                                                                                 /* FILE ATTACHMENT */
                                                                                 <a
-                                                                                    href={
-                                                                                        file.url
-                                                                                            ? (
-                                                                                                file.url?.startsWith("http")
-                                                                                                    ? file.url
-                                                                                                    : `https://api.autohubexpress.us${file.url}`
-                                                                                                )
-                                                                                                : `https://api.autohubexpress.us/uploads/${file.filename}`
-                                                                                    }
+                                                                                    href={file.url}
                                                                                     target="_blank"
                                                                                     rel="noreferrer"
 
@@ -1140,7 +1089,7 @@ Thank you for reaching out.
                                                                                         marginTop: "6px"
                                                                                     }}
                                                                                 >
-                                                                                    📎 {file.filename}
+                                                                                    📎 {file.originalname || file.filename}
                                                                                 </a>
                                                                             )}
 
@@ -1148,6 +1097,8 @@ Thank you for reaching out.
                                                                     ))}
                                                                 </div>
                                                             )}
+
+                                                            
                                                         </>
                                                     )}
                                             </div>
@@ -1824,95 +1775,21 @@ Thank you for reaching out.
                 </Modal>
                 {/* end here */}
             </div>
-            {/* <Modal
-                open={previewOpen}
 
-                footer={null}
-
-                onCancel={() => {
-
-                    setPreviewOpen(false);
-
-                    setPreviewUrl("");
-                }}
-
-                width="80%"
-
-                centered
-            >
-
-                <div
-                    style={{
-                        marginBottom: "14px",
-                        fontWeight: 600,
-                        fontSize: "16px"
-                    }}
-                >
-                    {previewFileName}
-                </div>
-
-                {previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-
-                    <img
-                        src={previewUrl}
-                        alt="preview"
-
-                        style={{
-                            width: "100%",
-                            borderRadius: "10px"
-                        }}
-                    />
-
-                ) : previewUrl.match(/\.pdf$/i) ? (
-
-                    <iframe
-                        src={previewUrl}
-
-                        title="PDF Preview"
-
-                        style={{
-                            width: "100%",
-                            height: "80vh",
-                            border: "none",
-                            borderRadius: "10px"
-                        }}
-                    />
-
-                ) : (
-
-                    <div>
-
-                        <p>
-                            Preview not available for this file type.
-                        </p>
-
-                        <a
-                            href={previewUrl}
-                            download
-
-                            style={{
-                                color: "#1677ff"
-                            }}
-                        >
-                            Download File
-                        </a>
-
-                    </div>
-                )}
-            </Modal> */}
-
-            {/* Modal for preview by shiva */}
+            {/* IMAGE PREVIEW MODAL by shiva */}
             <Modal
-                open={imagePreviewOpen}
+                open={previewOpen}
                 footer={null}
                 onCancel={() => {
-                    setImagePreviewOpen(false);
-                    setSelectedImage("");
-                    setSelectedImageName("");
+                    setPreviewOpen(false);
+                    setPreviewImage("");
+                    setPreviewTitle("");
                 }}
 
                 centered
+
                 width="75%"
+
                 bodyStyle={{
                     background: "#0f172a",
                     padding: "18px",
@@ -1928,12 +1805,18 @@ Thank you for reaching out.
                         wordBreak: "break-word"
                     }}
                 >
-                    {selectedImageName}
+                    {previewTitle}
                 </div>
 
                 <img
-                    src={selectedImage}
+                    src={previewImage}
                     alt="preview"
+
+                    onError={(e) => {
+                        e.currentTarget.src =
+                            "https://placehold.co/600x400?text=Image+Not+Found";
+                    }}
+
                     style={{
                         width: "100%",
                         maxHeight: "80vh",
@@ -1943,6 +1826,7 @@ Thank you for reaching out.
                     }}
                 />
             </Modal>
+            
         </>
 
     );
