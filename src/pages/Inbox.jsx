@@ -832,23 +832,14 @@ Thank you for reaching out.
                                 }}
                             >
                                 {(Array.isArray(thread) ? thread : []).map((msg) => {
-                                    // const isYou = msg.sender_email?.includes("support@autohubexpress.us");
 
-                                    // const isHtmlEmail =
-                                    //     !isYou &&
-                                    //     (
-                                    //         msg.body?.includes("<img") ||
-                                    //         msg.body?.includes("<table") ||
-                                    //         msg.body?.includes("<html") ||
-                                    //         msg.body?.includes("<div")
-                                    //     );
-                                    // const isYou =
-                                    //     msg.sender_email?.includes("support@autohubexpress.us");
-                                    // const isHtmlEmail =
-                                    //     msg.body?.includes("<img") ||
-                                    //     msg.body?.includes("<table") ||
-                                    //     msg.body?.includes("<html") ||
-                                    //     msg.body?.includes("<div");
+                                    const isYou =
+                                        msg.sender_email?.includes("support@autohubexpress.us");
+                                    const isHtmlEmail =
+                                        msg.body?.includes("<img") ||
+                                        msg.body?.includes("<table") ||
+                                        msg.body?.includes("<html") ||
+                                        msg.body?.includes("<div");
 
                                     return (
                                         <div
