@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Drawer, App, Modal, Input } from "antd";    // added Modal, Input
 import { io } from "socket.io-client";
 
@@ -67,6 +67,10 @@ export default function Inbox() {
     const [previewTitle, setPreviewTitle] = useState("");
     // end here
 
+    // Real time update Usestate
+    const selectedEmailRef = useRef(null);
+    // end here
+
     const { message } = App.useApp();   // added by shiva
     const emailsPerPage = 20;
 
@@ -83,6 +87,11 @@ export default function Inbox() {
     const currentEmails = filteredEmails.slice(indexOfFirstEmail, indexOfLastEmail);
 
     const totalPages = Math.ceil(filteredEmails.length / emailsPerPage);
+
+    // Sync REF by shiva
+    useEffect(() => {
+        selectedEmailRef.current = selectedEmail;
+    }, [selectedEmail]);
 
     // Safe attachment image URL by shiva
     const getImageUrl = (file) => {
@@ -307,8 +316,22 @@ export default function Inbox() {
             setEmails(prev => [newEmail, ...prev]);
 
             // update thread if open
-            if (selectedEmail && newEmail.thread_id === selectedEmail.thread_id) {
-                setThread(prev => [...prev, newEmail]);
+            if (
+                selectedEmailRef.current && 
+                newEmail.thread_id === selectedEmailRef.current.thread_id
+            ) {
+                setThread(prev => {
+                    const exists =
+                        prev.some(
+                            e => e._id === newEmail._id
+                        );
+
+                    if (exists) {
+                        return prev;
+                    }
+
+                    return [...prev, newEmail];
+                });
             }
         });
 
