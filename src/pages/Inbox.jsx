@@ -834,12 +834,6 @@ Thank you for reaching out.
                                 {(Array.isArray(thread) ? thread : []).map((msg) => {
                                     const isYou = msg.sender_email.includes("autohubexpress");
 
-                                    const isHtmlEmail =
-                                            msg.body?.includes("<img") ||
-                                            msg.body?.includes("<table") ||
-                                            msg.body?.includes("<html") ||
-                                            msg.body?.includes("<div")    //Some ecommerce emails only use nested <div> layouts.
-
                                     return (
                                         <div
                                             key={msg._id}
@@ -874,31 +868,19 @@ Thank you for reaching out.
 
                                             {/* Message */}
                                             <div
-                                                style={
-                                                    isHtmlEmail
-                                                        ? {
-                                                            background: "#1e293b",
-                                                            padding: "18px",
-                                                            borderRadius: "16px",
-                                                            marginTop: "10px",
-                                                            overflowX: "auto",
-                                                            width: "100%",
-                                                            maxWidth: "100%"
-                                                        }
-                                                        : {
-                                                            display: "inline-block",
-                                                            padding: "12px 16px",
-                                                            borderRadius: "16px",
-                                                            background: isYou ? "#3b82f6" : "#1e293b",
-                                                            color: "#f8fafc",
-                                                            maxWidth: "75%",
-                                                            fontSize: "14px",
-                                                            lineHeight: "1.6",
-                                                            textAlign: "left",
-                                                            whiteSpace: "pre-wrap",
-                                                            wordBreak: "break-word"
-                                                        }
-                                                }
+                                                style={{
+                                                        display: "inline-block",
+                                                        padding: "12px 16px",
+                                                        borderRadius: "16px",
+                                                        background: isYou ? "#3b82f6" : "#1e293b",
+                                                        color: "#f8fafc",
+                                                        maxWidth: "75%",
+                                                        fontSize: "14px",
+                                                        lineHeight: "1.6",
+                                                        textAlign: "left",
+                                                        whiteSpace: "pre-wrap",
+                                                        wordBreak: "break-word"
+                                                        }}
 
                                             // dangerouslySetInnerHTML={{ __html: cleanBody(msg.body) }}
                                             >
@@ -1067,7 +1049,6 @@ Thank you for reaching out.
                                                         <>
                                                             {/* Existing HTML Rendering */}
                                                             <div
-                                                                className="email-html-body"
 
                                                                 dangerouslySetInnerHTML={{
                                                                     __html: cleanBody(msg.body)
