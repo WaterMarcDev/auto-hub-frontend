@@ -858,10 +858,13 @@ Thank you for reaching out.
                                     const isYou = msg.sender_email.includes("autohubexpress");
 
                                     const isHtmlEmail =
-                                        msg.body?.includes("<img") ||
-                                        msg.body?.includes("<table") ||
-                                        msg.body?.includes("<html") ||
-                                        msg.body?.includes("<div");    //Some ecommerce emails only use nested <div> layouts.
+                                        !isYou &&
+                                        (
+                                            msg.body?.includes("<img") ||
+                                            msg.body?.includes("<table") ||
+                                            msg.body?.includes("<html") ||
+                                            msg.body?.includes("<div")    //Some ecommerce emails only use nested <div> layouts.
+                                        );
 
                                     return (
                                         <div
