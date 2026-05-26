@@ -313,7 +313,7 @@ export default function Inbox() {
         });
 
         return () => socket.disconnect();
-    }, [selectedEmail]);
+    }, []);
     // end here
 
 
