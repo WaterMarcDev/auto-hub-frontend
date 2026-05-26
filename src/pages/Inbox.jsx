@@ -832,7 +832,7 @@ Thank you for reaching out.
                                 }}
                             >
                                 {(Array.isArray(thread) ? thread : []).map((msg) => {
-                                    const isYou = msg.sender_email === user?.email;
+                                    const isYou = msg.sender_email?.includes("support@autohubexpress.us");
 
                                     const isHtmlEmail =
                                         !isYou &&
