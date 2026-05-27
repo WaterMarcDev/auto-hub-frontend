@@ -1099,13 +1099,20 @@ Thank you for reaching out.
                                                                     </div>
 
                                                                     {/* PRODUCT IMAGE */}
-                                                                    {msg.body.match(/<img[^>]+src="([^"]+)"/i)?.[1] && (
+                                                                    {
+                                                                    (
+                                                                        msg.body.match(
+                                                                            /https:\/\/static\.wixstatic\.com[^"]+/i
+                                                                        ) || []
+                                                                    )[0] && (
                                                                         
                                                                         <img
                                                                             src={
-                                                                                msg.body.match(
-                                                                                    /<img[^>]+src="([^"]+)"/i
-                                                                                )?.[1]
+                                                                                (
+                                                                                    msg.body.match(
+                                                                                        /https:\/\/static\.wixstatic\.com[^"]+/i
+                                                                                    ) || []
+                                                                                )[0]
                                                                             }
 
                                                                             alt="product"
