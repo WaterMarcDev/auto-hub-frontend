@@ -1054,14 +1054,69 @@ Thank you for reaching out.
                                                     })()
                                                     : (
                                                         <>
-                                                            {/* Existing HTML Rendering */}
-                                                            <div
+                                                            {/* Existing HTML Rendering By shiva*/}
+                                                            {msg.subject?.includes("back in stock request") ? (
 
-                                                                dangerouslySetInnerHTML={{
-                                                                    __html: cleanBody(msg.body)
-                                                                        .replace(/📎.*$/gm, "")
-                                                                }}
-                                                            />
+                                                                <div
+                                                                    style={{
+                                                                        lineHeight: "1.8",
+                                                                        fontSize: "15px",
+                                                                        color: "#f8fafc",
+                                                                    }}
+                                                                >
+
+                                                                    {/* CUSTOMER EMAIL */}
+                                                                    <div style={{ marginBottom: "10px" }}>
+                                                                        <strong>Customer:</strong>{" "}
+
+                                                                        <a
+                                                                            href={`mailto:${
+                                                                                msg.body.match(
+                                                                                    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
+                                                                                )?.[0] || ""
+                                                                            }`}
+                                                                            style={{
+                                                                                color: "#60a5fa",
+                                                                                textDecoration: "none",
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                msg.body.match(
+                                                                                    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
+                                                                                )?.[0]
+                                                                            }
+                                                                        </a>
+                                                                    </div>
+
+                                                                    {/* PRODUCT */}
+                                                                    <div style={{ marginBottom: "10px" }}>
+                                                                        <strong>Product:</strong>{" "}
+                                                                        {
+                                                                            msg.body.match(
+                                                                                /Air Intake Manifold/i
+                                                                            )?.[0] || "N/A"
+                                                                        }
+                                                                    </div>
+
+                                                                    {/* PRICE */}
+                                                                    <div>
+                                                                        <strong>Price:</strong>{" "}
+                                                                        {
+                                                                            msg.body.match(
+                                                                                /\$\d+(\.\d+)?/
+                                                                            )?.[0] || "N/A"
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html: cleanBody(msg.body)
+                                                                            .replace(/📎.*$/gm, "")
+                                                                    }}
+                                                                />
+                                                            )}
+                                                            {/* end here */}
 
                                                             {/* Attachment Preview */}
                                                             {/* Attachments */}
