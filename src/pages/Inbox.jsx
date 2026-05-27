@@ -1098,6 +1098,30 @@ Thank you for reaching out.
                                                                         }
                                                                     </div>
 
+                                                                    {/* PRODUCT IMAGE */}
+                                                                    {msg.body.match(/<img[^>]+src="([^"]+)"/i)?.[1] && (
+                                                                        
+                                                                        <img
+                                                                            src={
+                                                                                msg.body.match(
+                                                                                    /<img[^>]+src="([^"]+)"/i
+                                                                                )?.[1]
+                                                                            }
+
+                                                                            alt="product"
+
+                                                                            style={{
+                                                                                width: "220px",
+                                                                                borderRadius: "14px",
+                                                                                marginTop: "10px",
+                                                                                objectFit: "cover",
+                                                                                border: "1px solid rgba(255,255,255,0.08)",
+                                                                                boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+                                                                                display: "block"
+                                                                            }}
+                                                                        />
+                                                                    )}
+
                                                                     {/* PRICE */}
                                                                     <div>
                                                                         <strong>Price:</strong>{" "}
