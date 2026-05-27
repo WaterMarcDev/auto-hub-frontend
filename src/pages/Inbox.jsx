@@ -1055,7 +1055,8 @@ Thank you for reaching out.
                                                     : (
                                                         <>
                                                             {/* Existing HTML Rendering By shiva*/}
-                                                            {msg.subject?.includes("back in stock request") ? (
+                                                            {msg.subject?.includes("back in stock request") && 
+                                                            !isYou ? (
 
                                                                 <div
                                                                     style={{
