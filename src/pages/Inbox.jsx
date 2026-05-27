@@ -403,7 +403,7 @@ export default function Inbox() {
 
                     {/* 🔥 FILTER BUTTONS  */}
                     <div style={{ display: "flex", gap: "10px", marginLeft: "20px" }}>
-                        {["all", "unread", "read"].map((type) => (
+                        {["all", "unread", "read", "replied"].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => {
