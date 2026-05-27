@@ -1142,11 +1142,34 @@ Thank you for reaching out.
                                                                 </div>
                                                             ) : (
                                                                 <div
-                                                                    dangerouslySetInnerHTML={{
-                                                                        __html: cleanBody(msg.body)
-                                                                            .replace(/📎.*$/gm, "")
+                                                                    style={{
+                                                                        whiteSpace: "pre-wrap",
+                                                                        lineHeight: "1.7",
+                                                                        fontSize: "15px",
+                                                                        color: "#f8fafc",
                                                                     }}
-                                                                />
+                                                                >
+                                                                    {
+                                                                        cleanBody(msg.body)
+
+                                                                            // remove html
+                                                                            .replace(/<[^>]+>/g, "")
+
+                                                                            // remove signature block
+                                                                            .split("Best Regards,")[0]
+
+                                                                            // remove attachemnt text
+                                                                            .replace(/📎.*$/gm, "")
+
+                                                                            .trim()
+                                                                    }
+                                                                </div>
+                                                                // <div
+                                                                //     dangerouslySetInnerHTML={{
+                                                                //         __html: cleanBody(msg.body)
+                                                                //             .replace(/📎.*$/gm, "")
+                                                                //     }}
+                                                                // />
                                                             )}
                                                             {/* end here */}
 
