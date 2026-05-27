@@ -590,7 +590,15 @@ Thank you for reaching out.
 
                                         setEmails((prev) =>
                                             prev.map((e) =>
-                                                e._id === email._id ? { ...e, status: "read" } : e
+                                                e._id === email._id 
+                                                    ? { 
+                                                        ...e, 
+                                                        status: 
+                                                            e.status === "replied"
+                                                                ? "replied"
+                                                                : "read"
+                                                    } 
+                                                    : e
                                             )
                                         );
                                     }
