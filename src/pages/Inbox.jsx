@@ -739,7 +739,9 @@ Thank you for reaching out.
 
                                                             ?.replace(/[#.a-zA-Z0-9_-]+\s*\{[^}]*\}/g, "")
 
-                                                            .replace(/\s+/g, " ")
+                                                            ?.replace(/\s+/g, " ")
+
+                                                            ?.replace(/^96\s*/, "")
 
                                                             ?.replace(/^\d+\s*/, "")
 
