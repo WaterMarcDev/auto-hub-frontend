@@ -741,12 +741,12 @@ Thank you for reaching out.
 
                                                             ?.replace(/\s+/g, " ")
 
-                                                            ?.replace(/^96\s*/, "")
+                                                            ?.replace(/\b96\b/g, "")
 
                                                             ?.replace(/^\d+\s*/, "")
 
                                                             ?.replace(
-                                                                /You have a new  request,/gi,
+                                                                /You have a new request,/gi,
                                                                 ""
                                                             )
 
