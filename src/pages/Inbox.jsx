@@ -737,29 +737,13 @@ Thank you for reaching out.
                                                     }}
                                                 >
                                                     {
-                                                        email.body
-                                                            ?.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+                                                        `${
+                                                            email.sender_name ||
+                                                            email.sender_email.split("@")[0]
+                                                        } would like to know when this product is back in stock.`
+                                                    }
 
-                                                            ?.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-
-                                                            ?.replace(/<[^>]+>/g, "")
-
-                                                            ?.replace(/[#.a-zA-Z0-9_-]+\s*\{[^}]*\}/g, "")
-
-                                                            ?.replace(/\s+/g, " ")
-
-                                                            ?.replace(/\b96\b/g, "")
-
-                                                            ?.replace(/^\d+\s*/, "")
-
-                                                            ?.replace(
-                                                                /You have a new request,/gi,
-                                                                ""
-                                                            )
-
-                                                            .trim()
-
-                                                            .substring(0, 60)}...
+                                                            
                                                 </div>
 
                                                 {/* New Badge Position */}
