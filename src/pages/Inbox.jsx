@@ -729,11 +729,21 @@ Thank you for reaching out.
                                                         fontSize: "13px"
                                                     }}
                                                 >
-                                                    {email.body
-                                                        ?.replace(/<[^>]+>/g, "")
-                                                        .replace(/\s+/g, " ")
-                                                        .trim()
-                                                        .substring(0, 60)}...
+                                                    {
+                                                        email.body
+                                                            ?.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+
+                                                            ?.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+
+                                                            ?.replace(/<[^>]+>/g, "")
+
+                                                            ?.replace(/[#.a-zA-Z0-9_-]+\s*\{[^}]*\}/g, "")
+
+                                                            .replace(/\s+/g, " ")
+
+                                                            .trim()
+                                                            
+                                                            .substring(0, 60)}...
                                                 </div>
 
                                                 {/* New Badge Position */}
