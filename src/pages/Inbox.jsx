@@ -651,10 +651,14 @@ Thank you for reaching out.
                                         }}
                                     >
                                         {(() => {
-                                            const raw = email.sender_email;
-                                            const name = raw.includes("<")
-                                                ? raw.split("<")[0].trim()
-                                                : raw;
+                                            // const raw = email.sender_email;
+                                            const name =
+                                                email.sender_name ||
+                                                email.sender_email.split("@")[0];
+                                            return name[0].toUpperCase();
+                                            // const name = raw.includes("<")
+                                            //     ? raw.split("<")[0].trim()
+                                            //     : raw;
 
                                             return name[0].toUpperCase();
                                         })()}
@@ -667,10 +671,13 @@ Thank you for reaching out.
                                             {/* LEFT: Name + Badge */}
                                             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                                 {(() => {
-                                                    const raw = email.sender_email;
-                                                    const name = raw.includes("<")
-                                                        ? raw.split("<")[0].trim()
-                                                        : raw.split("@")[0];
+                                                    const name =
+                                                        email.sender_name ||
+                                                        email.sender_email.split("@")[0];
+                                                    // const raw = email.sender_email;
+                                                    // const name = raw.includes("<")
+                                                    //     ? raw.split("<")[0].trim()
+                                                    //     : raw.split("@")[0];
 
                                                     return (
                                                         <span
