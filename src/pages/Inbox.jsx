@@ -1174,10 +1174,14 @@ Thank you for reaching out.
 
                                                                             .replace(/<script[\s\S]*?<\/script>/gi, "")
 
-                                                                            .replace(/<\/(h1|h2|h3|h4|h5|p|div|table|tr)>/gi, "\n\n")
+                                                                            .replace(/<\/(h1|h2|h3|h4|h5)>/gi, "\n\n")
+
+                                                                            .replace(/<\/(p|div|table|tr)>/gi, "\n\n")
 
                                                                             .replace(/<\/(br|li|td)>/gi, "\n")
-                                                                            
+
+                                                                            .replace(/\n{3,}/g, "\n\n")
+
                                                                             // remove html
                                                                             .replace(/<[^>]+>/g, "")
 
@@ -1188,8 +1192,6 @@ Thank you for reaching out.
                                                                             .replace(/&amp;/g, "&")
 
                                                                             .replace(/\n\s*\n\s*\n+/g, "\n\n")
-
-                                                                            .replace(/\s{2,}/g, " ")
 
                                                                             // remove signature block
                                                                             .split("Best Regards,")[0]
