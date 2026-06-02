@@ -1182,6 +1182,12 @@ Thank you for reaching out.
 
                                                                             .replace(/<\/(td>)/gi, " ")
 
+                                                                            .replace(/<td[^>]*>/gi, "")
+
+                                                                            .replace(/<tr[^>]*>/gi, "")
+
+                                                                            .replace(/<\/tr>/gi, "\n")
+
                                                                             .replace(/\n{3,}/g, "\n\n")
 
                                                                             .replace(/[ \t]+\n/g, "\n")
