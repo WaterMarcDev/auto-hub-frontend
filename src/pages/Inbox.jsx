@@ -1183,6 +1183,10 @@ Thank you for reaching out.
 
                                                                             .replace(/&amp;/g, "&")
 
+                                                                            .replace(/\n\s*\n\s*\n+/g, "\n\n")
+
+                                                                            .replace(/\s{2,}/g, " ")
+
                                                                             // remove signature block
                                                                             .split("Best Regards,")[0]
 
