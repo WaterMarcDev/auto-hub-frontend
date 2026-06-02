@@ -1170,8 +1170,18 @@ Thank you for reaching out.
                                                                     {
                                                                         cleanBody(msg.body)
 
+                                                                            .replace(/<style[\s\S]*?<\/style>/gi, "")
+
+                                                                            .replace(/<script[\s\S]*?<\/script>/gi, "")
+
                                                                             // remove html
                                                                             .replace(/<[^>]+>/g, "")
+
+                                                                            .replace(/&#39;/g, "'")
+
+                                                                            .replace(/&nbsp;/g, " ")
+
+                                                                            .replace(/&amp;/g, "&")
 
                                                                             // remove signature block
                                                                             .split("Best Regards,")[0]
