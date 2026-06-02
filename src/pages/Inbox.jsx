@@ -1174,8 +1174,10 @@ Thank you for reaching out.
 
                                                                             .replace(/<script[\s\S]*?<\/script>/gi, "")
 
-                                                                            .replace(/<\/(p|div|tr|table|br|li|td)>/gi, "\n")
+                                                                            .replace(/<\/(h1|h2|h3|h4|h5|p|div|table|tr)>/gi, "\n\n")
 
+                                                                            .replace(/<\/(br|li|td)>/gi, "\n")
+                                                                            
                                                                             // remove html
                                                                             .replace(/<[^>]+>/g, "")
 
