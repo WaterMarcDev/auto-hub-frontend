@@ -1165,6 +1165,8 @@ Thank you for reaching out.
                                                                         lineHeight: "1.7",
                                                                         fontSize: "15px",
                                                                         color: "#f8fafc",
+                                                                        textAlign: "left",
+                                                                        width: "100%",
                                                                     }}
                                                                 >
                                                                     {
@@ -1181,6 +1183,12 @@ Thank you for reaching out.
                                                                             .replace(/<\/(table|tr)>/gi, "\n")
 
                                                                             .replace(/<\/(td>)/gi, " ")
+
+                                                                            .replace(/<td[^>]*align=["']center["'][^>]*>/gi, "")
+
+                                                                            .replace(/<text-align:\s*center/gi, "")
+
+                                                                            .replace(/align=["']center["']/gi, "")
 
                                                                             .replace(/<td[^>]*>/gi, "")
 
