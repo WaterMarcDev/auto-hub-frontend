@@ -894,12 +894,13 @@ Thank you for reaching out.
                                             {/* Message */}
                                             <div
                                                 style={{
-                                                        display: "inline-block",
+                                                        display: isYou ? "inline-block" : "block",
+                                                        width: isYou ? "auto" : "100%",
+                                                        maxWidth: isYou ? "75%" : "100%",
                                                         padding: "12px 16px",
                                                         borderRadius: "16px",
                                                         background: isYou ? "#3b82f6" : "#1e293b",
                                                         color: "#f8fafc",
-                                                        maxWidth: "75%",
                                                         fontSize: "14px",
                                                         lineHeight: "1.6",
                                                         textAlign: "left",
