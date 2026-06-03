@@ -1235,7 +1235,7 @@ Thank you for reaching out.
                                                                                     !trimmed.endsWith(":") &&
                                                                                     !trimmed.endsWith(",") &&
                                                                                     !trimmed.endsWith(".") &&
-                                                                                    trimmed.split(" ").length <= 8;
+                                                                                    trimmed.split(" ").length <= 8
                                                                                     // line.length > 0 &&
                                                                                     // line.length < 60 &&
                                                                                     // !line.includes("@") &&
