@@ -1239,8 +1239,9 @@ Thank you for reaching out.
                                                                                         style={{
                                                                                             fontWeight: isHeading ? "600" : "400",
                                                                                             fontSize: isHeading ? "16px" : "15px",
-                                                                                            color: isHeading ? "#ffffff" : "#f8fafc",
-                                                                                            marginBottom: isHeading ? "10px" : "6px",
+                                                                                            color: isHeading ? "#60a5fa" : "#f8fafc",
+                                                                                            marginBottom: isHeading ? "14px" : "6px",
+                                                                                            letterSpacing: isHeading ? "0.3px" : "0",
                                                                                         }}
                                                                                     >
                                                                                         {line}
