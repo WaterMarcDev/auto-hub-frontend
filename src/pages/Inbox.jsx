@@ -1162,7 +1162,7 @@ Thank you for reaching out.
                                                             ) : (
                                                                 <div
                                                                     style={{
-                                                                        whiteSpace: "pre-wrap",
+                                                                        whiteSpace: "pre-line",
                                                                         lineHeight: "1.7",
                                                                         fontSize: "15px",
                                                                         color: "#f8fafc",
@@ -1183,7 +1183,7 @@ Thank you for reaching out.
 
                                                                             .replace(/<\/(table|tr)>/gi, "\n")
 
-                                                                            .replace(/<\/(td>)/gi, " ")
+                                                                            .replace(/<\/td>/gi, " ")
 
                                                                             .replace(/<td[^>]*align=["']center["'][^>]*>/gi, "")
 
@@ -1203,6 +1203,8 @@ Thank you for reaching out.
 
                                                                             .replace(/\n\s+\n/g, "\n\n")
 
+                                                                            .replace(/\n(?=[a-z])/g, " ")
+
                                                                             // remove html
                                                                             .replace(/<[^>]+>/g, "")
 
@@ -1221,7 +1223,9 @@ Thank you for reaching out.
                                                                             .replace(/📎.*$/gm, "")
 
                                                                             .trim()
-                                                                    }
+                                                                    };
+
+                                                                    
                                                                 </div>
                                                                 // <div
                                                                 //     dangerouslySetInnerHTML={{
