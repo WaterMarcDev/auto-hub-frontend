@@ -1226,6 +1226,7 @@ Thank you for reaching out.
 
                                                                             .split("\n")
                                                                             .map((line, index) => {
+                                                                                const trimmed = line.trim();
                                                                                 const isHeading =
                                                                                     trimmed.length > 0 &&
                                                                                     trimmed.length <= 60 &&
@@ -1235,7 +1236,7 @@ Thank you for reaching out.
                                                                                     !trimmed.endsWith(":") &&
                                                                                     !trimmed.endsWith(",") &&
                                                                                     !trimmed.endsWith(".") &&
-                                                                                    trimmed.split(" ").length <= 8
+                                                                                    trimmed.split(" ").length <= 8;
                                                                                     // line.length > 0 &&
                                                                                     // line.length < 60 &&
                                                                                     // !line.includes("@") &&
@@ -1246,8 +1247,8 @@ Thank you for reaching out.
                                                                                     <div
                                                                                         key={index}
                                                                                         style={{
-                                                                                            fontWeight: isHeading ? "600" : "400",
-                                                                                            fontSize: isHeading ? "16px" : "15px",
+                                                                                            fontWeight: isHeading ? "400" : "200",
+                                                                                            fontSize: isHeading ? "14px" : "13px",
                                                                                             color: isHeading ? "#60a5fa" : "#f8fafc",
                                                                                             marginBottom: isHeading ? "14px" : "6px",
                                                                                             letterSpacing: isHeading ? "0.3px" : "0",
