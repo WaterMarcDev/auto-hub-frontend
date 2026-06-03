@@ -1227,11 +1227,20 @@ Thank you for reaching out.
                                                                             .split("\n")
                                                                             .map((line, index) => {
                                                                                 const isHeading =
-                                                                                    line.length > 0 &&
-                                                                                    line.length < 60 &&
-                                                                                    !line.includes("@") &&
-                                                                                    !line.endsWith(".") &&
-                                                                                    !line.startsWith("-");
+                                                                                    trimmed.length > 0 &&
+                                                                                    trimmed.length <= 60 &&
+                                                                                    !trimmed.includes("@") &&
+                                                                                    !trimmed.match(/^\$?\d+/) &&
+                                                                                    !trimmed.match(/^[A-Z0-9]{15,}$/) &&
+                                                                                    !trimmed.endsWith(":") &&
+                                                                                    !trimmed.endsWith(",") &&
+                                                                                    !trimmed.endsWith(".") &&
+                                                                                    trimmed.split(" ").length <= 8;
+                                                                                    // line.length > 0 &&
+                                                                                    // line.length < 60 &&
+                                                                                    // !line.includes("@") &&
+                                                                                    // !line.endsWith(".") &&
+                                                                                    // !line.startsWith("-");
 
                                                                                 return (
                                                                                     <div
