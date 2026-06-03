@@ -1223,6 +1223,30 @@ Thank you for reaching out.
                                                                             .replace(/📎.*$/gm, "")
 
                                                                             .trim()
+
+                                                                            .split("\n")
+                                                                            .map((line, index) => {
+                                                                                const isHeading =
+                                                                                    line.length > 0 &&
+                                                                                    line.length < 60 &&
+                                                                                    !line.includes("@") &&
+                                                                                    !line.endsWith(".") &&
+                                                                                    !line.startsWith("-");
+
+                                                                                return (
+                                                                                    <div
+                                                                                        key={index}
+                                                                                        style={{
+                                                                                            fontWeight: isHeading ? "600" : "400",
+                                                                                            fontSize: isHeading ? "16px" : "15px",
+                                                                                            color: isHeading ? "#ffffff" : "#f8fafc",
+                                                                                            marginBottom: isHeading ? "10px" : "6px",
+                                                                                        }}
+                                                                                    >
+                                                                                        {line}
+                                                                                    </div>
+                                                                                );
+                                                                            })
                                                                     };
 
                                                                     
