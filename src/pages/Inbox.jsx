@@ -34,6 +34,39 @@ const cleanBody = (html) => {
         .trim();
 };
 
+/**
+ * Sanitizes HTML email body for safe, professional rendering in dark theme.
+ * - Removes <script>, <iframe>, <style>, <object>, <embed> tags
+ * - Removes on* event handlers
+ * - Preserves structure: headings, paragraphs, links, tables, lists, images
+ * - Does NOT touch "back in stock" emails (those use a separate renderer)
+ */
+const sanitizeHtmlForDisplay = (html) => {
+    if (!html) return "";
+
+    let cleaned = html
+        // Remove dangerous tags entirely
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+        .replace(/<object[\s\S]*?<\/object>/gi, "")
+        .replace(/<embed[\s\S]*?(\/\s*>|<\/embed>)/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        // Remove event handlers
+        .replace(/\son\w+\s*=\s*(["'])[\s\S]*?\1/gi, "")
+        .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
+        // Remove javascript: links
+        .replace(/href\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi, 'href="#"')
+        // Clean up reply/footer sections
+        .replace(/On .*wrote:/gi, "")
+        .replace(/You've received this email because[\s\S]*/gi, "")
+        .replace(/If you feel you received it by mistake[\s\S]*/gi, "")
+        // Fix encoding
+        .replace(/�/g, "-")
+        .trim();
+
+    return cleaned;
+};
+
 // formatTime function by shiva
 function formatTime(dateString) {
     const now = new Date();
@@ -371,7 +404,144 @@ export default function Inbox() {
                         transform: rotate(360deg);
                     }
                 }
-                
+
+                /* Professional email HTML rendering for dark theme */
+                .email-html-body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    font-size: 14px;
+                    line-height: 1.7;
+                    color: #e2e8f0;
+                    word-break: break-word;
+                    overflow-wrap: break-word;
+                }
+
+                .email-html-body h1,
+                .email-html-body h2,
+                .email-html-body h3,
+                .email-html-body h4,
+                .email-html-body h5,
+                .email-html-body h6 {
+                    color: #f1f5f9;
+                    margin: 16px 0 8px 0;
+                    font-weight: 600;
+                    line-height: 1.3;
+                }
+                .email-html-body h1 { font-size: 20px; }
+                .email-html-body h2 { font-size: 18px; }
+                .email-html-body h3 { font-size: 16px; }
+                .email-html-body h4 { font-size: 15px; }
+                .email-html-body h5,
+                .email-html-body h6 { font-size: 14px; }
+
+                .email-html-body p {
+                    margin: 8px 0;
+                    color: #e2e8f0;
+                }
+
+                .email-html-body a {
+                    color: #60a5fa;
+                    text-decoration: none;
+                    border-bottom: 1px solid rgba(96, 165, 250, 0.3);
+                    transition: all 0.15s ease;
+                }
+                .email-html-body a:hover {
+                    color: #93bbfc;
+                    border-bottom-color: rgba(96, 165, 250, 0.6);
+                }
+
+                .email-html-body img {
+                    max-width: 100%;
+                    height: auto;
+                    border-radius: 8px;
+                    margin: 8px 0;
+                    display: block;
+                }
+
+                .email-html-body table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 12px 0;
+                    font-size: 13px;
+                }
+                .email-html-body table th,
+                .email-html-body table td {
+                    padding: 8px 12px;
+                    border: 1px solid #334155;
+                    text-align: left;
+                    vertical-align: top;
+                    color: #e2e8f0;
+                }
+                .email-html-body table th {
+                    background: rgba(51, 65, 85, 0.5);
+                    font-weight: 600;
+                    color: #f1f5f9;
+                }
+                .email-html-body table tr:nth-child(even) td {
+                    background: rgba(30, 41, 59, 0.3);
+                }
+
+                .email-html-body ul,
+                .email-html-body ol {
+                    margin: 8px 0;
+                    padding-left: 24px;
+                    color: #e2e8f0;
+                }
+                .email-html-body li {
+                    margin-bottom: 4px;
+                    line-height: 1.6;
+                }
+
+                .email-html-body blockquote {
+                    border-left: 3px solid #475569;
+                    margin: 12px 0;
+                    padding: 8px 16px;
+                    color: #94a3b8;
+                    background: rgba(30, 41, 59, 0.4);
+                    border-radius: 0 8px 8px 0;
+                }
+
+                .email-html-body hr {
+                    border: none;
+                    height: 1px;
+                    background: #334155;
+                    margin: 16px 0;
+                }
+
+                .email-html-body strong,
+                .email-html-body b {
+                    color: #f1f5f9;
+                    font-weight: 600;
+                }
+
+                .email-html-body pre,
+                .email-html-body code {
+                    background: rgba(15, 23, 42, 0.6);
+                    border: 1px solid #334155;
+                    border-radius: 6px;
+                    padding: 2px 6px;
+                    font-family: 'Fira Code', 'Consolas', monospace;
+                    font-size: 13px;
+                    color: #e2e8f0;
+                }
+                .email-html-body pre {
+                    padding: 12px 16px;
+                    overflow-x: auto;
+                }
+
+                /* Override any inline white/light backgrounds from email HTML */
+                .email-html-body div[style],
+                .email-html-body span[style],
+                .email-html-body td[style],
+                .email-html-body p[style] {
+                    background-color: transparent !important;
+                    color: inherit !important;
+                }
+
+                /* Keep images that are inline layout elements small */
+                .email-html-body img[width="1"],
+                .email-html-body img[height="1"] {
+                    display: none;
+                }
                 `}
             </style>
             {/* end here */}
@@ -1160,114 +1330,20 @@ Thank you for reaching out.
                                                                     </div>
                                                                 </div>
                                                             ) : (
+                                                                /* Professional HTML email renderer for eBay, Wix, normal emails */
                                                                 <div
+                                                                    className="email-html-body"
                                                                     style={{
-                                                                        whiteSpace: "pre-line",
-                                                                        lineHeight: "1.7",
-                                                                        fontSize: "15px",
-                                                                        color: "#f8fafc",
                                                                         textAlign: "left",
                                                                         width: "100%",
                                                                     }}
-                                                                >
-                                                                    {
-                                                                        cleanBody(msg.body)
-
-                                                                            .replace(/<style[\s\S]*?<\/style>/gi, "")
-
-                                                                            .replace(/<script[\s\S]*?<\/script>/gi, "")
-
-                                                                            .replace(/<\/(h1|h2|h3|h4|h5|p|div)>/gi, "\n\n")
-
-                                                                            .replace(/<\/(br|li)>/gi, "\n")
-
-                                                                            .replace(/<\/(table|tr)>/gi, "\n")
-
-                                                                            .replace(/<\/td>/gi, " ")
-
-                                                                            .replace(/<td[^>]*align=["']center["'][^>]*>/gi, "")
-
-                                                                            .replace(/<text-align:\s*center/gi, "")
-
-                                                                            .replace(/align=["']center["']/gi, "")
-
-                                                                            .replace(/<td[^>]*>/gi, "")
-
-                                                                            .replace(/<tr[^>]*>/gi, "")
-
-                                                                            .replace(/<\/tr>/gi, "\n")
-
-                                                                            .replace(/\n{3,}/g, "\n\n")
-
-                                                                            .replace(/[ \t]+\n/g, "\n")
-
-                                                                            .replace(/\n\s+\n/g, "\n\n")
-
-                                                                            .replace(/\n(?=[a-z])/g, " ")
-
-                                                                            // remove html
-                                                                            .replace(/<[^>]+>/g, "")
-
-                                                                            .replace(/&#39;/g, "'")
-
-                                                                            .replace(/&nbsp;/g, " ")
-
-                                                                            .replace(/&amp;/g, "&")
-
-                                                                            .replace(/\n\s*\n\s*\n+/g, "\n\n")
-
-                                                                            // remove signature block
-                                                                            .split("Best Regards,")[0]
-
-                                                                            // remove attachemnt text
-                                                                            .replace(/📎.*$/gm, "")
-
-                                                                            .trim()
-
-                                                                            .split("\n")
-                                                                            .map((line, index) => {
-                                                                                const trimmed = line.trim();
-                                                                                const isHeading =
-                                                                                    trimmed.length > 0 &&
-                                                                                    trimmed.length <= 60 &&
-                                                                                    !trimmed.includes("@") &&
-                                                                                    !trimmed.match(/^\$?\d+/) &&
-                                                                                    !trimmed.match(/^[A-Z0-9]{15,}$/) &&
-                                                                                    !trimmed.endsWith(":") &&
-                                                                                    !trimmed.endsWith(",") &&
-                                                                                    !trimmed.endsWith(".") &&
-                                                                                    trimmed.split(" ").length <= 8;
-                                                                                    // line.length > 0 &&
-                                                                                    // line.length < 60 &&
-                                                                                    // !line.includes("@") &&
-                                                                                    // !line.endsWith(".") &&
-                                                                                    // !line.startsWith("-");
-
-                                                                                return (
-                                                                                    <div
-                                                                                        key={index}
-                                                                                        style={{
-                                                                                            fontWeight: isHeading ? "400" : "200",
-                                                                                            fontSize: isHeading ? "14px" : "13px",
-                                                                                            color: isHeading ? "#60a5fa" : "#f8fafc",
-                                                                                            marginBottom: isHeading ? "14px" : "6px",
-                                                                                            letterSpacing: isHeading ? "0.3px" : "0",
-                                                                                        }}
-                                                                                    >
-                                                                                        {line}
-                                                                                    </div>
-                                                                                );
-                                                                            })
-                                                                    };
-
-                                                                    
-                                                                </div>
-                                                                // <div
-                                                                //     dangerouslySetInnerHTML={{
-                                                                //         __html: cleanBody(msg.body)
-                                                                //             .replace(/📎.*$/gm, "")
-                                                                //     }}
-                                                                // />
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html: sanitizeHtmlForDisplay(
+                                                                            msg.body
+                                                                                ?.replace(/📎.*$/gm, "")
+                                                                        )
+                                                                    }}
+                                                                />
                                                             )}
                                                             {/* end here */}
 
