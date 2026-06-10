@@ -1,594 +1,540 @@
-import { useEffect, useState, useRef } from "react";
-import { Drawer, App, Modal, Input } from "antd";    // added Modal, Input
-import { io } from "socket.io-client";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { Drawer, App, Modal, Input } from "antd";
 
+const API_URL = import.meta.env.VITE_API_URL;
 
-const API_URL = import.meta.env.VITE_API_URL;             //added by shiva
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 const cleanBody = (html) => {
-
     if (!html) return "";
-
     return html
-
-        // remove reply headers
         .replace(/On .*wrote:/gi, "")
-
-        // remove unsubscribe/footer section
-        .replace(
-            /You've received this email because[\s\S]*/gi,
-            ""
-        )
-
-        .replace(
-            /If you feel you received it by mistake[\s\S]*/gi,
-            ""
-        )
-
-        // fix broken encoding characters
-        .replace(/�/g, "-")
-
-        // remove extra spaces
+        .replace(/You've received this email because[\s\S]*/gi, "")
+        .replace(/If you feel you received it by mistake[\s\S]*/gi, "")
+        .replace(/\uFFFD/g, "-")
         .replace(/\n\s*\n/g, "\n")
-
         .trim();
 };
 
-/**
- * Sanitizes HTML email body for safe, professional rendering in dark theme.
- * - Removes <script>, <iframe>, <style>, <object>, <embed> tags
- * - Removes on* event handlers
- * - Preserves structure: headings, paragraphs, links, tables, lists, images
- * - Does NOT touch "back in stock" emails (those use a separate renderer)
- */
-const sanitizeHtmlForDisplay = (html) => {
-    if (!html) return "";
+// Detects whether body is rich HTML (not just plain text with occasional tags)
+const isRichHtml = (body) => {
+    if (!body) return false;
+    return (
+        /<(html|head|body|table|tbody|tr|td|div|span|p|img|a|h[1-6]|ul|ol|li|br|hr|style|font)[^>]*>/i.test(body)
+    );
+};
 
-    let cleaned = html
-        // Remove dangerous tags entirely
+// Strips dangerous tags/events but keeps all layout/styling intact (for iframe)
+const sanitizeForIframe = (html) => {
+    if (!html) return "";
+    return html
         .replace(/<script[\s\S]*?<\/script>/gi, "")
         .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
         .replace(/<object[\s\S]*?<\/object>/gi, "")
         .replace(/<embed[\s\S]*?(\/\s*>|<\/embed>)/gi, "")
-        .replace(/<style[\s\S]*?<\/style>/gi, "")
-        // Remove event handlers
         .replace(/\son\w+\s*=\s*(["'])[\s\S]*?\1/gi, "")
         .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
-        // Remove javascript: links
-        .replace(/href\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi, 'href="#"')
-        // Clean up reply/footer sections
-        .replace(/On .*wrote:/gi, "")
-        .replace(/You've received this email because[\s\S]*/gi, "")
-        .replace(/If you feel you received it by mistake[\s\S]*/gi, "")
-        // Fix encoding
-        .replace(/�/g, "-")
-        .trim();
-
-    return cleaned;
+        .replace(/href\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi, 'href="#"');
 };
 
-// formatTime function by shiva
 function formatTime(dateString) {
     const now = new Date();
     const date = new Date(dateString);
-
     const diff = (now - date) / 1000;
-
     if (diff < 60) return "Just now";
-    if (diff < 3600) return Math.floor(diff / 60) + "min ago";
-    if (diff < 86400) return Math.floor(diff / 3600) + "hr ago";
-
+    if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+    if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
     const isYesterday =
         now.toDateString() !== date.toDateString() &&
         new Date(now - 86400000).toDateString() === date.toDateString();
-
     if (isYesterday) return "Yesterday";
-
-    return date.toLocaleDateString("en-In", {
-        day: "numeric",
-        month: "short"
-    });
+    return date.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
-// end here
 
-export default function Inbox() {
-    const [emails, setEmails] = useState([]);
-    const [loading, setLoading] = useState(true);   // spinner loading state by shiva
-    const [selectedEmail, setSelectedEmail] = useState(null);   //added by shiva
-    const [replyText, setReplyText] = useState("");
-    const [thread, setThread] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);  //states 
-    const [filter, setFilter] = useState("all");   // all / unread / read
-    const [isSending, setIsSending] = useState(false);  // loading state
-    // Forward states by shiva
-    const [forwardModalOpen, setForwardModalOpen] = useState(false);
-    const [forwardEmail, setForwardEmail] = useState("");
-    const [forwardMessage, setForwardMessage] = useState("");
-    // Forward loading by shiva
-    const [isForwarding, setIsForwarding] = useState(false);
+// ─── IframeEmailBody ─────────────────────────────────────────────────────────
+// Renders HTML email in a sandboxed iframe with auto-height, white background.
+// This is exactly how Gmail/Outlook render HTML emails safely.
 
-    // Attachments states by shiva
-    const [attachments, setAttachments] = useState([]);
-    const [forwardAttachments, setForwardAttachments] = useState([]);
-    // end here
+function IframeEmailBody({ html }) {
+    const iframeRef = useRef(null);
+    const [height, setHeight] = useState(200);
 
-    // Image preview states
+    const sanitized = sanitizeForIframe(html);
+
+    // Wrap in a minimal HTML shell that resets to white background
+    const doc = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 12px 0 4px 0;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #202124;
+    word-break: break-word;
+  }
+  img { max-width: 100%; height: auto; }
+  a { color: #1a73e8; }
+  table { max-width: 100%; }
+</style>
+</head>
+<body>${sanitized}</body>
+</html>`;
+
+    const onLoad = useCallback(() => {
+        const iframe = iframeRef.current;
+        if (!iframe) return;
+        try {
+            const body = iframe.contentDocument?.body;
+            if (body) {
+                const h = body.scrollHeight;
+                setHeight(Math.max(h + 24, 80));
+            }
+        } catch (_) { }
+    }, []);
+
+    return (
+        <iframe
+            ref={iframeRef}
+            srcDoc={doc}
+            sandbox="allow-same-origin allow-popups"
+            onLoad={onLoad}
+            style={{
+                width: "100%",
+                height: `${height}px`,
+                border: "none",
+                borderRadius: "8px",
+                display: "block",
+                background: "#fff",
+            }}
+            title="email-body"
+        />
+    );
+}
+
+// ─── PlainTextBody ───────────────────────────────────────────────────────────
+// Renders plain-text email body — strips "From X" header line, shows clean text
+
+function PlainTextBody({ body, isYou }) {
+    const cleaned = cleanBody(body)
+        // Remove "From Name\n\n\n" style headers that appear in some messages
+        .replace(/^From [^\n]+\n+/i, "")
+        .trim();
+
+    return (
+        <span style={{ whiteSpace: "pre-wrap", lineHeight: 1.65, wordBreak: "break-word" }}>
+            {cleaned || "(No message content)"}
+        </span>
+    );
+}
+
+// ─── MessageBubble ───────────────────────────────────────────────────────────
+
+function MessageBubble({ msg }) {
     const [previewOpen, setPreviewOpen] = useState(false);
-
     const [previewImage, setPreviewImage] = useState("");
-
     const [previewTitle, setPreviewTitle] = useState("");
-    // end here
 
-    // Real time update Usestate
-    const selectedEmailRef = useRef(null);
-    // end here
+    const isYou = msg.sender_email?.toLowerCase().includes("support@autohubexpress.us");
+    const isHtml = isRichHtml(msg.body);
+    const isForward = /^Fwd(\[\d+\])?/i.test(msg.subject || "");
 
-    const { message } = App.useApp();   // added by shiva
-    const emailsPerPage = 20;
+    const senderLabel = isYou
+        ? "You"
+        : msg.sender_name ||
+        (msg.sender_email?.includes("<")
+            ? msg.sender_email.split("<")[0].trim()
+            : msg.sender_email?.split("@")[0] || "Unknown");
 
-    const indexOfLastEmail = currentPage * emailsPerPage;  //calculations 
-    const indexOfFirstEmail = indexOfLastEmail - emailsPerPage;
-    const filteredEmails =
-        filter === "all"
-            ? emails
-            : emails.filter((e) => e.status === filter);
-
-    const unreadCount = filteredEmails.filter(e => e.status === "unread").length;    // compute unread count
-
-
-    const currentEmails = filteredEmails.slice(indexOfFirstEmail, indexOfLastEmail);
-
-    const totalPages = Math.ceil(filteredEmails.length / emailsPerPage);
-
-    // Sync REF by shiva
-    useEffect(() => {
-        selectedEmailRef.current = selectedEmail;
-    }, [selectedEmail]);
-
-    // Safe attachment image URL by shiva
     const getImageUrl = (file) => {
-
-        // use backend URL directly if exists
-        if (file?.url &&
-            typeof file.url === "string" &&
-            file.url.startsWith("http") &&
-            !file.url.includes("undefined") &&
-            !file.url.includes("null")
-        ) {
+        if (file?.url && typeof file.url === "string" && file.url.startsWith("http") &&
+            !file.url.includes("undefined") && !file.url.includes("null")) {
             return file.url;
         }
-
-
-        // fallback for old records
-        if (
-            file?.filename &&
-            typeof file.filename === "string"
-        ) {
-            return `https://api.autohubexpress.us/uploads/${file.filename}`;
-        }
-
-        // final fallback
+        if (file?.filename) return `https://api.autohubexpress.us/uploads/${file.filename}`;
         return "https://placehold.co/300x200?text=No+Image";
     };
-    // end here
-
-
-
-
-    // Forward Mail Function by shiva
-    const handleForwardMail = async () => {
-
-        if (!forwardEmail.trim()) {
-
-            message.warning(
-                "Enter recipient email"
-            );
-
-            return;
-        }
-
-        // Email validation by shiva
-        const emailRegex =
-            /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-        if (!emailRegex.test(forwardEmail)) {
-
-            message.warning(
-                "Enter valid email"
-            );
-
-            return
-        }
-        // end here
-
-        if (isForwarding) return;
-
-        try {
-
-            setIsForwarding(true);
-
-            const formData = new FormData();
-
-            formData.append(
-                "to",
-                forwardEmail
-            );
-
-            formData.append(
-                "message",
-                forwardMessage
-            );
-
-            formData.append(
-                "originalEmail",
-                JSON.stringify(selectedEmail)
-            );
-
-            forwardAttachments.forEach(file => {
-
-                formData.append(
-                    "attachments",
-                    file
-                );
-            });
-
-            const res = await fetch(
-                `${API_URL}/email/forward`,
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
-
-
-            // const res = await fetch(
-            //     `${API_URL}/email/forward`,
-            //     {
-            //         method: "POST",
-
-            //         headers: {
-            //             "Content-Type":
-            //                 "application/json",
-            //         },
-
-            //         body: JSON.stringify({
-
-            //             to: forwardEmail,
-
-            //             message:
-            //                 forwardMessage,
-
-            //             originalEmail:
-            //                 selectedEmail,
-            //         }),
-            //     }
-            // );
-
-            const data = await res.json();
-
-            if (!res.ok) {
-
-                message.error(
-                    data.error ||
-                    "Invalid Email Address"
-                );
-
-                return;
-            }
-
-            message.success(
-                "Email forwarded"
-            );
-
-            setForwardModalOpen(false);
-
-            setForwardEmail("");
-            setForwardMessage("");
-            setForwardAttachments([]);  // clear forward attachments after success
-
-        } catch (err) {
-
-            console.error(err);
-
-            message.error(
-                "Forward failed"
-            );
-        } finally {
-            setIsForwarding(false);
-        }
-    };
-    // end here
-
-    useEffect(() => {
-        const total = Math.ceil(filteredEmails.length / emailsPerPage);
-
-        if (currentPage > total) {
-            setCurrentPage(total || 1);
-        }
-    }, [emails]);
-
-
-    // Adding Spinner -> By Shiva
-    useEffect(() => {
-
-        const fetchEmails = async () => {
-
-            try {
-
-                setLoading(true);
-
-                const res = await fetch(
-                    `${API_URL}/email/all`
-                );
-
-                // // Debug type only for testing by shiva
-                // await new Promise(
-                //     resolve =>
-                //         setTimeout(resolve, 2000)
-                // );
-                // // end here
-
-                const data =
-                    await res.json();
-
-                setEmails(data);
-
-            } catch (err) {
-
-                console.error(err);
-
-            } finally {
-
-                setLoading(false);
-            }
-        };
-
-        fetchEmails();
-
-    }, []);
-    // end here
-    // useEffect(() => {
-    //     fetch(`${API_URL}/email/all`)
-    //         .then(res => res.json())
-    //         .then(data => setEmails(data))
-    //         .catch(err => console.error(err));
-    // }, []);
-
-    // Real Time UPDATE by shiva
-    useEffect(() => {
-        const socket = io(
-            import.meta.env.VITE_SOCKET_URL ||
-            "https://api.autohubexpress.us"
-        );
-
-        socket.on("new_email", (data) => {
-            const newEmail = data.email || data;
-
-            // update inbox instantly
-            setEmails(prev => [newEmail, ...prev]);
-
-            // update thread if open
-            if (
-                selectedEmailRef.current &&
-                newEmail.thread_id === selectedEmailRef.current.thread_id
-            ) {
-                setThread(prev => {
-                    const exists =
-                        prev.some(
-                            e => e._id === newEmail._id
-                        );
-
-                    if (exists) {
-                        return prev;
-                    }
-
-                    return [...prev, newEmail];
-                });
-            }
-        });
-
-        return () => socket.disconnect();
-    }, []);
-    // end here
-
-
 
     return (
         <>
-            {/* Adding Spinner by shiva */}
-            <style>
-                {`
-                @keyframes spin {
-                    100% {
-                        transform: rotate(360deg);
-                    }
-                }
-
-                /* Professional email HTML rendering for dark theme */
-                .email-html-body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                    font-size: 14px;
-                    line-height: 1.7;
-                    color: #e2e8f0;
-                    word-break: break-word;
-                    overflow-wrap: break-word;
-                }
-
-                .email-html-body h1,
-                .email-html-body h2,
-                .email-html-body h3,
-                .email-html-body h4,
-                .email-html-body h5,
-                .email-html-body h6 {
-                    color: #f1f5f9;
-                    margin: 16px 0 8px 0;
-                    font-weight: 600;
-                    line-height: 1.3;
-                }
-                .email-html-body h1 { font-size: 20px; }
-                .email-html-body h2 { font-size: 18px; }
-                .email-html-body h3 { font-size: 16px; }
-                .email-html-body h4 { font-size: 15px; }
-                .email-html-body h5,
-                .email-html-body h6 { font-size: 14px; }
-
-                .email-html-body p {
-                    margin: 8px 0;
-                    color: #e2e8f0;
-                }
-
-                .email-html-body a {
-                    color: #60a5fa;
-                    text-decoration: none;
-                    border-bottom: 1px solid rgba(96, 165, 250, 0.3);
-                    transition: all 0.15s ease;
-                }
-                .email-html-body a:hover {
-                    color: #93bbfc;
-                    border-bottom-color: rgba(96, 165, 250, 0.6);
-                }
-
-                .email-html-body img {
-                    max-width: 100%;
-                    height: auto;
-                    border-radius: 8px;
-                    margin: 8px 0;
-                    display: block;
-                }
-
-                .email-html-body table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 12px 0;
-                    font-size: 13px;
-                }
-                .email-html-body table th,
-                .email-html-body table td {
-                    padding: 8px 12px;
-                    border: 1px solid #334155;
-                    text-align: left;
-                    vertical-align: top;
-                    color: #e2e8f0;
-                }
-                .email-html-body table th {
-                    background: rgba(51, 65, 85, 0.5);
-                    font-weight: 600;
-                    color: #f1f5f9;
-                }
-                .email-html-body table tr:nth-child(even) td {
-                    background: rgba(30, 41, 59, 0.3);
-                }
-
-                .email-html-body ul,
-                .email-html-body ol {
-                    margin: 8px 0;
-                    padding-left: 24px;
-                    color: #e2e8f0;
-                }
-                .email-html-body li {
-                    margin-bottom: 4px;
-                    line-height: 1.6;
-                }
-
-                .email-html-body blockquote {
-                    border-left: 3px solid #475569;
-                    margin: 12px 0;
-                    padding: 8px 16px;
-                    color: #94a3b8;
-                    background: rgba(30, 41, 59, 0.4);
-                    border-radius: 0 8px 8px 0;
-                }
-
-                .email-html-body hr {
-                    border: none;
-                    height: 1px;
-                    background: #334155;
-                    margin: 16px 0;
-                }
-
-                .email-html-body strong,
-                .email-html-body b {
-                    color: #f1f5f9;
-                    font-weight: 600;
-                }
-
-                .email-html-body pre,
-                .email-html-body code {
-                    background: rgba(15, 23, 42, 0.6);
-                    border: 1px solid #334155;
-                    border-radius: 6px;
-                    padding: 2px 6px;
-                    font-family: 'Fira Code', 'Consolas', monospace;
-                    font-size: 13px;
-                    color: #e2e8f0;
-                }
-                .email-html-body pre {
-                    padding: 12px 16px;
-                    overflow-x: auto;
-                }
-
-                /* Override any inline white/light backgrounds from email HTML */
-                .email-html-body div[style],
-                .email-html-body span[style],
-                .email-html-body td[style],
-                .email-html-body p[style] {
-                    background-color: transparent !important;
-                    color: inherit !important;
-                }
-
-                /* Keep images that are inline layout elements small */
-                .email-html-body img[width="1"],
-                .email-html-body img[height="1"] {
-                    display: none;
-                }
-                `}
-            </style>
-            {/* end here */}
-
-            <div style={{ padding: "16px", color: "#cbd5e1", paddingBottom: "80px", minHeight: "100vh", }}>
-
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: isYou ? "flex-end" : "flex-start",
+                    marginBottom: "20px",
+                }}
+            >
+                {/* Sender + time */}
                 <div
                     style={{
                         display: "flex",
                         alignItems: "center",
-                        marginBottom: "20px",
-                        gap: "10px",
+                        gap: "6px",
+                        marginBottom: "5px",
+                        fontSize: "12px",
+                        color: "#6b7280",
                     }}
                 >
-                    <h2 style={{ margin: 0 }}>📩 Inbox</h2>
+                    {!isYou && (
+                        <div
+                            style={{
+                                width: "22px",
+                                height: "22px",
+                                borderRadius: "50%",
+                                background: "#3b82f6",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "10px",
+                                fontWeight: 700,
+                                color: "#fff",
+                                flexShrink: 0,
+                            }}
+                        >
+                            {senderLabel[0]?.toUpperCase() || "?"}
+                        </div>
+                    )}
+                    <span style={{ fontWeight: 500, color: "#9ca3af" }}>{senderLabel}</span>
+                    <span>·</span>
+                    <span>{formatTime(msg.created_at)}</span>
+                </div>
 
+                {/* Bubble */}
+                <div
+                    style={{
+                        maxWidth: isYou ? "78%" : "100%",
+                        width: isYou ? "auto" : "100%",
+                        borderRadius: isYou ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
+                        background: isYou ? "#2563eb" : "#1e293b",
+                        border: isYou ? "none" : "1px solid #2d3748",
+                        padding: isHtml && !isYou ? "0" : "12px 16px",
+                        fontSize: "14px",
+                        color: "#f1f5f9",
+                        lineHeight: "1.65",
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* ── Forwarded email ── */}
+                    {isForward ? (
+                        <div style={{ padding: "12px 16px" }}>
+                            <div style={{
+                                fontSize: "10px",
+                                fontWeight: 600,
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                                color: "rgba(255,255,255,0.55)",
+                                marginBottom: "10px",
+                            }}>
+                                Forwarded Email
+                            </div>
+                            {(() => {
+                                const body = cleanBody(msg.body);
+                                const fwdToMatch = body.match(/Forwarded To:\s*(.*)/i);
+                                const fwdTo = fwdToMatch?.[1] || "";
+                                const cleanMsg = body
+                                    .replace(/Forwarded To:.*(\n)?/i, "")
+                                    .replace(fwdTo, "")
+                                    .trim();
+                                return (
+                                    <>
+                                        <div style={{
+                                            borderLeft: "2px solid rgba(255,255,255,0.25)",
+                                            paddingLeft: "12px",
+                                            marginBottom: "12px",
+                                            fontSize: "13px",
+                                            color: "rgba(255,255,255,0.7)",
+                                            lineHeight: 1.7,
+                                        }}>
+                                            {fwdTo && <div><span style={{ opacity: 0.6 }}>To:</span> {fwdTo}</div>}
+                                            <div><span style={{ opacity: 0.6 }}>Subject:</span> {msg.subject}</div>
+                                        </div>
+                                        <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.65 }}>
+                                            {cleanMsg.split("\n").map((line, i) => {
+                                                if (line.trim().startsWith("📎")) {
+                                                    const cleaned = line.replace("📎 ", "");
+                                                    const [filename, url] = cleaned.split("|||");
+                                                    return (
+                                                        <div key={i} style={{ marginTop: "8px" }}>
+                                                            <a href={url} target="_blank" rel="noreferrer"
+                                                                style={{
+                                                                    color: "#93c5fd",
+                                                                    display: "inline-flex",
+                                                                    alignItems: "center",
+                                                                    gap: "6px",
+                                                                    background: "rgba(255,255,255,0.08)",
+                                                                    padding: "6px 12px",
+                                                                    borderRadius: "8px",
+                                                                    textDecoration: "none",
+                                                                    fontSize: "13px",
+                                                                }}>
+                                                                📎 {filename}
+                                                            </a>
+                                                        </div>
+                                                    );
+                                                }
+                                                return <div key={i}>{line}</div>;
+                                            })}
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    ) : isHtml && !isYou ? (
+                        /* ── Rich HTML email → iframe with white bg ── */
+                        <IframeEmailBody html={msg.body} />
+                    ) : (
+                        /* ── Plain text ── */
+                        <PlainTextBody body={msg.body} isYou={isYou} />
+                    )}
+                </div>
+
+                {/* Attachments */}
+                {msg.attachments?.length > 0 && (
+                    <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", gap: "8px", maxWidth: "100%" }}>
+                        {msg.attachments.map((file, i) =>
+                            file.filename?.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) ? (
+                                <img
+                                    key={i}
+                                    src={getImageUrl(file)}
+                                    alt={file.originalname || file.filename}
+                                    onClick={() => {
+                                        setPreviewImage(getImageUrl(file));
+                                        setPreviewTitle(file.originalname || file.filename);
+                                        setPreviewOpen(true);
+                                    }}
+                                    onError={(e) => { e.currentTarget.src = "https://placehold.co/300x200?text=Image+Not+Found"; }}
+                                    style={{
+                                        width: "160px", height: "110px", objectFit: "cover",
+                                        borderRadius: "10px", cursor: "pointer",
+                                        border: "1px solid #334155",
+                                        transition: "opacity 0.15s",
+                                    }}
+                                />
+                            ) : (
+                                <a
+                                    key={i}
+                                    href={file.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                        color: "#93c5fd", textDecoration: "none",
+                                        display: "inline-flex", alignItems: "center", gap: "8px",
+                                        background: "#0f172a", border: "1px solid #334155",
+                                        padding: "8px 12px", borderRadius: "8px", fontSize: "13px",
+                                    }}
+                                >
+                                    📎 {file.originalname || file.filename}
+                                </a>
+                            )
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Image preview modal */}
+            <Modal
+                open={previewOpen}
+                footer={null}
+                onCancel={() => { setPreviewOpen(false); setPreviewImage(""); setPreviewTitle(""); }}
+                centered
+                width="80%"
+                styles={{ body: { background: "#0f172a", padding: "16px", borderRadius: "16px" } }}
+            >
+                <div style={{ color: "#e2e8f0", fontSize: "14px", fontWeight: 600, marginBottom: "12px", wordBreak: "break-word" }}>
+                    {previewTitle}
+                </div>
+                <img
+                    src={previewImage}
+                    alt="preview"
+                    onError={(e) => { e.currentTarget.src = "https://placehold.co/600x400?text=Image+Not+Found"; }}
+                    style={{ width: "100%", maxHeight: "80vh", objectFit: "contain", borderRadius: "10px" }}
+                />
+            </Modal>
+        </>
+    );
+}
+
+// ─── Main Inbox Component ────────────────────────────────────────────────────
+
+export default function Inbox() {
+    const [emails, setEmails] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedEmail, setSelectedEmail] = useState(null);
+    const [replyText, setReplyText] = useState("");
+    const [thread, setThread] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [filter, setFilter] = useState("all");
+    const [isSending, setIsSending] = useState(false);
+    const [forwardModalOpen, setForwardModalOpen] = useState(false);
+    const [forwardEmail, setForwardEmail] = useState("");
+    const [forwardMessage, setForwardMessage] = useState("");
+    const [isForwarding, setIsForwarding] = useState(false);
+    const [attachments, setAttachments] = useState([]);
+    const [forwardAttachments, setForwardAttachments] = useState([]);
+
+    const selectedEmailRef = useRef(null);
+    const threadEndRef = useRef(null);
+    const { message } = App.useApp();
+    const emailsPerPage = 20;
+
+    const filteredEmails =
+        filter === "all" ? emails : emails.filter((e) => e.status === filter);
+    const unreadCount = filteredEmails.filter((e) => e.status === "unread").length;
+    const indexOfLastEmail = currentPage * emailsPerPage;
+    const indexOfFirstEmail = indexOfLastEmail - emailsPerPage;
+    const currentEmails = filteredEmails.slice(indexOfFirstEmail, indexOfLastEmail);
+    const totalPages = Math.ceil(filteredEmails.length / emailsPerPage);
+
+    useEffect(() => { selectedEmailRef.current = selectedEmail; }, [selectedEmail]);
+
+    // Auto-scroll to bottom of thread when new message arrives
+    useEffect(() => {
+        if (thread.length > 0) {
+            setTimeout(() => threadEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        }
+    }, [thread.length]);
+
+    useEffect(() => {
+        const total = Math.ceil(filteredEmails.length / emailsPerPage);
+        if (currentPage > total) setCurrentPage(total || 1);
+    }, [emails]);
+
+    useEffect(() => {
+        const fetchEmails = async () => {
+            try {
+                setLoading(true);
+                const res = await fetch(`${API_URL}/email/all`);
+                const data = await res.json();
+                setEmails(data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEmails();
+    }, []);
+
+    // Real-time socket
+    useEffect(() => {
+        let socket;
+        import("socket.io-client")
+            .then(({ io }) => {
+                socket = io(import.meta.env.VITE_SOCKET_URL || "https://api.autohubexpress.us");
+                socket.on("new_email", (data) => {
+                    const newEmail = data.email || data;
+                    setEmails((prev) => [newEmail, ...prev]);
+                    if (selectedEmailRef.current?.thread_id === newEmail.thread_id) {
+                        setThread((prev) => {
+                            if (prev.some((e) => e._id === newEmail._id)) return prev;
+                            return [...prev, newEmail];
+                        });
+                    }
+                });
+            })
+            .catch(() => { });
+        return () => socket?.disconnect();
+    }, []);
+
+    const handleForwardMail = async () => {
+        if (!forwardEmail.trim()) { message.warning("Enter recipient email"); return; }
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(forwardEmail)) { message.warning("Enter a valid email address"); return; }
+        if (isForwarding) return;
+        try {
+            setIsForwarding(true);
+            const formData = new FormData();
+            formData.append("to", forwardEmail);
+            formData.append("message", forwardMessage);
+            formData.append("originalEmail", JSON.stringify(selectedEmail));
+            forwardAttachments.forEach((f) => formData.append("attachments", f));
+            const res = await fetch(`${API_URL}/email/forward`, { method: "POST", body: formData });
+            const data = await res.json();
+            if (!res.ok) { message.error(data.error || "Invalid email address"); return; }
+            message.success("Email forwarded successfully");
+            setForwardModalOpen(false);
+            setForwardEmail("");
+            setForwardMessage("");
+            setForwardAttachments([]);
+        } catch (err) {
+            console.error(err);
+            message.error("Forward failed");
+        } finally {
+            setIsForwarding(false);
+        }
+    };
+
+    const sendReply = async () => {
+        if (!replyText.trim()) { message.warning("Write something first"); return; }
+        if (isSending) return;
+        try {
+            setIsSending(true);
+            const to = selectedEmail.sender_email.match(/<(.+)>/)?.[1] || selectedEmail.sender_email;
+            const formData = new FormData();
+            formData.append("to", to);
+            formData.append("subject", selectedEmail.subject);
+            formData.append("message", replyText);
+            attachments.forEach((f) => formData.append("attachments", f));
+            await fetch(`${API_URL}/email/reply`, { method: "POST", body: formData });
+            message.success("Reply sent");
+            setReplyText("");
+            setAttachments([]);
+            const [emailsRes, threadRes] = await Promise.all([
+                fetch(`${API_URL}/email/all`),
+                fetch(`${API_URL}/email/thread/${selectedEmail._id}`),
+            ]);
+            setEmails(await emailsRes.json());
+            const threadData = await threadRes.json();
+            setThread(Array.isArray(threadData) ? threadData : []);
+        } catch (err) {
+            console.error(err);
+            message.error("Failed to send reply");
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return (
+        <>
+            <style>{`
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+                .inbox-row:hover { background: #1e2d45 !important; }
+            `}</style>
+
+            <div style={{ padding: "16px", color: "#cbd5e1", paddingBottom: "80px", minHeight: "100vh" }}>
+
+                {/* ── Header ── */}
+                <div style={{ display: "flex", alignItems: "center", marginBottom: "20px", gap: "10px", flexWrap: "wrap" }}>
+                    <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#f1f5f9" }}>
+                        📩 Inbox
+                    </h2>
                     {unreadCount > 0 && (
                         <span style={{
-                            background: "#3b82f6",
-                            color: "#fff",
-                            borderRadius: "999px",
-                            padding: "2px 8px",
-                            fontSize: "12px",
-                            fontWeight: "600"
+                            background: "#2563eb", color: "#fff", borderRadius: "999px",
+                            padding: "2px 8px", fontSize: "12px", fontWeight: 600,
                         }}>
                             {unreadCount}
                         </span>
                     )}
 
-                    {/* 🔥 FILTER BUTTONS  */}
-                    <div style={{ display: "flex", gap: "10px", marginLeft: "20px" }}>
+                    {/* Filter buttons */}
+                    <div style={{ display: "flex", gap: "6px", marginLeft: "16px" }}>
                         {["all", "unread", "read", "replied"].map((type) => (
                             <button
                                 key={type}
-                                onClick={() => {
-                                    setFilter(type);
-                                    setCurrentPage(1); // reset page
-                                }}
+                                onClick={() => { setFilter(type); setCurrentPage(1); }}
                                 style={{
-                                    padding: "4px 10px",
-                                    borderRadius: "6px",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    background:
-                                        filter === type ? "#3b82f6" : "#1e293b",
+                                    padding: "4px 12px", borderRadius: "6px", border: "none",
+                                    cursor: "pointer", fontSize: "12px", fontWeight: 500,
+                                    background: filter === type ? "#2563eb" : "#1e293b",
                                     color: filter === type ? "#fff" : "#94a3b8",
-                                    fontSize: "12px"
+                                    transition: "all 0.15s",
                                 }}
                             >
                                 {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -596,1593 +542,450 @@ export default function Inbox() {
                         ))}
                     </div>
 
-
-                    {/* 🔥 FINAL PAGINATION UI (LIKE YOUR IMAGE) */}
-                    <div
-                        style={{
-                            marginTop: "16px",
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            alignItems: "center",
-                            gap: "8px",
-                            marginLeft: "auto",
-                        }}
-                    >
-                        {/* LEFT ARROW */}
-                        <span
-                            onClick={() => currentPage > 1 && setCurrentPage((p) => p - 1)}
-                            style={{
-                                cursor: currentPage > 1 ? "pointer" : "default",
-                                opacity: currentPage > 1 ? 1 : 0.3,
-                                fontSize: "18px",
-                                color: "#94a3b8",
-                                padding: "6px"
-                            }}
-                        >
-                            ‹
-                        </span>
-
-                        {/* PAGE NUMBERS */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
                             <span
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
+                                onClick={() => currentPage > 1 && setCurrentPage((p) => p - 1)}
                                 style={{
-                                    minWidth: "32px",
-                                    height: "32px",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    borderRadius: "8px",
-                                    cursor: "pointer",
-                                    fontSize: "14px",
-
-                                    // ACTIVE STYLE (LIKE YOUR IMAGE)
-                                    border: page === currentPage ? "1px solid #3b82f6" : "1px solid transparent",
-                                    color: page === currentPage ? "#fff" : "#94a3b8",
-                                    background: page === currentPage ? "#1e293b" : "transparent"
+                                    cursor: currentPage > 1 ? "pointer" : "default",
+                                    opacity: currentPage > 1 ? 1 : 0.3,
+                                    fontSize: "20px", color: "#94a3b8", padding: "4px 6px",
+                                    lineHeight: 1,
                                 }}
-                            >
-                                {page}
-                            </span>
-                        ))}
-
-                        {/* RIGHT ARROW */}
-                        <span
-                            onClick={() =>
-                                currentPage < totalPages && setCurrentPage((p) => p + 1)
-                            }
-                            style={{
-                                cursor: currentPage < totalPages ? "pointer" : "default",
-                                opacity: currentPage < totalPages ? 1 : 0.3,
-                                fontSize: "18px",
-                                color: "#94a3b8",
-                                padding: "6px"
-                            }}
-                        >
-                            ›
-                        </span>
-                    </div>
-                </div>
-
-                <div style={{ borderRadius: "8px", overflow: "hidden", minHeight: "500px", }}>
-                    {loading ? (
-
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                height: "420px",
-                                color: "#94a3b8",
-                            }}
-                        >
-
-                            {/* Spinner */}
-                            <div
+                            >‹</span>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                <span
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    style={{
+                                        minWidth: "30px", height: "30px", display: "flex",
+                                        alignItems: "center", justifyContent: "center",
+                                        borderRadius: "6px", cursor: "pointer", fontSize: "13px",
+                                        border: page === currentPage ? "1px solid #3b82f6" : "1px solid transparent",
+                                        color: page === currentPage ? "#fff" : "#94a3b8",
+                                        background: page === currentPage ? "#1e3a6e" : "transparent",
+                                        fontWeight: page === currentPage ? 600 : 400,
+                                    }}
+                                >
+                                    {page}
+                                </span>
+                            ))}
+                            <span
+                                onClick={() => currentPage < totalPages && setCurrentPage((p) => p + 1)}
                                 style={{
-                                    width: "48px",
-                                    height: "48px",
-                                    border:
-                                        "4px solid rgba(255,255,255,0.12)",
-
-                                    borderTop:
-                                        "4px solid #3b82f6",
-
-                                    borderRadius: "50%",
-
-                                    animation:
-                                        "spin 0.8s linear infinite",
-
-                                    marginBottom: "18px",
+                                    cursor: currentPage < totalPages ? "pointer" : "default",
+                                    opacity: currentPage < totalPages ? 1 : 0.3,
+                                    fontSize: "20px", color: "#94a3b8", padding: "4px 6px",
+                                    lineHeight: 1,
                                 }}
-                            />
-
-                            <div
-                                style={{
-                                    fontSize: "18px",
-                                    fontWeight: "600",
-                                    color: "#e2e8f0",
-                                    marginBottom: "6px",
-                                }}
-                            >
-                                Loading Inbox...
-                            </div>
-
-                            <div
-                                style={{
-                                    fontSize: "14px",
-                                    color: "#64748b",
-                                }}
-                            >
-                                Fetching your emails
-                            </div>
-
+                            >›</span>
                         </div>
-
-                    ) : emails.length === 0 ? (
-                        <p>No emails yet</p>
-                    ) : (
-                        currentEmails.map((email) => (
-                            <div
-                                key={email._id}
-                                onClick={async () => {
-                                    setSelectedEmail(email);
-
-                                    // Add template when email opens
-                                    const name = email.sender_email.includes("<")
-                                        ? email.sender_email.split("<")[0].trim()
-                                        : email.sender_email.split("@")[0];
-
-                                    const template = `
-Hey ${name},
-                                
-Thank you for reaching out.
-`;
-
-                                    setReplyText(template);
-                                    // end here
-
-                                    // fetch thread here
-                                    const res = await fetch(
-                                        `${API_URL}/email/thread/${email._id}`
-                                    );
-                                    const data = await res.json();
-                                    setThread(Array.isArray(data) ? data : []);
-                                    // end here fetch
-
-                                    if (email.status === "unread") {
-                                        await fetch(
-                                            `${API_URL}/email/mark-read/${email._id}`,
-                                            { method: "PATCH" }
-                                        );
-
-                                        setEmails((prev) =>
-                                            prev.map((e) =>
-                                                e._id === email._id 
-                                                    ? { 
-                                                        ...e, 
-                                                        status: 
-                                                            e.status === "replied"
-                                                                ? "replied"
-                                                                : "read"
-                                                    } 
-                                                    : e
-                                            )
-                                        );
-                                    }
-                                }}  //added by shiva
-
-                                style={{
-                                    padding: "12px 15px",
-                                    borderBottom: "1px solid #2c3a55",
-
-                                    borderLeft:
-                                        selectedEmail?._id === email._id
-                                            ? "3px solid #3b82f6"
-                                            : "3px solid transparent",
-                                    background:
-                                        selectedEmail?._id === email._id
-                                            ? "#1e293b"     // selected color
-                                            : email.status === "unread"
-                                                ? "#22304d"      //highlight unread
-                                                : "#1a2338",    // normal color
-                                    cursor: "pointer",
-                                    transition: "all 0.15s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (selectedEmail?._id !== email._id) {
-                                        e.currentTarget.style.background = "#22304d";
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (selectedEmail?._id !== email._id) {
-                                        e.currentTarget.style.background =
-                                            email.status === "unread" ? "#22304d" : "#1a2338";
-                                    }
-                                }}
-                            >
-                                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-
-                                    {/* Avatar */}
-                                    <div
-                                        style={{
-                                            width: "38px",
-                                            height: "38px",
-                                            borderRadius: "50%",
-                                            background: "#3b82f6",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: "14px",
-                                            fontWeight: "bold",
-                                            color: "#fff"
-                                        }}
-                                    >
-                                        {(() => {
-                                            // const raw = email.sender_email;
-                                            const name =
-                                                email.sender_name ||
-                                                email.sender_email.split("@")[0];
-                                            return name[0].toUpperCase();
-                                            // const name = raw.includes("<")
-                                            //     ? raw.split("<")[0].trim()
-                                            //     : raw;
-
-                                            return name[0].toUpperCase();
-                                        })()}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-
-                                            {/* LEFT: Name + Badge */}
-                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                                {(() => {
-                                                    const name =
-                                                        email.sender_name ||
-                                                        email.sender_email.split("@")[0];
-                                                    // const raw = email.sender_email;
-                                                    // const name = raw.includes("<")
-                                                    //     ? raw.split("<")[0].trim()
-                                                    //     : raw.split("@")[0];
-
-                                                    return (
-                                                        <span
-                                                            style={{
-                                                                color: email.status === "unread" ? "#e2e8f0" : "#94a3b8",
-                                                                fontWeight: email.status === "unread" ? "700" : "400"
-                                                            }}
-                                                        >
-                                                            {name}
-                                                        </span>
-                                                    );
-                                                })()}
-
-                                                {/* ✅ NEW BADGE LOCATION */}
-                                                {email.status === "unread" && (
-                                                    <span style={{
-                                                        color: "#3b82f6",
-                                                        fontSize: "11px",
-                                                        fontWeight: "500"
-                                                    }}>
-                                                        ● New
-                                                    </span>
-                                                )}
-                                            </div>
-
-
-                                            {/* Time */}
-                                            <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                                                {formatTime(email.created_at)}
-                                            </span>
-                                        </div>
-
-                                        {/* Subject + Preview */}
-                                        <div style={{ fontSize: "14px" }}>
-                                            <div
-                                                style={{
-                                                    color: email.status === "unread" ? "#f1f5f9" : "#cbd5e1",
-                                                    fontWeight: email.status === "unread" ? "700" : "400"
-                                                }}
-                                            >
-                                                {email.subject || "(No Subject)"}
-                                            </div>
-                                            {/* Preview + Badge */}
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    alignItems: "center",
-                                                    gap: "10px",
-                                                }}
-                                            >
-                                                {/* Preview */}
-                                                <div
-                                                    style={{
-                                                        color: email.status === "unread" ? "#a1a1aa" : "#64748b",
-                                                        fontSize: "13px"
-                                                    }}
-                                                >
-                                                    {
-                                                        `${
-                                                            email.sender_name ||
-                                                            email.sender_email.split("@")[0]
-                                                        } would like to know when this product is back in stock.`
-                                                    }
-
-                                                            
-                                                </div>
-
-                                                {/* New Badge Position */}
-                                                {/* {email.status === "unread" && (
-                                                <span style={{
-                                                    color: "#3b82f6",
-                                                    fontSize: "11px",
-                                                    fontWeight: "500",
-                                                    whiteSpace: "nowrap"
-                                                }}>
-                                                    ● New
-                                                </span>
-                                            )} */}
-                                            </div>
-                                        </div>
-                                    </div>
-
-
-
-                                </div>
-                            </div>
-                        ))
                     )}
                 </div>
 
-                {/* added by shiva */}
-                <Drawer
-                    title="Inbox"                     //{selectedEmail?.subject}
-                    placement="right"
-                    onClose={() => setSelectedEmail(null)}
-                    open={!!selectedEmail}
-                    width={500}
-                >
-                    {selectedEmail && (
-                        <div style={{ padding: "16px", color: "#cbd5e1" }}>
-
-                            {/* SUBJECT */}
-                            {/* <div style={{ marginBottom: "20px" }}>
-                            <h2
-                                style={{
-                                    margin: 0,
-                                    color: "#e2e8f0",
-                                    fontWeight: 600,
-                                    letterSpacing: "0.3px",
-                                }}
-                            >
-                                {selectedEmail.subject}
-                            </h2>
-                        </div> */}
-
-                            {/* SENDER SECTION */}
-                            {/* CLEAN EMAIL HEADER */}
-                            <div style={{ marginBottom: "16px" }}>
-
-                                {/* SUBJECT */}
-                                <div style={{
-                                    fontSize: "16px",
-                                    fontWeight: 600,
-                                    color: "#e2e8f0",
-                                    marginBottom: "10px"
-                                }}>
-                                    {selectedEmail.subject || "(No Subject)"}
-                                </div>
-
-                                {/* SENDER ROW */}
-                                <div style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    fontSize: "13px",
-                                    color: "#94a3b8"
-                                }}>
-                                    <div>
-                                        <span style={{ color: "#e2e8f0", fontWeight: 500 }}>
-                                            {selectedEmail.sender_email.split("<")[0].trim()}
-                                        </span>
-                                        {" <"}
-                                        {selectedEmail.sender_email.match(/<(.+)>/)?.[1] || selectedEmail.sender_email}
-                                        {">"}
-                                    </div>
-
-                                    <div style={{ fontSize: "12px", color: "#64748b" }}>
-                                        {formatTime(selectedEmail.created_at)}
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* DIVIDER */}
+                {/* ── Email list ── */}
+                <div style={{ borderRadius: "10px", overflow: "hidden", border: "1px solid #1e293b" }}>
+                    {loading ? (
+                        <div style={{
+                            display: "flex", flexDirection: "column", alignItems: "center",
+                            justifyContent: "center", height: "400px", color: "#94a3b8",
+                        }}>
                             <div style={{
-                                height: "1px",
-                                background: "#1f2937",
-                                margin: "12px 0 20px"
+                                width: "40px", height: "40px",
+                                border: "3px solid rgba(255,255,255,0.08)",
+                                borderTop: "3px solid #3b82f6",
+                                borderRadius: "50%",
+                                animation: "spin 0.8s linear infinite",
+                                marginBottom: "16px",
                             }} />
+                            <div style={{ fontSize: "15px", fontWeight: 600, color: "#e2e8f0", marginBottom: "4px" }}>
+                                Loading Inbox...
+                            </div>
+                            <div style={{ fontSize: "13px", color: "#64748b" }}>Fetching your emails</div>
+                        </div>
+                    ) : emails.length === 0 ? (
+                        <div style={{ textAlign: "center", padding: "60px 20px", color: "#64748b" }}>
+                            <div style={{ fontSize: "32px", marginBottom: "12px" }}>📭</div>
+                            <div style={{ fontSize: "15px" }}>No emails yet</div>
+                        </div>
+                    ) : (
+                        currentEmails.map((email, idx) => {
+                            const isSelected = selectedEmail?._id === email._id;
+                            const isUnread = email.status === "unread";
+                            const name = email.sender_name || email.sender_email.split("@")[0];
 
-                            {/* BODY */}
-                            <div
-                                style={{
-                                    fontSize: "14px",
-                                    lineHeight: "1.6",
-                                    color: "#e5e7eb",
-                                    marginTop: "12px",
-                                    whiteSpace: "pre-wrap"
-                                }}
-                            >
-                                {(Array.isArray(thread) ? thread : []).map((msg) => {
+                            return (
+                                <div
+                                    key={email._id}
+                                    className="inbox-row"
+                                    onClick={async () => {
+                                        setSelectedEmail(email);
+                                        const template = `Hi ${name.split(" ")[0]},\n\nThank you for reaching out.\n\n`;
+                                        setReplyText(template);
+                                        const res = await fetch(`${API_URL}/email/thread/${email._id}`);
+                                        const data = await res.json();
+                                        setThread(Array.isArray(data) ? data : []);
+                                        if (email.status === "unread") {
+                                            await fetch(`${API_URL}/email/mark-read/${email._id}`, { method: "PATCH" });
+                                            setEmails((prev) =>
+                                                prev.map((e) =>
+                                                    e._id === email._id
+                                                        ? { ...e, status: e.status === "replied" ? "replied" : "read" }
+                                                        : e
+                                                )
+                                            );
+                                        }
+                                    }}
+                                    style={{
+                                        padding: "12px 16px",
+                                        borderBottom: idx < currentEmails.length - 1 ? "1px solid #1a2540" : "none",
+                                        borderLeft: isSelected ? "3px solid #3b82f6" : "3px solid transparent",
+                                        background: isSelected ? "#1e2d45" : isUnread ? "#172032" : "#111827",
+                                        cursor: "pointer",
+                                        transition: "background 0.12s",
+                                    }}
+                                >
+                                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                        {/* Avatar */}
+                                        <div style={{
+                                            width: "36px", height: "36px", borderRadius: "50%",
+                                            background: isUnread ? "#2563eb" : "#334155",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            fontSize: "13px", fontWeight: 700, color: "#fff", flexShrink: 0,
+                                        }}>
+                                            {name[0]?.toUpperCase() || "?"}
+                                        </div>
 
-                                    const isYou =
-                                        msg.sender_email?.includes("support@autohubexpress.us");
-                                    const isHtmlEmail =
-                                        msg.body?.includes("<img") ||
-                                        msg.body?.includes("<table") ||
-                                        msg.body?.includes("<html") ||
-                                        msg.body?.includes("<div");
-
-                                    return (
-                                        <div
-                                            key={msg._id}
-                                            style={{
-                                                marginBottom: "16px",
-                                                textAlign: isYou ? "right" : "left",
-                                            }}
-                                        >
-                                            {/* Sender */}
-                                            <div
-                                                style={{
-                                                    fontSize: "12px",
-                                                    color: "#94a3b8",
-                                                    marginBottom: "4px",
-                                                    display: "flex",
-                                                    justifyContent: isYou ? "flex-end" : "flex-start",
-                                                    gap: "8px",
-                                                }}
-                                            >
-                                                <span>
-                                                    {isYou
-                                                        ? "You"
-                                                        : msg.sender_email.includes("<")
-                                                            ? msg.sender_email.split("<")[0].trim()
-                                                            : msg.sender_email.split("@")[0]
-                                                    }
-                                                </span>
-                                                <span style={{ color: "#64748b" }}>
-                                                    • {formatTime(msg.created_at)}
+                                        {/* Content */}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                    <span style={{
+                                                        fontSize: "14px",
+                                                        fontWeight: isUnread ? 700 : 500,
+                                                        color: isUnread ? "#f1f5f9" : "#94a3b8",
+                                                        whiteSpace: "nowrap",
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis",
+                                                        maxWidth: "180px",
+                                                    }}>
+                                                        {name}
+                                                    </span>
+                                                    {isUnread && (
+                                                        <span style={{
+                                                            width: "7px", height: "7px", borderRadius: "50%",
+                                                            background: "#3b82f6", flexShrink: 0, display: "inline-block",
+                                                        }} />
+                                                    )}
+                                                </div>
+                                                <span style={{ fontSize: "11px", color: "#4b5563", whiteSpace: "nowrap", marginLeft: "8px" }}>
+                                                    {formatTime(email.created_at)}
                                                 </span>
                                             </div>
-
-                                            {/* Message */}
-                                            <div
-                                                style={{
-                                                        display: isYou ? "inline-block" : "block",
-                                                        width: isYou ? "auto" : "100%",
-                                                        maxWidth: isYou ? "75%" : "100%",
-                                                        padding: "12px 16px",
-                                                        borderRadius: "16px",
-                                                        background: isYou ? "#3b82f6" : "#1e293b",
-                                                        color: "#f8fafc",
-                                                        fontSize: "14px",
-                                                        lineHeight: "1.6",
-                                                        textAlign: "left",
-                                                        whiteSpace: "pre-wrap",
-                                                        wordBreak: "break-word"
-                                                        }}
-
-                                            // dangerouslySetInnerHTML={{ __html: cleanBody(msg.body) }}
-                                            >
-                                                {/^Fwd(\[\d+\])?/i.test(msg.subject)
-                                                    ? (() => {
-
-                                                        const body = cleanBody(msg.body);
-
-                                                        const forwardedToMatch =
-                                                            body.match(
-                                                                /Forwarded To:\s*(.*)/i
-                                                            );
-
-                                                        const forwardedTo =
-                                                            forwardedToMatch?.[1] || "";
-
-                                                        const cleanMessage =
-                                                            body
-                                                                .replace(
-                                                                    /Forwarded To:.*(\n)?/i,
-                                                                    ""
-                                                                )
-                                                                .replace(
-                                                                    forwardedTo,
-                                                                    ""
-                                                                )
-                                                                .trim();
-
-                                                        return (
-                                                            <div>
-
-                                                                {/* Forward Header */}
-                                                                <div
-                                                                    style={{
-                                                                        fontSize: "13px",
-                                                                        color: "rgba(255,255,255,0.75)",
-                                                                        marginBottom: "12px",
-                                                                        fontWeight: "500",
-                                                                        letterSpacing: "0.3px",
-                                                                        textTransform: "uppercase",
-                                                                        fontSize: "11px",
-                                                                    }}
-                                                                >
-                                                                    Forwarded Email
-                                                                </div>
-
-                                                                {/* Forward Meta */}
-                                                                <div
-                                                                    style={{
-                                                                        borderLeft:
-                                                                            "3px solid rgba(255,255,255,0.35)",
-
-                                                                        paddingLeft: "12px",
-
-                                                                        marginBottom: "12px",
-
-                                                                        lineHeight: "1.7",
-                                                                    }}
-                                                                >
-                                                                    <div>
-                                                                        <span
-                                                                            style={{
-                                                                                opacity: 0.7
-                                                                            }}
-                                                                        >
-                                                                            To:
-                                                                        </span>{" "}
-
-                                                                        {forwardedTo}
-                                                                    </div>
-
-                                                                    <div>
-                                                                        <span
-                                                                            style={{
-                                                                                opacity: 0.7
-                                                                            }}
-                                                                        >
-                                                                            Subject:
-                                                                        </span>{" "}
-
-                                                                        {msg.subject}
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Forward Body */}
-                                                                <div
-                                                                    style={{
-                                                                        whiteSpace: "pre-wrap",
-                                                                        lineHeight: "1.7",
-                                                                        textAlign: "left",
-                                                                        marginTop: "16px",
-                                                                    }}
-                                                                >
-                                                                    <div
-                                                                        style={{
-                                                                            whiteSpace: "pre-wrap",
-                                                                            lineHeight: "1.7",
-                                                                            textAlign: "left",
-                                                                            marginTop: "16px",
-                                                                        }}
-                                                                    >
-
-                                                                        {cleanMessage
-                                                                            .split("\n")
-                                                                            .map((line, index) => {
-
-                                                                                const isAttachment =
-                                                                                    line.trim().startsWith("📎");
-
-                                                                                if (isAttachment) {
-
-                                                                                    const cleaned =
-                                                                                        line.replace("📎 ", "");
-
-                                                                                    const [filename, url] =
-                                                                                        cleaned.split("|||");
-
-                                                                                    return (
-
-                                                                                        <div
-                                                                                            key={index}
-                                                                                            style={{
-                                                                                                marginTop: "10px",
-                                                                                                background: "rgba(255,255,255,0.08)",
-                                                                                                padding: "10px 14px",
-                                                                                                borderRadius: "10px",
-                                                                                                display: "flex",
-                                                                                                alignItems: "center",
-                                                                                                gap: "10px",
-                                                                                                width: "fit-content",
-                                                                                                maxWidth: "100%",
-                                                                                                overflow: "hidden"
-                                                                                            }}
-                                                                                        >
-                                                                                            <a
-                                                                                                href={url}
-                                                                                                target="_blank"
-                                                                                                rel="noreferrer"
-                                                                                                style={{
-                                                                                                    color: "#fff",
-                                                                                                    textDecoration: "none",
-                                                                                                    cursor: "pointer"
-                                                                                                }}
-                                                                                            >
-                                                                                                📎 {filename}
-                                                                                            </a>
-                                                                                        </div>
-                                                                                    );
-                                                                                }
-
-                                                                                return (
-                                                                                    <div key={index}>
-                                                                                        {line}
-                                                                                    </div>
-                                                                                );
-                                                                            })}
-                                                                    </div>
-                                                                    {/* {cleanMessage} */}
-                                                                </div>
-
-                                                            </div>
-                                                        );
-
-                                                    })()
-                                                    : (
-                                                        <>
-                                                            {/* Existing HTML Rendering By shiva*/}
-                                                            {msg.subject?.includes("back in stock request") && 
-                                                            !isYou ? (
-
-                                                                <div
-                                                                    style={{
-                                                                        lineHeight: "1.8",
-                                                                        fontSize: "15px",
-                                                                        color: "#f8fafc",
-                                                                    }}
-                                                                >
-
-                                                                    {/* CUSTOMER EMAIL */}
-                                                                    <div style={{ marginBottom: "10px" }}>
-                                                                        <strong>Customer:</strong>{" "}
-
-                                                                        <a
-                                                                            href={`mailto:${
-                                                                                msg.body.match(
-                                                                                    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
-                                                                                )?.[0] || ""
-                                                                            }`}
-                                                                            style={{
-                                                                                color: "#60a5fa",
-                                                                                textDecoration: "none",
-                                                                            }}
-                                                                        >
-                                                                            {
-                                                                                msg.body.match(
-                                                                                    /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
-                                                                                )?.[0]
-                                                                            }
-                                                                        </a>
-                                                                    </div>
-
-                                                                    {/* PRODUCT */}
-                                                                    <div style={{ marginBottom: "10px" }}>
-                                                                        <strong>Product:</strong>{" "}
-                                                                        {
-                                                                            msg.body.match(
-                                                                                /Air Intake Manifold/i
-                                                                            )?.[0] || "N/A"
-                                                                        }
-                                                                    </div>
-
-                                                                    {/* PRODUCT IMAGE */}
-                                                                    {
-                                                                    (
-                                                                        msg.body.match(
-                                                                            /https:\/\/static\.wixstatic\.com[^"]+/i
-                                                                        ) || []
-                                                                    )[0] && (
-                                                                        
-                                                                        <img
-                                                                            src={
-                                                                                (
-                                                                                    msg.body.match(
-                                                                                        /https:\/\/static\.wixstatic\.com[^"]+/i
-                                                                                    ) || []
-                                                                                )[0]
-                                                                            }
-
-                                                                            alt="product"
-
-                                                                            style={{
-                                                                                width: "220px",
-                                                                                borderRadius: "14px",
-                                                                                marginTop: "10px",
-                                                                                objectFit: "cover",
-                                                                                border: "1px solid rgba(255,255,255,0.08)",
-                                                                                boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-                                                                                display: "block"
-                                                                            }}
-                                                                        />
-                                                                    )}
-
-                                                                    {/* PRICE */}
-                                                                    <div>
-                                                                        <strong>Price:</strong>{" "}
-                                                                        {
-                                                                            msg.body.match(
-                                                                                /\$\d+(\.\d+)?/
-                                                                            )?.[0] || "N/A"
-                                                                        }
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                /* Professional HTML email renderer for eBay, Wix, normal emails */
-                                                                <div
-                                                                    className="email-html-body"
-                                                                    style={{
-                                                                        textAlign: "left",
-                                                                        width: "100%",
-                                                                    }}
-                                                                    dangerouslySetInnerHTML={{
-                                                                        __html: sanitizeHtmlForDisplay(
-                                                                            msg.body
-                                                                                ?.replace(/📎.*$/gm, "")
-                                                                        )
-                                                                    }}
-                                                                />
-                                                            )}
-                                                            {/* end here */}
-
-                                                            {/* Attachment Preview */}
-                                                            {/* Attachments */}
-                                                            {msg.attachments?.length > 0 && (
-
-                                                                <div
-                                                                    style={{
-                                                                        marginTop: "10px",
-                                                                        display: "flex",
-                                                                        flexDirection: "column",
-                                                                        gap: "10px"
-                                                                    }}
-                                                                >
-
-                                                                    {msg.attachments.map((file, i) => (
-
-                                                                        <div key={i}>
-
-
-                                                                            {/* IMAGE PREVIEW */}
-                                                                            {file.filename?.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i) ? (
-
-                                                                                <div
-                                                                                    style={{
-                                                                                        background: "rgba(255,255,255,0.04)",
-                                                                                        padding: "8px",
-                                                                                        borderRadius: "16px",
-                                                                                        marginTop: "10px",
-                                                                                        width: "fit-content"
-                                                                                    }}
-                                                                                >
-                                                                                    {/* To preview the image added by shiva */}
-                                                                                    <img
-                                                                                        src={getImageUrl(file)}
-                                                                                        alt={file.originalname || file.filename}
-
-                                                                                        onClick={() => {
-
-                                                                                            setPreviewImage(
-                                                                                                getImageUrl(file)
-                                                                                            );
-
-                                                                                            setPreviewTitle(
-                                                                                                file.originalname || file.filename
-                                                                                            );
-
-                                                                                            setPreviewOpen(true);
-                                                                                        }}
-
-                                                                                        onError={(e) => {
-                                                                                            console.log("BROKEN IMAGE:", getImageUrl(file));
-
-                                                                                            e.currentTarget.src =
-                                                                                                "https://placehold.co/300x200?text=Image+Not+Found";
-                                                                                        }}
-
-                                                                                        style={{
-                                                                                            width: "220px",
-                                                                                            maxWidth: "100%",
-                                                                                            borderRadius: "14px",
-                                                                                            cursor: "pointer",
-                                                                                            marginTop: "12px",
-                                                                                            objectFit: "cover",
-                                                                                            border: "1px solid rgba(255,255,255,0.08)",
-                                                                                            boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
-                                                                                            display: "block",
-                                                                                            transition: "0.2s ease"
-                                                                                        }}
-                                                                                    />
-                                                                                    {/* end here */}
-                                                                                </div>
-
-
-
-                                                                            ) : (
-
-                                                                                /* FILE ATTACHMENT */
-                                                                                <a
-                                                                                    href={file.url}
-                                                                                    target="_blank"
-                                                                                    rel="noreferrer"
-
-                                                                                    style={{
-                                                                                        color: "#fff",
-                                                                                        textDecoration: "none",
-                                                                                        display: "inline-flex",
-                                                                                        alignItems: "center",
-                                                                                        gap: "8px",
-                                                                                        background: "rgba(255,255,255,0.08)",
-                                                                                        padding: "8px 12px",
-                                                                                        borderRadius: "8px",
-                                                                                        marginTop: "6px"
-                                                                                    }}
-                                                                                >
-                                                                                    📎 {file.originalname || file.filename}
-                                                                                </a>
-                                                                            )}
-
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-
-
-                                                        </>
-                                                    )}
+                                            <div style={{
+                                                fontSize: "13px",
+                                                fontWeight: isUnread ? 600 : 400,
+                                                color: isUnread ? "#e2e8f0" : "#6b7280",
+                                                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                                                marginBottom: "2px",
+                                            }}>
+                                                {email.subject || "(No Subject)"}
+                                            </div>
+                                            <div style={{
+                                                fontSize: "12px", color: "#4b5563",
+                                                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                                            }}>
+                                                {email.status === "replied"
+                                                    ? "✓ Replied"
+                                                    : cleanBody(email.body || "")
+                                                        .replace(/<[^>]+>/g, "")
+                                                        .slice(0, 80) || "No preview available"}
                                             </div>
                                         </div>
-                                    );
-                                })}
-                                {/* {selectedEmail.body} */}
-                            </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+            </div>
 
-                            {/* Attachments Added by shiva */}
-                            <div style={{ marginTop: "14px" }}>
-                                {/* Hidden Input */}
+            {/* ── Email Detail Drawer ── */}
+            <Drawer
+                title={
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "#e2e8f0" }}>
+                        {selectedEmail?.subject || "Email"}
+                    </span>
+                }
+                placement="right"
+                onClose={() => { setSelectedEmail(null); setThread([]); setAttachments([]); }}
+                open={!!selectedEmail}
+                width={680}
+                styles={{
+                    header: { background: "#0f172a", borderBottom: "1px solid #1e293b", padding: "14px 20px" },
+                    body: { background: "#0f172a", padding: "0" },
+                    mask: { backdropFilter: "blur(2px)" },
+                }}
+            >
+                {selectedEmail && (
+                    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+
+                        {/* ── Email header card ── */}
+                        <div style={{
+                            padding: "16px 20px",
+                            borderBottom: "1px solid #1e293b",
+                            background: "#0f172a",
+                        }}>
+                            <div style={{ fontSize: "16px", fontWeight: 700, color: "#f1f5f9", marginBottom: "10px", lineHeight: 1.4 }}>
+                                {selectedEmail.subject || "(No Subject)"}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <div style={{
+                                    width: "34px", height: "34px", borderRadius: "50%", background: "#2563eb",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    fontSize: "13px", fontWeight: 700, color: "#fff", flexShrink: 0,
+                                }}>
+                                    {(selectedEmail.sender_name || selectedEmail.sender_email)[0]?.toUpperCase()}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#e2e8f0" }}>
+                                        {selectedEmail.sender_name || selectedEmail.sender_email.split("@")[0]}
+                                    </div>
+                                    <div style={{ fontSize: "12px", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {selectedEmail.sender_email.match(/<(.+)>/)?.[1] || selectedEmail.sender_email}
+                                    </div>
+                                </div>
+                                <div style={{ fontSize: "12px", color: "#4b5563", flexShrink: 0 }}>
+                                    {formatTime(selectedEmail.created_at)}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── Thread messages ── */}
+                        <div style={{
+                            flex: 1,
+                            overflowY: "auto",
+                            padding: "20px",
+                            display: "flex",
+                            flexDirection: "column",
+                        }}>
+                            {thread.length === 0 ? (
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "120px", color: "#4b5563", fontSize: "13px" }}>
+                                    Loading conversation...
+                                </div>
+                            ) : (
+                                thread.map((msg) => <MessageBubble key={msg._id} msg={msg} />)
+                            )}
+                            <div ref={threadEndRef} />
+                        </div>
+
+                        {/* ── Reply area ── */}
+                        <div style={{
+                            borderTop: "1px solid #1e293b",
+                            background: "#0a1628",
+                            padding: "16px 20px 20px",
+                        }}>
+                            {/* Attachment button + chips */}
+                            <div style={{ marginBottom: "10px" }}>
                                 <input
                                     id="replyAttachmentInput"
                                     type="file"
                                     multiple
                                     style={{ display: "none" }}
-
                                     onChange={(e) => {
                                         const files = Array.from(e.target.files);
-                                        const oversized = files.find(
-                                            file => file.size > 20 * 1024 * 1024
-                                        );
-
-                                        if (oversized) {
-                                            message.error(
-                                                "File size must be less than 20MB"
-                                            );
-                                            return;
-                                        }
-
-                                        setAttachments(prev => [
-                                            ...prev,
-                                            ...files
-                                        ]);
+                                        const oversized = files.find((f) => f.size > 20 * 1024 * 1024);
+                                        if (oversized) { message.error("Max file size is 20MB"); return; }
+                                        setAttachments((prev) => [...prev, ...files]);
+                                        e.target.value = "";
                                     }}
                                 />
-                                {/* Custom Button */}
-                                <label
-                                    htmlFor="replyAttachmentInput"
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "8px",
-                                        background: "#1e293b",
-                                        color: "#cbd5e1",
-                                        border: "1px solid #334155",
-                                        padding: "8px 14px",
-                                        borderRadius: "8px",
-                                        cursor: "pointer",
-                                        fontSize: "13px",
-                                        fontWeight: 500
-                                    }}
-                                >
-                                    📎 Attach Files
-                                </label>
-                                {/* Selected Files */}
                                 {attachments.length > 0 && (
-                                    <div
-                                        style={{
-                                            marginTop: "12px",
-                                            display: "flex",
-                                            flexWrap: "wrap",
-                                            gap: "8px",
-                                            // fontSize: "12px",
-                                            // color: "#94a3b8"
-                                        }}
-                                    >
-                                        {attachments.map((file, index) => (
-
-                                            <div
-                                                key={index}
-                                                style={{
-                                                    background: "#0f172a",
-                                                    border: "1px solid #334155",
-                                                    borderRadius: "8px",
-                                                    padding: "8px 10px",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: "10px",
-                                                    color: "#e2e8f0",
-                                                    fontSize: "12px",
-                                                    maxWidth: "220px"
-                                                }}
-                                            >
-                                                <span
-                                                    style={{
-                                                        overflow: "hidden",
-                                                        textOverflow: "ellipsis",
-                                                        whiteSpace: "nowrap"
-                                                    }}
-                                                >
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+                                        {attachments.map((file, i) => (
+                                            <div key={i} style={{
+                                                background: "#1e293b", border: "1px solid #334155",
+                                                borderRadius: "6px", padding: "5px 10px",
+                                                display: "flex", alignItems: "center", gap: "8px",
+                                                fontSize: "12px", color: "#e2e8f0", maxWidth: "200px",
+                                            }}>
+                                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                                     📄 {file.name}
                                                 </span>
-
                                                 <span
-                                                    onClick={() => {
-
-                                                        setAttachments(prev =>
-                                                            prev.filter((_, i) =>
-                                                                i !== index
-                                                            )
-                                                        );
-                                                    }}
-                                                    style={{
-                                                        cursor: "pointer",
-                                                        color: "#ef4444",
-                                                        fontWeight: "bold"
-                                                    }}
-                                                >
-                                                    ✕
-                                                </span>
+                                                    onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                                                    style={{ cursor: "pointer", color: "#ef4444", fontWeight: 700, flexShrink: 0 }}
+                                                >✕</span>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                            {/* end here */}
 
-                            {/* Reply  */}
-                            <textarea
-                                value={replyText}
-                                onChange={(e) => setReplyText(e.target.value)}
-
-                                onKeyDown={async (e) => {
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                        e.preventDefault();
-
-                                        if (!replyText.trim()) {
-                                            message.warning("Write something first");
-                                            return;
+                            {/* Textarea */}
+                            <div style={{
+                                background: "#1e293b",
+                                border: "1px solid #334155",
+                                borderRadius: "12px",
+                                overflow: "hidden",
+                            }}>
+                                <textarea
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    onKeyDown={async (e) => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                            e.preventDefault();
+                                            await sendReply();
                                         }
+                                    }}
+                                    placeholder="Write a reply… (Enter to send, Shift+Enter for new line)"
+                                    style={{
+                                        width: "100%", minHeight: "100px", maxHeight: "200px",
+                                        padding: "12px 14px",
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "#e2e8f0",
+                                        fontSize: "14px",
+                                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                                        lineHeight: 1.6,
+                                        resize: "vertical",
+                                        outline: "none",
+                                    }}
+                                />
 
-                                        if (isSending) return;
-
-                                        try {
-                                            setIsSending(true);
-
-                                            const to =
-                                                selectedEmail.sender_email.match(/<(.+)>/)?.[1] ||
-                                                selectedEmail.sender_email;
-
-                                            // Replace Reply API Logic with FormData
-                                            const formData = new FormData();
-
-                                            formData.append("to", to);
-                                            formData.append(
-                                                "subject",
-                                                selectedEmail.subject
-                                            );
-
-                                            formData.append(
-                                                "message",
-                                                replyText
-                                            );
-
-                                            attachments.forEach(file => {
-                                                formData.append(
-                                                    "attachments",
-                                                    file
-                                                );
-                                            });
-
-                                            await fetch(`${API_URL}/email/reply`, {
-                                                method: "POST",
-                                                body: formData
-                                            });
-
-
-
-
-                                            // await fetch(`${API_URL}/email/reply`, {
-                                            //     method: "POST",
-                                            //     headers: {
-                                            //         "Content-Type": "application/json"
-                                            //     },
-                                            //     body: JSON.stringify({
-                                            //         to,
-                                            //         subject: selectedEmail.subject,
-                                            //         message: replyText
-                                            //     })
-                                            // });
-
-                                            message.success("Reply sent");
-                                            setReplyText("");
-                                            setAttachments([]);   // added by shiva for attachments
-
-                                            // refresh emails
-                                            const res = await fetch(`${API_URL}/email/all`);
-                                            const data = await res.json();
-                                            setEmails(data);
-
-                                            // refresh thread
-                                            const threadRes = await fetch(
-                                                `${API_URL}/email/thread/${selectedEmail._id}`
-                                            );
-                                            const threadData = await threadRes.json();
-                                            setThread(Array.isArray(threadData) ? threadData : []);
-
-                                        } catch (err) {
-                                            console.error(err);
-                                            message.error("Failed to send");
-                                        } finally {
-                                            setIsSending(false);
-                                        }
-                                    }
-                                }}
-
-
-                                placeholder="Write your reply..."
-                                style={{
-                                    width: "100%",
-                                    marginTop: "16px",
-                                    padding: "14px",
-                                    minHeight: "180px",
-                                    borderRadius: "8px",
-                                    background: "#0f172a",
-                                    border: "1px solid #334155",
-                                    color: "#e2e8f0",
-                                    fontSize: "14px",
-                                    fontFamily: "Arial, sans-serif",
-                                    lineHeight: "1.6",
-                                    resize: "vertical",
-                                    outline: "none"
-                                }}
-                            />
-
-                            {/* ACTIONS */}
-                            <div
-                                style={{
-                                    marginTop: "18px",
+                                {/* Action bar inside textarea box */}
+                                <div style={{
                                     display: "flex",
-                                    gap: "20px",
-                                }}
-                            >
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    padding: "8px 12px",
+                                    borderTop: "1px solid #2d3f55",
+                                }}>
+                                    <label
+                                        htmlFor="replyAttachmentInput"
+                                        style={{
+                                            display: "inline-flex", alignItems: "center", gap: "6px",
+                                            color: "#64748b", cursor: "pointer", fontSize: "13px",
+                                            padding: "4px 8px", borderRadius: "6px",
+                                            transition: "color 0.15s",
+                                        }}
+                                        title="Attach files"
+                                    >
+                                        📎 <span>Attach</span>
+                                    </label>
 
-                                {/* <div
-                                style={{
-                                    height: "1px",
-                                    background: "#1f2937",
-                                    marginBottom: "16px",
-                                }}
-                            /> */}
-                                <button
-                                    disabled={isSending}
-                                    onClick={async () => {
-                                        if (!replyText.trim()) {
-                                            message.warning("Write something first");
-                                            return;
-                                        }
-
-                                        if (isSending) return    // prevent double click
-
-                                        try {
-                                            setIsSending(true);  // Start loading
-                                            // extract actual email
-                                            const to =
-                                                selectedEmail.sender_email.match(/<(.+)>/)?.[1] ||
-                                                selectedEmail.sender_email;
-
-                                            // Replace Reply API Logic with FormData
-                                            const formData = new FormData();
-
-                                            formData.append("to", to);
-                                            formData.append(
-                                                "subject",
-                                                selectedEmail.subject
-                                            );
-
-                                            formData.append(
-                                                "message",
-                                                replyText
-                                            );
-
-                                            attachments.forEach(file => {
-                                                formData.append(
-                                                    "attachments",
-                                                    file
-                                                );
-                                            });
-
-                                            await fetch(`${API_URL}/email/reply`, {
-                                                method: "POST",
-                                                body: formData
-                                            });
-
-
-                                            // await fetch(`${API_URL}/email/reply`, {
-                                            //     method: "POST",
-                                            //     headers: {
-                                            //         "Content-Type": "application/json"
-                                            //     },
-                                            //     body: JSON.stringify({
-                                            //         to,
-                                            //         subject: selectedEmail.subject,
-                                            //         message: replyText
-                                            //     })
-                                            // });
-
-                                            message.success("Reply sent");
-                                            setReplyText("");
-                                            setAttachments([]);   // added by shiva
-
-                                            // Optional: only reset if not already on page 1
-                                            // if (currentPage !== 1) {
-                                            //     setCurrentPage(1);
-                                            // }
-                                            // Refresh email list 
-                                            const res = await fetch(`${API_URL}/email/all`);
-                                            const data = await res.json();
-                                            setEmails(data);
-
-                                            // Refresh Thread also
-                                            const threadRes = await fetch(
-                                                `${API_URL}/email/thread/${selectedEmail._id}`
-                                            );
-                                            const threadData = await threadRes.json();
-                                            setThread(Array.isArray(threadData) ? threadData : []);
-
-                                        } catch (err) {
-                                            console.error(err);
-                                            message.error("Failed to send");
-                                        } finally {
-                                            setIsSending(false);    // stop loading
-                                        }
-                                    }}
-                                    style={{
-                                        background: isSending ? "#64748b" : "#3b82f6",
-                                        border: "none",
-                                        padding: "8px 16px",
-                                        borderRadius: "6px",
-                                        color: "#fff",
-                                        cursor: isSending ? "not-allowed" : "pointer",
-                                        fontWeight: 500,
-                                        opacity: isSending ? 0.7 : 1,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "6px",
-                                    }}
-                                >
-                                    {isSending && (
-                                        <span
+                                    <div style={{ display: "flex", gap: "8px" }}>
+                                        <button
+                                            onClick={() => setForwardModalOpen(true)}
                                             style={{
-                                                width: "14px",
-                                                height: "14px",
-                                                border: "2px solid #fff",
-                                                borderTop: "2px solid transparent",
-                                                borderRadius: "50%",
-                                                display: "inline-block",
-                                                animation: "spin 0.6s linear infinite"
+                                                background: "transparent", border: "1px solid #334155",
+                                                padding: "6px 14px", borderRadius: "7px",
+                                                color: "#94a3b8", cursor: "pointer", fontSize: "13px",
+                                                fontWeight: 500,
                                             }}
-                                        />
-                                    )}
-                                    {isSending ? "Sending..." : "Send Reply"}
-                                </button>
-
-                                <button
-                                    onClick={() =>
-                                        setForwardModalOpen(true)
-                                    }
-                                    style={{
-                                        background: "#334155",
-                                        border: "none",
-                                        padding: "8px 16px",
-                                        borderRadius: "6px",
-                                        color: "#cbd5e1",
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    Forward
-                                </button>
-
-                                {/* <button
-                                onClick={async () => {
-                                    if (!selectedEmail) return;
-
-                                    try {
-                                        // 🔥 CALL BACKEND (IMPORTANT)
-                                        await fetch(
-                                            `${API_URL}/email/mark-read/${selectedEmail._id}`,
-                                            { method: "PATCH" }
-                                        );
-
-                                        // 🔥 UPDATE UI
-                                        setEmails((prev) =>
-                                            prev.map((e) =>
-                                                e._id === selectedEmail._id ? { ...e, status: "read" } : e
-                                            )
-                                        );
-
-                                        setSelectedEmail((prev) => ({ ...prev, status: "read" }));
-
-                                    } catch (err) {
-                                        console.error(err);
-                                    }
-                                }}
-                                style={{
-                                    background: "#334155",
-                                    border: "none",
-                                    padding: "8px 16px",
-                                    borderRadius: "6px",
-                                    color: "#cbd5e1",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Mark as Read
-                            </button> */}
+                                        >
+                                            Forward
+                                        </button>
+                                        <button
+                                            disabled={isSending}
+                                            onClick={sendReply}
+                                            style={{
+                                                background: isSending ? "#1e3a6e" : "#2563eb",
+                                                border: "none", padding: "6px 18px", borderRadius: "7px",
+                                                color: "#fff", cursor: isSending ? "not-allowed" : "pointer",
+                                                fontSize: "13px", fontWeight: 600,
+                                                opacity: isSending ? 0.7 : 1,
+                                                display: "flex", alignItems: "center", gap: "6px",
+                                                transition: "background 0.15s",
+                                            }}
+                                        >
+                                            {isSending && (
+                                                <span style={{
+                                                    width: "12px", height: "12px",
+                                                    border: "2px solid #fff", borderTop: "2px solid transparent",
+                                                    borderRadius: "50%", display: "inline-block",
+                                                    animation: "spin 0.6s linear infinite",
+                                                }} />
+                                            )}
+                                            {isSending ? "Sending…" : "Send"}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+            </Drawer>
 
+            {/* ── Forward Modal ── */}
+            <Modal
+                title="Forward Email"
+                open={forwardModalOpen}
+                okText="Send"
+                cancelText="Cancel"
+                onCancel={() => { setForwardModalOpen(false); setForwardAttachments([]); setForwardEmail(""); setForwardMessage(""); }}
+                onOk={handleForwardMail}
+                confirmLoading={isForwarding}
+            >
+                <Input
+                    placeholder="Recipient email address"
+                    value={forwardEmail}
+                    onChange={(e) => setForwardEmail(e.target.value)}
+                    onPressEnter={(e) => e.preventDefault()}
+                    style={{ marginBottom: 12 }}
+                />
+                <Input.TextArea
+                    rows={4}
+                    placeholder="Add a message (optional)…"
+                    value={forwardMessage}
+                    onChange={(e) => setForwardMessage(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleForwardMail(); } }}
+                />
+
+                <div style={{ marginTop: "14px" }}>
+                    <input
+                        id="forwardAttachmentInput"
+                        type="file"
+                        multiple
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                            const files = Array.from(e.target.files);
+                            const oversized = files.find((f) => f.size > 20 * 1024 * 1024);
+                            if (oversized) { message.error("Max file size is 20MB"); return; }
+                            setForwardAttachments((prev) => [...prev, ...files]);
+                            e.target.value = "";
+                        }}
+                    />
+                    <label
+                        htmlFor="forwardAttachmentInput"
+                        style={{
+                            display: "inline-flex", alignItems: "center", gap: "8px",
+                            background: "#1e293b", color: "#cbd5e1", border: "1px solid #334155",
+                            padding: "7px 14px", borderRadius: "8px", cursor: "pointer",
+                            fontSize: "13px", fontWeight: 500,
+                        }}
+                    >
+                        📎 Attach Files
+                    </label>
+                    {forwardAttachments.length > 0 && (
+                        <div style={{ marginTop: "10px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                            {forwardAttachments.map((file, i) => (
+                                <div key={i} style={{
+                                    background: "#0f172a", border: "1px solid #334155",
+                                    borderRadius: "6px", padding: "5px 10px",
+                                    display: "flex", alignItems: "center", gap: "8px",
+                                    color: "#e2e8f0", fontSize: "12px", maxWidth: "200px",
+                                }}>
+                                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📄 {file.name}</span>
+                                    <span onClick={() => setForwardAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                                        style={{ cursor: "pointer", color: "#ef4444", fontWeight: 700, flexShrink: 0 }}>✕</span>
+                                </div>
+                            ))}
                         </div>
                     )}
-                </Drawer>
-                {/* Forward Modal by shiva */}
-                <Modal
-                    title="Forward Email"
-                    open={forwardModalOpen}
-                    okText="Send Forward"
-                    cancelText="Cancel"
-                    onCancel={() => {
-                        setForwardModalOpen(false);
-                        setForwardAttachments([]);
-                        setForwardEmail("");
-                        setForwardMessage("");
-
-                    }}
-                    onOk={handleForwardMail}
-                    confirmLoading={isForwarding}
-                // onOk={async () => {
-
-                //     if (!forwardEmail.trim()) {
-                //         message.warning(
-                //             "Enter recipient email"
-                //         );
-                //         return;
-                //     }
-
-                //     try {
-
-                //         await fetch(
-                //             `${API_URL}/email/forward`,
-                //             {
-                //                 method: "POST",
-
-                //                 headers: {
-                //                     "Content-Type":
-                //                         "application/json",
-                //                 },
-
-                //                 body: JSON.stringify({
-
-                //                     to: forwardEmail,
-
-                //                     message:
-                //                         forwardMessage,
-
-                //                     originalEmail:
-                //                         selectedEmail,
-                //                 }),
-                //             }
-                //         );
-
-                //         message.success(
-                //             "Email forwarded"
-                //         );
-
-                //         setForwardModalOpen(false);
-
-                //         setForwardEmail("");
-                //         setForwardMessage("");
-
-                //     } catch (err) {
-
-                //         console.error(err);
-
-                //         message.error(
-                //             "Forward failed"
-                //         );
-                //     }
-                // }}
-                >
-                    <Input
-                        placeholder="Recipient Email"
-                        value={forwardEmail}
-                        onPressEnter={(e) => {
-                            e.preventDefault();
-                        }}
-                        onChange={(e) =>
-                            setForwardEmail(
-                                e.target.value
-                            )
-                        }
-                        style={{ marginBottom: 14 }}
-                    />
-
-                    <Input.TextArea
-                        rows={4}
-                        placeholder="Add message..."
-                        value={forwardMessage}
-                        onChange={(e) =>
-                            setForwardMessage(
-                                e.target.value
-                            )
-                        }
-
-                        // Added by shiva On click Enter to forward the mail
-                        onKeyDown={(e) => {
-
-                            if (
-                                e.key === "Enter" &&
-                                !e.shiftKey
-                            ) {
-                                e.preventDefault();
-
-                                handleForwardMail();
-                            }
-                        }}
-                    // end here
-                    />
-
-                    {/* Forward Modal Attachments by shiva */}
-                    <div style={{ marginTop: "14px" }}>
-
-                        <input
-                            id="forwardAttachmentInput"
-                            type="file"
-                            multiple
-                            style={{ display: "none" }}
-
-                            onChange={(e) => {
-
-                                const files = Array.from(e.target.files);
-
-                                const oversized = files.find(
-                                    file => file.size > 20 * 1024 * 1024
-                                );
-
-                                if (oversized) {
-
-                                    message.error(
-                                        "File size must be less than 20MB"
-                                    );
-
-                                    return;
-                                }
-
-                                setForwardAttachments(prev => [
-                                    ...prev,
-                                    ...files
-                                ]);
-                            }}
-                        />
-
-                        <label
-                            htmlFor="forwardAttachmentInput"
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "8px",
-                                background: "#1e293b",
-                                color: "#cbd5e1",
-                                border: "1px solid #334155",
-                                padding: "8px 14px",
-                                borderRadius: "8px",
-                                cursor: "pointer",
-                                fontSize: "13px",
-                                fontWeight: 500
-                            }}
-                        >
-                            📎 Attach Files
-                        </label>
-
-                        {forwardAttachments.length > 0 && (
-
-                            <div
-                                style={{
-                                    marginTop: "12px",
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: "8px"
-                                }}
-                            >
-
-                                {forwardAttachments.map((file, index) => (
-
-                                    <div
-                                        key={index}
-                                        style={{
-                                            background: "#0f172a",
-                                            border: "1px solid #334155",
-                                            borderRadius: "8px",
-                                            padding: "8px 10px",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "10px",
-                                            color: "#e2e8f0",
-                                            fontSize: "12px",
-                                            maxWidth: "220px"
-                                        }}
-                                    >
-
-                                        <span
-                                            style={{
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap"
-                                            }}
-                                        >
-                                            📄 {file.name}
-                                        </span>
-
-                                        <span
-                                            onClick={() => {
-
-                                                setForwardAttachments(prev =>
-                                                    prev.filter((_, i) =>
-                                                        i !== index
-                                                    )
-                                                );
-                                            }}
-                                            style={{
-                                                cursor: "pointer",
-                                                color: "#ef4444",
-                                                fontWeight: "bold"
-                                            }}
-                                        >
-                                            ✕
-                                        </span>
-
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-
-
-
-                    {/* <div style={{ marginTop: "14px" }}>
-                        <input
-                            type="file"
-                            multiple
-                            onChange={(e) => {
-
-                                const files = Array.from(e.target.files);
-
-                                const oversized = files.find(
-                                    file => file.size > 20 * 1024 * 1024
-                                );
-
-                                if (oversized) {
-                                    message.error(
-                                        "File size must be less than 20MB"
-                                    );
-                                    return;
-                                }
-
-                                setForwardAttachments(files);
-                            }}
-                        />
-
-                        {forwardAttachments.length > 0 && (
-                            <div
-                                style={{
-                                    marginTop: "8px",
-                                    fontSize: "12px",
-                                    color: "#94a3b8"
-                                }}
-                            >
-                                {forwardAttachments.map(file => (
-                                    <div key={file.name}>
-                                        📎 {file.name}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div> */}
-                    {/* end here */}
-                </Modal>
-                {/* end here */}
-            </div>
-
-            {/* IMAGE PREVIEW MODAL by shiva */}
-            <Modal
-                open={previewOpen}
-                footer={null}
-                onCancel={() => {
-                    setPreviewOpen(false);
-                    setPreviewImage("");
-                    setPreviewTitle("");
-                }}
-
-                centered
-
-                width="75%"
-
-                bodyStyle={{
-                    background: "#0f172a",
-                    padding: "18px",
-                    borderRadius: "16px"
-                }}
-            >
-                <div
-                    style={{
-                        color: "#e2e8f0",
-                        fontSize: "15px",
-                        fontWeight: 600,
-                        marginBottom: "14px",
-                        wordBreak: "break-word"
-                    }}
-                >
-                    {previewTitle}
                 </div>
-
-                <img
-                    src={previewImage}
-                    alt="preview"
-
-                    onError={(e) => {
-                        e.currentTarget.src =
-                            "https://placehold.co/600x400?text=Image+Not+Found";
-                    }}
-
-                    style={{
-                        width: "100%",
-                        maxHeight: "80vh",
-                        objectFit: "contain",
-                        borderRadius: "12px",
-                        background: "#020617"
-                    }}
-                />
             </Modal>
-
         </>
-
     );
 }
