@@ -223,7 +223,7 @@ function IframeEmailBody({ html }) {
             onLoad={onLoad}
             style={{
                 width: "fit-content",
-                maxwidth: "100%",
+                // maxwidth: "100%",
                 height: `${height}px`,
                 border: "none",
                 borderRadius: "8px",
