@@ -142,7 +142,7 @@ function formatTime(dateString) {
 
 function IframeEmailBody({ html }) {
     const iframeRef = useRef(null);
-    const [height, setHeight] = useState(200);
+    const [height, setHeight] = useState(80);
 
     const sanitized = sanitizeForIframe(html);
 
@@ -174,14 +174,33 @@ function IframeEmailBody({ html }) {
     const onLoad = useCallback(() => {
         const iframe = iframeRef.current;
         if (!iframe) return;
+
         try {
-            const body = iframe.contentDocument?.body;
-            if (body) {
-                const h = body.scrollHeight;
-                setHeight(Math.max(h + 24, 80));
-            }
-        } catch (_) { }
+            const doc = iframe.contentDocument;
+            if (!doc) return;
+
+            const body = doc.body;
+
+            const h = Math.max(
+                body?.scrollHeight || 0,
+                body?.offsetHeight || 0
+            );
+
+            setHeight(h + 10);
+        } catch (_) {}
     }, []);
+
+    // const onLoad = useCallback(() => {
+    //     const iframe = iframeRef.current;
+    //     if (!iframe) return;
+    //     try {
+    //         const body = iframe.contentDocument?.body;
+    //         if (body) {
+    //             const h = body.scrollHeight;
+    //             setHeight(Math.max(h + 24, 80));
+    //         }
+    //     } catch (_) { }
+    // }, []);
 
     return (
         <iframe
