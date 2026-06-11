@@ -29,6 +29,10 @@ const sanitizeForIframe = (html) => {
     if (!html) return "";
     return html
         .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
+        .replace(/javascript:/gi, "")
+        .replace(/vbscript:/gi, "")
+        .replace(/data:text\/html/gi, "")
         .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
         .replace(/<object[\s\S]*?<\/object>/gi, "")
         .replace(/<embed[\s\S]*?(\/\s*>|<\/embed>)/gi, "")
@@ -67,6 +71,12 @@ function IframeEmailBody({ html }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'self' data: https:; script-src 'none'; object-src 'none'; frame-src 'none';">
+
 <style>
   * { box-sizing: border-box; }
   html, body {
