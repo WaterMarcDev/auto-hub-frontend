@@ -36,6 +36,10 @@ const sanitizeForIframe = (html) => {
         .replace(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*>/gi, "")   //added by shiva
         .replace(/<svg[\s\S]*?<\/svg>/gi, "")   //added by shiva
         .replace(/<img[^>]+src=["']https:\/\/[^"']*(?:tiktok\.com|service\.tiktok\.com)\/wf\/open[^"']*["'][^>]*>/gi, "")   //added by shiva
+        .replace(
+        /<img[^>]+src=["']https:\/\/[^"']*\.ct\.sendgrid\.net\/wf\/open[^"']*["'][^>]*>/gi,
+        ""
+        )
         .replace(/\son\w+\s*=\s*(["'])[\s\S]*?\1/gi, "")
         .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
         .replace(/href\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi, 'href="#"');
