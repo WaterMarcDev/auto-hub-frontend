@@ -331,8 +331,9 @@ function MessageBubble({ msg }) {
                 {/* Bubble */}
                 <div
                     style={{
-                        maxWidth: isYou ? "78%" : "100%",
-                        width: isYou ? "auto" : "100%",
+                        maxWidth: isYou ? "78%" : "fit-content",
+                        width: "fit-content",
+                        display: "inline-block",
                         borderRadius: isYou ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
                         background: isYou ? "#2563eb" : "#1e293b",
                         border: isYou ? "none" : "1px solid #2d3748",
