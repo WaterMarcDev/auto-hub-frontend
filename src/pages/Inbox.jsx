@@ -396,7 +396,8 @@ function MessageBubble({ msg }) {
                     // ) : (
                     //     /* ── Plain text ── */
                     //     <PlainTextBody body={msg.body} isYou={isYou} />
-                    // )}
+                    // )
+                    }
                 </div>
 
                 {/* Attachments */}
