@@ -155,7 +155,13 @@ function IframeEmailBody({ html }) {
 <style>
   * { box-sizing: border-box; }
   html, body {
-    margin: 0; padding: 12px 0 4px 0;
+    margin: 0 !important;
+    padding: 0;
+    width: auto !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     background: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     font-size: 14px;
@@ -165,7 +171,14 @@ function IframeEmailBody({ html }) {
   }
   img { max-width: 100%; height: auto; }
   a { color: #1a73e8; }
-  table { max-width: 100%; }
+  table,
+  tbody,
+  tr,
+  td,
+  div { 
+        max-height: none !important;
+        overflow: visible !important;
+    }
 </style>
 </head>
 <body>${sanitized}</body>
