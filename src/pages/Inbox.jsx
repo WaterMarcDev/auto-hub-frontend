@@ -75,7 +75,12 @@ function IframeEmailBody({ html }) {
 
 <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'self' data: https:; script-src 'none'; object-src 'none'; frame-src 'none';">
+    content="default-src 'self' data: https:; 
+    script-src 'none'; 
+    object-src 'none'; 
+    frame-src 'none';
+    "
+>
 
 <style>
   * { box-sizing: border-box; }
