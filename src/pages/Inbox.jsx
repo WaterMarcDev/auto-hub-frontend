@@ -481,14 +481,14 @@ export default function Inbox() {
             formData.append("subject", selectedEmail.subject);
             formData.append("message", replyText);
             attachments.forEach((f) => formData.append("attachments", f));
-            const res = await fetch(`${API_URL}/email/reply`, { method: "POST", body: formData });    // added const res by shiva
-            const data = await res.json().catch(() => ({}));  //added by shiva
+            await fetch(`${API_URL}/email/reply`, { method: "POST", body: formData });    // added const res by shiva
+            // const data = await res.json().catch(() => ({}));  //added by shiva
 
             // added by shiva
-            if (!res.ok) {
-                message.error(data.error || `Failed to send reply (${res.status})`);
-                return;  // don't clear text, don't refresh thread
-            }
+            // if (!res.ok) {
+            //     message.error(data.error || `Failed to send reply (${res.status})`);
+            //     return;  // don't clear text, don't refresh thread
+            // }
             // end here
             message.success("Reply sent");
             setReplyText("");
