@@ -29,7 +29,7 @@ const normalizeEmailContent = (html) => {
     if (!html) return "";
 
     const parser = new DOMParser();
-    const doc = parser.parserFromString(html, "text/html");
+    const doc = parser.parseFromString(html, "text/html");
 
     return (
         doc.body?.innerText ||
