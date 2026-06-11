@@ -67,17 +67,6 @@ function IframeEmailBody({ html }) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-
-<meta
-    http-equiv="Content-Security-Policy"
-    content="default-src 'self' data: https:; 
-    script-src 'none'; 
-    object-src 'none'; 
-    frame-src 'none';
-    "
->
-
 <style>
   * { box-sizing: border-box; }
   html, body {
