@@ -222,7 +222,8 @@ function IframeEmailBody({ html }) {
             sandbox="allow-same-origin allow-popups"
             onLoad={onLoad}
             style={{
-                width: "100%",
+                width: "fit-content",
+                maxwidth: "100%",
                 height: `${height}px`,
                 border: "none",
                 borderRadius: "8px",
