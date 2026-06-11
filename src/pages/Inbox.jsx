@@ -41,6 +41,30 @@ const sanitizeForIframe = (html) => {
     doc.querySelectorAll('meta[http-equiv="refresh"]').forEach(el => el.remove());
 
     // Remove event handlers
+
+    doc.querySelectorAll("img").forEach(img => {
+        const src = (img.getAttribute("src") || "").toLowerCase();
+
+        if (
+            src.includes(".ct.sendgrid.net/wf/open") ||
+            src.includes("service.tiktok.com/wf/open") ||
+            src.includes(".tiktok.com/wf/open")
+        ) {
+            img.remove();
+        }
+    });
+
+    doc.querySelectorAll("link").forEach(link => {
+        const rel = (link.getAttribute("rel") || "").toLowerCase();
+
+        if (
+            rel.includes("preload") ||
+            rel.includes("modulepreload")
+        ) {
+            link.remove();
+        }
+    });
+    
     doc.querySelectorAll("*").forEach(el => {
         [...el.attributes].forEach(attr => {
             if (attr.name.toLowerCase().startsWith("on")) {
