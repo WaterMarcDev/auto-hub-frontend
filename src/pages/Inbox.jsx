@@ -25,27 +25,61 @@ const isRichHtml = (body) => {
 };
 
 // Strips dangerous tags/events but keeps all layout/styling intact (for iframe)
+// added by shiva
 const sanitizeForIframe = (html) => {
     if (!html) return "";
-    return html
-        .replace(/<script[\s\S]*?<\/script>/gi, "")
-        .replace(/<script[^>]*\/>/gi, "")   //added by shiva
-        .replace(/<script[^>]*>/gi, "")    //added by shiva
-        .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
-        .replace(/<object[\s\S]*?<\/object>/gi, "")
-        .replace(/<embed[\s\S]*?(\/\s*>|<\/embed>)/gi, "")
-        .replace(/@font-face\s*{[\s\S]*?}/gi, "")  //remove external fonts by shiva
-        .replace(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*>/gi, "")   //added by shiva
-        .replace(/<svg[\s\S]*?<\/svg>/gi, "")   //added by shiva
-        .replace(/<img[^>]+src=["']https:\/\/[^"']*(?:tiktok\.com|service\.tiktok\.com)\/wf\/open[^"']*["'][^>]*>/gi, "")   //added by shiva
-        .replace(
-        /<img[^>]+src=["']https:\/\/[^"']*\.ct\.sendgrid\.net\/wf\/open[^"']*["'][^>]*>/gi,
-        ""
-        )
-        .replace(/\son\w+\s*=\s*(["'])[\s\S]*?\1/gi, "")
-        .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
-        .replace(/href\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi, 'href="#"');
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    // Remove dangerous elements
+    doc.querySelectorAll(
+        "script, iframe, object, embed, svg, form"
+    ).forEach(el => el.remove());
+
+    // Remove meta refresh
+    doc.querySelectorAll('meta[http-equiv="refresh"]').forEach(el => el.remove());
+
+    // Remove event handlers
+    doc.querySelectorAll("*").forEach(el => {
+        [...el.attributes].forEach(attr => {
+            if (attr.name.toLowerCase().startsWith("on")) {
+                el.removeAttribute(attr.name);
+            }
+
+            if (
+                (attr.name === "href" || attr.name === "src") &&
+                attr.value.toLowerCase().startsWith("javascript:")
+            ) {
+                el.removeAttribute(attr.name);
+            }
+        });
+    });
+
+    return doc.body.innerHTML;
 };
+// end here
+// const sanitizeForIframe = (html) => {
+//     if (!html) return "";
+//     return html
+//         .replace(/<script[\s\S]*?<\/script>/gi, "")
+//         .replace(/<script[^>]*\/>/gi, "")   //added by shiva
+//         .replace(/<script[^>]*>/gi, "")    //added by shiva
+//         .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+//         .replace(/<object[\s\S]*?<\/object>/gi, "")
+//         .replace(/<embed[\s\S]*?(\/\s*>|<\/embed>)/gi, "")
+//         .replace(/@font-face\s*{[\s\S]*?}/gi, "")  //remove external fonts by shiva
+//         .replace(/<meta[^>]*http-equiv=["']?refresh["']?[^>]*>/gi, "")   //added by shiva
+//         .replace(/<svg[\s\S]*?<\/svg>/gi, "")   //added by shiva
+//         .replace(/<img[^>]+src=["']https:\/\/[^"']*(?:tiktok\.com|service\.tiktok\.com)\/wf\/open[^"']*["'][^>]*>/gi, "")   //added by shiva
+//         .replace(
+//         /<img[^>]+src=["']https:\/\/[^"']*\.ct\.sendgrid\.net\/wf\/open[^"']*["'][^>]*>/gi,
+//         ""
+//         )
+//         .replace(/\son\w+\s*=\s*(["'])[\s\S]*?\1/gi, "")
+//         .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
+//         .replace(/href\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi, 'href="#"');
+// };
 
 function formatTime(dateString) {
     const now = new Date();
