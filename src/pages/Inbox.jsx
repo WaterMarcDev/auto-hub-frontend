@@ -29,10 +29,6 @@ const sanitizeForIframe = (html) => {
     if (!html) return "";
     return html
         .replace(/<script[\s\S]*?<\/script>/gi, "")
-        .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
-        .replace(/javascript:/gi, "")
-        .replace(/vbscript:/gi, "")
-        .replace(/data:text\/html/gi, "")
         .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
         .replace(/<object[\s\S]*?<\/object>/gi, "")
         .replace(/<embed[\s\S]*?(\/\s*>|<\/embed>)/gi, "")
