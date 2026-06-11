@@ -25,20 +25,20 @@ const isRichHtml = (body) => {
 };
 
 // Helper function by shiva
-const normalizeEmailContent = (html) => {
-    if (!html) return "";
+// const normalizeEmailContent = (html) => {
+//     if (!html) return "";
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+//     const parser = new DOMParser();
+//     const doc = parser.parseFromString(html, "text/html");
 
-    return (
-        doc.body?.innerText ||
-        doc.body?.textContent ||
-        html
-    )
-        .replace(/\n{3,}/g, "\n\n")
-        .trim();
-}
+//     return (
+//         doc.body?.innerText ||
+//         doc.body?.textContent ||
+//         html
+//     )
+//         .replace(/\n{3,}/g, "\n\n")
+//         .trim();
+// }
 // end here
 
 // Strips dangerous tags/events but keeps all layout/styling intact (for iframe)
@@ -228,9 +228,9 @@ function MessageBubble({ msg }) {
     const isYou = msg.sender_email?.toLowerCase().includes("support@autohubexpress.us");
     const isHtml = isRichHtml(msg.body);
     // added by shiva
-    const isEbay = 
-        msg.sender_email?.toLowerCase().includes("ebay") ||
-        msg.subject?.toLowerCase().includes("ebay");
+    // const isEbay = 
+    //     msg.sender_email?.toLowerCase().includes("ebay") ||
+    //     msg.subject?.toLowerCase().includes("ebay");
     // end here
     const isForward = /^Fwd(\[\d+\])?/i.test(msg.subject || "");
 
@@ -376,27 +376,27 @@ function MessageBubble({ msg }) {
                             })()}
                         </div>
 
-                    ) : isHtml && !isYou && isEbay ? (
-                        <IframeEmailBody html={msg.body} />
-                    ) : (
-                        <PlainTextBody
-                            body={
-                                isHtml
-                                    ? normalizeEmailContent(msg.body)
-                                    : msg.body
-                            }
-                            isYou={isYou}
-                        />
-                    )
-                    // end here
-                    
-                    // ) : isHtml && !isYou ? (
-                    //     /* ── Rich HTML email → iframe with white bg ── */
+                    // ) : isHtml && !isYou && isEbay ? (
                     //     <IframeEmailBody html={msg.body} />
                     // ) : (
-                    //     /* ── Plain text ── */
-                    //     <PlainTextBody body={msg.body} isYou={isYou} />
+                    //     <PlainTextBody
+                    //         body={
+                    //             isHtml
+                    //                 ? normalizeEmailContent(msg.body)
+                    //                 : msg.body
+                    //         }
+                    //         isYou={isYou}
+                    //     />
                     // )
+                    // end here
+                    
+                    ) : isHtml && !isYou ? (
+                        /* ── Rich HTML email → iframe with white bg ── */
+                        <IframeEmailBody html={msg.body} />
+                    ) : (
+                        /* ── Plain text ── */
+                        <PlainTextBody body={msg.body} isYou={isYou} />
+                    )
                     }
                 </div>
 
