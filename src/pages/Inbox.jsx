@@ -156,7 +156,7 @@ function IframeEmailBody({ html }) {
   * { box-sizing: border-box; }
   html, body {
     margin: 0 !important;
-    padding: 0;
+    padding: 12px !important;
     width: auto !important;
     height: auto !important;
     min-height: auto !important;
@@ -337,7 +337,7 @@ function MessageBubble({ msg }) {
                         borderRadius: isYou ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
                         background: isYou ? "#2563eb" : "#1e293b",
                         border: isYou ? "none" : "1px solid #2d3748",
-                        padding: isHtml && !isYou ? "0" : "12px 16px",
+                        padding: isHtml && !isYou ? "12px 12px 8px 12px" : "12px 16px",
                         fontSize: "14px",
                         color: "#f1f5f9",
                         lineHeight: "1.65",
