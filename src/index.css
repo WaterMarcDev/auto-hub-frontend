@@ -122,3 +122,19 @@ body {
     opacity: 0.7;
 }
 /* end here */
+
+/* Add Inventory Table Header Alignment by shiva*/ 
+.ant-table-thead > tr > th {
+  text-align: center !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+  padding: 10px 6px !important;
+}
+
+.ant-table-thead > tr > th .ant-table-column-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+/* end here */

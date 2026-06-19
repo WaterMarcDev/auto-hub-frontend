@@ -304,7 +304,8 @@ const AddInventoryPage = () => {
         {
             title: "Part Name",
             dataIndex: "name",
-            width: 160,
+            width: 130,
+            fixed: "left",
         },
         {
             title: "Unit",
@@ -411,7 +412,7 @@ const AddInventoryPage = () => {
         },
         {
             title: "Asset Tag",
-            width: 200,
+            width: 260,
             render: (_, record) => {
                 const partId = record.key;
                 const cache = tagCache[partId] || {};
@@ -498,14 +499,35 @@ const AddInventoryPage = () => {
 
             <PageContentWrapper>
                 <Table
-                    columns={columns}
+                    columns={columns.map(col => ({
+                        ...col,
+                        onHeaderCell: () => ({
+                            style: {
+                                textAlign: "center",
+                                whiteSpace: "nowrap",
+                                fontWeight: 600,
+                                verticalAlign: "middle",
+                            },
+                        }),
+                    }))}
                     dataSource={dataSource}
                     pagination={false}
                     rowKey="key"
-                    scroll={{ y: "calc(100vh - 320px)" }}
+                    sticky
+                    scroll={{
+                        x: 1600,
+                        y: "calc(100vh - 320px)",
+                    }}
                     size="small"
                     bordered
-                    tableLayout="auto"
+                    // columns={columns}
+                    // dataSource={dataSource}
+                    // pagination={false}
+                    // rowKey="key"
+                    // scroll={{ y: "calc(100vh - 320px)" }}
+                    // size="small"
+                    // bordered
+                    // tableLayout="auto"
                 />
 
                 <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
