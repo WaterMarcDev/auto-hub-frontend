@@ -29,6 +29,11 @@ const JunkCarRequests = () => {
             console.error(error);
         }
     };
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    const canEditSource =
+        user?.role?.toLowerCase() === "admin" ||
+        user?.role?.toLowerCase() === "manager";
 
     // Fetch Staff Users by shiva
     const fetchStaffUsers = async () => {
@@ -50,17 +55,16 @@ const JunkCarRequests = () => {
     useEffect(() => {
         fetchJunkCars();
 
-        fetchStaffUsers();
         //     const user = JSON.parse(localStorage.getItem("user"));
 
         //     console.log("LOGGED USER:", user);    // temp debug by shiva
 
-        //     if (
-        //         user?.role?.toLowerCase() === "admin" ||
-        //         user?.role?.toLowerCase() === "manager"
-        //     ) {
-        //         fetchStaffUsers();
-        //     }    // added by shiva
+            if (
+                user?.role?.toLowerCase() === "admin" ||
+                user?.role?.toLowerCase() === "manager"
+            ) {
+                fetchStaffUsers();
+            }    // added by shiva
     }, []);
 
     const updateStatus = async (id, status) => {
@@ -232,6 +236,9 @@ const JunkCarRequests = () => {
                         updateStatus(record._id, value)
                     }
                     style={{ width: 150 }}
+                    disabled={
+                        record.status?.toLowerCase() === "completed"
+                    }
                 >
                     <Option value="pending">Pending</Option>
                     <Option value="in progress">In Progress</Option>
@@ -249,6 +256,7 @@ const JunkCarRequests = () => {
                         updateSource(record._id, value)
                     }
                     style={{ width: 130 }}
+                    disabled={!canEditSource}
                 >
                     <Option value="Online">Online</Option>
                     <Option value="Offline">Offline</Option>
@@ -421,28 +429,64 @@ const JunkCarRequests = () => {
                 <Table
                     columns={columns}
                     dataSource={
-                        junkCars.filter((car) => {
+                        junkCars
+                            .filter((car) => {
 
-                            const handledMatch =
-                                !handledByFilter ||
-                                (
-                                    car.assignedTo &&
-                                    typeof car.assignedTo === "object" &&
-                                    car.assignedTo._id === handledByFilter
-                                );
+                                const handledMatch =
+                                    !handledByFilter ||
+                                    (
+                                        car.assignedTo &&
+                                        typeof car.assignedTo === "object" &&
+                                        car.assignedTo._id === handledByFilter
+                                    );
+                                
+                                const sourceMatch =
+                                    !sourceFilter ||
+                                    car.source === sourceFilter;
 
-                            const sourceMatch =
-                                !sourceFilter ||
-                                car.source === sourceFilter;
+                                const statusMatch =
+                                    !statusFilter ||
+                                    car.status?.toLowerCase() ===
+                                    statusFilter.toLowerCase();
 
-                            const statusMatch = 
-                                !statusFilter ||
-                                car.status?.toLowerCase() ===
-                                statusFilter.toLowerCase();
+                                return handledMatch && sourceMatch && statusMatch;
+                            })
+                            .sort((a, b) => {
+                                const aCompleted =
+                                    a.status?.toLowerCase() === "completed";
 
-                            return handledMatch && sourceMatch && statusMatch;
-                        })
+                                const bCompleted =
+                                    b.status?.toLowerCase() === "completed";
+
+                                if (aCompleted && !bCompleted) return 1;
+                                if (!aCompleted && bCompleted) return -1;
+
+                                return new Date(b.createdAt) - new Date(a.createdAt);
+                            })
                     }
+                    // dataSource={
+                    //     junkCars.filter((car) => {
+
+                    //         const handledMatch =
+                    //             !handledByFilter ||
+                    //             (
+                    //                 car.assignedTo &&
+                    //                 typeof car.assignedTo === "object" &&
+                    //                 car.assignedTo._id === handledByFilter
+                    //             );
+
+                    //         const sourceMatch =
+                    //             !sourceFilter ||
+                    //             car.source === sourceFilter;
+
+                    //         const statusMatch = 
+                    //             !statusFilter ||
+                    //             car.status?.toLowerCase() ===
+                    //             statusFilter.toLowerCase();
+
+                    //         return handledMatch && sourceMatch && statusMatch;
+                    //     })
+                    // }
                     rowKey="_id"
                     rowClassName={(record) => {
 

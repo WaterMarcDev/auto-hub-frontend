@@ -16,6 +16,12 @@ const { Option } = Select;
 const Requests = () => {
     const [requests, setRequests] = useState([]);
     const navigate = useNavigate();
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const canEditSource =
+        user?.role?.toLowerCase() === "admin" ||
+        user?.role?.toLowerCase() === "manager";
+
     const [search, setSearch] = useState("");
     const [searched, setSearched] = useState("");
     const [status, setStatus] = useState(null);
@@ -295,6 +301,7 @@ const Requests = () => {
                         updateSource(record._id, value)
                     }
                     style={{ width: 130 }}
+                    disabled={!canEditSource}
                 >
                     <Option value="Online">Online</Option>
                     <Option value="Offline">Offline</Option>
@@ -310,6 +317,9 @@ const Requests = () => {
                         updateStatus(record._id, value)
                     }
                     style={{ width: 150 }}
+                    disabled={
+                        record.status?.toLowerCase() === "completed"
+                    }
                 >
                     <Option value="Pending">Pending</Option>
                     <Option value="In Progress">In Progress</Option>
@@ -465,19 +475,35 @@ const Requests = () => {
                 )}
                 <Table
                     columns={columns}
-                    dataSource={searched ? filteredRequests : requests}
+                    dataSource={
+                        [...(searched ? filteredRequests : requests)].sort((a, b) => {
+                            const aCompleted =
+                                a.status?.toLowerCase() === "completed";
+
+                            const bCompleted =
+                                b.status?.toLowerCase() === "completed";
+
+                            if (aCompleted && !bCompleted) return 1;
+                            if (!aCompleted && bCompleted) return -1;
+
+                            return new Date(b.createdAt) - new Date(a.createdAt);
+                        })
+                    }
+                    // columns={columns}
+                    // dataSource={searched ? filteredRequests : requests}
+                    // rowKey="_id"
+                    // rowClassName={(record) => {
+
+                    //     if (
+                    //         record.status?.toLowerCase() ===
+                    //         "completed"
+                    //     ) {
+                    //         return "completed-row";
+                    //     }
+
+                    //     return "";
+                    // }}
                     rowKey="_id"
-                    rowClassName={(record) => {
-
-                        if (
-                            record.status?.toLowerCase() ===
-                            "completed"
-                        ) {
-                            return "completed-row";
-                        }
-
-                        return "";
-                    }}
                     bordered
                     scroll={{ x: "max-content" }}
                     locale={{
