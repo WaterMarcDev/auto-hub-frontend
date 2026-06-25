@@ -265,7 +265,7 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
               icon={<ArrowRightOutlined />}
               iconPosition="end"
             >
-              Car Diagnosis
+              Car Diagnostic
             </Button>
           </div>
         </Form.Item>

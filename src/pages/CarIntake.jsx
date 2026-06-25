@@ -94,7 +94,7 @@ const CarIntake = () => {
     fullVehicleImage: null,
     imageDescription: "",
 
-    // Step 3: Car Diagnosis
+    // Step 3: Car Diagnostic
     diagnosis: {},
 
     // Step 4: Car Price - matching original template
@@ -1090,7 +1090,7 @@ const CarIntake = () => {
       fullVehicleImage: null,
       imageDescription: "",
 
-      // Step 3: Car Diagnosis
+      // Step 3: Car Diagnostic
       diagnosis: {},
       partsDescription: "",
 

@@ -435,7 +435,7 @@ const CarPrice = ({
                 color: "white",
               }}
             >
-              Car Diagnosis
+              Car Diagnostic
             </Button>
             <Button
               type="primary"
