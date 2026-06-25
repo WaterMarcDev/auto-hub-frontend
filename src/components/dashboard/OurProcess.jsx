@@ -91,7 +91,7 @@ const OurProcess = () => {
                 </span>
               </div>
               <div className="flex-grow-1">
-                <h5 className="font-size-15 mb-1">Evaluation / Diagnosis</h5>
+                <h5 className="font-size-15 mb-1">Evaluation / Diagnostic</h5>
                 <p className="text-muted font-size-12 mb-0">
                   Collect 12 - 14 Images from different angles
                 </p>
