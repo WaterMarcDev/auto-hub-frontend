@@ -1939,7 +1939,7 @@ const CarIntake = () => {
                   <div
                     className={`nav-link ${currentStep === 3 ? "active" : ""}`}
                   >
-                    <span className="step-number">03. Car Diagnosis</span>
+                    <span className="step-number">03. Car Diagnostic</span>
                   </div>
                 </li>
                 <li className="nav-item">
