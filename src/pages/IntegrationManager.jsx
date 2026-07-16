@@ -31,7 +31,7 @@ const SUPPORTED_PLATFORMS = [
   { key: "tiktok", comingSoon: true },
   { key: "googleAds", comingSoon: true },
   { key: "amazon", comingSoon: true },
-  { key: "ebay", comingSoon: true },
+  { key: "ebay" },
   // shopify was here — removed, see comment above
 ];
 
