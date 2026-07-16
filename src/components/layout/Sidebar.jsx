@@ -12,6 +12,10 @@ import {
   UserOutlined,
   FileProtectOutlined,
   SettingOutlined,
+  ShopOutlined,
+  GlobalOutlined,
+  MessageOutlined,
+  ApiOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
@@ -302,6 +306,37 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
 
     }
 
+    // Social & Marketplace Integrations - Admin and Manager
+    if (isAdmin || isManager) {
+      items.push({
+        key: "integrations",
+        icon: <ApiOutlined />,
+        label: "Integrations",
+        children: [
+          {
+            key: "/unified-inbox",
+            icon: <MessageOutlined />,
+            label: <Link to="/unified-inbox">Unified Inbox</Link>,
+          },
+          {
+            key: "/social-leads",
+            icon: <GlobalOutlined />,
+            label: <Link to="/social-leads">Social Media Leads</Link>,
+          },
+          {
+            key: "/marketplace-leads",
+            icon: <ShopOutlined />,
+            label: <Link to="/marketplace-leads">Marketplace Orders</Link>,
+          },
+          {
+            key: "/integrations",
+            icon: <ApiOutlined />,
+            label: <Link to="/integrations">Platform Connections</Link>,
+          },
+        ],
+      });
+    }
+
     // Car Inventory - Only for Admin
     if (isAdmin || isManager || isStaff) {
       items.push({
@@ -567,6 +602,10 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/part-requests": "requests",       // added by shiva
       "/junk-car-requests": "requests",   // added by shiva
       "/inbox": "requests",               // added by shiva
+      "/social-leads": "integrations",
+      "/marketplace-leads": "integrations",
+      "/unified-inbox": "integrations",
+      "/integrations": "integrations",
     };
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {
