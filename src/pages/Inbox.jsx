@@ -283,6 +283,15 @@ function MessageBubble({ msg }) {
         return "https://placehold.co/300x200?text=No+Image";
     };
 
+    const getAttachmentUrl = (file) => {
+        if (file?.url && typeof file.url === "string" && file.url.startsWith("http") &&
+            !file.url.includes("undefined") && !file.url.includes("null")) {
+            return file.url;
+        }
+        if (file?.filename) return `https://api.autohubexpress.us/uploads/${file.filename}`;
+        return "#";
+    };
+
     return (
         <>
             <div
@@ -459,7 +468,7 @@ function MessageBubble({ msg }) {
                             ) : (
                                 <a
                                     key={i}
-                                    href={file.url}
+                                    href={getAttachmentUrl(file)}
                                     target="_blank"
                                     rel="noreferrer"
                                     style={{
@@ -621,15 +630,13 @@ export default function Inbox() {
             formData.append("subject", selectedEmail.subject);
             formData.append("message", replyText);
             attachments.forEach((f) => formData.append("attachments", f));
-            await fetch(`${API_URL}/email/reply`, { method: "POST", body: formData });    // added const res by shiva
-            // const data = await res.json().catch(() => ({}));  //added by shiva
+            const res = await fetch(`${API_URL}/email/reply`, { method: "POST", body: formData });
+            const data = await res.json().catch(() => ({}));
 
-            // added by shiva
-            // if (!res.ok) {
-            //     message.error(data.error || `Failed to send reply (${res.status})`);
-            //     return;  // don't clear text, don't refresh thread
-            // }
-            // end here
+            if (!res.ok) {
+                message.error(data.error || `Failed to send reply (${res.status})`);
+                return;  // don't clear text, don't refresh thread
+            }
             message.success("Reply sent");
             setReplyText("");
             setAttachments([]);

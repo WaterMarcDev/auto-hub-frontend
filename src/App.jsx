@@ -77,6 +77,10 @@ const UserList = React.lazy(() => import("./pages/Users/UserList"));
 const AddUser = React.lazy(() => import("./pages/Users/AddUser"));
 const EntryFeeSetting = React.lazy(() => import("./pages/Admin/EntryFeeSetting"));
 const ErrorCodes = React.lazy(() => import("./pages/ErrorCodes"));
+const SocialLeads = React.lazy(() => import("./pages/SocialLeads"));
+const MarketplaceLeads = React.lazy(() => import("./pages/MarketplaceLeads"));
+const UnifiedInbox = React.lazy(() => import("./pages/UnifiedInbox"));
+const IntegrationManager = React.lazy(() => import("./pages/IntegrationManager"));
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -364,6 +368,11 @@ function App() {
                         <Route path="/users/edit/:id" element={<AddUser />} />
                         <Route path="/entry-fee" element={<EntryFeeSetting />} />
                         <Route path="/error-codes" element={<ErrorCodes />} />
+                        {/* Social & Marketplace Integration Routes */}
+                        <Route path="/social-leads" element={<SocialLeads />} />
+                        <Route path="/marketplace-leads" element={<MarketplaceLeads />} />
+                        <Route path="/unified-inbox" element={<UnifiedInbox />} />
+                        <Route path="/integrations" element={<IntegrationManager />} />
                       </Routes>
                     </Suspense>
                   </Layout>
