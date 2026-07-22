@@ -300,13 +300,29 @@ const Requests = () => {
                     onChange={(value) =>
                         updateSource(record._id, value)
                     }
-                    style={{ width: 130 }}
+                    style={{ width: 150 }}
                     disabled={!canEditSource}
                 >
-                    <Option value="Online">Online</Option>
-                    <Option value="Offline">Offline</Option>
+                    {/* <Option value="Online">Online</Option>
+                    <Option value="Offline">Offline</Option> */}
+                    <Option value="Website">Website</Option>
+                    <Option value="Instagram">Instagram</Option>
+                    <Option value="Facebook">Facebook</Option>
+                    <Option value="WhatsApp">WhatsApp</Option>
+                    <Option value="TikTok">TikTok</Option>
+                    <Option value="eBay">eBay</Option>
+                    <Option value="Google Business">Google Business</Option>
+                    <Option value="SMS">SMS</Option>
+                    <Option value="Other">Other</Option>
                 </Select>
             ),
+        },
+        {
+            title: "Created By",
+            render: (_, record) =>
+                record.createdBy
+                    ? `${record.createdBy.first_name} ${record.createdBy.last_name}`
+                    : "—",
         },
         {
             title: "Status",
@@ -449,14 +465,17 @@ const Requests = () => {
                             size="large"
                             style={{ width: "100%" }}
                             options={[
-                                {
-                                    value: "Online",
-                                    label: "Online"
-                                },
-                                {
-                                    value: "Offline",
-                                    label: "Offline"
-                                }
+                                { value: "Online", label: "Online" },
+                                { value: "Offline", label: "Offline" },
+                                { value: "Website", label: "Website" },
+                                { value: "Instagram", label: "Instagram" },
+                                { value: "Facebook", label: "Facebook" },
+                                { value: "WhatsApp", label: "WhatsApp" },
+                                { value: "TikTok", label: "TikTok" },
+                                { value: "eBay", label: "eBay" },
+                                { value: "Google Business", label: "Google Business" },
+                                { value: "SMS", label: "SMS" },
+                                { value: "Other", label: "Other" },
                             ]}
                         />
                     </Col>
