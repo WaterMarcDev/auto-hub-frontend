@@ -9,9 +9,6 @@ const { Option } = Select;
 const MARKETPLACE_COLORS = {
   amazon: "#FF9900",
   ebay: "#E53238",
-  shopify: "#7AB55C",
-  etsy: "#F56400",
-  walmart: "#0071CE",
 };
 
 const SocialLeads = () => {
@@ -178,9 +175,6 @@ const SocialLeads = () => {
             >
               <Option value="amazon">Amazon</Option>
               <Option value="ebay">eBay</Option>
-              <Option value="shopify">Shopify</Option>
-              <Option value="etsy">Etsy</Option>
-              <Option value="walmart">Walmart</Option>
             </Select>
           </Col>
           <Col xs={12} sm={6} md={4}>

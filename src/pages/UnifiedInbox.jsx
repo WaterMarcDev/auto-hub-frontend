@@ -15,9 +15,6 @@ const PLATFORM_COLORS = {
   google_ads: "#4285F4",
   amazon: "#FF9900",
   ebay: "#E53238",
-  shopify: "#7AB55C",
-  etsy: "#F56400",
-  walmart: "#0071CE",
 };
 
 const UnifiedInbox = () => {

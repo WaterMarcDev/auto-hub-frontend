@@ -19,20 +19,11 @@ const { Title } = Typography;
  *   3. Add it to this array
  *   4. Add its metadata to PLATFORM_META in PlatformCard.jsx
  */
-// ----------------------------------------------------------
-// SHOPIFY REMOVED
-// Shopify was removed from the UI per project requirements.
-// The platform is not needed for the current integration scope.
-// ----------------------------------------------------------
 const SUPPORTED_PLATFORMS = [
-  { key: "whatsapp", comingSoon: false },
-  { key: "facebook", comingSoon: false },
-  { key: "instagram", comingSoon: false },
   { key: "tiktok", comingSoon: true },
   { key: "googleAds", comingSoon: true },
   { key: "amazon", comingSoon: true },
   { key: "ebay" },
-  // shopify was here — removed, see comment above
 ];
 
 const IntegrationManager = () => {

@@ -1,154 +1,120 @@
 import { useEffect, useState } from "react";
 import { Card, Table, Button, Select, Tag, message, Input, Row, Col } from "antd";
-import { ArrowLeftOutlined, SearchOutlined, MessageOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { socialLeadService } from "../services/socialApi";
 
 const { Option } = Select;
 
-const PLATFORM_COLORS = {
-  facebook: "#1877F2",
-  instagram: "#E4405F",
-  whatsapp: "#25D366",
-  tiktok: "#000000",
-  google_ads: "#4285F4",
-};
+/**
+ * Social Media Leads
+ *
+ * Reports completed Part Requests that originated from a social channel —
+ * i.e. leads that came in through Instagram/Facebook/TikTok/Google Business
+ * and were successfully fulfilled. Backed by the same PartRequest data as
+ * the Requests page (GET /api/part-request), filtered down here.
+ *
+ * Only these four sources are ever shown — a request with any other source
+ * (Online, Website, WhatsApp, eBay, SMS, Other, ...) never appears, so the
+ * Source column never displays an unrecognized value.
+ */
+const SUPPORTED_SOURCES = ["Instagram", "Facebook", "TikTok", "Google Business"];
 
-const STATUS_COLORS = {
-  new: "blue",
-  open: "green",
-  in_progress: "orange",
-  waiting_customer: "purple",
-  waiting_internal: "geekblue",
-  resolved: "cyan",
-  closed: "default",
-  archived: "default",
+const SOURCE_COLORS = {
+  Instagram: "#E4405F",
+  Facebook: "#1877F2",
+  TikTok: "#000000",
+  "Google Business": "#4285F4",
 };
 
 const SocialLeads = () => {
-  const [leads, setLeads] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [platformFilter, setPlatformFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
   const navigate = useNavigate();
 
-  const fetchLeads = async (params = {}) => {
+  const fetchRequests = async () => {
     try {
       setLoading(true);
-      const res = await socialLeadService.getAll(params);
-      setLeads(res.data?.data || []);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`);
+      const json = await res.json();
+      setRequests(json.data || []);
     } catch (err) {
-      console.error("Failed to fetch social leads:", err);
-      message.error("Failed to load social leads");
+      console.error("Failed to fetch part requests:", err);
+      message.error("Failed to load social media leads");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLeads();
+    fetchRequests();
   }, []);
 
-  const handleSearch = () => {
-    const params = {};
-    if (search.trim()) params.search = search;
-    if (platformFilter) params.platform = platformFilter;
-    if (statusFilter) params.status = statusFilter;
-    fetchLeads(params);
-  };
+  // Only completed requests from a supported social source ever qualify.
+  const completedSocialLeads = requests.filter(
+    (r) => r.status === "Completed" && SUPPORTED_SOURCES.includes(r.source)
+  );
 
-  const handleStatusChange = async (id, status) => {
-    try {
-      await socialLeadService.updateStatus(id, status);
-      message.success("Status updated");
-      fetchLeads();
-    } catch (err) {
-      message.error("Failed to update status");
-    }
-  };
+  const searchedLeads = completedSocialLeads.filter((r) => {
+    if (!search.trim()) return true;
+    const term = search.trim().toLowerCase();
+    const vehicle = `${r.year || ""} ${r.make || ""} ${r.model || ""}`.toLowerCase();
+    return (
+      (r.name || "").toLowerCase().includes(term) ||
+      (r.phone || "").toLowerCase().includes(term) ||
+      (r.partName || "").toLowerCase().includes(term) ||
+      vehicle.includes(term)
+    );
+  });
+
+  const filteredLeads = sourceFilter
+    ? searchedLeads.filter((r) => r.source === sourceFilter)
+    : searchedLeads;
 
   const columns = [
     {
-      title: "Platform",
-      dataIndex: "platform",
-      width: 100,
-      render: (platform) => (
-        <Tag color={PLATFORM_COLORS[platform] || "default"} style={{ textTransform: "capitalize" }}>
-          {platform}
-        </Tag>
-      ),
+      title: "Lead",
+      dataIndex: "partName",
+      render: (partName) => partName || "—",
     },
     {
       title: "Customer",
-      dataIndex: "customerName",
-      render: (name, record) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{name || "Unknown"}</div>
-          {record.email && <div style={{ fontSize: 12, color: "#6b7280" }}>{record.email}</div>}
-        </div>
-      ),
+      dataIndex: "name",
+      render: (name) => name || "Unknown",
     },
     {
-      title: "Last Message",
-      dataIndex: "lastMessage",
-      ellipsis: true,
-      render: (msg) => msg || "—",
+      title: "Phone",
+      dataIndex: "phone",
+      width: 130,
+      render: (phone) => phone || "—",
     },
     {
-      title: "Status",
-      dataIndex: "conversationStatus",
-      width: 140,
-      render: (status, record) => (
-        <Select
-          value={status}
-          onChange={(val) => handleStatusChange(record._id, val)}
-          size="small"
-          style={{ width: 120 }}
-        >
-          <Option value="new">New</Option>
-          <Option value="open">Open</Option>
-          <Option value="in_progress">In Progress</Option>
-          <Option value="waiting_customer">Waiting Customer</Option>
-          <Option value="resolved">Resolved</Option>
-          <Option value="closed">Closed</Option>
-        </Select>
-      ),
+      title: "Vehicle",
+      key: "vehicle",
+      render: (_, record) => {
+        const parts = [record.year, record.make, record.model].filter(Boolean);
+        return parts.length ? parts.join(" ") : "—";
+      },
     },
     {
-      title: "Priority",
-      dataIndex: "priority",
-      width: 90,
-      render: (priority) => (
-        <Tag color={priority === "urgent" ? "red" : priority === "high" ? "orange" : priority === "medium" ? "blue" : "default"}>
-          {priority}
-        </Tag>
-      ),
-    },
-    {
-      title: "Unread",
-      dataIndex: "unreadCount",
-      width: 70,
-      render: (count) => count > 0 ? <Tag color="red">{count}</Tag> : null,
-    },
-    {
-      title: "Date",
+      title: "Created Date",
       dataIndex: "createdAt",
-      width: 120,
-      render: (date) => date ? new Date(date).toLocaleDateString() : "—",
+      width: 130,
+      render: (date) => (date ? new Date(date).toLocaleDateString() : "—"),
     },
     {
-      title: "Action",
-      width: 80,
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={<MessageOutlined />}
-          onClick={() => navigate(`/unified-inbox?conversation=${record._id}&platform=${record.platform}`)}
-        >
-          Chat
-        </Button>
+      title: "Completed Date",
+      dataIndex: "completedAt",
+      width: 140,
+      render: (date) => (date ? new Date(date).toLocaleDateString() : "—"),
+    },
+    {
+      title: "Source",
+      dataIndex: "source",
+      width: 130,
+      render: (source) => (
+        <Tag color={SOURCE_COLORS[source] || "default"}>{source}</Tag>
       ),
     },
   ];
@@ -164,59 +130,37 @@ const SocialLeads = () => {
         }
       >
         <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-          <Col xs={24} sm={12} md={6}>
+          <Col xs={24} sm={12} md={8}>
             <Input
-              placeholder="Search customer, email, phone..."
+              placeholder="Search customer, phone, part, vehicle..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onPressEnter={handleSearch}
               prefix={<SearchOutlined />}
+              allowClear
             />
           </Col>
-          <Col xs={12} sm={6} md={4}>
+          <Col xs={12} sm={6} md={5}>
             <Select
-              placeholder="Platform"
-              value={platformFilter || undefined}
-              onChange={(val) => setPlatformFilter(val || "")}
+              placeholder="Source"
+              value={sourceFilter || undefined}
+              onChange={(val) => setSourceFilter(val || "")}
               allowClear
               style={{ width: "100%" }}
             >
-              <Option value="facebook">Facebook</Option>
-              <Option value="instagram">Instagram</Option>
-              <Option value="whatsapp">WhatsApp</Option>
-              <Option value="tiktok">TikTok</Option>
-              <Option value="google_ads">Google Ads</Option>
+              {SUPPORTED_SOURCES.map((s) => (
+                <Option key={s} value={s}>{s}</Option>
+              ))}
             </Select>
-          </Col>
-          <Col xs={12} sm={6} md={4}>
-            <Select
-              placeholder="Status"
-              value={statusFilter || undefined}
-              onChange={(val) => setStatusFilter(val || "")}
-              allowClear
-              style={{ width: "100%" }}
-            >
-              <Option value="new">New</Option>
-              <Option value="open">Open</Option>
-              <Option value="in_progress">In Progress</Option>
-              <Option value="resolved">Resolved</Option>
-              <Option value="closed">Closed</Option>
-            </Select>
-          </Col>
-          <Col xs={12} sm={6} md={3}>
-            <Button type="primary" icon={<SearchOutlined />} block onClick={handleSearch}>
-              Search
-            </Button>
           </Col>
         </Row>
 
         <Table
           columns={columns}
-          dataSource={leads}
+          dataSource={filteredLeads}
           rowKey="_id"
           loading={loading}
           scroll={{ x: "max-content" }}
-          locale={{ emptyText: "No social leads found" }}
+          locale={{ emptyText: "No completed social media leads found" }}
         />
       </Card>
     </div>
