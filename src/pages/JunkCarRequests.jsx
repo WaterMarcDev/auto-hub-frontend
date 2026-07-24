@@ -193,6 +193,10 @@ const JunkCarRequests = () => {
             title: "VIN / Engine",
             render: (_, record) => record.engineOrVin || "none",
         },
+        {
+            title: "Condition",
+            render: (_, record) => record.condition || "none",
+        },
 
         {
             title: "Remark",

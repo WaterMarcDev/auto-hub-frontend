@@ -3,10 +3,8 @@ import { Card, Table } from "antd";
 import { Button } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { Input, Select, Row, Col, message, Popconfirm } from "antd";
+import { Input, Select, Row, Col } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import { DeleteOutlined } from "@ant-design/icons";
-import { CarIntakeService } from "../../services/apiService";
 // import { Tabs } from "antd";
 // import axios from "axios";
 
@@ -92,21 +90,6 @@ const Requests = () => {
         setFilteredRequests(filtered);
         setSearched(true);
     };
-
-    // Create Delete Function  by shiva
-    const handleDelete = async (id) => {
-        try {
-            await CarIntakeService.deletePartRequest(id);
-
-            setRequests((prev) => prev.filter((item) => item._id !== id));
-            setFilteredRequests((prev) => prev.filter((item) => item._id !== id));
-
-            message.success("Deleted successfully");
-        } catch (error) {
-            console.error(error);
-            message.error("Delete failed");
-        }
-    }; // end here
 
     // Status filter function by shiva
     const handleStatusChange = (value) => {
@@ -261,6 +244,12 @@ const Requests = () => {
             dataIndex: "phone",
         },
         {
+            title: "Message",
+            dataIndex: "message",
+            width: 200,
+            render: (text) => text || "—",
+        },
+        {
             title: "Remark",
             dataIndex: "remark",
             key: "remark",
@@ -344,26 +333,6 @@ const Requests = () => {
                 </Select>
             ),
         },
-        {
-            title: "Action",
-            key: "action",
-            render: (_, record) => (
-                <Popconfirm
-                    title="Are you sure to delete?"
-                    onConfirm={() => handleDelete(record._id)}
-                    okText="Yes"
-                    cancelText="No"
-                >
-                    <Button
-                        danger
-                        icon={<DeleteOutlined />}
-                        size="small"
-                    >
-                        Delete
-                    </Button>
-                </Popconfirm>
-            )
-        }
     ];
 
     return (

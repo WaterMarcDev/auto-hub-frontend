@@ -125,12 +125,21 @@ const JunkCarRequest = (props) => {
                         </Form.Item>
                     </Col>
 
-                    <Col xs={24}>
+                    <Col xs={24} sm={12} md={8}>
                         <Form.Item
                             name="engineOrVin"
                             label="Engine / VIN Number"
                         >
                             <Input placeholder="Optional" />
+                        </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12} md={8}>
+                        <Form.Item
+                            name="condition"
+                            label="Condition"
+                        >
+                            <Input placeholder="e.g. Running, Not Running" />
                         </Form.Item>
                     </Col>
                 </Row>
