@@ -764,7 +764,8 @@ const UserKYCAndCarDoc = ({
               "titleCertificate",
               "Upload Title Certificate",
               "Take a clear photo of the vehicle title certificate",
-              true
+              // true
+              false
             )}
           </Col>
         </Row>
@@ -978,7 +979,7 @@ const UserKYCAndCarDoc = ({
             <Form.Item
               name="sellerSignature"
               rules={[
-                { required: true, message: "Seller signature is required" },
+                // { required: true, message: "Seller signature is required" },
               ]}
             >
               <Input value={formData.sellerSignature} readOnly />

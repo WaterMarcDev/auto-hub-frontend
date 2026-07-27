@@ -796,15 +796,15 @@ const CarIntake = () => {
 
     // Step 5: KYC
     firstName: [
-      { required: true, message: "First Name is required" },
+      // { required: true, message: "First Name is required" },
       { min: 2, message: "First Name must be at least 2 characters" },
     ],
     lastName: [
-      { required: true, message: "Last Name is required" },
+      // { required: true, message: "Last Name is required" },
       { min: 2, message: "Last Name must be at least 2 characters" },
     ],
     mobileNo: [
-      { required: true, message: "Mobile Number is required" },
+      // { required: true, message: "Mobile Number is required" },
       {
         pattern: /^\+?[\d\s\-()]{10,}$/,
         message: "Invalid mobile number format",
@@ -1028,15 +1028,15 @@ const CarIntake = () => {
         ];
       case 5: // UserKYCAndCarDoc - all required fields
         return [
-          "firstName",
-          "lastName",
-          "mobileNo",
-          "email",
-          // "dlDocument",
-          "sellerSignature",
-          // "physicalPaper",
-          "sellingDate",
-          "pickUpType",
+          // "firstName",
+          // "lastName",
+          // "mobileNo",
+          // "email",
+          // // "dlDocument",
+          // "sellerSignature",
+          // // "physicalPaper",
+          // "sellingDate",
+          // "pickUpType",
         ];
       case 6: // Payment - all required fields
       // added by shiva
@@ -1145,20 +1145,20 @@ const CarIntake = () => {
 
     try {
       // Custom validation for Step 5: Title Certificate is mandatory
-      if (currentStep === 5 && !manualVinMode) {          // added by shiva
-        const hasTitleCertificate =
-          formData.titleCertificate ||
-          (formData.documents && formData.documents.titleCertificate);
+      // if (currentStep === 5 && !manualVinMode) {          // added by shiva
+      //   const hasTitleCertificate =
+      //     formData.titleCertificate ||
+      //     (formData.documents && formData.documents.titleCertificate);
 
-        if (!hasTitleCertificate && !manualVinMode) {    // added by shiva
-          const errorMsg = "Title Certificate is required.";
-          setValidationErrors([
-            { field: "titleCertificate", message: errorMsg },
-          ]);
-          setValidationModalVisible(true);
-          return;
-        }
-      }
+      //   if (!hasTitleCertificate && !manualVinMode) {    // added by shiva
+      //     const errorMsg = "Title Certificate is required.";
+      //     setValidationErrors([
+      //       { field: "titleCertificate", message: errorMsg },
+      //     ]);
+      //     setValidationModalVisible(true);
+      //     return;
+      //   }
+      // }
 
       await form.validateFields(stepFields);
 
@@ -1226,20 +1226,20 @@ const CarIntake = () => {
       ];
 
       // Custom validation for Step 5: Title Certificate is mandatory
-      const hasTitleCertificate =
-        formData.titleCertificate ||
-        (formData.documents && formData.documents.titleCertificate);
+      // const hasTitleCertificate =
+      //   formData.titleCertificate ||
+      //   (formData.documents && formData.documents.titleCertificate);
 
-      if (!hasTitleCertificate) {
-        setValidationErrors([
-          {
-            field: "titleCertificate",
-            message: "Title Certificate is required.",
-          },
-        ]);
-        setValidationModalVisible(true);
-        return;
-      }
+      // if (!hasTitleCertificate) {
+      //   setValidationErrors([
+      //     {
+      //       field: "titleCertificate",
+      //       message: "Title Certificate is required.",
+      //     },
+      //   ]);
+      //   setValidationModalVisible(true);
+      //   return;
+      // }
 
       await form.validateFields(requiredStepFields);
 
