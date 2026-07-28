@@ -199,6 +199,13 @@ const JunkCarRequests = () => {
         },
 
         {
+            title: "Message",
+            dataIndex: "message",
+            key: "message",
+            render: (text) => text || "-",
+        },
+
+        {
             title: "Remark",
             dataIndex: "remark",
             key: "remark",
@@ -255,17 +262,40 @@ const JunkCarRequests = () => {
             render: (_, record) => (
                 <Select
                     placeholder="Source"
-                    value={record.source || "Online"}
+                    value={record.source || "Manual"}
                     onChange={(value) =>
                         updateSource(record._id, value)
                     }
                     style={{ width: 130 }}
                     disabled={!canEditSource}
                 >
-                    <Option value="Online">Online</Option>
-                    <Option value="Offline">Offline</Option>
+                    <Option value="Manual">Manual</Option>
+                    <Option value="Website">Website</Option>
+                    <Option value="Instagram">Instagram</Option>
+                    <Option value="Facebook">Facebook</Option>
+                    <Option value="WhatsApp">WhatsApp</Option>
+                    <Option value="TikTok">TikTok</Option>
+                    <Option value="SMS">SMS</Option>
+                    <Option value="Other">Other</Option>
+
                 </Select>
             ),
+        },
+
+        {
+            title: "Created By",
+            render: (_, record) => {
+
+                if (
+                    record.createdBy &&
+                    typeof record.createdBy === "object" &&
+                    record.createdBy.first_name
+                ) {
+                    return `${record.createdBy.first_name} ${record.createdBy.last_name || ""}`;
+                }
+
+                return "-";
+            },
         },
         {
             title: "Handled By",
@@ -390,13 +420,14 @@ const JunkCarRequests = () => {
                             setSourceFilter(value || "")
                         }
                     >
-                        <Option value="Online">
-                            Online
-                        </Option>
-
-                        <Option value="Offline">
-                            Offline
-                        </Option>
+                        <Option value="Manual">Manual</Option>
+                        <Option value="Website">Website</Option>
+                        <Option value="Instagram">Instagram</Option>
+                        <Option value="Facebook">Facebook</Option>
+                        <Option value="WhatsApp">WhatsApp</Option>
+                        <Option value="TikTok">TikTok</Option>
+                        <Option value="SMS">SMS</Option>
+                        <Option value="Other">Other</Option>
                     </Select>
 
                     {/* Search by Status : added by shiva*/}
