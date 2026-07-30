@@ -93,7 +93,7 @@ const UnifiedInbox = () => {
   const activeConv = getActiveConversationData();
 
   return (
-    <div style={{ padding: "20px", height: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
+    <div style={{ padding: "20px", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <Card
         title="Unified Inbox"
         extra={
@@ -101,10 +101,10 @@ const UnifiedInbox = () => {
             Back to Dashboard
           </Button>
         }
-        style={{ flex: 1, display: "flex", flexDirection: "column" }}
+        style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
         bodyStyle={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}
       >
-        <Row style={{ flex: 1, overflow: "hidden" }}>
+        <Row style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
           {/* Conversation List */}
           <Col xs={24} md={8} style={{ borderRight: "1px solid #303030", overflow: "auto", height: "100%" }}>
             {loading ? (
@@ -167,47 +167,56 @@ const UnifiedInbox = () => {
                     </Title>
                   </div>
                   <Text style={{ color: "#6b7280", fontSize: 12 }}>
-                    {activeConv.customerId?.email || activeConv.platform} 
+                    {activeConv.customerId?.email || activeConv.platform}
                     {activeConv.customerId?.mobileNo ? ` · ${activeConv.customerId.mobileNo}` : ""}
                   </Text>
                 </div>
 
                 {/* Messages */}
-                <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "12px 16px" }}>
                   {messages.length === 0 ? (
                     <Empty description="No messages yet" />
                   ) : (
-                    messages.map((msg, idx) => (
-                      <div
-                        key={msg._id || idx}
-                        style={{
-                          alignSelf: msg.senderType === "agent" ? "flex-end" : "flex-start",
-                          maxWidth: "80%",
-                          width: "fit-content",
-                          overflow: "hidden",
-                          background: msg.senderType === "agent" ? "#525BE5" : "#303030",
-                          borderRadius: "12px",
-                          padding: "8px 12px",
-                          // borderBottomRightRadius: msg.senderType === "agent" ? 4 : 12,
-                          // borderBottomLeftRadius: msg.senderType === "customer" ? 4 : 12,
-                        }}
-                      >
-                        <div style={{ color: "#fff", fontSize: 13, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", maxWidth: "100%" }}>{msg.text}</div>
-                        {msg.attachments?.length > 0 && (
-                          <div style={{ marginTop: 4 }}>
-                            {msg.attachments.map((att, i) => (
-                              <a key={i} href={att.url} target="_blank" rel="noopener noreferrer" style={{ color: "#93c5fd", fontSize: 12, display: "block" }}>
-                                📎 {att.filename || "Attachment"}
-                              </a>
-                            ))}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8
+                      }}
+                    >
+                      {messages.map((msg, idx) => (
+                        <div
+                          key={msg._id || idx}
+                          style={{
+                            alignSelf: msg.senderType === "agent" ? "flex-end" : "flex-start",
+                            maxWidth: "80%",
+                            width: "fit-content",
+                            overflow: "hidden",
+                            background: msg.senderType === "agent" ? "#525BE5" : "#303030",
+                            borderRadius: "12px",
+                            padding: "8px 12px",
+                            // borderBottomRightRadius: msg.senderType === "agent" ? 4 : 12,
+                            // borderBottomLeftRadius: msg.senderType === "customer" ? 4 : 12,
+                          }}
+                        >
+                          <div style={{ color: "#fff", fontSize: 13, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", maxWidth: "100%" }}>{msg.text}</div>
+                          {msg.attachments?.length > 0 && (
+                            <div style={{ marginTop: 4 }}>
+                              {msg.attachments.map((att, i) => (
+                                <a key={i} href={att.url} target="_blank" rel="noopener noreferrer" style={{ color: "#93c5fd", fontSize: 12, display: "block" }}>
+                                  📎 {att.filename || "Attachment"}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                          <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, textAlign: "right" }}>
+                            {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}
+                            {msg.senderType === "agent" && " · You"}
                           </div>
-                        )}
-                        <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, textAlign: "right" }}>
-                          {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}
-                          {msg.senderType === "agent" && " · You"}
                         </div>
-                      </div>
-                    ))
+                      ))}
+                    </div>
                   )}
                 </div>
 
