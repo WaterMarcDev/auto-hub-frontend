@@ -153,7 +153,7 @@ const UnifiedInbox = () => {
           </Col>
 
           {/* Message Area */}
-          <Col xs={24} md={16} style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          <Col xs={24} md={16} style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
             {activeConversation && activeConv ? (
               <>
                 {/* Header */}
@@ -173,7 +173,7 @@ const UnifiedInbox = () => {
                 </div>
 
                 {/* Messages */}
-                <div style={{ flex: 1, overflow: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "hidden", padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
                   {messages.length === 0 ? (
                     <Empty description="No messages yet" />
                   ) : (
@@ -212,7 +212,7 @@ const UnifiedInbox = () => {
                 </div>
 
                 {/* Reply Input */}
-                <div style={{ padding: "12px 16px", borderTop: "1px solid #303030" }}>
+                <div style={{ flexShrink: 0, padding: "8px 16px", borderTop: "1px solid #303030", background: "#1F293D" }}>
                   <Row gutter={8} align="middle">
                     <Col flex="auto">
                       <TextArea
@@ -221,7 +221,7 @@ const UnifiedInbox = () => {
                         onKeyDown={handleKeyDown}
                         placeholder="Type your reply... (Enter to send, Shift+Enter for new line)"
                         rows={2}
-                        style={{ background: "#1F293D", border: "1px solid #303030", color: "#fff" }}
+                        style={{ background: "#1F293D", border: "1px solid #303030", color: "#fff", minHeight: 40, resize: "none" }}
                       />
                     </Col>
                     <Col>
@@ -231,7 +231,7 @@ const UnifiedInbox = () => {
                         onClick={handleSendReply}
                         loading={sending}
                         disabled={!replyText.trim()}
-                        style={{ height: 48 }}
+                        style={{ height: 40 }}
                       >
                         Send
                       </Button>
