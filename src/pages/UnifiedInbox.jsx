@@ -183,14 +183,16 @@ const UnifiedInbox = () => {
                         style={{
                           alignSelf: msg.senderType === "agent" ? "flex-end" : "flex-start",
                           maxWidth: "80%",
+                          width: "fit-content",
+                          overflow: "hidden",
                           background: msg.senderType === "agent" ? "#525BE5" : "#303030",
                           borderRadius: "12px",
                           padding: "8px 12px",
-                          borderBottomRightRadius: msg.senderType === "agent" ? 4 : 12,
-                          borderBottomLeftRadius: msg.senderType === "customer" ? 4 : 12,
+                          // borderBottomRightRadius: msg.senderType === "agent" ? 4 : 12,
+                          // borderBottomLeftRadius: msg.senderType === "customer" ? 4 : 12,
                         }}
                       >
-                        <div style={{ color: "#fff", fontSize: 13 }}>{msg.text}</div>
+                        <div style={{ color: "#fff", fontSize: 13, whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word", maxWidth: "100%" }}>{msg.text}</div>
                         {msg.attachments?.length > 0 && (
                           <div style={{ marginTop: 4 }}>
                             {msg.attachments.map((att, i) => (
