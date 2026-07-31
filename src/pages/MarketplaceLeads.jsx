@@ -44,9 +44,9 @@ const SocialLeads = () => {
     fetchLeads(params);
   };
 
-  const handleStatusChange = async (id, status) => {
+  const handleStatusChange = async (id, status, marketplace) => {
     try {
-      await marketplaceLeadService.updateStatus(id, status);
+      await marketplaceLeadService.updateStatus(id, status, marketplace);
       message.success("Status updated");
       fetchLeads();
     } catch (err) {
@@ -104,7 +104,7 @@ const SocialLeads = () => {
       render: (status, record) => (
         <Select
           value={status}
-          onChange={(val) => handleStatusChange(record._id, val)}
+          onChange={(val) => handleStatusChange(record._id, val, record.marketplace)}
           size="small"
           style={{ width: 120 }}
         >

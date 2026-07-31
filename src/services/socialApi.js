@@ -24,7 +24,11 @@ export const socialLeadService = {
 export const marketplaceLeadService = {
   getAll: (params = {}) => api.get("/marketplace-leads", { params }),
   getById: (id) => api.get(`/marketplace-leads/${id}`),
-  updateStatus: (id, status) => api.patch(`/marketplace-leads/${id}/status`, { status }),
+  // `marketplace` is optional and additive — sent alongside id/status so the
+  // backend can scope the update to the record's own marketplace (defense
+  // in depth against a status update ever affecting the wrong platform's
+  // record). Omitting it keeps prior behavior unchanged.
+  updateStatus: (id, status, marketplace) => api.patch(`/marketplace-leads/${id}/status`, { status, marketplace }),
   assignUser: (id, userId) => api.patch(`/marketplace-leads/${id}/assign`, { userId }),
   updateNotes: (id, notes) => api.patch(`/marketplace-leads/${id}/notes`, { notes }),
   updateOrderStatus: (id, data) => api.patch(`/marketplace-leads/${id}/order-status`, data),

@@ -16,6 +16,7 @@ import {
   GlobalOutlined,
   MessageOutlined,
   ApiOutlined,
+  ShoppingCartOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
@@ -329,6 +330,11 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
             label: <Link to="/marketplace-leads">Marketplace Orders</Link>,
           },
           {
+            key: "/orders",
+            icon: <ShoppingCartOutlined />,
+            label: <Link to="/orders">Orders</Link>,
+          },
+          {
             key: "/integrations",
             icon: <ApiOutlined />,
             label: <Link to="/integrations">Platform Connections</Link>,
@@ -605,6 +611,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/social-leads": "integrations",
       "/marketplace-leads": "integrations",
       "/unified-inbox": "integrations",
+      "/orders": "integrations",
       "/integrations": "integrations",
     };
     const parentKey = routeMapping[path];

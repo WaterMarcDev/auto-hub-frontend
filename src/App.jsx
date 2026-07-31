@@ -80,6 +80,7 @@ const ErrorCodes = React.lazy(() => import("./pages/ErrorCodes"));
 const SocialLeads = React.lazy(() => import("./pages/SocialLeads"));
 const MarketplaceLeads = React.lazy(() => import("./pages/MarketplaceLeads"));
 const UnifiedInbox = React.lazy(() => import("./pages/UnifiedInbox"));
+const Orders = React.lazy(() => import("./pages/Orders"));
 const IntegrationManager = React.lazy(() => import("./pages/IntegrationManager"));
 
 // Create placeholder components for other routes
@@ -372,6 +373,7 @@ function App() {
                         <Route path="/social-leads" element={<SocialLeads />} />
                         <Route path="/marketplace-leads" element={<MarketplaceLeads />} />
                         <Route path="/unified-inbox" element={<UnifiedInbox />} />
+                        <Route path="/orders" element={<Orders />} />
                         <Route path="/integrations" element={<IntegrationManager />} />
                       </Routes>
                     </Suspense>
