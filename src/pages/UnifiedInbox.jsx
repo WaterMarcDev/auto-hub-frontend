@@ -173,7 +173,11 @@ const UnifiedInbox = () => {
       await fetchMessages(activeConversation);
       await fetchConversations();
     } catch (err) {
-      message.error("Failed to send reply");
+      // Surface the backend's actual failure reason (e.g. which prerequisite
+      // was missing, or the real marketplace error) instead of a generic
+      // toast — falls back to the generic message only if the backend
+      // didn't provide one.
+      message.error(err.response?.data?.message || "Failed to send reply");
     } finally {
       setSending(false);
     }
@@ -355,7 +359,7 @@ const UnifiedInbox = () => {
   return (
     <div style={{ padding: "20px", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       <Card
-        title="Unified Inbox"
+        title="Marketplace Inbox"
         extra={
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
             Back to Dashboard
@@ -642,7 +646,7 @@ const UnifiedInbox = () => {
             <div><strong>Payment Status:</strong> {relatedOrder.paymentStatus || "—"}</div>
             <div><strong>Shipping Status:</strong> {relatedOrder.shippingStatus || "—"}</div>
             <Button type="link" onClick={() => navigate(`/orders?highlight=${relatedOrder._id}`)} style={{ padding: 0 }}>
-              Open in Orders →
+              Open in Marketplace Orders →
             </Button>
           </div>
         ) : (

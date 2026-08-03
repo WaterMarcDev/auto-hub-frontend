@@ -14,16 +14,41 @@ const PLATFORM_COLORS = {
   ebay: "#E53238",
 };
 
+// Canonical vocabularies — must exactly match services/orderStatusMapper.js
+// on the backend, since Order.status/paymentStatus/refundStatus/
+// shippingStatus are normalized into these same strings at sync time. This
+// is what makes filtering actually work: the stored value and the filter
+// option are always drawn from the same source of truth.
 const ORDER_STATUS_OPTIONS = [
-  "pending",
-  "confirmed",
-  "shipped",
-  "delivered",
-  "returned",
-  "refunded",
-  "cancelled",
-  "awaiting_payment",
-  "on_hold",
+  "Pending",
+  "Processing",
+  "Awaiting Shipment",
+  "Shipped",
+  "Out For Delivery",
+  "Completed",
+  "Cancelled",
+  "Returned",
+  "Refund Pending",
+  "Refunded",
+  "Partially Refunded",
+  "Unknown",
+];
+
+const PAYMENT_STATUS_OPTIONS = [
+  "Paid",
+  "Pending",
+  "Failed",
+  "Partially Paid",
+  "Refunded",
+  "Partially Refunded",
+  "Unknown",
+];
+
+const REFUND_STATUS_OPTIONS = [
+  "Not Refunded",
+  "Refund Pending",
+  "Refunded",
+  "Partially Refunded",
 ];
 
 const Orders = () => {
@@ -33,6 +58,7 @@ const Orders = () => {
   const [platformFilter, setPlatformFilter] = useState("");
   const [orderStatusFilter, setOrderStatusFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [refundStatusFilter, setRefundStatusFilter] = useState("");
   const [dateRange, setDateRange] = useState(null);
   const navigate = useNavigate();
 
@@ -60,6 +86,7 @@ const Orders = () => {
     if (platformFilter) params.platform = platformFilter;
     if (orderStatusFilter) params.status = orderStatusFilter;
     if (paymentStatusFilter) params.paymentStatus = paymentStatusFilter;
+    if (refundStatusFilter) params.refundStatus = refundStatusFilter;
     if (dateRange?.[0]) params.dateFrom = dateRange[0].toISOString();
     if (dateRange?.[1]) params.dateTo = dateRange[1].toISOString();
     fetchOrders(params);
@@ -129,23 +156,47 @@ const Orders = () => {
     {
       title: "Order Status",
       dataIndex: "status",
-      width: 130,
+      width: 140,
       render: (status, record) => {
-        const value = status || record.orderStatus;
-        return value ? (
-          <Tag color={value === "cancelled" ? "red" : value === "delivered" || value === "shipped" ? "green" : "orange"}>
-            {value}
-          </Tag>
-        ) : (
-          "—"
-        );
+        const value = status || record.orderStatus || "Unknown";
+        const color =
+          value === "Cancelled" || value === "Returned"
+            ? "red"
+            : value === "Completed" || value === "Shipped" || value === "Out For Delivery"
+            ? "green"
+            : value === "Unknown"
+            ? "default"
+            : "orange";
+        return <Tag color={color}>{value}</Tag>;
       },
+    },
+    {
+      title: "Refund Status",
+      dataIndex: "refundStatus",
+      width: 140,
+      render: (status) => {
+        const value = status || "Not Refunded";
+        return <Tag color={value === "Not Refunded" ? "default" : "volcano"}>{value}</Tag>;
+      },
+    },
+    {
+      title: "Carrier",
+      dataIndex: "carrier",
+      width: 120,
+      render: (val) => val || "N/A",
     },
     {
       title: "Tracking #",
       dataIndex: "trackingNumber",
-      width: 150,
-      render: (val) => val || "—",
+      width: 160,
+      render: (val, record) =>
+        val && val !== "N/A" && record.trackingUrl ? (
+          <a href={record.trackingUrl} target="_blank" rel="noopener noreferrer">
+            {val}
+          </a>
+        ) : (
+          val || "N/A"
+        ),
     },
     {
       title: "Order Date",
@@ -193,14 +244,14 @@ const Orders = () => {
   return (
     <div style={{ padding: "20px", paddingBottom: "90px" }}>
       <Card
-        title="Orders"
+        title="Marketplace Orders"
         extra={
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
             Back
           </Button>
         }
       >
-        <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+        <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} md={5}>
             <Input
               placeholder="Search order, customer, product, SKU..."
@@ -236,10 +287,6 @@ const Orders = () => {
             </Select>
           </Col>
           <Col xs={12} sm={6} md={4}>
-            {/* Payment Status filtering is UI-complete but stays inert until
-                the backend populates `paymentStatus` from real synced order
-                data — sending it as a query param the backend doesn't yet
-                have values for is harmless. */}
             <Select
               placeholder="Payment Status"
               value={paymentStatusFilter || undefined}
@@ -247,17 +294,29 @@ const Orders = () => {
               allowClear
               style={{ width: "100%" }}
             >
-              <Option value="PAID">Paid</Option>
-              <Option value="PENDING">Pending</Option>
-              <Option value="FAILED">Failed</Option>
-              <Option value="REFUNDED">Refunded</Option>
+              {PAYMENT_STATUS_OPTIONS.map((s) => (
+                <Option key={s} value={s}>{s}</Option>
+              ))}
+            </Select>
+          </Col>
+          <Col xs={12} sm={6} md={4}>
+            <Select
+              placeholder="Refund Status"
+              value={refundStatusFilter || undefined}
+              onChange={(val) => setRefundStatusFilter(val || "")}
+              allowClear
+              style={{ width: "100%" }}
+            >
+              {REFUND_STATUS_OPTIONS.map((s) => (
+                <Option key={s} value={s}>{s}</Option>
+              ))}
             </Select>
           </Col>
           <Col xs={24} sm={12} md={5}>
             <RangePicker style={{ width: "100%" }} value={dateRange} onChange={setDateRange} />
           </Col>
-          <Col xs={24} sm={12} md={2}>
-            <Button type="primary" icon={<SearchOutlined />} block onClick={handleSearch}>
+          <Col xs={24} sm={12} md={3} style={{ display: "flex", alignItems: "center", }}>
+            <Button type="primary" icon={<SearchOutlined />} block style={{ height: 32, display: "flex", alignItems: "center", justifyContent: "center", }} onClick={handleSearch}>
               Search
             </Button>
           </Col>

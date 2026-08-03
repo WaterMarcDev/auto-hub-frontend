@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, Table, Button, Select, Tag, message, Input, Row, Col } from "antd";
-import { ArrowLeftOutlined, SearchOutlined, MessageOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { marketplaceLeadService } from "../services/socialApi";
 
@@ -11,22 +11,27 @@ const MARKETPLACE_COLORS = {
   ebay: "#E53238",
 };
 
+// Marketplace Listings manages ONLY marketplace listings (Listing ID,
+// Marketplace, Product, Listing Status, SKU, Price, Quantity, Created/Updated
+// Date) — order-related fields (Order ID, Order Status, Customer, chat)
+// belong exclusively to Marketplace Orders (src/pages/Orders.jsx).
 const SocialLeads = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [marketplaceFilter, setMarketplaceFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const navigate = useNavigate();
 
   const fetchLeads = async (params = {}) => {
     try {
       setLoading(true);
-      const res = await marketplaceLeadService.getAll(params);
+      // hasListingId restricts results to listing-sourced records only —
+      // additive, opt-in backend filter (see marketplaceLead.controller.js).
+      const res = await marketplaceLeadService.getAll({ hasListingId: "true", ...params });
       setLeads(res.data?.data || []);
     } catch (err) {
       console.error("Failed to fetch marketplace leads:", err);
-      message.error("Failed to load marketplace leads");
+      message.error("Failed to load marketplace listings");
     } finally {
       setLoading(false);
     }
@@ -40,21 +45,16 @@ const SocialLeads = () => {
     const params = {};
     if (search.trim()) params.search = search;
     if (marketplaceFilter) params.marketplace = marketplaceFilter;
-    if (statusFilter) params.status = statusFilter;
     fetchLeads(params);
   };
 
-  const handleStatusChange = async (id, status, marketplace) => {
-    try {
-      await marketplaceLeadService.updateStatus(id, status, marketplace);
-      message.success("Status updated");
-      fetchLeads();
-    } catch (err) {
-      message.error("Failed to update status");
-    }
-  };
-
   const columns = [
+    {
+      title: "Listing ID",
+      dataIndex: "marketplaceListingId",
+      width: 150,
+      render: (id) => id || "—",
+    },
     {
       title: "Marketplace",
       dataIndex: "marketplace",
@@ -66,89 +66,57 @@ const SocialLeads = () => {
       ),
     },
     {
-      title: "Order ID",
-      dataIndex: "marketplaceOrderId",
-      width: 150,
-      render: (id) => id || "—",
-    },
-    {
-      title: "Customer",
-      dataIndex: "customerName",
-      render: (name, record) => (
-        <div>
-          <div style={{ fontWeight: 500 }}>{name || "Unknown"}</div>
-          {record.customerEmail && <div style={{ fontSize: 12, color: "#6b7280" }}>{record.customerEmail}</div>}
-        </div>
-      ),
-    },
-    {
       title: "Product",
       dataIndex: "productName",
       ellipsis: true,
       render: (name) => name || "—",
     },
     {
-      title: "Order Status",
-      dataIndex: "orderStatus",
-      width: 120,
+      title: "Listing Status",
+      dataIndex: "listingStatus",
+      width: 130,
       render: (status) => (
-        <Tag color={status === "cancelled" ? "red" : status === "shipped" ? "green" : status === "pending" ? "orange" : "blue"}>
-          {status || "—"}
+        <Tag color={status === "active" ? "green" : "default"} style={{ textTransform: "capitalize" }}>
+          {status || "Unknown"}
         </Tag>
       ),
     },
     {
-      title: "Status",
-      dataIndex: "conversationStatus",
+      title: "SKU",
+      dataIndex: "productSku",
       width: 140,
-      render: (status, record) => (
-        <Select
-          value={status}
-          onChange={(val) => handleStatusChange(record._id, val, record.marketplace)}
-          size="small"
-          style={{ width: 120 }}
-        >
-          <Option value="new">New</Option>
-          <Option value="open">Open</Option>
-          <Option value="in_progress">In Progress</Option>
-          <Option value="waiting_customer">Waiting Customer</Option>
-          <Option value="resolved">Resolved</Option>
-          <Option value="closed">Closed</Option>
-        </Select>
-      ),
+      render: (sku) => sku || "—",
     },
     {
-      title: "Unread",
-      dataIndex: "unreadCount",
-      width: 70,
-      render: (count) => count > 0 ? <Tag color="red">{count}</Tag> : null,
+      title: "Price",
+      dataIndex: "price",
+      width: 100,
+      render: (price) => (price != null ? `$${Number(price).toFixed(2)}` : "—"),
     },
     {
-      title: "Date",
+      title: "Quantity",
+      dataIndex: "quantity",
+      width: 100,
+      render: (qty) => qty ?? "—",
+    },
+    {
+      title: "Created Date",
       dataIndex: "createdAt",
-      width: 120,
-      render: (date) => date ? new Date(date).toLocaleDateString() : "—",
+      width: 130,
+      render: (date) => (date ? new Date(date).toLocaleDateString() : "—"),
     },
     {
-      title: "Action",
-      width: 80,
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={<MessageOutlined />}
-          onClick={() => navigate(`/unified-inbox?conversation=${record._id}&platform=${record.marketplace}`)}
-        >
-          Chat
-        </Button>
-      ),
+      title: "Updated Date",
+      dataIndex: "updatedAt",
+      width: 130,
+      render: (date) => (date ? new Date(date).toLocaleDateString() : "—"),
     },
   ];
 
   return (
     <div style={{ padding: "20px", paddingBottom: "90px" }}>
       <Card
-        title="Marketplace Orders & Leads"
+        title="Marketplace Listings"
         extra={
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
             Back
@@ -158,7 +126,7 @@ const SocialLeads = () => {
         <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} md={6}>
             <Input
-              placeholder="Search order, customer, product..."
+              placeholder="Search product, SKU..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onPressEnter={handleSearch}
@@ -177,21 +145,6 @@ const SocialLeads = () => {
               <Option value="ebay">eBay</Option>
             </Select>
           </Col>
-          <Col xs={12} sm={6} md={4}>
-            <Select
-              placeholder="Status"
-              value={statusFilter || undefined}
-              onChange={(val) => setStatusFilter(val || "")}
-              allowClear
-              style={{ width: "100%" }}
-            >
-              <Option value="new">New</Option>
-              <Option value="open">Open</Option>
-              <Option value="in_progress">In Progress</Option>
-              <Option value="resolved">Resolved</Option>
-              <Option value="closed">Closed</Option>
-            </Select>
-          </Col>
           <Col xs={12} sm={6} md={3}>
             <Button type="primary" icon={<SearchOutlined />} block onClick={handleSearch}>
               Search
@@ -205,7 +158,7 @@ const SocialLeads = () => {
           rowKey="_id"
           loading={loading}
           scroll={{ x: "max-content" }}
-          locale={{ emptyText: "No marketplace leads found" }}
+          locale={{ emptyText: "No marketplace listings found" }}
         />
       </Card>
     </div>

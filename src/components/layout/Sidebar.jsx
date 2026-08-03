@@ -317,7 +317,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
           {
             key: "/unified-inbox",
             icon: <MessageOutlined />,
-            label: <Link to="/unified-inbox">Unified Inbox</Link>,
+            label: <Link to="/unified-inbox">Marketplace Inbox</Link>,
           },
           {
             key: "/social-leads",
@@ -327,12 +327,12 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
           {
             key: "/marketplace-leads",
             icon: <ShopOutlined />,
-            label: <Link to="/marketplace-leads">Marketplace Orders</Link>,
+            label: <Link to="/marketplace-leads">Marketplace Listings</Link>,
           },
           {
             key: "/orders",
             icon: <ShoppingCartOutlined />,
-            label: <Link to="/orders">Orders</Link>,
+            label: <Link to="/orders">Marketplace Orders</Link>,
           },
           {
             key: "/integrations",
