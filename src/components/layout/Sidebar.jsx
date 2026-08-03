@@ -168,7 +168,43 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
         ],
       });
       //end here
-      
+
+      // Social & Marketplace Integrations - Admin and Manager
+      // Moved here (between Requests and Master) per request.
+      if (isAdmin || isManager) {
+        items.push({
+          key: "integrations",
+          icon: <ApiOutlined />,
+          label: "Integrations",
+          children: [
+            {
+              key: "/unified-inbox",
+              icon: <MessageOutlined />,
+              label: <Link to="/unified-inbox">Marketplace Inbox</Link>,
+            },
+            {
+              key: "/social-leads",
+              icon: <GlobalOutlined />,
+              label: <Link to="/social-leads">Social Media Leads</Link>,
+            },
+            {
+              key: "/marketplace-leads",
+              icon: <ShopOutlined />,
+              label: <Link to="/marketplace-leads">Marketplace Listings</Link>,
+            },
+            {
+              key: "/orders",
+              icon: <ShoppingCartOutlined />,
+              label: <Link to="/orders">Marketplace Orders</Link>,
+            },
+            {
+              key: "/integrations",
+              icon: <ApiOutlined />,
+              label: <Link to="/integrations">Platform Connections</Link>,
+            },
+          ],
+        });
+      }
 
       /* User Management moved to bottom as per request */
 
@@ -305,42 +341,6 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       // });
 
 
-    }
-
-    // Social & Marketplace Integrations - Admin and Manager
-    if (isAdmin || isManager) {
-      items.push({
-        key: "integrations",
-        icon: <ApiOutlined />,
-        label: "Integrations",
-        children: [
-          {
-            key: "/unified-inbox",
-            icon: <MessageOutlined />,
-            label: <Link to="/unified-inbox">Marketplace Inbox</Link>,
-          },
-          {
-            key: "/social-leads",
-            icon: <GlobalOutlined />,
-            label: <Link to="/social-leads">Social Media Leads</Link>,
-          },
-          {
-            key: "/marketplace-leads",
-            icon: <ShopOutlined />,
-            label: <Link to="/marketplace-leads">Marketplace Listings</Link>,
-          },
-          {
-            key: "/orders",
-            icon: <ShoppingCartOutlined />,
-            label: <Link to="/orders">Marketplace Orders</Link>,
-          },
-          {
-            key: "/integrations",
-            icon: <ApiOutlined />,
-            label: <Link to="/integrations">Platform Connections</Link>,
-          },
-        ],
-      });
     }
 
     // Car Inventory - Only for Admin
