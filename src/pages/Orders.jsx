@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, Table, Button, Select, Tag, message, Input, Row, Col, DatePicker } from "antd";
-import { ArrowLeftOutlined, SearchOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { ordersService } from "../services/ordersApi";
+import { marketplaceLeadService } from "../services/socialApi";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -60,6 +61,7 @@ const Orders = () => {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
   const [refundStatusFilter, setRefundStatusFilter] = useState("");
   const [dateRange, setDateRange] = useState(null);
+  const [syncing, setSyncing] = useState(false);
   const navigate = useNavigate();
 
   const fetchOrders = async (params = {}) => {
@@ -90,6 +92,24 @@ const Orders = () => {
     if (dateRange?.[0]) params.dateFrom = dateRange[0].toISOString();
     if (dateRange?.[1]) params.dateTo = dateRange[1].toISOString();
     fetchOrders(params);
+  };
+
+  // Order Status/Payment/Refund/Shipping/Tracking are always marketplace-
+  // derived, never manually maintained — this triggers a live eBay order
+  // sync (existing sync endpoint) so the CRM picks up the latest values,
+  // then refreshes the table from the database.
+  const handleSyncNow = async () => {
+    try {
+      setSyncing(true);
+      await marketplaceLeadService.syncOrders(platformFilter || "ebay");
+      message.success("Marketplace orders synced");
+      fetchOrders();
+    } catch (err) {
+      console.error("Failed to sync orders:", err);
+      message.error(err.response?.data?.message || "Failed to sync orders");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const columns = [
@@ -246,9 +266,18 @@ const Orders = () => {
       <Card
         title="Marketplace Orders"
         extra={
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
-            Back
-          </Button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button
+              icon={<SyncOutlined spin={syncing} />}
+              onClick={handleSyncNow}
+              loading={syncing}
+            >
+              Sync Now
+            </Button>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
+              Back
+            </Button>
+          </div>
         }
       >
         <Row gutter={[12, 12]} align="middle" style={{ marginBottom: 16 }}>

@@ -33,6 +33,10 @@ export const marketplaceLeadService = {
   updateNotes: (id, notes) => api.patch(`/marketplace-leads/${id}/notes`, { notes }),
   updateOrderStatus: (id, data) => api.patch(`/marketplace-leads/${id}/order-status`, data),
   remove: (id) => api.delete(`/marketplace-leads/${id}`),
+  // Triggers a live order sync for the given marketplace (existing backend
+  // endpoint — GET /api/marketplace-leads/orders?platform=... — already used
+  // elsewhere; exposed here for the Marketplace Orders page's "Sync Now").
+  syncOrders: (platform) => api.get("/marketplace-leads/orders", { params: { platform } }),
 };
 
 // ─── Conversations ────────────────────────────────────────────────────────
