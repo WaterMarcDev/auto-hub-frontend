@@ -52,6 +52,20 @@ const REFUND_STATUS_OPTIONS = [
   "Partially Refunded",
 ];
 
+// Mirrors the backend's canonical SHIPPING_STATUS vocabulary
+// (services/orderStatusMapper.js) — same pattern as the other status option
+// lists above, so the stored value and this filter's options can never
+// mismatch.
+const SHIPPING_STATUS_OPTIONS = [
+  "Awaiting Shipment",
+  "Processing",
+  "Shipped",
+  "Delivered",
+  "Returned",
+  "Cancelled",
+  "Unknown",
+];
+
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +74,7 @@ const Orders = () => {
   const [orderStatusFilter, setOrderStatusFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
   const [refundStatusFilter, setRefundStatusFilter] = useState("");
+  const [shippingStatusFilter, setShippingStatusFilter] = useState("");
   const [dateRange, setDateRange] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const navigate = useNavigate();
@@ -89,6 +104,7 @@ const Orders = () => {
     if (orderStatusFilter) params.status = orderStatusFilter;
     if (paymentStatusFilter) params.paymentStatus = paymentStatusFilter;
     if (refundStatusFilter) params.refundStatus = refundStatusFilter;
+    if (shippingStatusFilter) params.shippingStatus = shippingStatusFilter;
     if (dateRange?.[0]) params.dateFrom = dateRange[0].startOf("day").toISOString();
     // RangePicker's end date defaults to midnight (00:00:00) of that day —
     // without extending to end-of-day, records from the selected end date
@@ -349,6 +365,19 @@ const Orders = () => {
               style={{ width: "100%" }}
             >
               {REFUND_STATUS_OPTIONS.map((s) => (
+                <Option key={s} value={s}>{s}</Option>
+              ))}
+            </Select>
+          </Col>
+          <Col xs={12} sm={6} md={4}>
+            <Select
+              placeholder="Shipping Status"
+              value={shippingStatusFilter || undefined}
+              onChange={(val) => setShippingStatusFilter(val || "")}
+              allowClear
+              style={{ width: "100%" }}
+            >
+              {SHIPPING_STATUS_OPTIONS.map((s) => (
                 <Option key={s} value={s}>{s}</Option>
               ))}
             </Select>
