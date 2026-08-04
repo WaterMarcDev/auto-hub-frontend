@@ -89,8 +89,11 @@ const Orders = () => {
     if (orderStatusFilter) params.status = orderStatusFilter;
     if (paymentStatusFilter) params.paymentStatus = paymentStatusFilter;
     if (refundStatusFilter) params.refundStatus = refundStatusFilter;
-    if (dateRange?.[0]) params.dateFrom = dateRange[0].toISOString();
-    if (dateRange?.[1]) params.dateTo = dateRange[1].toISOString();
+    if (dateRange?.[0]) params.dateFrom = dateRange[0].startOf("day").toISOString();
+    // RangePicker's end date defaults to midnight (00:00:00) of that day —
+    // without extending to end-of-day, records from the selected end date
+    // itself would be excluded from the range.
+    if (dateRange?.[1]) params.dateTo = dateRange[1].endOf("day").toISOString();
     fetchOrders(params);
   };
 
@@ -147,7 +150,7 @@ const Orders = () => {
     {
       title: "Email",
       dataIndex: "customerEmail",
-      render: (email, record) => email || record.buyerEmail || "—",
+      render: (email, record) => email || record.buyerEmail || "N/A",
     },
     {
       title: "Phone",
@@ -208,14 +211,23 @@ const Orders = () => {
     {
       title: "Tracking #",
       dataIndex: "trackingNumber",
-      width: 160,
-      render: (val, record) =>
-        val && val !== "N/A" && record.trackingUrl ? (
-          <a href={record.trackingUrl} target="_blank" rel="noopener noreferrer">
-            {val}
+      width: 150,
+      render: (val) => val || "N/A",
+    },
+    {
+      title: "Tracking URL",
+      dataIndex: "trackingUrl",
+      width: 130,
+      // eBay's shipping_fulfillment API does not provide a tracking URL
+      // field — this is only ever populated if a real one is present.
+      // Never fabricated (e.g. never built from a carrier+number template).
+      render: (url) =>
+        url ? (
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            View
           </a>
         ) : (
-          val || "N/A"
+          "N/A"
         ),
     },
     {
