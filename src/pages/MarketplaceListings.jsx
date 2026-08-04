@@ -75,11 +75,24 @@ const SocialLeads = () => {
       title: "Listing Status",
       dataIndex: "listingStatus",
       width: 130,
-      render: (status) => (
-        <Tag color={status === "active" ? "green" : "default"} style={{ textTransform: "capitalize" }}>
-          {status || "Unknown"}
-        </Tag>
-      ),
+      // Canonical values from services/orderStatusMapper-style normalization
+      // in services/adapters/ebayAdapter.js#_normalizeListingStatus: Active,
+      // Ended, Draft, Inactive, Out of Stock, Unknown — never a raw eBay
+      // value, never hardcoded here.
+      render: (status) => {
+        const value = status || "Unknown";
+        const color =
+          value === "Active"
+            ? "green"
+            : value === "Ended" || value === "Inactive"
+            ? "default"
+            : value === "Out of Stock"
+            ? "orange"
+            : value === "Unknown"
+            ? "default"
+            : "blue";
+        return <Tag color={color}>{value}</Tag>;
+      },
     },
     {
       title: "SKU",
@@ -103,13 +116,23 @@ const SocialLeads = () => {
       title: "Created Date",
       dataIndex: "createdAt",
       width: 130,
-      render: (date) => (date ? new Date(date).toLocaleDateString() : "—"),
+      // Explicit "en-US" locale — without it, toLocaleDateString() falls
+      // back to the browser/server's own locale, which can render dates
+      // day-first (ambiguous, and unparseable for day-of-month > 12 if
+      // typed back into search). Matches the format the backend's search
+      // date-parsing expects (see marketplaceListing.controller.js).
+      render: (date) => (date ? new Date(date).toLocaleDateString("en-US") : "—"),
     },
     {
       title: "Updated Date",
       dataIndex: "updatedAt",
       width: 130,
-      render: (date) => (date ? new Date(date).toLocaleDateString() : "—"),
+      // Explicit "en-US" locale — without it, toLocaleDateString() falls
+      // back to the browser/server's own locale, which can render dates
+      // day-first (ambiguous, and unparseable for day-of-month > 12 if
+      // typed back into search). Matches the format the backend's search
+      // date-parsing expects (see marketplaceListing.controller.js).
+      render: (date) => (date ? new Date(date).toLocaleDateString("en-US") : "—"),
     },
   ];
 
