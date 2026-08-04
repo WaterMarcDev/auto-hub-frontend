@@ -3,12 +3,12 @@ import { Card, Table, Button, Select, Tag, message, Input, Row, Col, DatePicker 
 import { ArrowLeftOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { ordersService } from "../services/ordersApi";
-import { marketplaceLeadService } from "../services/socialApi";
+import { marketplaceListingService } from "../services/socialApi";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-// Local to this page — intentionally not shared with MarketplaceLeads.jsx's
+// Local to this page — intentionally not shared with MarketplaceListings.jsx's
 // own MARKETPLACE_COLORS constant, to avoid coupling the two modules.
 const PLATFORM_COLORS = {
   amazon: "#FF9900",
@@ -120,7 +120,7 @@ const Orders = () => {
   const handleSyncNow = async () => {
     try {
       setSyncing(true);
-      await marketplaceLeadService.syncOrders(platformFilter || "ebay");
+      await marketplaceListingService.syncOrders(platformFilter || "ebay");
       message.success("Marketplace orders synced");
       fetchOrders();
     } catch (err) {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, Table, Button, Select, Tag, message, Input, Row, Col } from "antd";
 import { ArrowLeftOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { marketplaceLeadService } from "../services/socialApi";
+import { marketplaceListingService } from "../services/socialApi";
 
 const { Option } = Select;
 
@@ -26,8 +26,8 @@ const SocialLeads = () => {
     try {
       setLoading(true);
       // hasListingId restricts results to listing-sourced records only —
-      // additive, opt-in backend filter (see marketplaceLead.controller.js).
-      const res = await marketplaceLeadService.getAll({ hasListingId: "true", ...params });
+      // additive, opt-in backend filter (see marketplaceListing.controller.js).
+      const res = await marketplaceListingService.getAll({ hasListingId: "true", ...params });
       setLeads(res.data?.data || []);
     } catch (err) {
       console.error("Failed to fetch marketplace leads:", err);

@@ -19,9 +19,13 @@ export const socialLeadService = {
   remove: (id) => api.delete(`/social-leads/${id}`),
 };
 
-// ─── Marketplace Leads ────────────────────────────────────────────────────
+// ─── Marketplace Listings ─────────────────────────────────────────────────
+// NOTE: this module was renamed from "Marketplace Leads" to "Marketplace
+// Listings" for clarity (it no longer represents leads). The underlying
+// backend endpoints stay at /marketplace-leads for backward compatibility —
+// only this JS-level name changed.
 
-export const marketplaceLeadService = {
+export const marketplaceListingService = {
   getAll: (params = {}) => api.get("/marketplace-leads", { params }),
   getById: (id) => api.get(`/marketplace-leads/${id}`),
   // `marketplace` is optional and additive — sent alongside id/status so the
@@ -38,6 +42,13 @@ export const marketplaceLeadService = {
   // elsewhere; exposed here for the Marketplace Orders page's "Sync Now").
   syncOrders: (platform) => api.get("/marketplace-leads/orders", { params: { platform } }),
 };
+
+/**
+ * @deprecated Renamed to `marketplaceListingService`. Kept as a
+ * backward-compatible alias so any existing import of the old name keeps
+ * working — new code should import `marketplaceListingService` directly.
+ */
+export const marketplaceLeadService = marketplaceListingService;
 
 // ─── Conversations ────────────────────────────────────────────────────────
 
