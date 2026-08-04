@@ -126,7 +126,7 @@ const SocialLeads = () => {
         <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} md={6}>
             <Input
-              placeholder="Search product, SKU..."
+              placeholder="Search listing ID, product, SKU, price, status, date..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onPressEnter={handleSearch}
