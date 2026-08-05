@@ -48,6 +48,23 @@ const DELIVERY_ICON = {
 
 const ORDER_LINKABLE_PLATFORMS = ["amazon", "ebay"];
 
+/**
+ * Resolve the authoritative time for a message, for sorting strictly
+ * oldest -> newest — mirrors the backend's identical helper in
+ * controllers/conversation.controller.js. `createdAt` already holds the
+ * real timestamp for every message; this is a defensive second layer in
+ * case any out-of-order data ever reaches the client (e.g. a socket event
+ * for a backfilled historical message), never trusting array/insertion
+ * order. Never throws on missing/malformed timestamps.
+ */
+function getMessageTime(message) {
+  if (message?.createdAt) {
+    const time = new Date(message.createdAt).getTime();
+    if (!Number.isNaN(time)) return time;
+  }
+  return 0;
+}
+
 /** Renders one message attachment: image (native antd zoom), PDF (new-tab
  * link — no PDF.js dependency needed), or a generic download link. */
 const AttachmentItem = ({ att }) => {
@@ -85,6 +102,18 @@ const UnifiedInbox = () => {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
+  // Defensive display-order guarantee: sort strictly oldest -> newest by
+  // each message's own timestamp rather than trusting array/insertion
+  // order (the backend already sorts, but this protects against any
+  // out-of-order data arriving via a socket event too). Memoized so this
+  // only recomputes when the messages array itself actually changes, not
+  // on unrelated re-renders (typing a reply, resizing, etc.) — cheap even
+  // for large conversations since it's O(n log n) once per update, not
+  // per render.
+  const sortedMessages = useMemo(
+    () => [...messages].sort((a, b) => getMessageTime(a) - getMessageTime(b)),
+    [messages]
+  );
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -502,12 +531,12 @@ const UnifiedInbox = () => {
                       onScroll={handleThreadScroll}
                       style={{ height: "100%", overflowY: "auto", overflowX: "hidden", padding: "12px 16px" }}
                     >
-                      {messages.length === 0 ? (
+                      {sortedMessages.length === 0 ? (
                         <Empty description="No messages yet" />
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          {messages.map((msg, idx) => {
-                            const prevMsg = messages[idx - 1];
+                          {sortedMessages.map((msg, idx) => {
+                            const prevMsg = sortedMessages[idx - 1];
                             const showDateDivider =
                               !prevMsg ||
                               (msg.createdAt && new Date(msg.createdAt).toDateString() !== new Date(prevMsg.createdAt).toDateString());
