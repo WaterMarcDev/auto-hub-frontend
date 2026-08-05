@@ -98,70 +98,6 @@ const AttachmentItem = ({ att }) => {
   );
 };
 
-/**
- * Manual "Translate to English" action for a single incoming customer
- * message — translation only ever happens when the user clicks; never
- * automatic, never on render, never on scroll/pagination. Purely
- * presentational: all fetching/caching lives in the parent
- * (handleToggleTranslation). The original message (rendered by the
- * caller, above this) is never touched or replaced.
- */
-const TranslateAction = ({ translation, onToggle }) => {
-  const status = translation?.status;
-  const isShown = status === "shown";
-  const isLoading = status === "loading";
-
-  return (
-    <div style={{ marginTop: 4 }}>
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={isLoading}
-        aria-expanded={isShown}
-        aria-label={isShown ? "Hide translation" : "Translate message to English"}
-        style={{
-          background: "none",
-          border: "none",
-          padding: 0,
-          margin: 0,
-          color: "#93c5fd",
-          fontSize: 12,
-          cursor: isLoading ? "default" : "pointer",
-          textDecoration: "underline",
-          font: "inherit",
-        }}
-      >
-        {isLoading ? "Translating…" : isShown ? "Hide Translation" : "🌐 Translate"}
-      </button>
-
-      {status === "error" && (
-        <div style={{ marginTop: 2, fontSize: 12, color: "#f87171" }} role="alert">
-          Translation unavailable.
-        </div>
-      )}
-
-      {isShown && (
-        <div
-          style={{
-            marginTop: 4,
-            paddingTop: 4,
-            borderTop: "1px solid rgba(255,255,255,0.15)",
-            fontSize: 13,
-            color: "#fff",
-            whiteSpace: "pre-wrap",
-            overflowWrap: "anywhere",
-            wordBreak: "break-word",
-          }}
-          aria-label="English translation"
-        >
-          <div style={{ fontSize: 10, color: "#c7c9f5", marginBottom: 2 }}>🌐 English Translation</div>
-          {translation?.translatedText || "Translation unavailable."}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const UnifiedInbox = () => {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -178,60 +114,6 @@ const UnifiedInbox = () => {
     () => [...messages].sort((a, b) => getMessageTime(a) - getMessageTime(b)),
     [messages]
   );
-
-  // ─── Manual translation (customer messages only) ──────────────────────
-  // Translation is strictly user-initiated: nothing is fetched on render,
-  // on scroll, on pagination, or in the background — only when the agent
-  // clicks "Translate to English" on a specific message. Keyed by
-  // message._id so the in-session cache persists across conversation
-  // switches and prevents a second click from re-requesting the same
-  // message's translation.
-  //   translations[id]: { status: "loading"|"shown"|"hidden"|"error", translatedText, originalLanguage }
-  const [translations, setTranslations] = useState({});
-
-  const handleToggleTranslation = async (msg) => {
-    const messageId = msg._id;
-    const current = translations[messageId];
-
-    if (current?.status === "shown") {
-      setTranslations((prev) => ({ ...prev, [messageId]: { ...prev[messageId], status: "hidden" } }));
-      return;
-    }
-
-    if (current?.status === "hidden") {
-      setTranslations((prev) => ({ ...prev, [messageId]: { ...prev[messageId], status: "shown" } }));
-      return;
-    }
-
-    // Already translated & persisted server-side by a previous click (this
-    // session or an earlier one, by any agent) — the message itself already
-    // carries the result, so show it immediately without calling the API.
-    if (msg.originalLanguage) {
-      setTranslations((prev) => ({
-        ...prev,
-        [messageId]: { status: "shown", originalLanguage: msg.originalLanguage, translatedText: msg.translatedText },
-      }));
-      return;
-    }
-
-    // No cached result yet, or the previous attempt failed — fetch (or retry).
-    setTranslations((prev) => ({ ...prev, [messageId]: { status: "loading" } }));
-    try {
-      const res = await conversationService.translateMessage(activeConversation, { messageId });
-      const data = res.data?.data || {};
-      setTranslations((prev) => ({
-        ...prev,
-        [messageId]: {
-          status: "shown",
-          translatedText: data.translatedText,
-          originalLanguage: data.originalLanguage,
-        },
-      }));
-    } catch (err) {
-      console.error("Failed to translate message:", err);
-      setTranslations((prev) => ({ ...prev, [messageId]: { status: "error" } }));
-    }
-  };
 
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
@@ -698,15 +580,6 @@ const UnifiedInbox = () => {
                                         <AttachmentItem key={i} att={att} />
                                       ))}
                                     </div>
-                                  )}
-                                  {/* Manual translation — incoming customer messages only.
-                                      Never rendered for the agent's own outgoing messages;
-                                      translation only happens when this button is clicked. */}
-                                  {!isOutgoing && msg._id && (
-                                    <TranslateAction
-                                      translation={translations[msg._id]}
-                                      onToggle={() => handleToggleTranslation(msg)}
-                                    />
                                   )}
                                   <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, textAlign: "right" }}>
                                     {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}

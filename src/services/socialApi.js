@@ -57,8 +57,6 @@ export const conversationService = {
   getById: (id) => api.get(`/conversations/${id}`),
   getMessages: (id, params = {}) => api.get(`/conversations/${id}/messages`, { params }),
   sendReply: (id, data) => api.post(`/conversations/${id}/reply`, data),
-  translateMessage: (id, data) => api.post(`/conversations/${id}/translate`, data),
-  detectLanguage: (id, data) => api.post(`/conversations/${id}/detect-language`, data),
   addNote: (id, text) => api.post(`/conversations/${id}/notes`, { text }),
   updateStatus: (id, status) => api.patch(`/conversations/${id}/status`, { status }),
   assignUser: (id, userId) => api.patch(`/conversations/${id}/assign`, { userId }),
