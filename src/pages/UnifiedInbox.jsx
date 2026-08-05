@@ -98,6 +98,66 @@ const AttachmentItem = ({ att }) => {
   );
 };
 
+/**
+ * On-demand "Translate to English" action for a single incoming customer
+ * message. Purely presentational — all fetching/caching lives in the
+ * parent (handleToggleTranslation), so this never triggers a request
+ * itself; it only toggles what's already there. The original message text
+ * (rendered by the caller, above this) is never touched or replaced.
+ */
+const TranslateAction = ({ translation, onToggle }) => {
+  const status = translation?.status;
+  const isShown = status === "shown";
+  const isLoading = status === "loading";
+
+  return (
+    <div style={{ marginTop: 4 }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={isLoading}
+        aria-expanded={isShown}
+        aria-label={isShown ? "Hide translation" : "Translate message to English"}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          margin: 0,
+          color: "#93c5fd",
+          fontSize: 12,
+          cursor: isLoading ? "default" : "pointer",
+          textDecoration: "underline",
+          font: "inherit",
+        }}
+      >
+        {isLoading ? "Translating…" : isShown ? "Hide Translation" : "🌐 Translate to English"}
+      </button>
+
+      {status === "error" && (
+        <div style={{ marginTop: 2, fontSize: 12, color: "#f87171" }}>Translation unavailable.</div>
+      )}
+
+      {isShown && (
+        <div
+          style={{
+            marginTop: 4,
+            paddingTop: 4,
+            borderTop: "1px solid rgba(255,255,255,0.15)",
+            fontSize: 13,
+            color: "#fff",
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          <div style={{ fontSize: 10, color: "#c7c9f5", marginBottom: 2 }}>English Translation</div>
+          {translation?.translatedText || "Translation unavailable."}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const UnifiedInbox = () => {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -114,6 +174,89 @@ const UnifiedInbox = () => {
     () => [...messages].sort((a, b) => getMessageTime(a) - getMessageTime(b)),
     [messages]
   );
+
+  // ─── On-demand translation (customer messages only) ──────────────────────
+  // Keyed by message._id (globally unique) so both caches persist across
+  // conversation switches — a message is ever detected/translated at most
+  // once per session, never re-fetched just because the agent revisits a
+  // conversation or toggles Hide/Show.
+  //   detectedLanguages[id]: undefined = not checked yet, null = checked but
+  //     unknown/failed (never shown, never retried), "en"/"es"/... = detected.
+  //   translations[id]: { status: "loading"|"shown"|"hidden"|"error", translatedText, originalLanguage }
+  const [detectedLanguages, setDetectedLanguages] = useState({});
+  const [translations, setTranslations] = useState({});
+  const detectionInFlightRef = useRef(new Set());
+
+  // Lazily detect the language of newly-seen customer messages only — never
+  // for the agent's own messages, never re-detecting ones already cached
+  // above. This is what decides whether the "Translate" action shows at all
+  // (never shown for messages already in English), without ever calling the
+  // full translation endpoint just to make that decision.
+  useEffect(() => {
+    if (!activeConversation) return;
+
+    sortedMessages.forEach((m) => {
+      if (!m?._id || m.senderType === "agent") return;
+      if (detectedLanguages[m._id] !== undefined) return;
+      if (detectionInFlightRef.current.has(m._id)) return;
+
+      detectionInFlightRef.current.add(m._id);
+      conversationService
+        .detectLanguage(activeConversation, { messageId: m._id })
+        .then((res) => {
+          const language = res.data?.data?.language || "en";
+          setDetectedLanguages((prev) => (prev[m._id] !== undefined ? prev : { ...prev, [m._id]: language }));
+        })
+        .catch((err) => {
+          console.error("Failed to detect message language:", err);
+          // Marked as "checked, unknown" (null) rather than left undefined —
+          // this is what stops it from being retried on every subsequent
+          // message update; the action simply never appears for it rather
+          // than risking a crash or a wrong guess.
+          setDetectedLanguages((prev) => (prev[m._id] !== undefined ? prev : { ...prev, [m._id]: null }));
+        })
+        .finally(() => {
+          detectionInFlightRef.current.delete(m._id);
+        });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortedMessages, activeConversation]);
+
+  const handleToggleTranslation = async (messageId) => {
+    const current = translations[messageId];
+
+    if (current?.status === "shown") {
+      setTranslations((prev) => ({ ...prev, [messageId]: { ...prev[messageId], status: "hidden" } }));
+      return;
+    }
+
+    if (current?.status === "hidden") {
+      setTranslations((prev) => ({ ...prev, [messageId]: { ...prev[messageId], status: "shown" } }));
+      return;
+    }
+
+    // No cached result yet, or the previous attempt failed — fetch (or retry).
+    setTranslations((prev) => ({ ...prev, [messageId]: { status: "loading" } }));
+    try {
+      const res = await conversationService.translateMessage(activeConversation, {
+        messageId,
+        targetLanguage: "en",
+      });
+      const data = res.data?.data || {};
+      setTranslations((prev) => ({
+        ...prev,
+        [messageId]: {
+          status: "shown",
+          translatedText: data.translatedText,
+          originalLanguage: data.originalLanguage,
+        },
+      }));
+    } catch (err) {
+      console.error("Failed to translate message:", err);
+      setTranslations((prev) => ({ ...prev, [messageId]: { status: "error" } }));
+    }
+  };
+
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -579,6 +722,15 @@ const UnifiedInbox = () => {
                                         <AttachmentItem key={i} att={att} />
                                       ))}
                                     </div>
+                                  )}
+                                  {/* On-demand translation — incoming customer messages only, and
+                                      only once a non-English language has actually been detected
+                                      (never automatic, never shown for English text). */}
+                                  {!isOutgoing && msg._id && detectedLanguages[msg._id] && detectedLanguages[msg._id] !== "en" && (
+                                    <TranslateAction
+                                      translation={translations[msg._id]}
+                                      onToggle={() => handleToggleTranslation(msg._id)}
+                                    />
                                   )}
                                   <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, textAlign: "right" }}>
                                     {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}
