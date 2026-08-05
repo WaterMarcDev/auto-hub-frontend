@@ -99,49 +99,65 @@ const AttachmentItem = ({ att }) => {
 };
 
 /**
- * Automatically-displayed English translation for a single incoming
- * customer message, rendered directly below the original text — no click
- * required. Purely presentational: all fetching/caching happens in the
- * parent; this only renders whatever state it's given. The original
- * message (rendered by the caller, above this) is never touched.
+ * Manual "Translate to English" action for a single incoming customer
+ * message — translation only ever happens when the user clicks; never
+ * automatic, never on render, never on scroll/pagination. Purely
+ * presentational: all fetching/caching lives in the parent
+ * (handleToggleTranslation). The original message (rendered by the
+ * caller, above this) is never touched or replaced.
  */
-const TranslationBlock = ({ translation }) => {
-  if (!translation) return null;
-
-  if (translation.status === "loading") {
-    return (
-      <div style={{ marginTop: 4, fontSize: 12, color: "#9ca3af" }} aria-live="polite">
-        Translating…
-      </div>
-    );
-  }
-
-  if (translation.status === "error") {
-    return (
-      <div style={{ marginTop: 4, fontSize: 12, color: "#f87171" }} role="alert">
-        Translation unavailable.
-      </div>
-    );
-  }
-
-  if (!translation.originalLanguage || translation.originalLanguage === "en") return null;
+const TranslateAction = ({ translation, onToggle }) => {
+  const status = translation?.status;
+  const isShown = status === "shown";
+  const isLoading = status === "loading";
 
   return (
-    <div
-      style={{
-        marginTop: 4,
-        paddingTop: 4,
-        borderTop: "1px solid rgba(255,255,255,0.15)",
-        fontSize: 13,
-        color: "#fff",
-        whiteSpace: "pre-wrap",
-        overflowWrap: "anywhere",
-        wordBreak: "break-word",
-      }}
-      aria-label="English translation"
-    >
-      <div style={{ fontSize: 10, color: "#c7c9f5", marginBottom: 2 }}>🌐 English Translation</div>
-      {translation.translatedText || "Translation unavailable."}
+    <div style={{ marginTop: 4 }}>
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={isLoading}
+        aria-expanded={isShown}
+        aria-label={isShown ? "Hide translation" : "Translate message to English"}
+        style={{
+          background: "none",
+          border: "none",
+          padding: 0,
+          margin: 0,
+          color: "#93c5fd",
+          fontSize: 12,
+          cursor: isLoading ? "default" : "pointer",
+          textDecoration: "underline",
+          font: "inherit",
+        }}
+      >
+        {isLoading ? "Translating…" : isShown ? "Hide Translation" : "🌐 Translate"}
+      </button>
+
+      {status === "error" && (
+        <div style={{ marginTop: 2, fontSize: 12, color: "#f87171" }} role="alert">
+          Translation unavailable.
+        </div>
+      )}
+
+      {isShown && (
+        <div
+          style={{
+            marginTop: 4,
+            paddingTop: 4,
+            borderTop: "1px solid rgba(255,255,255,0.15)",
+            fontSize: 13,
+            color: "#fff",
+            whiteSpace: "pre-wrap",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+          aria-label="English translation"
+        >
+          <div style={{ fontSize: 10, color: "#c7c9f5", marginBottom: 2 }}>🌐 English Translation</div>
+          {translation?.translatedText || "Translation unavailable."}
+        </div>
+      )}
     </div>
   );
 };
@@ -163,62 +179,58 @@ const UnifiedInbox = () => {
     [messages]
   );
 
-  // ─── Automatic translation (customer messages only) ──────────────────────
-  // Every non-agent message with a detected non-English language gets its
-  // English translation fetched and displayed automatically below the
-  // original text — no click required. Keyed by message._id so the
-  // in-session cache persists across conversation switches.
-  //   translations[id]: { status: "loading"|"done"|"error", originalLanguage, translatedText }
-  // A message that already has originalLanguage/translatedText from the
-  // server (persisted the first time any agent translates it — see
-  // conversation.controller.js#translateMessage) is displayed straight from
-  // that data below and never sent to the API again.
+  // ─── Manual translation (customer messages only) ──────────────────────
+  // Translation is strictly user-initiated: nothing is fetched on render,
+  // on scroll, on pagination, or in the background — only when the agent
+  // clicks "Translate to English" on a specific message. Keyed by
+  // message._id so the in-session cache persists across conversation
+  // switches and prevents a second click from re-requesting the same
+  // message's translation.
+  //   translations[id]: { status: "loading"|"shown"|"hidden"|"error", translatedText, originalLanguage }
   const [translations, setTranslations] = useState({});
-  const translationInFlightRef = useRef(new Set());
 
-  useEffect(() => {
-    if (!activeConversation) return;
+  const handleToggleTranslation = async (msg) => {
+    const messageId = msg._id;
+    const current = translations[messageId];
 
-    sortedMessages.forEach((m) => {
-      if (!m?._id || m.senderType === "agent") return;
-      if (m.originalLanguage) return; // already translated & persisted server-side
-      if (translations[m._id]) return; // already fetched/fetching this session
-      if (translationInFlightRef.current.has(m._id)) return;
-
-      translationInFlightRef.current.add(m._id);
-      setTranslations((prev) => ({ ...prev, [m._id]: { status: "loading" } }));
-
-      conversationService
-        .translateMessage(activeConversation, { messageId: m._id })
-        .then((res) => {
-          const data = res.data?.data || {};
-          setTranslations((prev) => ({
-            ...prev,
-            [m._id]: {
-              status: "done",
-              originalLanguage: data.originalLanguage,
-              translatedText: data.translatedText,
-            },
-          }));
-        })
-        .catch((err) => {
-          console.error("Failed to translate message:", err);
-          setTranslations((prev) => ({ ...prev, [m._id]: { status: "error" } }));
-        })
-        .finally(() => {
-          translationInFlightRef.current.delete(m._id);
-        });
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortedMessages, activeConversation]);
-
-  // Prefer the server-persisted translation (already on the message once
-  // any agent has triggered it before) over the local in-session cache.
-  const getMessageTranslation = (msg) => {
-    if (msg.originalLanguage) {
-      return { status: "done", originalLanguage: msg.originalLanguage, translatedText: msg.translatedText };
+    if (current?.status === "shown") {
+      setTranslations((prev) => ({ ...prev, [messageId]: { ...prev[messageId], status: "hidden" } }));
+      return;
     }
-    return translations[msg._id];
+
+    if (current?.status === "hidden") {
+      setTranslations((prev) => ({ ...prev, [messageId]: { ...prev[messageId], status: "shown" } }));
+      return;
+    }
+
+    // Already translated & persisted server-side by a previous click (this
+    // session or an earlier one, by any agent) — the message itself already
+    // carries the result, so show it immediately without calling the API.
+    if (msg.originalLanguage) {
+      setTranslations((prev) => ({
+        ...prev,
+        [messageId]: { status: "shown", originalLanguage: msg.originalLanguage, translatedText: msg.translatedText },
+      }));
+      return;
+    }
+
+    // No cached result yet, or the previous attempt failed — fetch (or retry).
+    setTranslations((prev) => ({ ...prev, [messageId]: { status: "loading" } }));
+    try {
+      const res = await conversationService.translateMessage(activeConversation, { messageId });
+      const data = res.data?.data || {};
+      setTranslations((prev) => ({
+        ...prev,
+        [messageId]: {
+          status: "shown",
+          translatedText: data.translatedText,
+          originalLanguage: data.originalLanguage,
+        },
+      }));
+    } catch (err) {
+      console.error("Failed to translate message:", err);
+      setTranslations((prev) => ({ ...prev, [messageId]: { status: "error" } }));
+    }
   };
 
   const [replyText, setReplyText] = useState("");
@@ -687,11 +699,14 @@ const UnifiedInbox = () => {
                                       ))}
                                     </div>
                                   )}
-                                  {/* Automatic translation — incoming customer messages only;
-                                      displayed as soon as it's ready, no click required. Never
-                                      rendered for the agent's own outgoing messages. */}
+                                  {/* Manual translation — incoming customer messages only.
+                                      Never rendered for the agent's own outgoing messages;
+                                      translation only happens when this button is clicked. */}
                                   {!isOutgoing && msg._id && (
-                                    <TranslationBlock translation={getMessageTranslation(msg)} />
+                                    <TranslateAction
+                                      translation={translations[msg._id]}
+                                      onToggle={() => handleToggleTranslation(msg)}
+                                    />
                                   )}
                                   <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, textAlign: "right" }}>
                                     {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : ""}
