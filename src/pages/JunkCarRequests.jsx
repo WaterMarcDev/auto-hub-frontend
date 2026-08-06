@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Select, Button, Input } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { Card, Table, Select, Button, Input, Tag } from "antd";
+import { ArrowLeftOutlined, FileTextOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import AddJunkCarRequest from "./AddJunkCarRequest";
 import { Modal } from "antd";
@@ -16,6 +16,13 @@ const JunkCarRequests = () => {
     const [statusFilter, setStatusFilter] = useState("");             // by shiva
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);  // by shiva
+    const [conditionModalOpen, setConditionModalOpen] = useState(false);
+    const [conditionModalRecord, setConditionModalRecord] = useState(null);
+
+    const openConditionModal = (record) => {
+        setConditionModalRecord(record);
+        setConditionModalOpen(true);
+    };
 
     const fetchJunkCars = async () => {
         try {
@@ -195,7 +202,20 @@ const JunkCarRequests = () => {
         },
         {
             title: "Condition",
-            render: (_, record) => record.condition || "none",
+            width: 110,
+            render: (_, record) => {
+                const hasCondition = record.condition && record.condition !== "none";
+                return (
+                    <Tag
+                        icon={<FileTextOutlined />}
+                        color={hasCondition ? "blue" : "default"}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => openConditionModal(record)}
+                    >
+                        View
+                    </Tag>
+                );
+            },
         },
 
         {
@@ -560,6 +580,45 @@ const JunkCarRequests = () => {
                     }}
                 />
             </Modal>  // end here
+
+            {/* Condition Details popup */}
+            <Modal
+                title="Condition Details"
+                open={conditionModalOpen}
+                onCancel={() => setConditionModalOpen(false)}
+                footer={
+                    <Button onClick={() => setConditionModalOpen(false)}>
+                        Close
+                    </Button>
+                }
+                width={480}
+                centered
+                destroyOnHidden
+            >
+                {conditionModalRecord && (
+                    <div>
+                        <div style={{ marginBottom: 12, color: "#888", fontSize: 13 }}>
+                            {conditionModalRecord.make} {conditionModalRecord.model}{" "}
+                            {conditionModalRecord.year ? `(${conditionModalRecord.year})` : ""}
+                            {" — "}
+                            {conditionModalRecord.name}
+                        </div>
+                        <div
+                            style={{
+                                maxHeight: "50vh",
+                                overflowY: "auto",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            {conditionModalRecord.condition && conditionModalRecord.condition !== "none"
+                                ? conditionModalRecord.condition
+                                : "No condition details provided."}
+                        </div>
+                    </div>
+                )}
+            </Modal>
 
         </div>
     );

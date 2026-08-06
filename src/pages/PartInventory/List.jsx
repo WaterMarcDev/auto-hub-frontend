@@ -196,14 +196,14 @@ const PartInventoryList = () => {
     //     );
     //   },
     // },
-    // // email is displayed together with seller info above; keep a compact column for finalPrice next
-    // {
-    //   title: "Final Price",
-    //   dataIndex: ["price", "finalPrice"],
-    //   key: "finalPrice",
-    //   minWidth: 100,
-    //   render: (price) => `$${price || "0"}`,
-    // },
+    {
+      title: "Price",
+      dataIndex: ["price", "finalPrice"],
+      key: "finalPrice",
+      minWidth: 100,
+      render: (price) =>
+        price != null ? `$${Number(price).toFixed(2)}` : "N/A",
+    },
     // {
     //   title: "Documents",
     //   key: "documents",
