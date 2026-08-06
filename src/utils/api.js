@@ -135,6 +135,7 @@ export const inventoryAPI = {
   getByVIN: (vin) => api.get(`/inventory/vin/${vin}`),
   getPartsMaster: (params = {}) => api.get(`/inventory/parts`, { params }),
   getAll: (params = {}) => api.get("/inventory", { params }),
+  updatePrice: (id, price) => api.patch(`/inventory/${id}/price`, { price }),
 };
 
 export const assetTagsAPI = {
