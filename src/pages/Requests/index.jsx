@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Card, Table } from "antd";
+import { Card, Table, Tag, Modal } from "antd";
 import { Button } from "antd";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, FileTextOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { Input, Select, Row, Col } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
@@ -27,6 +27,20 @@ const Requests = () => {
     const [filteredRequests, setFilteredRequests] = useState([]);
     const [noResults, setNoResults] = useState(false);
     const [junkCars, setJunkCars] = useState([]);
+
+    // Message popup — copies the exact same behaviour/state pattern/UI as
+    // the Junk Car Request "Condition" column popup
+    // (src/pages/JunkCarRequests.jsx#openConditionModal / "Condition
+    // Details" Modal), replicated here since that implementation is
+    // embedded inline there rather than a shared component.
+    // JunkCarRequests.jsx itself is read-only and was not modified.
+    const [messageModalOpen, setMessageModalOpen] = useState(false);
+    const [messageModalRecord, setMessageModalRecord] = useState(null);
+
+    const openMessageModal = (record) => {
+        setMessageModalRecord(record);
+        setMessageModalOpen(true);
+    };
 
     // Filter requests based on search and status by shiva
     const handleSearch = () => {
@@ -245,9 +259,20 @@ const Requests = () => {
         },
         {
             title: "Message",
-            dataIndex: "message",
-            width: 200,
-            render: (text) => text || "—",
+            width: 110,
+            render: (_, record) => {
+                const hasMessage = record.message && record.message.trim();
+                return (
+                    <Tag
+                        icon={<FileTextOutlined />}
+                        color={hasMessage ? "blue" : "default"}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => openMessageModal(record)}
+                    >
+                        View
+                    </Tag>
+                );
+            },
         },
         {
             title: "Remark",
@@ -500,6 +525,47 @@ const Requests = () => {
 
                 />
             </Card>
+
+            {/* Message Details popup — visually and behaviourally identical
+                to the Junk Car Request "Condition Details" popup. */}
+            <Modal
+                title="Message Details"
+                open={messageModalOpen}
+                onCancel={() => setMessageModalOpen(false)}
+                footer={
+                    <Button onClick={() => setMessageModalOpen(false)}>
+                        Close
+                    </Button>
+                }
+                width={480}
+                centered
+                destroyOnHidden
+            >
+                {messageModalRecord && (
+                    <div>
+                        <div style={{ marginBottom: 12, color: "#888", fontSize: 13 }}>
+                            {messageModalRecord.make} {messageModalRecord.model}{" "}
+                            {messageModalRecord.year ? `(${messageModalRecord.year})` : ""}
+                            {" — "}
+                            {messageModalRecord.name}
+                            {messageModalRecord.partName ? ` — Part: ${messageModalRecord.partName}` : ""}
+                        </div>
+                        <div
+                            style={{
+                                maxHeight: "50vh",
+                                overflowY: "auto",
+                                whiteSpace: "pre-wrap",
+                                wordBreak: "break-word",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            {messageModalRecord.message && messageModalRecord.message.trim()
+                                ? messageModalRecord.message
+                                : "No message provided."}
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 
