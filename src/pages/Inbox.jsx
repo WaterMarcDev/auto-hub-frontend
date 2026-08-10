@@ -526,6 +526,8 @@ export default function Inbox() {
     const [isForwarding, setIsForwarding] = useState(false);
     const [attachments, setAttachments] = useState([]);
     const [forwardAttachments, setForwardAttachments] = useState([]);
+    const [ccText, setCcText] = useState("");
+    const [showCc, setShowCc] = useState(false);
 
     const selectedEmailRef = useRef(null);
     const threadEndRef = useRef(null);
@@ -622,6 +624,17 @@ export default function Inbox() {
     const sendReply = async () => {
         if (!replyText.trim()) { message.warning("Write something first"); return; }
         if (isSending) return;
+
+        // Cc is optional — split on comma/semicolon and validate client-side
+        // before sending, mirroring the forward modal's email check.
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        const ccList = ccText
+            .split(/[,;]/)
+            .map((v) => v.trim())
+            .filter(Boolean);
+        const invalidCc = ccList.find((addr) => !emailRegex.test(addr));
+        if (invalidCc) { message.warning(`Invalid Cc email: ${invalidCc}`); return; }
+
         try {
             setIsSending(true);
             const to = selectedEmail.sender_email.match(/<(.+)>/)?.[1] || selectedEmail.sender_email;
@@ -629,6 +642,7 @@ export default function Inbox() {
             formData.append("to", to);
             formData.append("subject", selectedEmail.subject);
             formData.append("message", replyText);
+            ccList.forEach((addr) => formData.append("cc", addr));
             attachments.forEach((f) => formData.append("attachments", f));
             const res = await fetch(`${API_URL}/email/reply`, { method: "POST", body: formData });
             const data = await res.json().catch(() => ({}));
@@ -640,6 +654,8 @@ export default function Inbox() {
             message.success("Reply sent");
             setReplyText("");
             setAttachments([]);
+            setCcText("");
+            setShowCc(false);
             const [emailsRes, threadRes] = await Promise.all([
                 fetch(`${API_URL}/email/all`),
                 fetch(`${API_URL}/email/thread/${selectedEmail._id}`),
@@ -941,6 +957,36 @@ export default function Inbox() {
                             background: "#0a1628",
                             padding: "16px 20px 20px",
                         }}>
+                            {/* Cc field */}
+                            <div style={{ marginBottom: "10px" }}>
+                                {showCc ? (
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span style={{ fontSize: "12px", color: "#64748b", flexShrink: 0 }}>Cc:</span>
+                                        <input
+                                            type="text"
+                                            value={ccText}
+                                            onChange={(e) => setCcText(e.target.value)}
+                                            placeholder="cc-recipient@example.com, another@example.com"
+                                            style={{
+                                                flex: 1, background: "#1e293b", border: "1px solid #334155",
+                                                borderRadius: "6px", padding: "6px 10px", color: "#e2e8f0",
+                                                fontSize: "12px", outline: "none",
+                                            }}
+                                        />
+                                        <span
+                                            onClick={() => { setShowCc(false); setCcText(""); }}
+                                            title="Remove Cc"
+                                            style={{ cursor: "pointer", color: "#ef4444", fontWeight: 700, fontSize: "12px", flexShrink: 0 }}
+                                        >✕</span>
+                                    </div>
+                                ) : (
+                                    <span
+                                        onClick={() => setShowCc(true)}
+                                        style={{ cursor: "pointer", color: "#64748b", fontSize: "12px" }}
+                                    >+ Add Cc</span>
+                                )}
+                            </div>
+
                             {/* Attachment button + chips */}
                             <div style={{ marginBottom: "10px" }}>
                                 <input
