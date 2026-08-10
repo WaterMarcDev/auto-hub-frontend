@@ -5,8 +5,27 @@ import { useNavigate } from "react-router-dom";
 import AddJunkCarRequest from "./AddJunkCarRequest";
 import { Modal } from "antd";
 import api from "../utils/api";    // by shiva
+import SourceBadge from "../components/SourceBadge";
 
 const { Option } = Select;
+
+// Mirrors the selectable list on the Part Request page (see
+// src/pages/Requests/index.jsx), plus "Manual" which — unlike Part Request's
+// "Online"/"Offline" — has always been a selectable value here, not just a
+// creation-time default. "eBay"/"Google Business" now included to match the
+// backend's shared BOT_SOURCES whitelist.
+const JUNK_CAR_SOURCE_OPTIONS = [
+    { value: "Manual" },
+    { value: "Website" },
+    { value: "Instagram" },
+    { value: "Facebook" },
+    { value: "WhatsApp" },
+    { value: "TikTok" },
+    { value: "eBay" },
+    { value: "Google Business" },
+    { value: "SMS" },
+    { value: "Other" },
+];
 
 const JunkCarRequests = () => {
     const [junkCars, setJunkCars] = useState([]);
@@ -280,25 +299,17 @@ const JunkCarRequests = () => {
         {
             title: "Source",
             render: (_, record) => (
-                <Select
-                    placeholder="Source"
+                <SourceBadge
                     value={record.source || "Manual"}
-                    onChange={(value) =>
-                        updateSource(record._id, value)
+                    options={JUNK_CAR_SOURCE_OPTIONS}
+                    onChange={
+                        canEditSource
+                            ? (value) => updateSource(record._id, value)
+                            : undefined
                     }
-                    style={{ width: 130 }}
                     disabled={!canEditSource}
-                >
-                    <Option value="Manual">Manual</Option>
-                    <Option value="Website">Website</Option>
-                    <Option value="Instagram">Instagram</Option>
-                    <Option value="Facebook">Facebook</Option>
-                    <Option value="WhatsApp">WhatsApp</Option>
-                    <Option value="TikTok">TikTok</Option>
-                    <Option value="SMS">SMS</Option>
-                    <Option value="Other">Other</Option>
-
-                </Select>
+                    readOnlyReason="Only admins/managers can change source"
+                />
             ),
         },
 
@@ -377,9 +388,14 @@ const JunkCarRequests = () => {
     ];
 
     return (
-        <div style={{ paddingTop: "20px", paddingBottom: "90px" }}>
+        <div className="requests-page" style={{ paddingTop: "20px", paddingBottom: "90px" }}>
             <Card
-                title="Junk Car Requests"
+                title={
+                    <>
+                        Junk Car Requests
+                        <span className="request-count-pill">{junkCars.length}</span>
+                    </>
+                }
                 extra={
                     <div style={{ display: "flex", gap: "10px" }}>
                         <Button
@@ -399,9 +415,9 @@ const JunkCarRequests = () => {
                 }
             >
                 {/* HandledByFilter by shiva */}
-                <div 
-                    style={{ 
-                        marginBottom: 20,
+                <div
+                    className="requests-toolbar"
+                    style={{
                         display: "flex",
                         flexWrap: "wrap",
                         gap: "12px",
@@ -446,6 +462,8 @@ const JunkCarRequests = () => {
                         <Option value="Facebook">Facebook</Option>
                         <Option value="WhatsApp">WhatsApp</Option>
                         <Option value="TikTok">TikTok</Option>
+                        <Option value="eBay">eBay</Option>
+                        <Option value="Google Business">Google Business</Option>
                         <Option value="SMS">SMS</Option>
                         <Option value="Other">Other</Option>
                     </Select>

@@ -5,10 +5,26 @@ import { ArrowLeftOutlined, FileTextOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { Input, Select, Row, Col } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
+import SourceBadge from "../../components/SourceBadge";
 // import { Tabs } from "antd";
 // import axios from "axios";
 
 const { Option } = Select;
+
+// "Online"/"Offline" are assigned automatically at creation (organic website
+// submission vs staff-entered) and were never selectable here — preserved
+// from the previous <Select> implementation's commented-out Options.
+const PART_REQUEST_SOURCE_OPTIONS = [
+    { value: "Website" },
+    { value: "Instagram" },
+    { value: "Facebook" },
+    { value: "WhatsApp" },
+    { value: "TikTok" },
+    { value: "eBay" },
+    { value: "Google Business" },
+    { value: "SMS" },
+    { value: "Other" },
+];
 
 
 const Requests = () => {
@@ -309,26 +325,17 @@ const Requests = () => {
         {
             title: "Source",
             render: (_, record) => (
-                <Select
+                <SourceBadge
                     value={record.source || "Online"}
-                    onChange={(value) =>
-                        updateSource(record._id, value)
+                    options={PART_REQUEST_SOURCE_OPTIONS}
+                    onChange={
+                        canEditSource
+                            ? (value) => updateSource(record._id, value)
+                            : undefined
                     }
-                    style={{ width: 150 }}
                     disabled={!canEditSource}
-                >
-                    {/* <Option value="Online">Online</Option>
-                    <Option value="Offline">Offline</Option> */}
-                    <Option value="Website">Website</Option>
-                    <Option value="Instagram">Instagram</Option>
-                    <Option value="Facebook">Facebook</Option>
-                    <Option value="WhatsApp">WhatsApp</Option>
-                    <Option value="TikTok">TikTok</Option>
-                    <Option value="eBay">eBay</Option>
-                    <Option value="Google Business">Google Business</Option>
-                    <Option value="SMS">SMS</Option>
-                    <Option value="Other">Other</Option>
-                </Select>
+                    readOnlyReason="Only admins/managers can change source"
+                />
             ),
         },
         {
@@ -368,7 +375,12 @@ const Requests = () => {
                 paddingBottom: "90px"
             }}>
             <Card
-                title="Part Requests"
+                title={
+                    <>
+                        Part Requests
+                        <span className="request-count-pill">{requests.length}</span>
+                    </>
+                }
                 extra={
                     <div style={{ display: "flex", gap: "10px" }}>
                         <Button
@@ -390,7 +402,8 @@ const Requests = () => {
 
                 {/* Add Search + Filter Here -> by shiva*/}
 
-                <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+                <div className="requests-toolbar">
+                <Row gutter={[12, 12]}>
 
                     <Col xs={24} sm={12} md={8}>
                         <Input
@@ -475,6 +488,7 @@ const Requests = () => {
                     </Col>
                     {/* end here */}
                 </Row>
+                </div>
 
                 {noResults && (
                     <div style={{

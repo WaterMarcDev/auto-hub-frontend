@@ -12,7 +12,8 @@ const JunkCarRequest = (props) => {
                 },
                 body: JSON.stringify({
                     ...values,
-                    year: values.year ? parseInt(values.year) : null
+                    year: values.year ? parseInt(values.year) : null,
+                    source: "Manual",
                 }),
                 
             });

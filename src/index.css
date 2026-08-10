@@ -123,7 +123,7 @@ body {
 }
 /* end here */
 
-/* Add Inventory Table Header Alignment by shiva*/ 
+/* Add Inventory Table Header Alignment by shiva*/
 .ant-table-thead > tr > th {
   text-align: center !important;
   vertical-align: middle !important;
@@ -138,3 +138,40 @@ body {
   text-align: center;
 }
 /* end here */
+
+/* Premium polish — shared by Part Request & Junk Car Request pages only
+   (scoped under .requests-page, does not affect other tables/cards). */
+.requests-page .ant-card-head-title {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.requests-page .request-count-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(82, 91, 229, 0.18);
+  color: #A5AEFF;
+  font-size: 12px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.requests-page .requests-toolbar {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.requests-page .ant-table-thead > tr > th {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: 0.85;
+}
+/* end premium polish */

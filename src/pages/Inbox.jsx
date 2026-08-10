@@ -961,7 +961,13 @@ export default function Inbox() {
                             <div style={{ marginBottom: "10px" }}>
                                 {showCc ? (
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        <span style={{ fontSize: "12px", color: "#64748b", flexShrink: 0 }}>Cc:</span>
+                                        <span style={{
+                                            fontSize: "12px", color: "#93c5fd", flexShrink: 0,
+                                            display: "inline-flex", alignItems: "center", gap: "4px",
+                                            padding: "4px 8px", borderRadius: "6px",
+                                            background: "#132340", border: "1px solid #1e3a6e",
+                                            fontWeight: 600,
+                                        }}>✉ Cc</span>
                                         <input
                                             type="text"
                                             value={ccText}
@@ -982,8 +988,13 @@ export default function Inbox() {
                                 ) : (
                                     <span
                                         onClick={() => setShowCc(true)}
-                                        style={{ cursor: "pointer", color: "#64748b", fontSize: "12px" }}
-                                    >+ Add Cc</span>
+                                        className="inbox-pill-action"
+                                        style={{
+                                            cursor: "pointer", color: "#64748b", fontSize: "13px",
+                                            display: "inline-flex", alignItems: "center", gap: "6px",
+                                            padding: "4px 8px", borderRadius: "6px",
+                                        }}
+                                    >✉ <span>Add Cc</span></span>
                                 )}
                             </div>
 
@@ -1065,11 +1076,11 @@ export default function Inbox() {
                                 }}>
                                     <label
                                         htmlFor="replyAttachmentInput"
+                                        className="inbox-pill-action"
                                         style={{
                                             display: "inline-flex", alignItems: "center", gap: "6px",
                                             color: "#64748b", cursor: "pointer", fontSize: "13px",
                                             padding: "4px 8px", borderRadius: "6px",
-                                            transition: "color 0.15s",
                                         }}
                                         title="Attach files"
                                     >
