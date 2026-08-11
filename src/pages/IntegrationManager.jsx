@@ -20,7 +20,7 @@ const { Title } = Typography;
  *   4. Add its metadata to PLATFORM_META in PlatformCard.jsx
  */
 const SUPPORTED_PLATFORMS = [
-  { key: "tiktok", comingSoon: true },
+  { key: "tiktok" },
   { key: "googleAds", comingSoon: true },
   { key: "amazon", comingSoon: true },
   { key: "ebay" },
