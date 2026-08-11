@@ -174,4 +174,68 @@ body {
   font-weight: 600;
   opacity: 0.85;
 }
+
+.requests-page .ant-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.requests-page .ant-table-tbody > tr > td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.requests-page .ant-table-tbody > tr:hover > td {
+  background: rgba(82, 91, 229, 0.06) !important;
+}
+
+.requests-page .ant-btn {
+  border-radius: 8px;
+  transition: filter 0.15s, transform 0.05s;
+}
+
+.requests-page .ant-btn:hover {
+  filter: brightness(1.08);
+}
+
+.requests-page .ant-btn:active {
+  transform: translateY(1px);
+}
+
+.requests-page .ant-input:focus,
+.requests-page .ant-input-focused,
+.requests-page .ant-select-focused .ant-select-selector,
+.requests-page .ant-input-affix-wrapper-focused {
+  border-color: #7C83EF !important;
+  box-shadow: 0 0 0 3px rgba(82, 91, 229, 0.15) !important;
+}
+
+.requests-page .ant-pagination-item-active {
+  border-color: #7C83EF;
+}
+
+.requests-page .ant-pagination-item-active a {
+  color: #A5AEFF;
+}
+
+.requests-page .requests-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 0;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+}
+
+.requests-page .requests-empty-state .anticon {
+  font-size: 22px;
+  opacity: 0.6;
+}
+
+@media (max-width: 576px) {
+  .requests-page .requests-toolbar {
+    padding: 12px;
+  }
+}
 /* end premium polish */

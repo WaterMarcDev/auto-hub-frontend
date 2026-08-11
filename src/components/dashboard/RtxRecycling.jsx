@@ -66,7 +66,7 @@ const RtxRecycling = ({ rtxSlides }) => {
           <b>Mobile : </b>+1 609 758 1919
         </p>
         <p>
-          <b>Email : </b>Hello@autohub.express
+          <b>Email : </b>hello@autohub.express
         </p>
       </div>
     </div>

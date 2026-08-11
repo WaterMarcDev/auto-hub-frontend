@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Drawer, App, Modal, Input } from "antd";
+import {
+    InboxOutlined,
+    MailOutlined,
+    CloseOutlined,
+    SendOutlined,
+} from "@ant-design/icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -676,14 +682,21 @@ export default function Inbox() {
             <style>{`
                 @keyframes spin { 100% { transform: rotate(360deg); } }
                 .inbox-row:hover { background: #1e2d45 !important; }
+                .inbox-pill-action:hover { background: rgba(255,255,255,0.06); color: #cbd5e1 !important; }
+                .inbox-filter-btn:hover { filter: brightness(1.15); }
+                .inbox-send-btn:hover:not(:disabled) { filter: brightness(1.08); }
+                .inbox-forward-btn:hover { border-color: #475569 !important; color: #cbd5e1 !important; }
+                .inbox-composer-box:focus-within { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+                .inbox-cc-input:focus { border-color: #3b82f6 !important; }
+                .inbox-remove-btn:hover { opacity: 0.75; }
             `}</style>
 
             <div style={{ padding: "16px", color: "#cbd5e1", paddingBottom: "80px", minHeight: "100vh" }}>
 
                 {/* ── Header ── */}
                 <div style={{ display: "flex", alignItems: "center", marginBottom: "20px", gap: "10px", flexWrap: "wrap" }}>
-                    <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#f1f5f9" }}>
-                        📩 Inbox
+                    <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#f1f5f9", display: "flex", alignItems: "center", gap: "8px" }}>
+                        <InboxOutlined style={{ color: "#3b82f6" }} /> Inbox
                     </h2>
                     {unreadCount > 0 && (
                         <span style={{
@@ -699,6 +712,7 @@ export default function Inbox() {
                         {["all", "unread", "read", "replied"].map((type) => (
                             <button
                                 key={type}
+                                className="inbox-filter-btn"
                                 onClick={() => { setFilter(type); setCurrentPage(1); }}
                                 style={{
                                     padding: "4px 12px", borderRadius: "6px", border: "none",
@@ -756,7 +770,7 @@ export default function Inbox() {
                 </div>
 
                 {/* ── Email list ── */}
-                <div style={{ borderRadius: "10px", overflow: "hidden", border: "1px solid #1e293b" }}>
+                <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #1e293b", boxShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>
                     {loading ? (
                         <div style={{
                             display: "flex", flexDirection: "column", alignItems: "center",
@@ -777,7 +791,7 @@ export default function Inbox() {
                         </div>
                     ) : emails.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "60px 20px", color: "#64748b" }}>
-                            <div style={{ fontSize: "32px", marginBottom: "12px" }}>📭</div>
+                            <InboxOutlined style={{ fontSize: "32px", marginBottom: "12px", display: "block", color: "#334155" }} />
                             <div style={{ fontSize: "15px" }}>No emails yet</div>
                         </div>
                     ) : (
@@ -967,23 +981,25 @@ export default function Inbox() {
                                             padding: "4px 8px", borderRadius: "6px",
                                             background: "#132340", border: "1px solid #1e3a6e",
                                             fontWeight: 600,
-                                        }}>✉ Cc</span>
+                                        }}><MailOutlined style={{ fontSize: "11px" }} /> Cc</span>
                                         <input
                                             type="text"
+                                            className="inbox-cc-input"
                                             value={ccText}
                                             onChange={(e) => setCcText(e.target.value)}
                                             placeholder="cc-recipient@example.com, another@example.com"
                                             style={{
                                                 flex: 1, background: "#1e293b", border: "1px solid #334155",
                                                 borderRadius: "6px", padding: "6px 10px", color: "#e2e8f0",
-                                                fontSize: "12px", outline: "none",
+                                                fontSize: "12px", outline: "none", transition: "border-color 0.15s",
                                             }}
                                         />
                                         <span
+                                            className="inbox-remove-btn"
                                             onClick={() => { setShowCc(false); setCcText(""); }}
                                             title="Remove Cc"
-                                            style={{ cursor: "pointer", color: "#ef4444", fontWeight: 700, fontSize: "12px", flexShrink: 0 }}
-                                        >✕</span>
+                                            style={{ cursor: "pointer", color: "#ef4444", fontSize: "12px", flexShrink: 0, transition: "opacity 0.15s" }}
+                                        ><CloseOutlined /></span>
                                     </div>
                                 ) : (
                                     <span
@@ -992,9 +1008,9 @@ export default function Inbox() {
                                         style={{
                                             cursor: "pointer", color: "#64748b", fontSize: "13px",
                                             display: "inline-flex", alignItems: "center", gap: "6px",
-                                            padding: "4px 8px", borderRadius: "6px",
+                                            padding: "4px 8px", borderRadius: "6px", transition: "background 0.15s, color 0.15s",
                                         }}
-                                    >✉ <span>Add Cc</span></span>
+                                    ><MailOutlined /> <span>Add Cc</span></span>
                                 )}
                             </div>
 
@@ -1026,9 +1042,10 @@ export default function Inbox() {
                                                     📄 {file.name}
                                                 </span>
                                                 <span
+                                                    className="inbox-remove-btn"
                                                     onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
-                                                    style={{ cursor: "pointer", color: "#ef4444", fontWeight: 700, flexShrink: 0 }}
-                                                >✕</span>
+                                                    style={{ cursor: "pointer", color: "#ef4444", flexShrink: 0, transition: "opacity 0.15s" }}
+                                                ><CloseOutlined /></span>
                                             </div>
                                         ))}
                                     </div>
@@ -1036,11 +1053,12 @@ export default function Inbox() {
                             </div>
 
                             {/* Textarea */}
-                            <div style={{
+                            <div className="inbox-composer-box" style={{
                                 background: "#1e293b",
                                 border: "1px solid #334155",
                                 borderRadius: "12px",
                                 overflow: "hidden",
+                                transition: "border-color 0.15s, box-shadow 0.15s",
                             }}>
                                 <textarea
                                     value={replyText}
@@ -1089,17 +1107,19 @@ export default function Inbox() {
 
                                     <div style={{ display: "flex", gap: "8px" }}>
                                         <button
+                                            className="inbox-forward-btn"
                                             onClick={() => setForwardModalOpen(true)}
                                             style={{
                                                 background: "transparent", border: "1px solid #334155",
                                                 padding: "6px 14px", borderRadius: "7px",
                                                 color: "#94a3b8", cursor: "pointer", fontSize: "13px",
-                                                fontWeight: 500,
+                                                fontWeight: 500, transition: "border-color 0.15s, color 0.15s",
                                             }}
                                         >
                                             Forward
                                         </button>
                                         <button
+                                            className="inbox-send-btn"
                                             disabled={isSending}
                                             onClick={sendReply}
                                             style={{
@@ -1109,16 +1129,18 @@ export default function Inbox() {
                                                 fontSize: "13px", fontWeight: 600,
                                                 opacity: isSending ? 0.7 : 1,
                                                 display: "flex", alignItems: "center", gap: "6px",
-                                                transition: "background 0.15s",
+                                                transition: "background 0.15s, filter 0.15s",
                                             }}
                                         >
-                                            {isSending && (
+                                            {isSending ? (
                                                 <span style={{
                                                     width: "12px", height: "12px",
                                                     border: "2px solid #fff", borderTop: "2px solid transparent",
                                                     borderRadius: "50%", display: "inline-block",
                                                     animation: "spin 0.6s linear infinite",
                                                 }} />
+                                            ) : (
+                                                <SendOutlined style={{ fontSize: "12px" }} />
                                             )}
                                             {isSending ? "Sending…" : "Send"}
                                         </button>
@@ -1190,8 +1212,9 @@ export default function Inbox() {
                                     color: "#e2e8f0", fontSize: "12px", maxWidth: "200px",
                                 }}>
                                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>📄 {file.name}</span>
-                                    <span onClick={() => setForwardAttachments((prev) => prev.filter((_, idx) => idx !== i))}
-                                        style={{ cursor: "pointer", color: "#ef4444", fontWeight: 700, flexShrink: 0 }}>✕</span>
+                                    <span className="inbox-remove-btn"
+                                        onClick={() => setForwardAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                                        style={{ cursor: "pointer", color: "#ef4444", flexShrink: 0, transition: "opacity 0.15s" }}><CloseOutlined /></span>
                                 </div>
                             ))}
                         </div>

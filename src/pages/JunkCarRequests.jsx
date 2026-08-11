@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, Table, Select, Button, Input, Tag } from "antd";
-import { ArrowLeftOutlined, FileTextOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import AddJunkCarRequest from "./AddJunkCarRequest";
 import { Modal } from "antd";
@@ -575,6 +575,18 @@ const JunkCarRequests = () => {
                     }}
                     bordered
                     scroll={{ x: "max-content" }}
+                    locale={{
+                        emptyText: (
+                            <div className="requests-empty-state">
+                                <InboxOutlined />
+                                <span>
+                                    {handledByFilter || sourceFilter || statusFilter
+                                        ? "No matching requests found"
+                                        : "No junk car requests yet"}
+                                </span>
+                            </div>
+                        )
+                    }}
                 />
             </Card>
 

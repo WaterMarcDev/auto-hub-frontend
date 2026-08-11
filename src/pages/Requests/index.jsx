@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, Table, Tag, Modal } from "antd";
 import { Button } from "antd";
-import { ArrowLeftOutlined, FileTextOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { Input, Select, Row, Col } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
@@ -534,7 +534,12 @@ const Requests = () => {
                     bordered
                     scroll={{ x: "max-content" }}
                     locale={{
-                        emptyText: searched ? "Item not found" : "No data"
+                        emptyText: (
+                            <div className="requests-empty-state">
+                                <InboxOutlined />
+                                <span>{searched ? "No matching requests found" : "No requests yet"}</span>
+                            </div>
+                        )
                     }}
 
                 />
