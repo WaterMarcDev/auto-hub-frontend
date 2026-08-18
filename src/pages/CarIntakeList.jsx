@@ -91,6 +91,13 @@ const CarIntakeList = () => {
         (pagination.current - 1) * pagination.pageSize + index + 1,
     },
     {
+      title: "Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      minWidth: 110,
+      render: (date) => (date ? new Date(date).toLocaleDateString() : "N/A"),
+    },
+    {
       title: "VIN No.",
       dataIndex: "vin",
       key: "vin",
