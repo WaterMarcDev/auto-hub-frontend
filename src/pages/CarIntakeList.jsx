@@ -28,6 +28,24 @@ import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
 import PageContentWrapper from "../components/PageContentWrapper";
 
+// Statuses at which the intake wizard is already fully complete — payment
+// done, and (for the ones after it) parts already moved into real Inventory
+// records / later scrap lifecycle stages. Editing via the intake wizard no
+// longer applies once a car reaches any of these; use "View" instead. Kept
+// as one list so this button's condition can't drift from
+// src/pages/CarIntake.jsx's STATUS_TO_STEP, which maps this same set to the
+// wizard's final step for any admin path that still reaches it directly.
+const NON_EDITABLE_STATUSES = [
+  "payment-done",
+  "part-added-to-inventory",
+  "car-added-to-inventory",
+  "ready-to-scrap",
+  "elements-scraped",
+  "scraped",
+  "sold",
+  "towed",
+];
+
 const CarIntakeList = () => {
   const [loading, setLoading] = useState(false);
   const [carIntakes, setCarIntakes] = useState([]);
@@ -303,16 +321,20 @@ const CarIntakeList = () => {
             View
           </Button>
           <Button
-            type={record?.status === "payment-done" ? "default" : "primary"}
+            type={
+              NON_EDITABLE_STATUSES.includes(record?.status)
+                ? "default"
+                : "primary"
+            }
             size="small"
             icon={<EditOutlined />}
             onClick={() => navigate(`/car-intake/${record._id}`)}
             title={
-              record?.status === "payment-done"
-                ? "Cannot edit — payment completed"
+              NON_EDITABLE_STATUSES.includes(record?.status)
+                ? "Cannot edit — intake already completed"
                 : "Edit"
             }
-            disabled={record?.status === "payment-done"}
+            disabled={NON_EDITABLE_STATUSES.includes(record?.status)}
           />
 
           {/* Ready To Scrap Button by shiva */}

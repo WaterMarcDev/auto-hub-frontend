@@ -31,6 +31,20 @@ const STATUS_TO_STEP = {
   "price-uploaded": 5,
   "kyc-uploaded": 6,
   "payment-done": 7,
+  // Statuses reached AFTER this wizard is fully complete (car already moved
+  // to inventory / later scrap lifecycle stages — see the status enum in
+  // models/carInTake.model.js). None of these have a wizard step of their
+  // own, so they must still resolve to the final step (7) instead of
+  // falling through to the `|| 1` default in getStepForStatus(), which
+  // previously reset already-completed cars back to Step 1 (Car Details)
+  // whenever they were reopened via Edit.
+  "part-added-to-inventory": 7,
+  "car-added-to-inventory": 7,
+  "ready-to-scrap": 7,
+  "elements-scraped": 7,
+  scraped: 7,
+  sold: 7,
+  towed: 7,
   // fallback
   intake: 1,
 };
