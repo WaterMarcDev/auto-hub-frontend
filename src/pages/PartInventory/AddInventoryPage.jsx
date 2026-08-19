@@ -237,9 +237,63 @@ const AddInventoryPage = () => {
         inventoryId: inventoryParts[k]._id || null,
     }));
 
+    // Independent select-all state per column: each is derived only from its
+    // own field across all parts, never from the other column.
+    const extractedSelectAllState = useMemo(() => {
+        const keys = Object.keys(inventoryParts);
+        if (!keys.length) return { checked: false, indeterminate: false };
+        const checkedCount = keys.filter((k) => inventoryParts[k]?.extracted).length;
+        return {
+            checked: checkedCount === keys.length,
+            indeterminate: checkedCount > 0 && checkedCount < keys.length,
+        };
+    }, [inventoryParts]);
+
+    const cleanedSelectAllState = useMemo(() => {
+        const keys = Object.keys(inventoryParts);
+        if (!keys.length) return { checked: false, indeterminate: false };
+        const checkedCount = keys.filter((k) => inventoryParts[k]?.cleaned).length;
+        return {
+            checked: checkedCount === keys.length,
+            indeterminate: checkedCount > 0 && checkedCount < keys.length,
+        };
+    }, [inventoryParts]);
+
+    const handleExtractedSelectAll = (e) => {
+        const checked = e.target.checked;
+        setInventoryParts((prev) => {
+            const next = {};
+            for (const k of Object.keys(prev)) {
+                next[k] = { ...prev[k], extracted: checked };
+            }
+            return next;
+        });
+    };
+
+    const handleCleanedSelectAll = (e) => {
+        const checked = e.target.checked;
+        setInventoryParts((prev) => {
+            const next = {};
+            for (const k of Object.keys(prev)) {
+                next[k] = { ...prev[k], cleaned: checked };
+            }
+            return next;
+        });
+    };
+
     const columns = [
         {
-            title: "Extracted",
+            title: (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <span>Extracted</span>
+                    <Checkbox
+                        checked={extractedSelectAllState.checked}
+                        indeterminate={extractedSelectAllState.indeterminate}
+                        onChange={handleExtractedSelectAll}
+                        title="Select all Extracted"
+                    />
+                </div>
+            ),
             width: 90,
             align: "center",
             render: (_, r) => (
@@ -268,7 +322,17 @@ const AddInventoryPage = () => {
 
         },
         {
-            title: "Cleaned",
+            title: (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <span>Cleaned</span>
+                    <Checkbox
+                        checked={cleanedSelectAllState.checked}
+                        indeterminate={cleanedSelectAllState.indeterminate}
+                        onChange={handleCleanedSelectAll}
+                        title="Select all Cleaned"
+                    />
+                </div>
+            ),
             width: 90,
             align: "center",
             render: (_, r) => (
