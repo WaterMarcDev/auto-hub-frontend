@@ -55,6 +55,13 @@ const AddInventoryPage = () => {
     const [tagCache, setTagCache] = useState({});
     const searchDebounceRef = useRef(null);
 
+    // All originally-selected part keys and the set already present in
+    // active Inventory at load time — kept outside component state since
+    // they're only needed as read-only reference data when computing
+    // completion after submission, not for rendering.
+    const selectedKeysAtLoadRef = useRef([]);
+    const existingPartNamesAtLoadRef = useRef(new Set());
+
     useEffect(() => {
         if (!state?.record) {
             message.error("Invalid inventory data");
@@ -63,11 +70,28 @@ const AddInventoryPage = () => {
         }
 
         const record = state.record;
-        const parts = {};
 
-        Object.keys(record.partDetails.parts || {}).forEach((key) => {
-            const p = record.partDetails.parts[key];
-            if (p?.selected) {
+        (async () => {
+            let existingPartNames = new Set();
+            try {
+                const res = await inventoryAPI.getByVIN(record.vin);
+                const items = res.data?.inventoryItems || res.inventoryItems || [];
+                existingPartNames = new Set(items.map((i) => i.partName));
+            } catch (err) {
+                console.error("Failed to load existing inventory for VIN", err);
+            }
+
+            const allSelectedKeys = Object.keys(record.partDetails.parts || {}).filter(
+                (key) => record.partDetails.parts[key]?.selected
+            );
+
+            const parts = {};
+            allSelectedKeys.forEach((key) => {
+                // Already in active Inventory for this VIN — nothing left to do
+                // for this part, so it isn't shown as something to add again.
+                if (existingPartNames.has(key)) return;
+
+                const p = record.partDetails.parts[key];
                 parts[key] = {
                     extracted: !!p.extracted,
                     cleaned: !!p.cleaned,
@@ -78,11 +102,14 @@ const AddInventoryPage = () => {
                     quality: p.quality || "",
                     label: key,
                 };
-            }
-        });
+            });
 
-        setInventoryRecord(record);
-        setInventoryParts(parts);
+            selectedKeysAtLoadRef.current = allSelectedKeys;
+            existingPartNamesAtLoadRef.current = existingPartNames;
+
+            setInventoryRecord(record);
+            setInventoryParts(parts);
+        })();
     }, [state, navigate]);
 
     const handleInventoryChange = (key, field, value) => {
@@ -183,6 +210,7 @@ const AddInventoryPage = () => {
 
         setLoading(true);
         try {
+            const createdKeys = new Set();
             for (const p of partsToCreate) {
                 const res = await inventoryAPI.create({
                     partName: p.label,
@@ -201,6 +229,7 @@ const AddInventoryPage = () => {
                     image: partImages[p.key] || null,
                 });
                 const inventoryId = res.data?.data?._id || res.data?._id || res._id;
+                createdKeys.add(p.key);
 
                 const selectedTagId = p.assetTagId;
                 if (selectedTagId) {
@@ -208,12 +237,30 @@ const AddInventoryPage = () => {
                 }
             }
 
-            await carIntakeAPI.updateStatus(
-                inventoryRecord._id,
-                "part-added-to-inventory"
+            // Only mark the car complete once every originally-selected part is
+            // accounted for (already existed at load, or was just created here).
+            // A partial submission must leave the car visible in Add to
+            // Inventory so the remaining missing parts can still be added.
+            const nowCovered = new Set([
+                ...existingPartNamesAtLoadRef.current,
+                ...createdKeys,
+            ]);
+            const stillMissing = selectedKeysAtLoadRef.current.filter(
+                (k) => !nowCovered.has(k)
             );
 
-            message.success("Inventory added successfully");
+            if (stillMissing.length === 0) {
+                await carIntakeAPI.updateStatus(
+                    inventoryRecord._id,
+                    "part-added-to-inventory"
+                );
+                message.success("Inventory added successfully");
+            } else {
+                message.success(
+                    `Added ${createdKeys.size} part(s) — ${stillMissing.length} part(s) still missing`
+                );
+            }
+
             navigate(-1);
         } catch {
             message.error("Failed to add inventory");

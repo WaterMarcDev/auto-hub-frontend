@@ -135,6 +135,7 @@ const PartInventoryAdd = () => {
         limit,
         status: "payment-done",
         search,
+        forInventory: true,
       });
 
       const data = res.data || res;
