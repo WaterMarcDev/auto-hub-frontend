@@ -442,24 +442,25 @@ const ReadyToScrapList = () => {
         if (search && search.trim()) {
           params.search = search.trim();
         }
-        // include status filter if any (single value)
+        // include status filter if any (single value). This list only ever
+        // shows Ready-to-Scrap cars, so default to that status at the query
+        // layer (not via a post-fetch filter) so `pagination.total`/`pages`
+        // match what's actually rendered.
         const statusToSend = statusArg !== undefined ? statusArg : statusFilter;
-        if (statusToSend) {
-          params.status = statusToSend;
-        }
+        params.status = statusToSend || "ready-to-scrap";
         // debug
         // console.debug("fetchCarIntakes params:", params);
         const res = await carIntakeAPI.getAll(params);
         const data = res.data || res;
 
-
-        // FILTER ONLY READY-TO-SCRAP CARS by shiva
+        // Defensive: this list must only ever show Ready-to-Scrap cars, even
+        // if a caller passes a different status. The default path above
+        // already requests status=ready-to-scrap from the backend, so this
+        // is a no-op there and only guards the explicit-status-filter case.
         const filteredCars = (data.carIntakes || data).filter(
           (item) => item.status === "ready-to-scrap"
         );
         setCarIntakes(filteredCars);
-        // setCarIntakes(data.carIntakes || data);   // original line
-        // end here
 
         
         // Update pagination info if available from backend

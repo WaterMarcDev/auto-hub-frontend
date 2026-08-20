@@ -435,20 +435,18 @@ const CarIntakeList = () => {
         const statusToSend = statusArg !== undefined ? statusArg : statusFilter;
         if (statusToSend) {
           params.status = statusToSend;
+        } else {
+          // Cars moved to Ready-to-Scrap belong on that dedicated list, not
+          // here. Exclude them at the query layer (not after paginating)
+          // so `pagination.total`/`pages` match what's actually rendered.
+          params.excludeStatus = "ready-to-scrap";
         }
         // debug
         // console.debug("fetchCarIntakes params:", params);
         const res = await carIntakeAPI.getAll(params);
         const data = res.data || res;
 
-
-        // filter frontend display by shiva
-        const filteredCars = (data.carIntakes || data).filter(
-          (item) => item.status != "ready-to-scrap"
-        );
-        setCarIntakes(filteredCars);
-        // setCarIntakes(data.carIntakes || data);   // original line
-        // end here
+        setCarIntakes(data.carIntakes || data);
 
 
         // Update pagination info if available from backend
