@@ -251,7 +251,7 @@ const Dashboard2 = () => {
               // Added by shiva
               {
                 id: "card-4",
-                title: "Requests",
+                title: "Lead Requests",
                 color: "#f97316",
                 onClick: () => {},
                 visible: isAdmin || isManager || isStaff,

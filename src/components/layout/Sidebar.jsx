@@ -17,6 +17,7 @@ import {
   MessageOutlined,
   ApiOutlined,
   ShoppingCartOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
@@ -79,7 +80,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       items.push({
         key: "requests",
         icon: <InboxOutlined />,
-        label: "Requests",
+        label: "Lead Requests",
         children: [
           {
             key: "/part-requests",
@@ -201,6 +202,11 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
               key: "/integrations",
               icon: <ApiOutlined />,
               label: <Link to="/integrations">Platform Connections</Link>,
+            },
+            {
+              key: "/ebay-catalog-sync",
+              icon: <SyncOutlined />,
+              label: <Link to="/ebay-catalog-sync">eBay Catalog Sync</Link>,
             },
           ],
         });
@@ -613,6 +619,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/unified-inbox": "integrations",
       "/orders": "integrations",
       "/integrations": "integrations",
+      "/ebay-catalog-sync": "integrations",
     };
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {

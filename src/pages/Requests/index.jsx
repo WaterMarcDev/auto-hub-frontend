@@ -324,19 +324,27 @@ const Requests = () => {
         },
         {
             title: "Source",
-            render: (_, record) => (
-                <SourceBadge
-                    value={record.source || "Online"}
-                    options={PART_REQUEST_SOURCE_OPTIONS}
-                    onChange={
-                        canEditSource
-                            ? (value) => updateSource(record._id, value)
-                            : undefined
-                    }
-                    disabled={!canEditSource}
-                    readOnlyReason="Only admins/managers can change source"
-                />
-            ),
+            render: (_, record) => {
+                const sourceValue = record.source || "Online";
+                return (
+                    <SourceBadge
+                        value={sourceValue}
+                        // "Online" is the auto-assigned value for a genuine
+                        // website form submission (see comment above) — only
+                        // its DISPLAYED text changes here, never the stored
+                        // value/API contract/filter behavior.
+                        displayLabel={sourceValue === "Online" ? "Website" : undefined}
+                        options={PART_REQUEST_SOURCE_OPTIONS}
+                        onChange={
+                            canEditSource
+                                ? (value) => updateSource(record._id, value)
+                                : undefined
+                        }
+                        disabled={!canEditSource}
+                        readOnlyReason="Only admins/managers can change source"
+                    />
+                );
+            },
         },
         {
             title: "Created By",
@@ -472,7 +480,7 @@ const Requests = () => {
                             size="large"
                             style={{ width: "100%" }}
                             options={[
-                                { value: "Online", label: "Online" },
+                                { value: "Online", label: "Website" },
                                 { value: "Offline", label: "Offline" },
                                 { value: "Website", label: "Website" },
                                 { value: "Instagram", label: "Instagram" },

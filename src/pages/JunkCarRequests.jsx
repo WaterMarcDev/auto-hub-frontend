@@ -298,19 +298,28 @@ const JunkCarRequests = () => {
         },
         {
             title: "Source",
-            render: (_, record) => (
-                <SourceBadge
-                    value={record.source || "Manual"}
-                    options={JUNK_CAR_SOURCE_OPTIONS}
-                    onChange={
-                        canEditSource
-                            ? (value) => updateSource(record._id, value)
-                            : undefined
-                    }
-                    disabled={!canEditSource}
-                    readOnlyReason="Only admins/managers can change source"
-                />
-            ),
+            render: (_, record) => {
+                const sourceValue = record.source || "Manual";
+                return (
+                    <SourceBadge
+                        value={sourceValue}
+                        // Junk Car has no "Online" value (unlike Part Request) —
+                        // "Website" is its equivalent "came from our public
+                        // website" indicator, so that's the one whose DISPLAYED
+                        // text changes here. The stored value/API contract/
+                        // filter behavior are untouched.
+                        displayLabel={sourceValue === "Website" ? "Website" : undefined}
+                        options={JUNK_CAR_SOURCE_OPTIONS}
+                        onChange={
+                            canEditSource
+                                ? (value) => updateSource(record._id, value)
+                                : undefined
+                        }
+                        disabled={!canEditSource}
+                        readOnlyReason="Only admins/managers can change source"
+                    />
+                );
+            },
         },
 
         {
@@ -332,21 +341,38 @@ const JunkCarRequests = () => {
             title: "Handled By",
             render: (_, record) => {
 
-                const assignedStaff =
-                    record.assignedTo &&
-                        typeof record.assignedTo === "object" &&
-                        record.assignedTo.first_name
-                        ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
-                        : "Unassigned";
+                // ─── TEMPORARY DEFAULT ──────────────────────────────────
+                // Current requirement: default "Handled By" display to
+                // "Vijay Kumar" for now, regardless of actual assignment.
+                //
+                // ORIGINAL ACCOUNT-BASED "HANDLED BY" LOGIC IS PRESERVED
+                // BELOW, COMMENTED OUT — NOT DELETED. Re-enable it (restore
+                // `assignedStaff` and the Select's `placeholder`/
+                // `defaultValue` below) when Completed requests need to show
+                // the handler according to the user's account again.
+                //
+                // const assignedStaff =
+                //     record.assignedTo &&
+                //         typeof record.assignedTo === "object" &&
+                //         record.assignedTo.first_name
+                //         ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
+                //         : "Unassigned";
+                const assignedStaff = "Vijay Kumar";
 
+                // The underlying assignment mechanism (assignStaff / the
+                // Select's onChange / staffUsers options) is left fully
+                // intact and functional — only the displayed placeholder/
+                // defaultValue is temporarily overridden, so real staff
+                // assignment still works and persists exactly as before.
                 return (
                     <Select
                         defaultValue={
-                            record.assignedTo &&
-                                typeof record.assignedTo === "object" &&
-                                record.assignedTo.first_name
-                                ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
-                                : undefined
+                            // record.assignedTo &&
+                            //     typeof record.assignedTo === "object" &&
+                            //     record.assignedTo.first_name
+                            //     ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
+                            //     : undefined
+                            undefined
                         }
                         placeholder={assignedStaff}
                         onChange={(value) =>

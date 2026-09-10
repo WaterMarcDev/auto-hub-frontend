@@ -35,7 +35,7 @@ const SOURCE_STYLES = {
 
 const FALLBACK_STYLE = SOURCE_STYLES.Other;
 
-function Chip({ value, styleFor, size, interactive, active }) {
+function Chip({ value, label, styleFor, size, interactive, active }) {
     const { icon: Icon, color, bg, border } = styleFor(value);
 
     return (
@@ -60,7 +60,7 @@ function Chip({ value, styleFor, size, interactive, active }) {
             }}
         >
             <Icon style={{ fontSize: size === "sm" ? 12 : 13 }} />
-            {value || "Unknown"}
+            {label || value || "Unknown"}
         </span>
     );
 }
@@ -70,8 +70,16 @@ function Chip({ value, styleFor, size, interactive, active }) {
  * colored chip (never a "Select ▼" control). When `onChange` is provided the
  * chip becomes a click target that opens a small popover grid of selectable
  * source pills; without `onChange` it renders as a static, read-only badge.
+ *
+ * `displayLabel` (optional): overrides only the VISIBLE TEXT of the resting
+ * chip, while `value` still drives the icon/color lookup and stays what a
+ * caller filters/compares against. Used e.g. to show "Website of Part
+ * Request" for a record whose real, unchanged `source` value is "Online" —
+ * the underlying data/API contract is untouched, only the presentation.
+ * Does not affect the selectable options in the popover, which still show
+ * their own short canonical names.
  */
-export default function SourceBadge({ value, options, onChange, disabled, readOnlyReason }) {
+export default function SourceBadge({ value, displayLabel, options, onChange, disabled, readOnlyReason }) {
     const [open, setOpen] = useState(false);
 
     const styleFor = (v) => SOURCE_STYLES[v] || FALLBACK_STYLE;
@@ -80,7 +88,7 @@ export default function SourceBadge({ value, options, onChange, disabled, readOn
 
     const trigger = (
         <span title={!interactive && readOnlyReason ? readOnlyReason : undefined}>
-            <Chip value={value} styleFor={styleFor} interactive={interactive} />
+            <Chip value={value} label={displayLabel} styleFor={styleFor} interactive={interactive} />
         </span>
     );
 
