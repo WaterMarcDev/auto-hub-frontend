@@ -15,16 +15,16 @@ const { Option } = Select;
 // creation-time default. "eBay"/"Google Business" now included to match the
 // backend's shared BOT_SOURCES whitelist.
 const JUNK_CAR_SOURCE_OPTIONS = [
-    { value: "Manual" },
-    { value: "Website" },
-    { value: "Instagram" },
-    { value: "Facebook" },
-    { value: "WhatsApp" },
-    { value: "TikTok" },
-    { value: "eBay" },
-    { value: "Google Business" },
-    { value: "SMS" },
-    { value: "Other" },
+    { value: "manual" },
+    { value: "website" },
+    { value: "instagram" },
+    { value: "facebook" },
+    { value: "whatsApp" },
+    { value: "tiktok" },
+    { value: "ebay" },
+    { value: "google business" },
+    { value: "sms" },
+    { value: "other" },
 ];
 
 const JunkCarRequests = () => {
@@ -299,7 +299,7 @@ const JunkCarRequests = () => {
         {
             title: "Source",
             render: (_, record) => {
-                const sourceValue = record.source || "Manual";
+                const sourceValue = record.source || "manual";
                 return (
                     <SourceBadge
                         value={sourceValue}
@@ -308,7 +308,7 @@ const JunkCarRequests = () => {
                         // website" indicator, so that's the one whose DISPLAYED
                         // text changes here. The stored value/API contract/
                         // filter behavior are untouched.
-                        displayLabel={sourceValue === "Website" ? "Website" : undefined}
+                        displayLabel={sourceValue === "website" ? "website" : undefined}
                         options={JUNK_CAR_SOURCE_OPTIONS}
                         onChange={
                             canEditSource
@@ -482,16 +482,16 @@ const JunkCarRequests = () => {
                             setSourceFilter(value || "")
                         }
                     >
-                        <Option value="Manual">Manual</Option>
-                        <Option value="Website">Website</Option>
-                        <Option value="Instagram">Instagram</Option>
-                        <Option value="Facebook">Facebook</Option>
-                        <Option value="WhatsApp">WhatsApp</Option>
-                        <Option value="TikTok">TikTok</Option>
-                        <Option value="eBay">eBay</Option>
-                        <Option value="Google Business">Google Business</Option>
-                        <Option value="SMS">SMS</Option>
-                        <Option value="Other">Other</Option>
+                        <Option value="manual">Manual</Option>
+                        <Option value="website">Website</Option>
+                        <Option value="instagram">Instagram</Option>
+                        <Option value="facebook">Facebook</Option>
+                        <Option value="whatsApp">WhatsApp</Option>
+                        <Option value="tiktok">TikTok</Option>
+                        <Option value="ebay">eBay</Option>
+                        <Option value="google business">Google Business</Option>
+                        <Option value="sms">SMS</Option>
+                        <Option value="other">Other</Option>
                     </Select>
 
                     {/* Search by Status : added by shiva*/}

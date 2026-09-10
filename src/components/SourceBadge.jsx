@@ -82,7 +82,28 @@ function Chip({ value, label, styleFor, size, interactive, active }) {
 export default function SourceBadge({ value, displayLabel, options, onChange, disabled, readOnlyReason }) {
     const [open, setOpen] = useState(false);
 
-    const styleFor = (v) => SOURCE_STYLES[v] || FALLBACK_STYLE;
+    const styleFor = (v) => {
+        if (!v) return FALLBACK_STYLE;
+
+        const normalized = v.toString().trim().toLowerCase();
+
+        const sourceKeyMap = {
+            online: "Online",
+            website: "Website",
+            offline: "Offline",
+            manual: "Manual",
+            instagram: "Instagram",
+            facebook: "Facebook",
+            whatsapp: "WhatsApp",
+            tiktok: "TikTok",
+            ebay: "eBay",
+            "google business": "Google Business",
+            sms: "SMS",
+            other: "Other",
+        };
+
+        return SOURCE_STYLES[sourceKeyMap[normalized]] || FALLBACK_STYLE;
+    };
 
     const interactive = Boolean(onChange) && !disabled;
 
