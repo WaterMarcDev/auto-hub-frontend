@@ -15,7 +15,7 @@ const { Option } = Select;
 // creation-time default. "eBay"/"Google Business" now included to match the
 // backend's shared BOT_SOURCES whitelist.
 const JUNK_CAR_SOURCE_OPTIONS = [
-    { value: "manual" },
+    // { value: "manual" },
     { value: "website" },
     { value: "instagram" },
     { value: "facebook" },
@@ -299,7 +299,7 @@ const JunkCarRequests = () => {
         {
             title: "Source",
             render: (_, record) => {
-                const sourceValue = record.source || "manual";
+                const sourceValue = record.source?.toString().trim().toLowerCase() || "other";
                 return (
                     <SourceBadge
                         value={sourceValue}
@@ -308,7 +308,7 @@ const JunkCarRequests = () => {
                         // website" indicator, so that's the one whose DISPLAYED
                         // text changes here. The stored value/API contract/
                         // filter behavior are untouched.
-                        displayLabel={sourceValue === "website" ? "website" : undefined}
+                        displayLabel={sourceValue === "website" ? "Website" : undefined}
                         options={JUNK_CAR_SOURCE_OPTIONS}
                         onChange={
                             canEditSource
@@ -482,7 +482,7 @@ const JunkCarRequests = () => {
                             setSourceFilter(value || "")
                         }
                     >
-                        <Option value="manual">Manual</Option>
+                        {/* <Option value="manual">Manual</Option> */}
                         <Option value="website">Website</Option>
                         <Option value="instagram">Instagram</Option>
                         <Option value="facebook">Facebook</Option>
