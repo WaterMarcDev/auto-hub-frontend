@@ -360,22 +360,20 @@ const CarIntake = () => {
           } else if (step === 6) {
             // Payment component uses form fields named `paidTo` and `finalPrice`.
             // Normalize to backend expected keys: `paymentMethod` and `paidAmount`.
-            // Compute tax data locally and include taxRate so backend computes/stores tax
-            const _gross =
+            // Car Intake vehicle purchase: NO tax. The amount paid is the actual
+            // gross vehicle purchase amount (Final Price). Towing Fee, if any, is
+            // a separate acquisition cost handled on the documents.
+            const _purchaseAmount =
               stepData.finalPrice !== undefined && stepData.finalPrice !== ""
                 ? parseFloat(stepData.finalPrice)
                 : stepData.paymentAmount !== undefined
                   ? parseFloat(stepData.paymentAmount)
                   : stepData.paidAmount || 0;
-            const TAX_RATE = 0.06625;
-            const _taxAmount = Number(Math.abs(_gross * TAX_RATE).toFixed(2));
 
             payload = {
               paymentMethod: stepData.paidTo || stepData.paymentMethod,
-              paidAmount: _gross,
+              paidAmount: _purchaseAmount,
               paymentDescription: stepData.paymentDescription,
-              taxRate: TAX_RATE,
-              taxAmount: _taxAmount,
             };
           }
 
@@ -1419,7 +1417,10 @@ const CarIntake = () => {
         kycDescription: formData.kycDescription,
       };
 
-      // Include payment data explicitly for the inventory submit flow
+      // Include payment data explicitly for the inventory submit flow.
+      // Car Intake vehicle purchase: NO tax. The amount paid is the actual
+      // gross vehicle purchase amount (Final Price); no taxRate/taxAmount is
+      // sent so the backend does not generate tax for this acquisition flow.
       submitData.paymentMethod = formData.paidTo || submitData.paymentMethod;
       submitData.paidAmount =
         formData.finalPrice !== undefined && formData.finalPrice !== ""
@@ -1427,14 +1428,6 @@ const CarIntake = () => {
           : formData.paymentAmount !== undefined
             ? parseFloat(formData.paymentAmount)
             : formData.paidAmount;
-
-      // Include tax info so backend can persist transaction tax fields
-      const SUBMIT_GROSS = submitData.paidAmount || 0;
-      const SUBMIT_TAX_RATE = 0.06625;
-      submitData.taxRate = SUBMIT_TAX_RATE;
-      submitData.taxAmount = Number(
-        Math.abs(SUBMIT_GROSS * SUBMIT_TAX_RATE).toFixed(2)
-      );
 
       // Ensure backend receives status indicating payment step completed
       if (STEP_STATUS_MAP[6]) submitData.status = STEP_STATUS_MAP[6];

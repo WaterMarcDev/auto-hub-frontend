@@ -330,26 +330,32 @@ const CarIntakeDetails = () => {
   const renderTransaction = () => {
     if (!transaction) return <div className="p-3"></div>;
 
-    // Helpers / fallbacks for tax values
+    // Car Intake vehicle purchase: NO tax. The transaction amount is the
+    // actual gross vehicle purchase amount (carIntake.price.finalPrice); no
+    // tax is applied or deducted for this acquisition flow.
     const rawAmount = Number(transaction?.amount) || 0;
-    const rate =
-      transaction && typeof transaction.taxRate === "number"
-        ? Number(transaction.taxRate)
-        : undefined;
-    const defaultRate = 0.06625; // 6.625% fallback
-    const usedRate = rate != null ? rate : defaultRate;
-    const taxAmt =
-      transaction && typeof transaction.taxAmount === "number"
-        ? Number(transaction.taxAmount)
-        : Math.round((Math.abs(rawAmount) * usedRate + Number.EPSILON) * 100) /
-        100;
 
-    const netAmt =
-      transaction && typeof transaction.netAmount === "number"
-        ? Number(transaction.netAmount)
-        : transaction?.type === "debit"
-          ? Math.round((rawAmount - taxAmt + Number.EPSILON) * 100) / 100
-          : Math.round((rawAmount + taxAmt + Number.EPSILON) * 100) / 100;
+    // -----------------------------------------------------------------------
+    // PRESERVED (no longer used): previous tax-derived helpers kept for
+    // recovery.
+    // const rate =
+    //   transaction && typeof transaction.taxRate === "number"
+    //     ? Number(transaction.taxRate)
+    //     : undefined;
+    // const defaultRate = 0.06625; // 6.625% fallback
+    // const usedRate = rate != null ? rate : defaultRate;
+    // const taxAmt =
+    //   transaction && typeof transaction.taxAmount === "number"
+    //     ? Number(transaction.taxAmount)
+    //     : Math.round((Math.abs(rawAmount) * usedRate + Number.EPSILON) * 100) / 100;
+    //
+    // const netAmt =
+    //   transaction && typeof transaction.netAmount === "number"
+    //     ? Number(transaction.netAmount)
+    //     : transaction?.type === "debit"
+    //       ? Math.round((rawAmount - taxAmt + Number.EPSILON) * 100) / 100
+    //       : Math.round((rawAmount + taxAmt + Number.EPSILON) * 100) / 100;
+    // -----------------------------------------------------------------------
 
     const fmt = (v) => `$${(Number(v) || 0).toFixed(2)}`;
 
@@ -386,12 +392,15 @@ const CarIntakeDetails = () => {
           </Col>
         </Row>
 
+        {/*
+          PRESERVED (no longer rendered): previous tax summary row that
+          displayed "Tax Rate", "Tax Amount" and "Net Amount". Car Intake
+          vehicle purchase has NO tax, so this must not be shown.
+
         <Row gutter={16} style={{ marginTop: 12 }}>
           <Col xs={24} sm={12} md={8}>
             <div style={{ color: "#e5e7eb" }}>Tax Rate</div>
-            <div>
-              {rate != null ? `${(usedRate * 100).toFixed(3)}%` : "6.625%"}
-            </div>
+            <div>{rate != null ? `${(usedRate * 100).toFixed(3)}%` : "6.625%"}</div>
           </Col>
           <Col xs={24} sm={12} md={8}>
             <div style={{ color: "#e5e7eb" }}>Tax Amount</div>
@@ -401,6 +410,22 @@ const CarIntakeDetails = () => {
             <div style={{ color: "#e5e7eb" }}>Net Amount</div>
             <div style={{ fontWeight: 600 }}>{fmt(netAmt)}</div>
           </Col>
+        </Row>
+        */}
+
+        <Row gutter={16} style={{ marginTop: 12 }}>
+          <Col xs={24} sm={12} md={8}>
+            <div style={{ color: "#e5e7eb" }}>Vehicle Purchase Amount</div>
+            <div style={{ fontWeight: 600 }}>{fmt(rawAmount)}</div>
+          </Col>
+          {(car?.price?.towingFee > 0 || Number(transaction?.towingFee) > 0) && (
+            <Col xs={24} sm={12} md={8}>
+              <div style={{ color: "#e5e7eb" }}>Towing Fee</div>
+              <div style={{ fontWeight: 600 }}>
+                {fmt(car?.price?.towingFee)}
+              </div>
+            </Col>
+          )}
         </Row>
 
         {transaction?.description && (

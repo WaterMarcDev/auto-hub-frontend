@@ -18,7 +18,12 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const TAX_RATE = 0.06625; // 6.625%
+// PRESERVED (no longer used): Car Intake vehicle purchasing has NO tax.
+// The 6.625% rate was previously used to back-calculate a gross amount from
+// the Final Price treated as a net amount. It must no longer participate in
+// the Car Intake vehicle purchase calculation (Final Price IS the gross
+// vehicle purchase amount). Kept here for recovery only.
+// const TAX_RATE = 0.06625; // 6.625%
 
 const CarPrice = ({
   formData,
@@ -91,23 +96,34 @@ const CarPrice = ({
     updateFormData,
   ]);
 
-  // Calculate tax: finalPrice is what seller receives (net amount)
-  // We need to calculate gross amount = net / (1 - tax_rate)
-  const netAmount = React.useMemo(() => {
+  // Car Intake vehicle purchase: Final Price IS the actual gross vehicle
+  // purchase amount. There is NO 6.625% tax calculation and NO tax deduction
+  // from Final Price for this flow.
+  const finalPriceAmount = React.useMemo(() => {
     const fp = parseFloat(formData.finalPrice) || 0;
     return Number(fp.toFixed(2));
   }, [formData.finalPrice]);
 
-  const grossAmount = React.useMemo(() => {
-    // gross = net / (1 - tax_rate)
-    const gross = netAmount / (1 - TAX_RATE);
-    return Number(gross.toFixed(2));
-  }, [netAmount]);
-
-  const taxAmount = React.useMemo(() => {
-    const tax = grossAmount - netAmount;
-    return Number(tax.toFixed(2));
-  }, [grossAmount, netAmount]);
+  // -----------------------------------------------------------------------
+  // PRESERVED (no longer used): previous net/gross/tax derivation, kept for
+  // recovery. It treated finalPrice as NET and back-calculated:
+  //   grossAmount = netAmount / (1 - TAX_RATE)
+  //   taxAmount   = grossAmount - netAmount
+  // const netAmount = React.useMemo(() => {
+  //   const fp = parseFloat(formData.finalPrice) || 0;
+  //   return Number(fp.toFixed(2));
+  // }, [formData.finalPrice]);
+  //
+  // const grossAmount = React.useMemo(() => {
+  //   const gross = netAmount / (1 - TAX_RATE);
+  //   return Number(gross.toFixed(2));
+  // }, [netAmount]);
+  //
+  // const taxAmount = React.useMemo(() => {
+  //   const tax = grossAmount - netAmount;
+  //   return Number(tax.toFixed(2));
+  // }, [grossAmount, netAmount]);
+  // -----------------------------------------------------------------------
 
   return (
     <div>
@@ -393,14 +409,15 @@ const CarPrice = ({
               name="finalPrice"
               label={
                 <Text style={{ color: "white" }}>
-                  Final Price (Amount Seller Receives)
+                  Final Price (Actual Vehicle Purchase Amount)
                 </Text>
               }
               rules={[{ required: true, message: "Final Price is required" }]}
               extra={
                 <Text style={{ color: "#9ca3af", fontSize: "12px" }}>
-                  This is the net amount the seller will receive after tax
-                  deduction
+                  This is the actual gross vehicle purchase amount paid to the
+                  seller. No tax is deducted. Towing Fee (if any) is added as a
+                  separate acquisition cost and does not change this amount.
                 </Text>
               }
             >
@@ -421,7 +438,52 @@ const CarPrice = ({
             </Form.Item>
           </Col>
           <Col span={12}>
-            {/* Tax breakdown card */}
+            {/*
+              PRESERVED (no longer rendered): previous tax breakdown card that
+              displayed "Gross Amount", "Tax (6.625%)" and "Net to Seller".
+              This was the old 6.625% net-to-seller logic that must not apply
+              to the Car Intake vehicle purchase flow.
+
+            <div style={{ marginTop: 30 }}>
+              <Card
+                size="small"
+                style={{
+                  backgroundColor: "#1f2937",
+                  borderColor: "#6b7280",
+                }}
+                bodyStyle={{ padding: "12px" }}
+              >
+                <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <Text style={{ color: "#9ca3af" }}>Gross Amount:</Text>
+                    <Text style={{ color: "white", fontWeight: 500 }}>
+                      ${grossAmount.toFixed(2)}
+                    </Text>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <Text style={{ color: "#9ca3af" }}>
+                      Tax ({(TAX_RATE * 100).toFixed(3)}%):
+                    </Text>
+                    <Text style={{ color: "#ef4444" }}>
+                      -${taxAmount.toFixed(2)}
+                    </Text>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "8px", borderTop: "1px solid #6b7280" }}>
+                    <Text style={{ color: "#9ca3af", fontWeight: 600 }}>
+                      Net to Seller:
+                    </Text>
+                    <Text style={{ color: "#10b981", fontWeight: 700, fontSize: "16px" }}>
+                      ${netAmount.toFixed(2)}
+                    </Text>
+                  </div>
+                </Space>
+              </Card>
+            </div>
+            */}
+
+            {/* Car Intake vehicle purchase summary: Final Price is the gross
+                purchase amount. No tax. Towing Fee (when > 0) is added on top
+                and does NOT modify Final Price. */}
             <div style={{ marginTop: 30 }}>
               <Card
                 size="small"
@@ -438,24 +500,26 @@ const CarPrice = ({
                       justifyContent: "space-between",
                     }}
                   >
-                    <Text style={{ color: "#9ca3af" }}>Gross Amount:</Text>
-                    <Text style={{ color: "white", fontWeight: 500 }}>
-                      ${grossAmount.toFixed(2)}
-                    </Text>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                    }}
-                  >
                     <Text style={{ color: "#9ca3af" }}>
-                      Tax ({(TAX_RATE * 100).toFixed(3)}%):
+                      Vehicle Purchase Amount:
                     </Text>
-                    <Text style={{ color: "#ef4444" }}>
-                      -${taxAmount.toFixed(2)}
+                    <Text style={{ color: "white", fontWeight: 500 }}>
+                      ${finalPriceAmount.toFixed(2)}
                     </Text>
                   </div>
+                  {Number(formData.towingFee) > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Text style={{ color: "#9ca3af" }}>Towing Fee:</Text>
+                      <Text style={{ color: "white", fontWeight: 500 }}>
+                        ${Number(formData.towingFee).toFixed(2)}
+                      </Text>
+                    </div>
+                  )}
                   <div
                     style={{
                       display: "flex",
@@ -465,7 +529,7 @@ const CarPrice = ({
                     }}
                   >
                     <Text style={{ color: "#9ca3af", fontWeight: 600 }}>
-                      Net to Seller:
+                      Payment Total:
                     </Text>
                     <Text
                       style={{
@@ -474,7 +538,13 @@ const CarPrice = ({
                         fontSize: "16px",
                       }}
                     >
-                      ${netAmount.toFixed(2)}
+                      $
+                      {(
+                        finalPriceAmount +
+                        (Number(formData.towingFee) > 0
+                          ? Number(formData.towingFee)
+                          : 0)
+                      ).toFixed(2)}
                     </Text>
                   </div>
                 </Space>
