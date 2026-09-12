@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Card, Steps, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { customerAPI } from "../../utils/api";
+import { DEFAULT_CUSTOMER_TYPE } from "./customerTypeOptions";
 import CustomerInfoStep from "./CustomerInfoStep";
 import CreateCheckInModal from "../../components/CheckIn/CreateCheckInModal";
 
@@ -14,7 +15,7 @@ const AddWaiver = () => {
 
   // initial data passed to the step (stateless here)
   const initialData = {
-    customerType: "seller",
+    type: DEFAULT_CUSTOMER_TYPE,
     customerMode: "select",
     sellerId: null,
     sellerData: null,
@@ -27,11 +28,12 @@ const AddWaiver = () => {
   };
 
   const handleCustomerInfoComplete = async (data) => {
-    // Final submission: create a Customer record via customers API, then create waiver
+    // Final submission: create a Customer record via the customers API only.
+    // This flow does NOT create a Waiver document.
     try {
       // Build customer payload from the CustomerInfoStep values
       const customerPayload = {
-        type: data.type || "customer",
+        type: data.type || DEFAULT_CUSTOMER_TYPE,
         firstName: data.firstName || undefined,
         lastName: data.lastName || undefined,
         email: data.email || undefined,
@@ -39,7 +41,9 @@ const AddWaiver = () => {
         idProofType: data.idProofType || undefined,
         idProofNumber: data.idProofNumber || undefined,
         idProofImage: data.idProofImage || undefined,
-        signature: data.signature || undefined,
+        // The backend persists the captured signature in `signatureImage`
+        // (the same field used by Customer/Seller/Buyer registration).
+        signatureImage: data.signature || undefined,
         linkedSeller: data.linkedSeller || null,
         linkedBuyer: data.linkedBuyer || null,
       };
@@ -118,7 +122,7 @@ const AddWaiver = () => {
       title: "Customer Info",
       content: (
         <CustomerInfoStep
-          data={initialData}
+          initialValues={initialData}
           onComplete={handleCustomerInfoComplete}
         />
       ),

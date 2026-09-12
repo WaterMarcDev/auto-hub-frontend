@@ -14,6 +14,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { customerAPI, uploadAPI } from "../../utils/api";
 import dayjs from "dayjs";
+import { getCustomerTypeLabel } from "./customerTypeOptions";
 
 const WaiverDetails = () => {
   const { id } = useParams();
@@ -88,6 +89,9 @@ const WaiverDetails = () => {
 
           <Card title="Customer Information" style={{ marginBottom: 16 }}>
             <Descriptions bordered column={2}>
+              <Descriptions.Item label="Customer Type">
+                {getCustomerTypeLabel(customer.type) || "N/A"}
+              </Descriptions.Item>
               <Descriptions.Item label="Created Date">
                 {customer.createdAt
                   ? dayjs(customer.createdAt).format("MMMM DD, YYYY hh:mm A")

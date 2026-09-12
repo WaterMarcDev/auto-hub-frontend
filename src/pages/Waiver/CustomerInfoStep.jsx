@@ -1,18 +1,40 @@
 import React, { useState } from "react";
-import { Card, Form, Input, Row, Col, Button, Radio, Checkbox } from "antd";
+import {
+  Card,
+  Form,
+  Input,
+  Row,
+  Col,
+  Button,
+  Select,
+  Checkbox,
+  Alert,
+} from "antd";
 import { uploadAPI } from "../../utils/api";
 import CameraUpload from "../../components/CameraUpload";
 import SignatureCanvas from "../../components/SignatureCanvas";
+import {
+  CUSTOMER_TYPE_OPTIONS,
+  DEFAULT_CUSTOMER_TYPE,
+  getCustomerTypeLabel,
+} from "./customerTypeOptions";
 
-// Seller-style customer form: radio on first row, two-column layout from second row
+// Waiver customer form: Customer Type dropdown on first row, two-column layout from second row
 const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
   const [form] = Form.useForm();
   const [uploadedIdProof, setUploadedIdProof] = useState(null);
   const [signatureUrl, setSignatureUrl] = useState(null);
 
+  // Single source of truth for the contextual heading: the same `type` field
+  // bound to the dropdown. Form.useWatch re-renders on every change so the
+  // indicator can never go stale relative to the selection.
+  const watchedType = Form.useWatch("type", form);
+  const selectedType = watchedType || DEFAULT_CUSTOMER_TYPE;
+  const selectedLabel = getCustomerTypeLabel(selectedType) || "Seller";
+
   const handleFinish = (values) => {
     const payload = {
-      type: values.type || "seller",
+      type: values.type || DEFAULT_CUSTOMER_TYPE,
       firstName: values.firstName,
       lastName: values.lastName,
       mobileNo: values.mobileNo,
@@ -33,24 +55,35 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
         layout="vertical"
         form={form}
         name="customerInfo"
-        initialValues={{ type: "seller", ...initialValues }}
+        initialValues={{ type: DEFAULT_CUSTOMER_TYPE, ...initialValues }}
         onFinish={handleFinish}
       >
-        {/* First row: radio full width */}
+        {/* First row: Customer Type dropdown (full width) */}
         <Row gutter={24}>
           <Col span={24}>
             <Form.Item
               name="type"
-              label="Customer type"
-              rules={[{ required: true }]}
+              label="Customer Type"
+              rules={[
+                { required: true, message: "Please select customer type" },
+              ]}
             >
-              <Radio.Group>
-                <Radio value="seller">Seller</Radio>
-                <Radio value="buyer">Buyer</Radio>
-              </Radio.Group>
+              <Select
+                placeholder="Select customer type"
+                options={CUSTOMER_TYPE_OPTIONS}
+              />
             </Form.Item>
           </Col>
         </Row>
+
+        {/* Dynamic context indicator — derives from the same `type` value */}
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message={`${selectedLabel} Waiver Form`}
+          description={`You are completing this waiver for a ${selectedLabel}`}
+        />
 
         {/* Two-column layout from here */}
         <Row gutter={24}>

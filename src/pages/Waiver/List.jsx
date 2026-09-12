@@ -16,6 +16,7 @@ import { customerAPI, uploadAPI } from "../../utils/api";
 import dayjs from "dayjs";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import { getCustomerTypeLabel } from "./customerTypeOptions";
 
 const { RangePicker } = DatePicker;
 
@@ -162,11 +163,15 @@ const WaiverList = () => {
       dataIndex: "type",
       key: "type",
       width: 120,
-      render: (type) => (
-        <Tag color={type === "seller" ? "blue" : "green"}>
-          {type?.toUpperCase()}
-        </Tag>
-      ),
+      render: (type) => {
+        const label = getCustomerTypeLabel(type);
+        if (!label) return <span>N/A</span>;
+        return (
+          <Tag color={type === "seller" ? "blue" : "green"}>
+            {label.toUpperCase()}
+          </Tag>
+        );
+      },
     },
     {
       title: "Name",
