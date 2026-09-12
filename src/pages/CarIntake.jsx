@@ -120,6 +120,8 @@ const CarIntake = () => {
     negotiateTo: "",
     finalPrice: "0",
     priceDescription: "",
+    towingFee: "",
+    vehicleSource: "",
 
     // Step 5: User KYC & Car Doc
     customerName: "",
@@ -278,6 +280,14 @@ const CarIntake = () => {
               },
             };
           } else if (step === 4) {
+            // Towing Fee is optional: only include it when intentionally
+            // supplied. Invalid values are already blocked by the Step-4 Form
+            // rule, so they never reach this payload.
+            const towingFeeRaw = stepData.towingFee;
+            const hasTowingFee =
+              towingFeeRaw !== undefined &&
+              towingFeeRaw !== null &&
+              String(towingFeeRaw).trim() !== "";
             payload = {
               actualWeight: parseFloat(stepData.actualWeight) || undefined,
               ratePerPound: parseFloat(stepData.rate) || undefined,
@@ -287,6 +297,8 @@ const CarIntake = () => {
               negotiateTo: stepData.negotiateTo,
               finalPrice: parseFloat(stepData.finalPrice) || undefined,
               priceDescription: stepData.priceDescription,
+              vehicleSource: stepData.vehicleSource || undefined,
+              ...(hasTowingFee ? { towingFee: towingFeeRaw } : {}),
             };
           } else if (step === 5) {
             // Ensure sellingDate is serialized (dayjs -> string) for backend
@@ -531,6 +543,7 @@ const CarIntake = () => {
           car.price.customerPrice ?? formData.customerPrice;
         populated.negotiateTo = car.price.negotiateTo ?? formData.negotiateTo;
         populated.finalPrice = car.price.finalPrice ?? formData.finalPrice;
+        populated.towingFee = car.price.towingFee ?? formData.towingFee;
         populated.priceDescription =
           car.price.priceDescription ?? formData.priceDescription;
       }
@@ -543,6 +556,8 @@ const CarIntake = () => {
           populated.sellingDate = formData.sellingDate;
         }
         populated.pickUpType = car.kyc.pickupType ?? formData.pickUpType;
+        populated.vehicleSource =
+          car.kyc.vehicleSource ?? formData.vehicleSource;
         // Map backend documents object into individual form fields so the
         // KYC component shows uploaded status for driver license, RC, and title certificate.
         const docs = car.kyc.documents || {};
@@ -1117,6 +1132,8 @@ const CarIntake = () => {
       negotiateTo: "",
       finalPrice: "",
       priceDescription: "",
+      towingFee: "",
+      vehicleSource: "",
 
       // Step 5: User KYC & Car Doc
       firstName: "",
@@ -1368,6 +1385,13 @@ const CarIntake = () => {
         negotiateTo: formData.negotiateTo,
         finalPrice: parseFloat(formData.finalPrice) || 0,
         priceDescription: formData.priceDescription,
+        vehicleSource: formData.vehicleSource || undefined,
+        towingFee:
+          formData.towingFee !== undefined &&
+          formData.towingFee !== null &&
+          String(formData.towingFee).trim() !== ""
+            ? formData.towingFee
+            : undefined,
 
         // Seller data
         sellerData: {

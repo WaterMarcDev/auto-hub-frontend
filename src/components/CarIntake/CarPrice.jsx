@@ -12,7 +12,7 @@ import {
   Card,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
-import { NEGOTIATION_OPTIONS } from "./intakeConstants";
+import { NEGOTIATION_OPTIONS, VEHICLE_SOURCE_OPTIONS } from "./intakeConstants";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -301,6 +301,88 @@ const CarPrice = ({
                   );
                 })}
               </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Vehicle Source + Towing Fee (optional; do NOT affect finalPrice/tax math) */}
+        <Row gutter={24}>
+          <Col span={12}>
+            <Form.Item
+              name="vehicleSource"
+              label={<Text style={{ color: "white" }}>Vehicle Source</Text>}
+              extra={
+                <Text style={{ color: "#9ca3af", fontSize: "12px" }}>
+                  Where the vehicle came from (optional)
+                </Text>
+              }
+            >
+              <Select
+                placeholder="Select Vehicle Source"
+                style={{ width: "100%" }}
+                dropdownStyle={{ backgroundColor: "#374151" }}
+                allowClear
+              >
+                {VEHICLE_SOURCE_OPTIONS.map((opt) => (
+                  <Option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="towingFee"
+              label={<Text style={{ color: "white" }}>Towing Fee</Text>}
+              extra={
+                <Text style={{ color: "#9ca3af", fontSize: "12px" }}>
+                  Optional; added as a separate line and does not change Final
+                  Price
+                </Text>
+              }
+              rules={[
+                {
+                  validator: (_, v) => {
+                    // Empty/missing is allowed (optional field).
+                    if (v === undefined || v === null || v === "")
+                      return Promise.resolve();
+                    // Only accept a real number (or numeric string); reject
+                    // booleans/arrays/objects instead of coercing them.
+                    const t = typeof v;
+                    if (t !== "number" && t !== "string")
+                      return Promise.reject(
+                        new Error("Towing Fee must be a valid number")
+                      );
+                    const n = Number(v);
+                    if (!Number.isFinite(n))
+                      return Promise.reject(
+                        new Error("Towing Fee must be a valid number")
+                      );
+                    if (n < 0)
+                      return Promise.reject(
+                        new Error("Towing Fee cannot be negative")
+                      );
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+            >
+              <InputNumber
+                style={{
+                  width: "100%",
+                  backgroundColor: "#4b5563",
+                  borderColor: "#6b7280",
+                  color: "white",
+                }}
+                placeholder="Enter towing fee (optional)"
+                min={0}
+                step={0.01}
+                formatter={(value) =>
+                  `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
+                parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+              />
             </Form.Item>
           </Col>
         </Row>

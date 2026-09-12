@@ -117,13 +117,10 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
 
         <Row gutter={24} align="middle">
           <Col span={12}>
-            <Form.Item
-              label="ID Proof Image"
-              name="idProofImage"
-              rules={[
-                { required: true, message: "Please upload ID proof image" },
-              ]}
-            >
+            {/* ID Proof Image is optional (backend validates .optional()).
+                Previous rule preserved for recovery:
+                rules={[{ required: true, message: "Please upload ID proof image" }]} */}
+            <Form.Item label="ID Proof Image" name="idProofImage">
               <div style={{ minHeight: 220 }}>
                 {!uploadedIdProof ? (
                   <CameraUpload

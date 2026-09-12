@@ -639,6 +639,12 @@ const CarIntakeDetails = () => {
               <Descriptions.Item label="Final Price">
                 {car?.price?.finalPrice ? `$${car?.price?.finalPrice}` : "N/A"}
               </Descriptions.Item>
+              <Descriptions.Item label="Vehicle Source">
+                {car?.kyc?.vehicleSource || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Towing Fee">
+                {car?.price?.towingFee ? `$${car?.price?.towingFee}` : "N/A"}
+              </Descriptions.Item>
               <Descriptions.Item label="Payment Method">
                 {car?.payment?.paymentMethod || "N/A"}
               </Descriptions.Item>
