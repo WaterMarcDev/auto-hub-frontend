@@ -82,6 +82,7 @@ const MarketplaceListings = React.lazy(() => import("./pages/MarketplaceListings
 const UnifiedInbox = React.lazy(() => import("./pages/UnifiedInbox"));
 const Orders = React.lazy(() => import("./pages/Orders"));
 const IntegrationManager = React.lazy(() => import("./pages/IntegrationManager"));
+const EbayCatalogSync = React.lazy(() => import("./pages/EbayCatalogSyncStatus"));
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -375,6 +376,7 @@ function App() {
                         <Route path="/unified-inbox" element={<UnifiedInbox />} />
                         <Route path="/orders" element={<Orders />} />
                         <Route path="/integrations" element={<IntegrationManager />} />
+                        <Route path="/ebay-catalog-sync" element={<EbayCatalogSync />} />
                       </Routes>
                     </Suspense>
                   </Layout>
