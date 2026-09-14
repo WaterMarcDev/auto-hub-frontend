@@ -596,7 +596,7 @@ const CarIntakeList = () => {
                 }}
                 onPressEnter={() => handleSearch(searchTerm)}
                 size="middle"
-                style={{ width: "100%", minWidth: 240 }}
+                style={{ width: "100%", minWidth: 360 }}
               />
               <Button
                 type="primary"
