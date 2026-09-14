@@ -584,7 +584,7 @@ const CarIntakeList = () => {
               flexWrap: "wrap",
             }}
           >
-            <Space.Compact style={{ flex: "1 1 0%", minWidth: 360, maxWidth: 600 }} size="middle">
+            <Space.Compact style={{ width: "100%", maxWidth: 600 }} size="middle">
               <Input
                 placeholder="Search by VIN, Make, Model, Trim, or Seller..."
                 value={searchTerm}
@@ -596,7 +596,7 @@ const CarIntakeList = () => {
                 }}
                 onPressEnter={() => handleSearch(searchTerm)}
                 size="middle"
-                style={{ width: "100%", minWidth: 360 }}
+                style={{ width: "100%" }}
               />
               <Button
                 type="primary"
