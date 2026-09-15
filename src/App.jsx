@@ -49,6 +49,7 @@ const ViewPartsPage = React.lazy(() => import("./pages/ViewPartsPage"));
 const CarInventoryList = React.lazy(() => import("./pages/CarInventory/List"));
 const AddScrap = React.lazy(() => import("./pages/Scrap/Add"));
 const ScrapList = React.lazy(() => import("./pages/Scrap/List"));
+const ScrapPurchase = React.lazy(() => import("./pages/ScrapPurchase"));
 const SellerRegister = React.lazy(() => import("./pages/Seller/Register"));
 const SellerList = React.lazy(() => import("./pages/Seller/List"));
 const BuyerRegister = React.lazy(() => import("./pages/Buyer/Register"));
@@ -315,6 +316,11 @@ function App() {
                         />
                         <Route path="/add-scrap" element={<AddScrap />} />
                         <Route path="/scrap-list" element={<ScrapList />} />
+                        {/* Scrap Material Purchase (independent module) */}
+                        <Route
+                          path="/scrap-purchase"
+                          element={<ScrapPurchase />}
+                        />
                         <Route path="/customer/list" element={<CustomerList />} />
                         <Route
                           path="/customer/register"

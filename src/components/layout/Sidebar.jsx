@@ -18,6 +18,7 @@ import {
   ApiOutlined,
   ShoppingCartOutlined,
   SyncOutlined,
+  ContainerOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
@@ -401,6 +402,22 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       });
     }
 
+    // Scrap Material Purchase - independent module (Admin, Manager, Staff)
+    if (isAdmin || isManager || isStaff) {
+      items.push({
+        key: "scrapMaterialPurchase",
+        icon: <ContainerOutlined />,
+        label: "Scrap Material Purchase",
+        children: [
+          {
+            key: "/scrap-purchase",
+            icon: <BulletIcon />,
+            label: <Link to="/scrap-purchase">Purchase Entries</Link>,
+          },
+        ],
+      });
+    }
+
     // Customer - visible for Front Desk, Scraper and Admin
     if (isFrontDesk || isScraper || isAdmin || isManager) {
       items.push({
@@ -594,6 +611,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/add-scrap": "scrapCar",
       "/scrap-list": "scrapCar",
       "/element-hub": "scrapCar",
+      "/scrap-purchase": "scrapMaterialPurchase",
       "/customer/register": "customer",
       "/customer/list": "customer",
       "/seller/register": "customer",
