@@ -42,6 +42,21 @@ const MATERIAL_OPTIONS = [
 
 const MATERIAL_UNITS = "lb";
 
+// Calculate a single material line total. Kept at module scope so it is stable
+// (no re-creation per render) and reused for display, validation and payload.
+const lineTotalOf = (item) => {
+  const weight = Number(item?.weightLbs || 0);
+  const rate = Number(item?.pricePerLb || 0);
+  return Number((weight * rate).toFixed(2));
+};
+
+// True when the stored line total differs from weight × rate (a manual override).
+const isLineOverridden = (item) => {
+  const stored = item?.totalAmount;
+  if (stored === undefined || stored === null || stored === "") return false;
+  return Math.abs(Number(stored) - lineTotalOf(item)) > 0.009;
+};
+
 // US phone validation for the New Seller form. Accepts 10 digits, or 11 digits
 // with a leading country code 1, allowing spaces, dashes, parentheses and a
 // leading "+". Rejects any value containing letters. Mirrors the backend check
@@ -75,10 +90,27 @@ const ScrapPurchase = () => {
   const [sellerModalOpen, setSellerModalOpen] = useState(false);
   const [savingSeller, setSavingSeller] = useState(false);
 
-  // Live-derived total shown in the form (weight × rate) unless overridden.
-  const [derivedTotal, setDerivedTotal] = useState(0);
+  // ── Multi-material line items ─────────────────────────────────────────────
+  // One entry per selected material. This is the canonical source of truth for
+  // the row inputs and is converted to the backend items[] array on save.
+  const [items, setItems] = useState([]);
+  // Materials currently selected in the multi-select (kept in sync with items).
+  const [selectedMaterials, setSelectedMaterials] = useState([]);
+  // Any non-standard material names found on a legacy/edited record, so they
+  // remain selectable and display correctly.
+  const [customOptions, setCustomOptions] = useState([]);
+
+  // Grand total override state. When true the explicitly entered Grand Total is
+  // authoritative and is never overwritten by the calculated sum.
   const [totalOverridden, setTotalOverridden] = useState(false);
-  const [materialOtherMode, setMaterialOtherMode] = useState(false);
+
+  const materialOptions = Array.from(
+    new Set([...MATERIAL_OPTIONS, ...customOptions])
+  );
+
+  const itemsTotal = Number(
+    items.reduce((acc, it) => acc + lineTotalOf(it), 0).toFixed(2)
+  );
 
   const fetchRecords = useCallback(
     async (page = pagination.current, pageSize = pagination.pageSize, q = search) => {
@@ -126,7 +158,7 @@ const ScrapPurchase = () => {
 
   const closeSellerModal = () => {
     // Only the seller sub-form is reset; the main Scrap Purchase form values
-    // (material, weight, rate, total, supplier, payment, note) are preserved.
+    // (materials, weights, rates, total, supplier, payment, note) are preserved.
     setSellerModalOpen(false);
     sellerForm.resetFields();
   };
@@ -193,94 +225,223 @@ const ScrapPurchase = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const recomputeDerived = (values) => {
-    const weight = Number(values?.weightLbs || 0);
-    const rate = Number(values?.pricePerLb || 0);
-    setDerivedTotal(Number((weight * rate).toFixed(2)));
-  };
+  // Keep the Grand Total in sync with the sum of the line totals, unless the
+  // operator has explicitly overridden it.
+  useEffect(() => {
+    if (!modalOpen) return;
+    if (!totalOverridden) {
+      form.setFieldsValue({ totalAmount: itemsTotal });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsTotal, totalOverridden, modalOpen]);
+
+  const emptyItem = (materialName) => ({
+    materialName,
+    customName: undefined,
+    weightLbs: undefined,
+    pricePerLb: undefined,
+    totalAmount: undefined,
+  });
 
   const openCreate = () => {
     setEditing(null);
     setTotalOverridden(false);
-    setDerivedTotal(0);
-    setMaterialOtherMode(false);
+    setCustomOptions([]);
+    setSelectedMaterials(["Iron"]);
+    setItems([emptyItem("Iron")]);
     form.resetFields();
-    form.setFieldsValue({
-      materialName: "Iron",
-      paymentDate: dayjs(),
-    });
+    form.setFieldsValue({ totalAmount: 0, paymentDate: dayjs() });
     fetchCustomers();
     setModalOpen(true);
   };
 
   const openEdit = (record) => {
     setEditing(record);
-    // Prefer the canonical line item (items[0]) for NEW records; fall back to
-    // the legacy top-level fields for records created before items[] was sent.
-    const item =
+
+    // Prefer the canonical items[] array; fall back to the legacy top-level
+    // fields for records created before items[] was sent.
+    const raw =
       Array.isArray(record.items) && record.items.length
-        ? record.items[0]
-        : record;
-    const isOther =
-      item.materialName && !MATERIAL_OPTIONS.includes(item.materialName);
-    setMaterialOtherMode(isOther);
+        ? record.items
+        : [
+            {
+              materialName: record.materialName,
+              weightLbs: record.weightLbs,
+              pricePerLb: record.pricePerLb,
+              totalAmount: record.totalAmount,
+            },
+          ];
+
+    // Malformed/duplicate names are collapsed to a single row (data preserved
+    // for the first occurrence) — duplicate materials are never shown twice.
+    const seen = new Set();
+    const loaded = [];
+    raw.forEach((it) => {
+      const name = (it.materialName || "Other").toString().trim() || "Other";
+      if (seen.has(name)) return;
+      seen.add(name);
+      loaded.push({
+        materialName: name,
+        customName: undefined,
+        weightLbs: it.weightLbs,
+        pricePerLb: it.pricePerLb,
+        totalAmount: it.totalAmount,
+      });
+    });
+
+    const extras = loaded
+      .map((it) => it.materialName)
+      .filter((n) => n && !MATERIAL_OPTIONS.includes(n));
+    setCustomOptions(Array.from(new Set(extras)));
+    setSelectedMaterials(Array.from(new Set(loaded.map((it) => it.materialName))));
+    setItems(loaded);
+
     form.setFieldsValue({
-      materialName: item.materialName || "Other",
-      customMaterialName: isOther ? item.materialName : undefined,
-      weightLbs: item.weightLbs,
-      pricePerLb: item.pricePerLb,
-      totalAmount: item.totalAmount,
+      totalAmount: record.totalAmount,
       supplier: record.supplier?._id || record.supplier || undefined,
       paymentMethod: record.paymentMethod,
       paymentDate: record.paymentDate ? dayjs(record.paymentDate) : dayjs(),
       note: record.note,
     });
+
+    // Detect an existing Grand Total override so it is preserved on reload.
     const expected = Number(
-      ((item.weightLbs || 0) * (item.pricePerLb || 0)).toFixed(2)
+      loaded.reduce((acc, it) => acc + lineTotalOf(it), 0).toFixed(2)
     );
     setTotalOverridden(
-      Number(item.totalAmount || 0) > 0 &&
-        Math.abs(Number(item.totalAmount) - expected) > 0.009
+      Number(record.totalAmount || 0) > 0 &&
+        Math.abs(Number(record.totalAmount) - expected) > 0.009
     );
-    setDerivedTotal(expected);
+
     fetchCustomers();
     setModalOpen(true);
   };
 
+  // Update a single row. Auto-managed line totals follow weight/rate changes;
+  // a manually overridden line total is preserved.
+  const updateItem = (index, patch) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== index) return it;
+        const next = { ...it, ...patch };
+        if (patch.weightLbs !== undefined || patch.pricePerLb !== undefined) {
+          if (!isLineOverridden(it)) {
+            next.totalAmount = lineTotalOf(next);
+          }
+        }
+        return next;
+      })
+    );
+  };
+
+  // Add rows for newly selected materials; remove rows for deselected ones.
+  // Existing rows (and any values already entered) are always preserved.
+  const handleMaterialsChange = (selected) => {
+    const unique = Array.from(new Set(selected || []));
+    setSelectedMaterials(unique);
+    setItems((prev) => {
+      const byName = new Map(prev.map((it) => [it.materialName, it]));
+      return unique.map((name) => byName.get(name) || emptyItem(name));
+    });
+  };
+
+  // Resolve the stored material name, using the free-text value for "Other".
+  const resolveMaterialName = (item) =>
+    item.materialName === "Other"
+      ? String(item.customName || "").trim()
+      : String(item.materialName || "").trim();
+
+  // Row-level validation (weight > 0, price >= 0, valid numerics).
+  const validateItems = () => {
+    const errs = [];
+    const seen = new Set();
+    items.forEach((it, idx) => {
+      const name = resolveMaterialName(it);
+      const label = name || `Row ${idx + 1}`;
+      if (!name) errs.push(`Row ${idx + 1}: material name is required`);
+      else {
+        const key = name.toLowerCase();
+        if (seen.has(key)) errs.push(`Duplicate material: ${name}`);
+        seen.add(key);
+      }
+
+      const w = it.weightLbs;
+      if (
+        w === undefined ||
+        w === null ||
+        w === "" ||
+        typeof w === "boolean" ||
+        typeof w === "object" ||
+        !Number.isFinite(Number(w)) ||
+        Number(w) <= 0
+      ) {
+        errs.push(`${label}: weight must be a number greater than 0`);
+      }
+
+      const p = it.pricePerLb;
+      if (
+        p === undefined ||
+        p === null ||
+        p === "" ||
+        typeof p === "boolean" ||
+        typeof p === "object" ||
+        !Number.isFinite(Number(p)) ||
+        Number(p) < 0
+      ) {
+        errs.push(`${label}: price per lb must be 0 or greater`);
+      }
+    });
+    return errs;
+  };
+
   const buildPayload = async () => {
     const values = await form.validateFields();
-    const materialName =
-      values.materialName === "Other"
-        ? (values.customMaterialName || "Other").trim()
-        : values.materialName;
 
-    const weightLbs = Number(values.weightLbs || 0);
-    const pricePerLb = Number(values.pricePerLb || 0);
-    // Editable total override: use it if the operator changed it or if no
-    // weight/rate is available; otherwise let the backend derive it.
-    const providedTotal = Number(values.totalAmount || 0);
-    const derived = Number((weightLbs * pricePerLb).toFixed(2));
-    const totalAmount =
-      totalOverridden || derived === 0 ? providedTotal : derived;
+    const errs = validateItems();
+    if (errs.length) {
+      message.error(errs[0]);
+      // Throw a validation-shaped error so callers treat it as a form error.
+      throw { errorFields: [{ name: "items", errors: errs }] };
+    }
+
+    // Each selected material becomes one line item — no double multiplication,
+    // an explicit line override (legacy) always wins over weight × rate.
+    const payloadItems = items.map((it) => {
+      const weightLbs = Number(it.weightLbs || 0);
+      const pricePerLb = Number(it.pricePerLb || 0);
+      const calc = lineTotalOf(it);
+      const totalAmount = isLineOverridden(it) ? Number(it.totalAmount) : calc;
+      return {
+        materialName: resolveMaterialName(it),
+        description: "",
+        weightLbs,
+        pricePerLb,
+        totalAmount,
+      };
+    });
+
+    const itemsSum = Number(
+      payloadItems.reduce((acc, it) => acc + Number(it.totalAmount || 0), 0).toFixed(2)
+    );
+
+    const enteredTotal = Number(values.totalAmount || 0);
+    // Editable Grand Total override: keep the entered value when overridden (or
+    // when the calculated sum is zero); otherwise persist the exact sum.
+    const grandTotal =
+      totalOverridden || itemsSum === 0 ? enteredTotal : itemsSum;
+
+    const first = payloadItems[0];
 
     return {
       // Top-level fields retained as compatibility/mirror fields for existing
-      // records and existing UI behavior.
-      materialName,
-      weightLbs,
-      pricePerLb,
-      totalAmount,
+      // records and existing UI behavior (mirrors the first line item).
+      materialName: first.materialName,
+      weightLbs: first.weightLbs,
+      pricePerLb: first.pricePerLb,
+      totalAmount: grandTotal,
       // Canonical line-item representation. items[] is authoritative for the
       // backend normalization and for printing.
-      items: [
-        {
-          materialName,
-          description: "",
-          weightLbs,
-          pricePerLb,
-          totalAmount,
-        },
-      ],
+      items: payloadItems,
       supplier: values.supplier || undefined,
       paymentMethod: values.paymentMethod || undefined,
       paymentDate: values.paymentDate ? values.paymentDate.toISOString() : undefined,
@@ -352,6 +513,14 @@ const ScrapPurchase = () => {
     }
   };
 
+  // Material names for a list row (multi-material aware, legacy-safe).
+  const recordMaterialNames = (r) => {
+    if (Array.isArray(r.items) && r.items.length) {
+      return r.items.map((it) => it.materialName || "Scrap Material");
+    }
+    return [r.materialName || "Scrap Material"];
+  };
+
   const columns = [
     {
       title: "Bill #",
@@ -364,7 +533,15 @@ const ScrapPurchase = () => {
       title: "Material",
       dataIndex: "materialName",
       key: "materialName",
-      render: (v) => <Tag color="blue">{v || "Scrap Material"}</Tag>,
+      render: (_, r) => (
+        <Space size={4} wrap>
+          {recordMaterialNames(r).map((name, i) => (
+            <Tag color="blue" key={`${name}-${i}`}>
+              {name}
+            </Tag>
+          ))}
+        </Space>
+      ),
     },
     {
       title: `Weight (${MATERIAL_UNITS})`,
@@ -543,37 +720,28 @@ const ScrapPurchase = () => {
           </Button>,
         ]}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onValuesChange={(changed) => {
-            const values = form.getFieldsValue();
-            if (changed.weightLbs !== undefined || changed.pricePerLb !== undefined) {
-              const weight = Number(values.weightLbs || 0);
-              const rate = Number(values.pricePerLb || 0);
-              const derived = Number((weight * rate).toFixed(2));
-              setDerivedTotal(derived);
-              // Keep the displayed total in sync while not overridden.
-              if (!totalOverridden) {
-                form.setFieldsValue({ totalAmount: derived });
-              }
-            }
-            if (changed.totalAmount !== undefined) {
-              const entered = Number(changed.totalAmount || 0);
-              setTotalOverridden(Math.abs(entered - derivedTotal) > 0.009);
-            }
-          }}
-        >
+        <Form form={form} layout="vertical">
           <Form.Item
-            name="materialName"
+            name="selectedMaterials"
             label="Material Type"
-            rules={[{ required: true, message: "Select a material" }]}
+            rules={[
+              {
+                validator: () =>
+                  selectedMaterials.length
+                    ? Promise.resolve()
+                    : Promise.reject(new Error("Select at least one material")),
+              },
+            ]}
           >
             <Select
-              onChange={(v) => setMaterialOtherMode(v === "Other")}
-              placeholder="Select material"
+              mode="multiple"
+              allowClear
+              placeholder="Select one or more materials"
+              value={selectedMaterials}
+              onChange={handleMaterialsChange}
+              optionFilterProp="value"
             >
-              {MATERIAL_OPTIONS.map((m) => (
+              {materialOptions.map((m) => (
                 <Option key={m} value={m}>
                   {m}
                 </Option>
@@ -581,47 +749,102 @@ const ScrapPurchase = () => {
             </Select>
           </Form.Item>
 
-          {materialOtherMode && (
-            <Form.Item
-              name="customMaterialName"
-              label="Specify Material"
-              rules={[{ required: true, message: "Enter the material name" }]}
+          {/* One pricing card per selected material */}
+          {items.map((it, index) => (
+            <div
+              key={it.materialName}
+              style={{
+                border: "1px solid #f0f0f0",
+                borderRadius: 8,
+                padding: "12px 12px 0",
+                marginBottom: 12,
+              }}
             >
-              <Input placeholder="e.g. Brass, Lead, Mixed Scrap" />
-            </Form.Item>
-          )}
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                {it.materialName === "Other" ? "Other material" : it.materialName}
+              </div>
 
-          <Space style={{ display: "flex" }} align="start">
-            <Form.Item
-              name="weightLbs"
-              label={`Weight (${MATERIAL_UNITS})`}
-              rules={[{ required: true, message: "Enter weight" }]}
-              style={{ flex: 1, minWidth: 160 }}
-            >
-              <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item
-              name="pricePerLb"
-              label="Price / lb ($)"
-              rules={[{ required: true, message: "Enter price per lb" }]}
-              style={{ flex: 1, minWidth: 160 }}
-            >
-              <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item
-              name="totalAmount"
-              label="Total Amount ($)"
-              tooltip="Defaults to Weight x Price/lb. Edit to override the printed total."
-              rules={[{ required: true, message: "Enter total" }]}
-              style={{ flex: 1, minWidth: 160 }}
-            >
-              <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
-            </Form.Item>
-          </Space>
+              {it.materialName === "Other" && (
+                <Form.Item
+                  label="Specify Material"
+                  required
+                  style={{ marginBottom: 12 }}
+                >
+                  <Input
+                    value={it.customName}
+                    placeholder="e.g. Brass, Lead, Mixed Scrap"
+                    onChange={(e) =>
+                      updateItem(index, { customName: e.target.value })
+                    }
+                  />
+                </Form.Item>
+              )}
+
+              <Space style={{ display: "flex" }} align="start">
+                <Form.Item
+                  label={`Weight (${MATERIAL_UNITS})`}
+                  required
+                  style={{ flex: 1, minWidth: 150 }}
+                >
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    style={{ width: "100%" }}
+                    value={it.weightLbs}
+                    onChange={(v) => updateItem(index, { weightLbs: v })}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="Price / lb ($)"
+                  required
+                  style={{ flex: 1, minWidth: 150 }}
+                >
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    style={{ width: "100%" }}
+                    value={it.pricePerLb}
+                    onChange={(v) => updateItem(index, { pricePerLb: v })}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label="Total Amount ($)"
+                  tooltip="Calculated as Weight x Price/lb."
+                  style={{ flex: 1, minWidth: 150 }}
+                >
+                  <InputNumber
+                    min={0}
+                    step={0.01}
+                    style={{ width: "100%" }}
+                    value={Number(it.totalAmount || 0)}
+                    disabled
+                  />
+                </Form.Item>
+              </Space>
+            </div>
+          ))}
+
+          {/* One overall Grand Total for the complete purchase */}
+          <Form.Item
+            name="totalAmount"
+            label="Grand Total ($)"
+            tooltip="Sum of all material line totals. Edit to override the printed total."
+            rules={[{ required: true, message: "Enter grand total" }]}
+          >
+            <InputNumber
+              min={0}
+              step={0.01}
+              style={{ width: "100%" }}
+              onChange={(v) => {
+                const entered = Number(v || 0);
+                setTotalOverridden(Math.abs(entered - itemsTotal) > 0.009);
+              }}
+            />
+          </Form.Item>
 
           {totalOverridden && (
             <div style={{ marginTop: -8, marginBottom: 12, color: "#faad14" }}>
-              Total manually overridden (calculated: ${derivedTotal.toFixed(2)})
+              Grand total manually overridden (calculated: ${itemsTotal.toFixed(2)})
             </div>
           )}
 
