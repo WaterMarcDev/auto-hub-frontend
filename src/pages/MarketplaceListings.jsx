@@ -48,6 +48,26 @@ const SocialLeads = () => {
     fetchLeads(params);
   };
 
+  // Root cause of "click Amazon, then eBay, same data shown": this Select's
+  // onChange previously only called setMarketplaceFilter() — pure local
+  // state, no re-fetch — so the table kept showing whatever the LAST actual
+  // fetchLeads() call returned (the unfiltered initial load) until the user
+  // separately pressed "Search". Selecting a marketplace now re-fetches
+  // immediately, matching the filter UX used elsewhere in this app (e.g.
+  // Requests/Junk Car Requests). Passes the new value directly rather than
+  // reading the `marketplaceFilter` state var, since setState here hasn't
+  // re-rendered yet in this same tick. The backend's own `marketplace`
+  // query filter (controllers/marketplaceListing.controller.js) was already
+  // correct — this was a frontend-only bug.
+  const handleMarketplaceFilterChange = (val) => {
+    const marketplace = val || "";
+    setMarketplaceFilter(marketplace);
+    const params = {};
+    if (search.trim()) params.search = search;
+    if (marketplace) params.marketplace = marketplace;
+    fetchLeads(params);
+  };
+
   const columns = [
     {
       title: "Listing ID",
@@ -160,7 +180,7 @@ const SocialLeads = () => {
             <Select
               placeholder="Marketplace"
               value={marketplaceFilter || undefined}
-              onChange={(val) => setMarketplaceFilter(val || "")}
+              onChange={handleMarketplaceFilterChange}
               allowClear
               style={{ width: "100%" }}
             >
