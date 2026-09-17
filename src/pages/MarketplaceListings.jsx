@@ -41,24 +41,61 @@ const SocialLeads = () => {
   const [marketplaceFilter, setMarketplaceFilter] = useState("");
   const navigate = useNavigate();
 
-  // Remembered so a Sync can refresh the table without losing the user's
-  // active search/marketplace filter.
+  // SERVER-SIDE pagination state. `total` comes from the backend's
+  // pagination.total (the count of the WHOLE filtered set) — it must never be
+  // derived from leads.length. Deriving the page count from the current
+  // page's row count was the bug that capped the UI at 5 pages / 50 records.
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+
+  // Remembered so a Sync/delete can refresh the table without losing the
+  // user's active search/marketplace filter.
   const [activeParams, setActiveParams] = useState({});
 
-  const fetchLeads = async (params = {}) => {
+  const fetchLeads = async (
+    params = activeParams,
+    page = currentPage,
+    limit = pageSize
+  ) => {
     try {
       setLoading(true);
       // hasListingId restricts results to listing-sourced records only —
       // additive, opt-in backend filter (see marketplaceListing.controller.js).
-      const res = await marketplaceListingService.getAll({ hasListingId: "true", ...params });
-      setLeads(res.data?.data || []);
-      return res.data?.data || [];
+      // page/limit are sent so the BACKEND paginates and returns the true
+      // total for the entire filtered set (pagination.total), rather than the
+      // client paginating a single capped page of rows.
+      const res = await marketplaceListingService.getAll({
+        hasListingId: "true",
+        ...params,
+        page,
+        limit,
+      });
+      const rows = res.data?.data || [];
+      setLeads(rows);
+      // The authoritative total for the whole filtered set. Fall back to the
+      // current page length only if the backend omitted pagination metadata.
+      setTotal(res.data?.pagination?.total ?? rows.length);
+      return rows;
     } catch (err) {
       console.error("Failed to fetch marketplace leads:", err);
       message.error("Failed to load marketplace listings");
       return [];
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Refresh the current page while keeping the active filters. If that page is
+  // now empty (e.g. a sync removed stale rows or a delete emptied the last
+  // page), step back one page so the table never strands the user on a blank
+  // page.
+  const refresh = async (page = currentPage, limit = pageSize) => {
+    const rows = await fetchLeads(activeParams, page, limit);
+    if (rows.length === 0 && page > 1) {
+      const prevPage = page - 1;
+      setCurrentPage(prevPage);
+      await fetchLeads(activeParams, prevPage, limit);
     }
   };
 
@@ -71,7 +108,22 @@ const SocialLeads = () => {
     if (search.trim()) params.search = search;
     if (marketplaceFilter) params.marketplace = marketplaceFilter;
     setActiveParams(params);
-    fetchLeads(params);
+    // A new search/filter defines a NEW result set — always restart at page 1.
+    setCurrentPage(1);
+    fetchLeads(params, 1, pageSize);
+  };
+
+  // Ant Design routes EVERY page and page-size change through here now that
+  // the Table is given a pagination.total. Re-fetch from the server; never
+  // slice the already-fetched `leads` client-side.
+  const handleTableChange = (pagination) => {
+    const nextSize = pagination.pageSize || pageSize;
+    const sizeChanged = nextSize !== pageSize;
+    // Changing page size changes the row boundaries — go back to page 1.
+    const nextPage = sizeChanged ? 1 : pagination.current || 1;
+    setPageSize(nextSize);
+    setCurrentPage(nextPage);
+    fetchLeads(activeParams, nextPage, nextSize);
   };
 
   /**
@@ -114,7 +166,7 @@ const SocialLeads = () => {
         message.success("eBay listings synced");
       }
 
-      await fetchLeads(activeParams);
+      await refresh();
     } catch (err) {
       console.error("eBay listing sync failed:", err);
       message.error(
@@ -135,7 +187,7 @@ const SocialLeads = () => {
       setDeletingId(record._id);
       await marketplaceListingService.remove(record._id);
       message.success("Listing removed from CRM (eBay listing was not affected)");
-      await fetchLeads(activeParams);
+      await refresh();
     } catch (err) {
       console.error("Failed to remove marketplace listing:", err);
       message.error(err.response?.data?.message || "Failed to remove listing");
@@ -161,7 +213,11 @@ const SocialLeads = () => {
     const params = {};
     if (search.trim()) params.search = search;
     if (marketplace) params.marketplace = marketplace;
-    fetchLeads(params);
+    // Persist the new filter combination so a later Sync/refresh keeps it.
+    setActiveParams(params);
+    // New filter = new result set — restart at page 1.
+    setCurrentPage(1);
+    fetchLeads(params, 1, pageSize);
   };
 
   const columns = [
@@ -339,6 +395,18 @@ const SocialLeads = () => {
           loading={loading}
           scroll={{ x: "max-content" }}
           locale={{ emptyText: "No marketplace listings found" }}
+          // Server-side pagination: the Table shows only the current page's
+          // rows, but the pager is sized by the backend's TOTAL for the whole
+          // filtered set — so every page is reachable, not just the first 5.
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: total,
+            showSizeChanger: true,
+            showTotal: (count) => `${count} listings`,
+            pageSizeOptions: ["10", "20", "50", "100"],
+          }}
+          onChange={handleTableChange}
         />
       </Card>
     </div>
