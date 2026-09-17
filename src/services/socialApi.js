@@ -36,11 +36,19 @@ export const marketplaceListingService = {
   assignUser: (id, userId) => api.patch(`/marketplace-leads/${id}/assign`, { userId }),
   updateNotes: (id, notes) => api.patch(`/marketplace-leads/${id}/notes`, { notes }),
   updateOrderStatus: (id, data) => api.patch(`/marketplace-leads/${id}/order-status`, data),
+  // CRM-ONLY removal: deletes this CRM record and nothing else. The backend
+  // never calls the marketplace, so the actual eBay listing keeps running.
   remove: (id) => api.delete(`/marketplace-leads/${id}`),
   // Triggers a live order sync for the given marketplace (existing backend
   // endpoint — GET /api/marketplace-leads/orders?platform=... — already used
   // elsewhere; exposed here for the Marketplace Orders page's "Sync Now").
   syncOrders: (platform) => api.get("/marketplace-leads/orders", { params: { platform } }),
+  // Manual "Sync eBay Listings": pulls the seller's CURRENTLY ACTIVE eBay
+  // listings and reconciles the CRM dataset to match (creates/updates/removes).
+  // POST is used so a link prefetch/crawl can never trigger a sync.
+  syncListings: (params = {}) => api.post("/marketplace-leads/listings", params),
+  // Read-only integrity counts (duplicates, missing ids, unknown status).
+  getEbayIntegrity: () => api.get("/marketplace-leads/ebay/integrity"),
 };
 
 /**
