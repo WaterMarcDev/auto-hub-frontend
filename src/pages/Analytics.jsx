@@ -34,6 +34,7 @@ import {
   TeamOutlined,
   HddOutlined,
   SafetyOutlined,
+  RocketOutlined,
 } from "@ant-design/icons";
 import { systemAPI } from "../utils/api";
 
@@ -744,6 +745,78 @@ const Analytics = () => {
                     No sync run history recorded yet on this environment.
                   </div>
                 )}
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Sub-Millisecond Cache Acceleration Telemetry */}
+          <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+            <Col span={24}>
+              <Card
+                title={
+                  <span>
+                    <RocketOutlined style={{ marginRight: 8, color: "#722ed1" }} />
+                    Sub-Millisecond In-Memory Route Cache (Performance Engine)
+                  </span>
+                }
+                bordered={false}
+                style={{ borderRadius: 8 }}
+              >
+                <Row gutter={[24, 24]} align="middle">
+                  <Col xs={24} sm={8} md={6} style={{ textAlign: "center" }}>
+                    <Statistic
+                      title="Cache Hit Ratio"
+                      value={data?.cache?.hitRatePercent || 0}
+                      suffix="%"
+                      valueStyle={{
+                        color: (data?.cache?.hitRatePercent || 0) > 60 ? "#52c41a" : "#722ed1",
+                        fontWeight: 700,
+                        fontSize: 32,
+                      }}
+                    />
+                    <Progress
+                      percent={data?.cache?.hitRatePercent || 0}
+                      strokeColor="#722ed1"
+                      showInfo={false}
+                      style={{ marginTop: 8 }}
+                    />
+                    <div style={{ fontSize: 12, color: "#8c8c8c", marginTop: 8 }}>
+                      Memory lookups bypass MongoDB completely (~0.2ms)
+                    </div>
+                  </Col>
+                  <Col xs={24} sm={16} md={18}>
+                    <Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }}>
+                      <Descriptions.Item label="Active Keys in Memory">
+                        <Badge
+                          count={data?.cache?.totalKeys || 0}
+                          overflowCount={99999}
+                          style={{ backgroundColor: "#722ed1" }}
+                        />
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Cache Hits (Sub-1ms)">
+                        <span style={{ color: "#52c41a", fontWeight: 600 }}>
+                          {data?.cache?.hits?.toLocaleString() || 0}
+                        </span>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Cache Misses (DB Roundtrips)">
+                        <span style={{ color: "#faad14", fontWeight: 600 }}>
+                          {data?.cache?.misses?.toLocaleString() || 0}
+                        </span>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Consistency Strategy" span={3}>
+                        <Tag color="cyan">Socket.io Real-Time Push Invalidation</Tag>
+                        <Tag color="purple">Write-Through Cache Eviction</Tag>
+                        <Tag color="blue">Stale-While-Revalidate (SWR)</Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Master Data Layer" span={3}>
+                        <code>master:entryFee</code>, <code>master:makes</code>, <code>master:models</code> (1h TTL, instant write-through purge on edit)
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Dashboard Micro-Cache" span={3}>
+                        <code>dash:*</code> (30s TTL, auto-purged on check-in, check-out, and waiver submission)
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Col>
+                </Row>
               </Card>
             </Col>
           </Row>

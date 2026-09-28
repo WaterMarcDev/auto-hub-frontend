@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Card, Table, Button, Space, Input, Modal, message, Tag } from "antd";
 import { PrinterOutlined } from "@ant-design/icons";
 import { checkInAPI } from "../../utils/api";
+import { cacheManager } from "../../utils/cacheManager";
+import { useDebounce } from "../../hooks/useDebounce";
 import getStatusColor from "../../utils/statusColors";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
@@ -22,18 +24,36 @@ const CheckedInList = () => {
   const [confirmRecord, setConfirmRecord] = useState(null);
   const [printingId, setPrintingId] = useState(null);
 
+  const debouncedSearch = useDebounce(search, 350);
+  const initialRenderRef = useRef(true);
+
   const fetchItems = useCallback(
     async (opts = {}) => {
-      setLoading(true);
+      const currentPage = opts.page || page;
+      const currentLimit = opts.limit || limit;
+      const currentSearch = opts.search !== undefined ? opts.search : search;
+      const cacheKey = `checkins:checked-in:${currentPage}:${currentLimit}:${currentSearch}`;
+
+      const cached = cacheManager.get(cacheKey);
+      if (cached && !opts.force) {
+        setItems(cached.items || []);
+        setTotal(cached.total || 0);
+        setPage(cached.page || currentPage);
+        setLimit(cached.limit || currentLimit);
+      } else if (!cached) {
+        setLoading(true);
+      }
+
       try {
         const params = {
-          page: opts.page || page,
-          limit: opts.limit || limit,
-          search: opts.search ?? search,
+          page: currentPage,
+          limit: currentLimit,
+          search: currentSearch,
           status: "checked-in",
         };
         const res = await checkInAPI.getAll(params);
         const data = res.data || res;
+        cacheManager.set(cacheKey, data, 60);
         setItems(data.items || []);
         setTotal(data.total || 0);
         setPage(data.page || params.page);
@@ -50,13 +70,31 @@ const CheckedInList = () => {
     [page, limit, search]
   );
 
+  // Subscribe to real-time check-in updates/invalidations across all staff
+  useEffect(() => {
+    const unsub = cacheManager.subscribe("checkins", () => {
+      fetchItems({ force: true });
+    });
+    return () => unsub();
+  }, [fetchItems]);
+
   useEffect(() => {
     fetchItems({ page: 1, limit });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Search trigger on debounced input change
+  useEffect(() => {
+    if (initialRenderRef.current) {
+      initialRenderRef.current = false;
+      return;
+    }
+    fetchItems({ page: 1, limit, search: debouncedSearch });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
   const handleSearch = () => {
-    fetchItems({ page: 1, limit, search });
+    fetchItems({ page: 1, limit, search, force: true });
   };
 
   const handleTableChange = (p) => {
@@ -84,7 +122,8 @@ const CheckedInList = () => {
     try {
       await checkInAPI.checkout(id);
       message.success("Checked out");
-      fetchItems({ page, limit });
+      cacheManager.invalidate("checkins");
+      fetchItems({ page, limit, force: true });
     } catch (err) {
       console.error(err);
       message.error(
@@ -248,7 +287,10 @@ const CheckedInList = () => {
       <CreateCheckInModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={() => fetchItems({ page: 1, limit })}
+        onCreated={() => {
+          cacheManager.invalidate("checkins");
+          fetchItems({ page: 1, limit, force: true });
+        }}
       />
 
       <Modal
