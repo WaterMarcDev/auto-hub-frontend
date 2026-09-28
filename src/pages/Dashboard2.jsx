@@ -11,9 +11,9 @@ import {
   inventoryAPI,
   customerAPI,
 } from "../utils/api";
-import OurProcess from "../components/dashboard/OurProcess";
-import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
-import RtxRecycling from "../components/dashboard/RtxRecycling";
+import OurProcess from "../components/Dashboard/OurProcess";
+import PopularPartsCarousel from "../components/Dashboard/PopularPartsCarousel";
+import RtxRecycling from "../components/Dashboard/RtxRecycling";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import ComingSoonModal from "../components/ComingSoonModal";

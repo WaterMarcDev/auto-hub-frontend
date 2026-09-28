@@ -1,4 +1,4 @@
-import { errorCodes } from "../data/ErrorCodesData";
+import { errorCodes } from "../data/errorCodesData";
 
 /**
  * Tries to find a matching error definition from the list of known errors.

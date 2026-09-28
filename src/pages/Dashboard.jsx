@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import SummaryChart from "../components/dashboard/SummaryChart";
-import InfoCards from "../components/dashboard/InfoCards";
-import RevenueCard from "../components/dashboard/RevenueCard";
-import OurProcess from "../components/dashboard/OurProcess";
-import EarningGoal from "../components/dashboard/EarningGoal";
-import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
-import RtxRecycling from "../components/dashboard/RtxRecycling";
+import SummaryChart from "../components/Dashboard/SummaryChart";
+import InfoCards from "../components/Dashboard/InfoCards";
+import RevenueCard from "../components/Dashboard/RevenueCard";
+import OurProcess from "../components/Dashboard/OurProcess";
+import EarningGoal from "../components/Dashboard/EarningGoal";
+import PopularPartsCarousel from "../components/Dashboard/PopularPartsCarousel";
+import RtxRecycling from "../components/Dashboard/RtxRecycling";
 import { dashboardAPI } from "../utils/api";
 
 const Dashboard = () => {

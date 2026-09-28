@@ -4,7 +4,7 @@ import api from "../utils/api";
  * Social & Marketplace Integration API Service
  *
  * Provides clean API methods for all social/marketplace operations.
- * Pattern matches the existing apiService pattern used in the project.
+ * Pattern matches the existing api client pattern used in the project (utils/api.js).
  */
 
 // ─── Social Leads ─────────────────────────────────────────────────────────

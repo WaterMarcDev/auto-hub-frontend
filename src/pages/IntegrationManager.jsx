@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, Button, Row, Col, Spin, Typography, App } from "antd";
 import { ArrowLeftOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import PlatformCard from "../components/integrations/PlatformCard";
+import PlatformCard from "../components/Integrations/PlatformCard";
 
 const { Title } = Typography;
 

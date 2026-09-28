@@ -8,10 +8,10 @@ import {
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Layout from "./components/layout/Layout";
+import Layout from "./components/Layout/Layout";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Spin } from "antd";
-import Requests from "./pages/Requests";
+import Requests from "./pages/Requests/Requests";
 import AddPartRequest from "./pages/AddPartRequest";
 import JunkCarRequests from "./pages/JunkCarRequests";
 import AddJunkCarRequest from "./pages/AddJunkCarRequest";
@@ -25,11 +25,11 @@ const CarIntakeDetails = React.lazy(() => import("./pages/CarIntakeDetails"));
 const Login = React.lazy(() => import("./pages/Login"));
 
 import { ConfigProvider, theme } from "antd";
-const Make = React.lazy(() => import("./pages/Make"));
-const Model = React.lazy(() => import("./pages/Model"));
-const Trim = React.lazy(() => import("./pages/Trim"));
-const Part = React.lazy(() => import("./pages/Part"));
-const Element = React.lazy(() => import("./pages/Element"));
+const Make = React.lazy(() => import("./pages/Make/Make"));
+const Model = React.lazy(() => import("./pages/Model/Model"));
+const Trim = React.lazy(() => import("./pages/Trim/Trim"));
+const Part = React.lazy(() => import("./pages/Part/Part"));
+const Element = React.lazy(() => import("./pages/Element/Element"));
 const ElementHub = React.lazy(() => import("./pages/Element/Hub"));
 const PartInventoryAdd = React.lazy(() => import("./pages/PartInventory/Add"));
 const AddInventoryPage = React.lazy(() =>
@@ -49,7 +49,7 @@ const ViewPartsPage = React.lazy(() => import("./pages/ViewPartsPage"));
 const CarInventoryList = React.lazy(() => import("./pages/CarInventory/List"));
 const AddScrap = React.lazy(() => import("./pages/Scrap/Add"));
 const ScrapList = React.lazy(() => import("./pages/Scrap/List"));
-const ScrapPurchase = React.lazy(() => import("./pages/ScrapPurchase"));
+const ScrapPurchase = React.lazy(() => import("./pages/ScrapPurchase/ScrapPurchase"));
 const SellerRegister = React.lazy(() => import("./pages/Seller/Register"));
 const SellerList = React.lazy(() => import("./pages/Seller/List"));
 const BuyerRegister = React.lazy(() => import("./pages/Buyer/Register"));

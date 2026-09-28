@@ -17,7 +17,7 @@ import {
   UserOutlined,
   PrinterOutlined,
 } from "@ant-design/icons";
-import ElementHubService from "../../services/elementHubService";
+import ElementHubService from "../../services/elementHubApi";
 import { customerAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";

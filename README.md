@@ -4,7 +4,7 @@ React-based admin and operations dashboard for the AutoHub platform. This applic
 
 ## Tech Stack
 
-- **Framework**: React 19.1.1 with Vite 7.1.2
+- **Framework**: React 18.3.1 with Vite 7.1.2
 - **Routing**: React Router DOM 7.8.2
 - **UI Libraries**: 
   - Ant Design 5.27.2 (primary component library)
@@ -24,16 +24,13 @@ auto-hub-frontend/
 │   ├── App.jsx                   # Root component with routing configuration
 │   ├── App.css                   # Global app styles
 │   ├── index.css                 # Base styles
-│   ├── dark-theme.css            # Dark mode theme overrides
 │   │
 │   ├── components/               # Reusable UI components
-│   │   ├── layout/               # Layout components (Header, Sidebar, Footer, Layout)
-│   │   │   ├── RBAC_IMPLEMENTATION.md  # RBAC documentation
-│   │   ├── dashboard/            # Dashboard-specific widgets
+│   │   ├── Layout/               # Layout components (Header, Sidebar, Footer, Layout)
+│   │   ├── Dashboard/            # Dashboard-specific widgets
 │   │   ├── CarIntake/            # Car intake flow components
 │   │   ├── CheckIn/              # Check-in modal components
 │   │   ├── ProtectedRoute.jsx    # Route protection wrapper
-│   │   ├── PermissionGuard.jsx  # Permission-based UI guard
 │   │   └── ...
 │   │
 │   ├── pages/                    # Route-level page components
@@ -54,21 +51,15 @@ auto-hub-frontend/
 │   │   └── AuthContext.jsx       # Authentication state management
 │   │
 │   ├── hooks/                    # Custom React hooks
-│   │   ├── useAuth.js            # Authentication hook
-│   │   └── usePermissions.js     # Permission checking hook
+│   │   └── useAuth.js            # Authentication hook
 │   │
 │   ├── services/                 # API service layer
-│   │   ├── apiService.js         # Main API service wrapper
-│   │   └── elementHubService.js  # Element hub specific API calls
+│   │   └── elementHubApi.js      # Element hub specific API calls
 │   │
 │   ├── utils/                    # Utility functions
 │   │   ├── api.js                # API configuration and helpers
 │   │   ├── rbac.js               # Role-based access control utilities
 │   │   └── statusColors.js       # Status color mapping utilities
-│   │
-│   ├── styles/                   # Feature-specific stylesheets
-│   │   ├── CarIntake.css
-│   │   └── horizontal-sidebar.css
 │   │
 │   └── assets/                   # Static assets
 │       └── css/
@@ -177,7 +168,6 @@ The application uses React Router DOM for client-side routing. Routes are define
 
 Routes are protected using:
 - **`ProtectedRoute`** component (`src/components/ProtectedRoute.jsx`) - Wraps routes that require authentication
-- **`PermissionGuard`** component (`src/components/PermissionGuard.jsx`) - Provides fine-grained permission-based access control
 
 ## Authentication & Authorization
 
@@ -197,52 +187,33 @@ The application implements role-based access control:
 - **Permissions**: Fine-grained permissions control access to features
 - **Implementation**:
   - `src/hooks/useAuth.js` - Access authentication state
-  - `src/hooks/usePermissions.js` - Check user permissions
   - `src/utils/rbac.js` - RBAC utility functions
-  - `src/components/layout/RBAC_IMPLEMENTATION.md` - Detailed RBAC documentation
-
-### Using Permissions in Components
-
-```jsx
-import { usePermissions } from '../hooks/usePermissions';
-
-function MyComponent() {
-  const { hasPermission } = usePermissions();
-  
-  if (!hasPermission('inventory:create')) {
-    return <div>Access Denied</div>;
-  }
-  
-  return <div>Protected Content</div>;
-}
-```
 
 ## API Integration
 
 ### API Service Layer
 
-The application uses a centralized API service layer:
+The application uses a centralized API client:
 
-- **`src/services/apiService.js`** - Main API service with axios configuration
-- **`src/utils/api.js`** - API configuration and helper functions
-- **Feature-specific services** - E.g., `elementHubService.js` for element hub operations
+- **`src/utils/api.js`** - API configuration and helper functions (axios instance used throughout the app)
+- **Feature-specific services** - E.g., `elementHubApi.js` for element hub operations, built on top of the shared client
 
 ### Making API Calls
 
 ```jsx
-import apiService from '../services/apiService';
+import api from '../utils/api';
 
 // GET request
-const data = await apiService.get('/inventory');
+const data = await api.get('/inventory');
 
 // POST request
-const result = await apiService.post('/car-intake', formData);
+const result = await api.post('/car-intake', formData);
 
 // PUT request
-await apiService.put(`/inventory/${id}`, updates);
+await api.put(`/inventory/${id}`, updates);
 
 // DELETE request
-await apiService.delete(`/inventory/${id}`);
+await api.delete(`/inventory/${id}`);
 ```
 
 ### Error Handling
@@ -254,8 +225,6 @@ API errors are typically handled at the component level or via global error boun
 ### CSS Architecture
 
 - **Global Styles**: `src/index.css`, `src/App.css`
-- **Theme**: `src/dark-theme.css` for dark mode support
-- **Component Styles**: Feature-specific CSS files in `src/styles/`
 - **Layout Styles**: `src/assets/css/custom-layout.css`
 
 ### UI Component Libraries
@@ -304,7 +273,7 @@ npm run lint -- --fix
    - Consider React Query or similar for server state if needed
 
 4. **Permissions**: 
-   - Use `PermissionGuard` or `usePermissions` hook instead of inline permission checks
+   - Use `src/utils/rbac.js` utilities instead of inline permission checks
    - Keep permission logic centralized
 
 ## Development Tips
@@ -391,7 +360,6 @@ The frontend is a static site and can be deployed to:
 
 ## Additional Resources
 
-- **RBAC Documentation**: `src/components/layout/RBAC_IMPLEMENTATION.md`
 - **User Guides**: `src/pages/Guide/guides/` (USER_GUIDE_ADMIN.md, USER_GUIDE_MANAGER.md, etc.)
 - **Backend API Docs**: `../auto-hub-backend/API_DOCS.md`
 - **Vite Documentation**: https://vitejs.dev/
