@@ -152,20 +152,34 @@ const Dashboard = () => {
   const { groupBy, startDate, endDate } = getRangeParams(range);
   const [sellerCount, setSellerCount] = useState(0);
   const [partsOrders, setPartsOrders] = useState(0);
+  const [summaryCounts, setSummaryCounts] = useState({
+    carIntakes: 0,
+    inventoryItems: 0,
+    scrapRecords: 0,
+  });
+  const [countsLoading, setCountsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     const fetch = async () => {
       try {
+        setCountsLoading(true);
         const res = await dashboardAPI.getSummaryCounts();
         const payload = res.data || res;
         if (!mounted) return;
+        setSummaryCounts({
+          carIntakes: payload.carIntakes ?? 0,
+          inventoryItems: payload.inventoryItems ?? 0,
+          scrapRecords: payload.scrapRecords ?? 0,
+        });
         setSellerCount(payload.sellerCount ?? 0);
         // Parts orders could come from inventory items or a separate count
         // For now, using inventoryItems as parts orders count
         setPartsOrders(payload.inventoryItems ?? 0);
       } catch (err) {
         console.error("Failed to load counts:", err);
+      } finally {
+        if (mounted) setCountsLoading(false);
       }
     };
     fetch();
@@ -333,7 +347,7 @@ const Dashboard = () => {
                       />
                     </div>
                     <div className="col-xl-3">
-                      <InfoCards />
+                      <InfoCards counts={summaryCounts} loading={countsLoading} />
                     </div>
                   </div>
                 </div>

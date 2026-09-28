@@ -19,6 +19,7 @@ import {
   ShoppingCartOutlined,
   SyncOutlined,
   ContainerOutlined,
+  FundOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
@@ -75,7 +76,18 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
         icon: <DashboardOutlined />,
         label: <Link to="/dashboard">Dashboard</Link>,
       });
+    }
 
+    // Network & System Health Analytics - Only for Admin
+    if (isAdmin) {
+      items.push({
+        key: "/analytics",
+        icon: <FundOutlined />,
+        label: <Link to="/analytics">Analytics</Link>,
+      });
+    }
+
+    if (isManager || isAdmin) {
       // added by shiva
       // Requests: Part Request and Junk Car Request combined
       items.push({
