@@ -19,6 +19,28 @@ import {
   getCustomerTypeLabel,
 } from "./customerTypeOptions";
 
+// Formats 10 digits as (XXX)XXX-XXXX
+const formatPhoneNumber = (value, previousValue = "") => {
+  if (!value) return "";
+  let raw = value;
+  // If user hit backspace on the closing parenthesis or dash, remove the preceding digit
+  if (previousValue && previousValue.length > value.length) {
+    if (previousValue.endsWith(")") && value === previousValue.slice(0, -1)) {
+      raw = value.slice(0, -1);
+    } else if (previousValue.includes("-") && !value.includes("-")) {
+      raw = value.slice(0, -1);
+    }
+  }
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  if (!digits) return "";
+  if (digits.length < 3) return `(${digits}`;
+  if (digits.length === 3) {
+    return value.length > (previousValue || "").length ? `(${digits})` : `(${digits}`;
+  }
+  if (digits.length <= 6) return `(${digits.slice(0, 3)})${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)})${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
 // Waiver customer form: Customer Type dropdown on first row, two-column layout from second row
 const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
   const [form] = Form.useForm();
@@ -55,7 +77,11 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
         layout="vertical"
         form={form}
         name="customerInfo"
-        initialValues={{ type: DEFAULT_CUSTOMER_TYPE, ...initialValues }}
+        initialValues={{
+          type: DEFAULT_CUSTOMER_TYPE,
+          ...initialValues,
+          ...(initialValues.mobileNo ? { mobileNo: formatPhoneNumber(initialValues.mobileNo) } : {}),
+        }}
         onFinish={handleFinish}
       >
         {/* First row: Customer Type dropdown (full width) */}
@@ -110,8 +136,36 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
 
         <Row gutter={24}>
           <Col span={12}>
-            <Form.Item label="Mobile No." name="mobileNo">
-              <Input placeholder="Enter Mobile No (optional)" />
+            <Form.Item
+              label="Mobile No."
+              name="mobileNo"
+              rules={[
+                { required: true, message: "Mobile number is required" },
+                {
+                  validator: (_, value) => {
+                    if (!value) {
+                      return Promise.reject(new Error("Mobile number is required"));
+                    }
+                    const digits = String(value).replace(/\D/g, "");
+                    if (digits.length !== 10) {
+                      return Promise.reject(
+                        new Error("Mobile number must be exactly 10 digits")
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+            >
+              <Input
+                placeholder="(XXX)XXX-XXXX"
+                maxLength={13}
+                onChange={(e) => {
+                  const prev = form.getFieldValue("mobileNo") || "";
+                  const formatted = formatPhoneNumber(e.target.value, prev);
+                  form.setFieldsValue({ mobileNo: formatted });
+                }}
+              />
             </Form.Item>
           </Col>
 
@@ -124,26 +178,14 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
 
         <Row gutter={24}>
           <Col span={12}>
-            <Form.Item
-              label="ID Proof Type"
-              name="idProofType"
-              rules={[
-                { required: true, message: "Please enter ID proof type" },
-              ]}
-            >
-              <Input placeholder="e.g. NIC, Passport" />
+            <Form.Item label="ID Proof Type" name="idProofType">
+              <Input placeholder="e.g. NIC, Passport (optional)" />
             </Form.Item>
           </Col>
 
           <Col span={12}>
-            <Form.Item
-              label="ID Proof Number"
-              name="idProofNumber"
-              rules={[
-                { required: true, message: "Please enter ID proof number" },
-              ]}
-            >
-              <Input placeholder="Enter ID proof number" />
+            <Form.Item label="ID Proof Number" name="idProofNumber">
+              <Input placeholder="Enter ID proof number (optional)" />
             </Form.Item>
           </Col>
         </Row>
@@ -209,11 +251,7 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
           </Col>
 
           <Col span={12}>
-            <Form.Item
-              label="Signature"
-              name="signature"
-              rules={[{ required: true, message: "Please provide signature" }]}
-            >
+            <Form.Item label="Signature (optional)" name="signature">
               <div style={{ minHeight: 220 }}>
                 <SignatureCanvas
                   value={signatureUrl}

@@ -24,11 +24,13 @@ const SignatureCanvas = ({ value, onChange, disabled = false }) => {
     const ctx = canvas.getContext("2d");
     const ratio = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    const cssWidth = rect.width || canvas.clientWidth || 800;
+    const parentWidth = canvas.parentElement?.clientWidth;
+    const cssWidth = rect.width || parentWidth || canvas.clientWidth || 500;
     const cssHeight = rect.height || canvas.clientHeight || 160;
     canvas.width = Math.round(cssWidth * ratio);
     canvas.height = Math.round(cssHeight * ratio);
-    canvas.style.width = `${cssWidth}px`;
+    canvas.style.width = "100%";
+    canvas.style.maxWidth = "100%";
     canvas.style.height = `${cssHeight}px`;
     ctx.scale(ratio, ratio);
     ctx.lineCap = "round";
@@ -190,6 +192,9 @@ const SignatureCanvas = ({ value, onChange, disabled = false }) => {
               cursor: disabled ? "not-allowed" : "crosshair",
               touchAction: "none",
               width: "100%",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+              display: "block",
               height: "160px",
               backgroundColor: "#fff",
             }}

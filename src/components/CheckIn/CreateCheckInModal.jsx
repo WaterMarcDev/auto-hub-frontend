@@ -98,13 +98,25 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
       open={open}
       onCancel={onClose}
       footer={null}
-      //   centered
+      width={620}
       style={{
-        top: 40,
+        top: 24,
+        maxWidth: "calc(100vw - 32px)",
+        margin: "0 auto",
+      }}
+      styles={{
+        body: {
+          maxHeight: "calc(85vh - 100px)",
+          overflowY: "auto",
+          overflowX: "hidden",
+          paddingRight: "8px",
+        },
       }}
       bodyStyle={{
-        height: "70vh",
+        maxHeight: "calc(85vh - 100px)",
         overflowY: "auto",
+        overflowX: "hidden",
+        paddingRight: "8px",
       }}
     >
       <Form
@@ -112,6 +124,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
         layout="vertical"
         onFinish={handleFinish}
         initialValues={{ amount: 2 }}
+        style={{ maxWidth: "100%", overflowX: "hidden" }}
       >
         <Form.Item label="Customer" required>
           <Input.Search
@@ -144,16 +157,31 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
                       width: "100%",
                       display: "flex",
                       justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 600 }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          wordBreak: "break-word",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
                         {`${item.firstName || ""} ${item.lastName || ""
                           }`.trim() ||
                           item.email ||
                           item.mobileNo}
                       </div>
-                      <div style={{ fontSize: 12, color: "#999" }}>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#999",
+                          wordBreak: "break-word",
+                          overflowWrap: "anywhere",
+                        }}
+                      >
                         {item.email || "N/A"} • {item.mobileNo || "N/A"}
                       </div>
                     </div>
@@ -188,7 +216,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
 
         {selectedCustomer ? (
           <Card
-            style={{ marginBottom: 12 }}
+            style={{ marginBottom: 12, maxWidth: "100%" }}
             title="Customer Preview"
             extra={
               <Button
@@ -202,7 +230,13 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
               </Button>
             }
           >
-            <Descriptions column={1} bordered size="small">
+            <Descriptions
+              column={1}
+              bordered
+              size="small"
+              style={{ width: "100%", wordBreak: "break-word" }}
+              contentStyle={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+            >
               <Descriptions.Item label="Name">
                 {`${selectedCustomer.firstName || ""} ${selectedCustomer.lastName || ""
                   }`.trim()}
@@ -322,6 +356,9 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
             borderRadius: "8px",
             padding: "16px",
             marginBottom: "16px",
+            maxWidth: "100%",
+            boxSizing: "border-box",
+            wordBreak: "break-word",
           }}
         >
           <h4 style={{ color: "#d84315", marginBottom: "12px", fontWeight: "bold", fontSize: "14px" }}>
