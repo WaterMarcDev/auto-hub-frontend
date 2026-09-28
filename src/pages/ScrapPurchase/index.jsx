@@ -26,7 +26,7 @@ import {
 import dayjs from "dayjs";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
-import ScrapPurchaseService from "../../services/scrapPurchaseApi";
+import ScrapPurchaseService from "../../services/scrapPurchaseService";
 
 const { Option } = Select;
 
