@@ -3,6 +3,7 @@ import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import api from "../../utils/api";   // added by shiva
+import { cacheManager } from "../../utils/cacheManager";
 
 
 const Layout = ({ children }) => {
@@ -12,6 +13,33 @@ const Layout = ({ children }) => {
   const [junkRequestCount, setJunkRequestCount] = useState(0);   // count new junk requests by shiva
   const [partRequestCount, setPartRequestCount] = useState(0);  // count new part requests
 
+  // Initialize Socket.io connection for reactive cache updates across the app
+  useEffect(() => {
+    let socket;
+    let cancelled = false;
+
+    import("socket.io-client")
+      .then(({ io }) => {
+        if (cancelled) return;
+        const socketUrl =
+          import.meta.env.VITE_SOCKET_URL ||
+          (import.meta.env.VITE_API_URL
+            ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
+            : "https://api.autohubexpress.us");
+        socket = io(socketUrl);
+        cacheManager.initSocket(socket);
+      })
+      .catch((err) => {
+        console.warn("Socket.io initialization error for cache manager:", err);
+      });
+
+    return () => {
+      cancelled = true;
+      if (socket) {
+        socket.disconnect();
+      }
+    };
+  }, []);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
