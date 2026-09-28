@@ -1,23 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { dashboardAPI } from "../../utils/api";
 
-const InfoCards = () => {
-  const [counts, setCounts] = useState({
+const InfoCards = ({ counts: externalCounts, loading: externalLoading }) => {
+  const [internalCounts, setInternalCounts] = useState({
     carIntakes: 0,
     inventoryItems: 0,
     scrapRecords: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [internalLoading, setInternalLoading] = useState(true);
+
+  const counts = externalCounts !== undefined ? externalCounts : internalCounts;
+  const loading = externalLoading !== undefined ? externalLoading : internalLoading;
 
   useEffect(() => {
+    // If counts are passed from parent (e.g. Dashboard), skip duplicate fetch
+    if (externalCounts !== undefined) return;
+
     let mounted = true;
     const fetchCounts = async () => {
       try {
-        setLoading(true);
+        setInternalLoading(true);
         const res = await dashboardAPI.getSummaryCounts();
         const payload = res.data || res;
         if (!mounted) return;
-        setCounts({
+        setInternalCounts({
           carIntakes: payload.carIntakes ?? 0,
           inventoryItems: payload.inventoryItems ?? 0,
           scrapRecords: payload.scrapRecords ?? 0,
@@ -25,7 +31,7 @@ const InfoCards = () => {
       } catch (err) {
         console.error("Failed to load summary counts:", err);
       } finally {
-        setLoading(false);
+        setInternalLoading(false);
       }
     };
 
@@ -33,7 +39,7 @@ const InfoCards = () => {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [externalCounts]);
 
   return (
     <div className="dash-info-widget mt-4 mt-lg-0 py-4 px-3 rounded">

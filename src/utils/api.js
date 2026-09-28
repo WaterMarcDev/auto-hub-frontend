@@ -320,5 +320,11 @@ export const dashboardAPI = {
     api.get("/dashboard/earning-goal", { params }),
 };
 
+// System & Health Analytics API
+export const systemAPI = {
+  getHealth: () => api.get("/system/health"),
+  getAnalytics: () => api.get("/system/analytics"),
+};
+
 // Export the configured axios instance as default
 export default api;
