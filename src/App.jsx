@@ -50,10 +50,6 @@ const CarInventoryList = React.lazy(() => import("./pages/CarInventory/List"));
 const AddScrap = React.lazy(() => import("./pages/Scrap/Add"));
 const ScrapList = React.lazy(() => import("./pages/Scrap/List"));
 const ScrapPurchase = React.lazy(() => import("./pages/ScrapPurchase/ScrapPurchase"));
-const SellerRegister = React.lazy(() => import("./pages/Seller/Register"));
-const SellerList = React.lazy(() => import("./pages/Seller/List"));
-const BuyerRegister = React.lazy(() => import("./pages/Buyer/Register"));
-const BuyerList = React.lazy(() => import("./pages/Buyer/List"));
 const AddWaiver = React.lazy(() =>
   import("./pages/Waiver").then((mod) => ({ default: mod.AddWaiver }))
 );
@@ -84,37 +80,6 @@ const UnifiedInbox = React.lazy(() => import("./pages/UnifiedInbox"));
 const Orders = React.lazy(() => import("./pages/Orders"));
 const IntegrationManager = React.lazy(() => import("./pages/IntegrationManager"));
 const EbayCatalogSync = React.lazy(() => import("./pages/EbayCatalogSyncStatus"));
-
-// Create placeholder components for other routes
-const PlaceholderPage = ({ title }) => (
-  <div className="page-title-box">
-    <div className="container-fluid">
-      <div className="row align-items-center">
-        <div className="col-sm-6">
-          <div className="page-title">
-            <h4>{title}</h4>
-            <ol className="breadcrumb m-0">
-              <li className="breadcrumb-item">
-                <a href="javascript: void(0);">Scrap Yard</a>
-              </li>
-              <li className="breadcrumb-item active">{title}</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div className="row">
-      <div className="col-12">
-        <div className="card">
-          <div className="card-body">
-            <h4 className="card-title">{title}</h4>
-            <p>This page is under development.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 // Auth placeholder component (standalone without layout)
 const AuthPlaceholderPage = ({ title }) => {

@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Input, Select, Row, Col } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SourceBadge from "../../components/SourceBadge";
+import { useAuth } from "../../hooks/useAuth";
 // import { Tabs } from "antd";
 // import axios from "axios";
 
@@ -31,7 +32,8 @@ const Requests = () => {
     const [requests, setRequests] = useState([]);
     const navigate = useNavigate();
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    // Nothing writes localStorage "user"; the session user lives in AuthContext.
+    const { user } = useAuth();
     const canEditSource =
         user?.role?.toLowerCase() === "admin" ||
         user?.role?.toLowerCase() === "manager";
@@ -142,7 +144,7 @@ const Requests = () => {
 
     const fetchRequests = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`, { credentials: "include" });
             const data = await res.json();
             setRequests(data.data || []);
         } catch (error) {
@@ -153,7 +155,7 @@ const Requests = () => {
     //Fetch Junk Car API - shiva
     const fetchJunkCars = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`, { credentials: "include" });
             const data = await res.json();
             setJunkCars(data.data || []);
         } catch (error) {
@@ -170,6 +172,7 @@ const Requests = () => {
     const updateStatus = async (id, status) => {
         try {
             await fetch(`${import.meta.env.VITE_API_URL}/part-request/${id}`, {
+                credentials: "include",
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -190,6 +193,7 @@ const Requests = () => {
             await fetch(
                 `${import.meta.env.VITE_API_URL}/part-request/${id}/source`,
                 {
+                    credentials: "include",
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
@@ -214,6 +218,7 @@ const Requests = () => {
             await fetch(
                 `${import.meta.env.VITE_API_URL}/part-request/${id}/remark`,
                 {
+                    credentials: "include",
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",

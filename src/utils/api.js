@@ -142,8 +142,8 @@ export const assetTagsAPI = {
   generate: (data) => api.post("/tags/generate", data),
   available: (params = {}) => api.get("/tags/available/", { params }),
   getAll: (params = {}) => api.get("/tags/", { params }),
-  get: (params = {}) => api.get("/tags/${id}", { params }),
-  toggle: (params = {}) => api.patch("/tags/${id}/toggle", { params }),
+  get: (barcode, params = {}) => api.get(`/tags/${barcode}`, { params }),
+  toggle: (barcode) => api.patch(`/tags/${barcode}/toggle`),
   attach: (barcode, data) => api.post(`/tags/${barcode}/attach`, data)
 };
 

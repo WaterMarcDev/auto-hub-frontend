@@ -566,7 +566,7 @@ export default function Inbox() {
         const fetchEmails = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`${API_URL}/email/all`);
+                const res = await fetch(`${API_URL}/email/all`, { credentials: "include" });
                 const data = await res.json();
                 setEmails(data);
             } catch (err) {
@@ -611,7 +611,7 @@ export default function Inbox() {
             formData.append("message", forwardMessage);
             formData.append("originalEmail", JSON.stringify(selectedEmail));
             forwardAttachments.forEach((f) => formData.append("attachments", f));
-            const res = await fetch(`${API_URL}/email/forward`, { method: "POST", body: formData });
+            const res = await fetch(`${API_URL}/email/forward`, { credentials: "include", method: "POST", body: formData });
             const data = await res.json();
             if (!res.ok) { message.error(data.error || "Invalid email address"); return; }
             message.success("Email forwarded successfully");
@@ -650,7 +650,7 @@ export default function Inbox() {
             formData.append("message", replyText);
             ccList.forEach((addr) => formData.append("cc", addr));
             attachments.forEach((f) => formData.append("attachments", f));
-            const res = await fetch(`${API_URL}/email/reply`, { method: "POST", body: formData });
+            const res = await fetch(`${API_URL}/email/reply`, { credentials: "include", method: "POST", body: formData });
             const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
@@ -663,8 +663,8 @@ export default function Inbox() {
             setCcText("");
             setShowCc(false);
             const [emailsRes, threadRes] = await Promise.all([
-                fetch(`${API_URL}/email/all`),
-                fetch(`${API_URL}/email/thread/${selectedEmail._id}`),
+                fetch(`${API_URL}/email/all`, { credentials: "include" }),
+                fetch(`${API_URL}/email/thread/${selectedEmail._id}`, { credentials: "include" }),
             ]);
             setEmails(await emailsRes.json());
             const threadData = await threadRes.json();
@@ -808,11 +808,11 @@ export default function Inbox() {
                                         setSelectedEmail(email);
                                         const template = `Hi ${name.split(" ")[0]},\n\nThank you for reaching out.\n\n`;
                                         setReplyText(template);
-                                        const res = await fetch(`${API_URL}/email/thread/${email._id}`);
+                                        const res = await fetch(`${API_URL}/email/thread/${email._id}`, { credentials: "include" });
                                         const data = await res.json();
                                         setThread(Array.isArray(data) ? data : []);
                                         if (email.status === "unread") {
-                                            await fetch(`${API_URL}/email/mark-read/${email._id}`, { method: "PATCH" });
+                                            await fetch(`${API_URL}/email/mark-read/${email._id}`, { credentials: "include", method: "PATCH" });
                                             setEmails((prev) =>
                                                 prev.map((e) =>
                                                     e._id === email._id

@@ -36,7 +36,7 @@ const SocialLeads = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`, { credentials: "include" });
       const json = await res.json();
       setRequests(json.data || []);
     } catch (err) {

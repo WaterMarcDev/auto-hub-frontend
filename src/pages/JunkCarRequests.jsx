@@ -6,6 +6,7 @@ import AddJunkCarRequest from "./AddJunkCarRequest";
 import { Modal } from "antd";
 import api from "../utils/api";    // by shiva
 import SourceBadge from "../components/SourceBadge";
+import { useAuth } from "../hooks/useAuth";
 
 const { Option } = Select;
 
@@ -55,7 +56,8 @@ const JunkCarRequests = () => {
             console.error(error);
         }
     };
-    const user = JSON.parse(localStorage.getItem("user"));
+    // Nothing writes localStorage "user"; the session user lives in AuthContext.
+    const { user } = useAuth();
 
     const canEditSource =
         user?.role?.toLowerCase() === "admin" ||
@@ -69,8 +71,6 @@ const JunkCarRequests = () => {
 
             setStaffUsers(res.data.data || []);
 
-            console.log("STAFF USERS:", res.data);    // temp debug by shiva
-
         } catch (error) {
 
             console.error("Error fetching staff users:", error);
@@ -80,10 +80,6 @@ const JunkCarRequests = () => {
 
     useEffect(() => {
         fetchJunkCars();
-
-        //     const user = JSON.parse(localStorage.getItem("user"));
-
-        //     console.log("LOGGED USER:", user);    // temp debug by shiva
 
             if (
                 user?.role?.toLowerCase() === "admin" ||

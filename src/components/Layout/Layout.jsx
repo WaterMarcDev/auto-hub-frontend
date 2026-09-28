@@ -35,7 +35,7 @@ const Layout = ({ children }) => {
   useEffect(() => {
     const fetchEmails = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/email/all`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/email/all`, { credentials: "include" });
         const data = await res.json();
 
         const unread = data.filter(e => e.status === "unread").length;
