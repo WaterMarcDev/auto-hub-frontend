@@ -19,15 +19,17 @@ import {
   getCustomerTypeLabel,
 } from "./customerTypeOptions";
 
-// Formats 10 digits as (XXX)XXX-XXXX
+// Formats 10 digits as (XXX) XXX-XXXX
 const formatPhoneNumber = (value, previousValue = "") => {
   if (!value) return "";
   let raw = value;
-  // If user hit backspace on the closing parenthesis or dash, remove the preceding digit
+  // If user hit backspace on ') ' or '-' or ')', remove the preceding digit
   if (previousValue && previousValue.length > value.length) {
-    if (previousValue.endsWith(")") && value === previousValue.slice(0, -1)) {
+    if (previousValue.endsWith(") ") && value === previousValue.slice(0, -1)) {
+      raw = value.slice(0, -2);
+    } else if (previousValue.endsWith(")") && value === previousValue.slice(0, -1)) {
       raw = value.slice(0, -1);
-    } else if (previousValue.includes("-") && !value.includes("-")) {
+    } else if (previousValue.endsWith("-") && value === previousValue.slice(0, -1)) {
       raw = value.slice(0, -1);
     }
   }
@@ -35,10 +37,10 @@ const formatPhoneNumber = (value, previousValue = "") => {
   if (!digits) return "";
   if (digits.length < 3) return `(${digits}`;
   if (digits.length === 3) {
-    return value.length > (previousValue || "").length ? `(${digits})` : `(${digits}`;
+    return value.length > (previousValue || "").length ? `(${digits}) ` : `(${digits}`;
   }
-  if (digits.length <= 6) return `(${digits.slice(0, 3)})${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)})${digits.slice(3, 6)}-${digits.slice(6)}`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 };
 
 // Waiver customer form: Customer Type dropdown on first row, two-column layout from second row
@@ -144,7 +146,7 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
                 {
                   validator: (_, value) => {
                     if (!value) {
-                      return Promise.reject(new Error("Mobile number is required"));
+                      return Promise.resolve();
                     }
                     const digits = String(value).replace(/\D/g, "");
                     if (digits.length !== 10) {
@@ -158,8 +160,8 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
               ]}
             >
               <Input
-                placeholder="(XXX)XXX-XXXX"
-                maxLength={13}
+                placeholder="Please enter your mobile number"
+                maxLength={14}
                 onChange={(e) => {
                   const prev = form.getFieldValue("mobileNo") || "";
                   const formatted = formatPhoneNumber(e.target.value, prev);

@@ -22,6 +22,7 @@ const AllCheckins = () => {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState(predefinedSearch);
   const [statusFilter, setStatusFilter] = useState(null);
+  const [printingId, setPrintingId] = useState(null);
 
   const fetchItems = useCallback(
     async (opts = {}) => {
@@ -61,26 +62,58 @@ const AllCheckins = () => {
   };
 
   const handlePrintInvoice = (record) => {
+    if (printingId) return;
+    setPrintingId(record._id);
+
     const url = checkInAPI.printInvoice(record._id);
-    // Create a hidden iframe to load and print the invoice
+    // Use an off-screen non-zero dimension iframe so browser computes layout immediately without freezing
     const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "1px";
+    iframe.style.height = "1px";
+    iframe.style.opacity = "0";
+    iframe.style.border = "0";
+    iframe.style.pointerEvents = "none";
     iframe.src = url;
     document.body.appendChild(iframe);
 
-    iframe.onload = () => {
+    let cleanedUp = false;
+    const cleanup = () => {
+      if (cleanedUp) return;
+      cleanedUp = true;
+      setPrintingId(null);
       try {
-        iframe.contentWindow.print();
+        if (iframe.parentNode) {
+          document.body.removeChild(iframe);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    iframe.onload = () => {
+      setPrintingId(null);
+      try {
+        if (iframe.contentWindow) {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }
       } catch (e) {
         console.error("Print error:", e);
         message.error("Failed to open print dialog");
       }
+      setTimeout(cleanup, 2000);
     };
 
-    // Clean up iframe after printing
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 1000);
+    iframe.onerror = () => {
+      message.error("Failed to load invoice");
+      cleanup();
+    };
+
+    // Safety timeout in case print dialog stalls
+    setTimeout(cleanup, 20000);
   };
 
   const columns = [
@@ -135,6 +168,8 @@ const AllCheckins = () => {
           <Button
             size="small"
             icon={<PrinterOutlined />}
+            loading={printingId === rec._id}
+            disabled={Boolean(printingId && printingId !== rec._id)}
             onClick={() => handlePrintInvoice(rec)}
             title="Print Invoice"
           >
