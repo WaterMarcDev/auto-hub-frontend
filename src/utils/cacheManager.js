@@ -25,6 +25,15 @@ class ClientCacheManager {
         this.invalidate(scope);
       }
     });
+
+    this.socket.on("badge:update", () => {
+      this.invalidate("badge");
+    });
+
+    this.socket.on("new_email", () => {
+      this.invalidate("badge");
+      this.invalidate("emails");
+    });
   }
 
   /**
