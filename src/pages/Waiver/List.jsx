@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { getCustomerTypeLabel } from "./customerTypeOptions";
+import { cacheManager } from "../../utils/cacheManager";
 
 const { RangePicker } = DatePicker;
 
@@ -81,12 +82,27 @@ const WaiverList = () => {
 
   const fetchCustomers = useCallback(
     async (opts = {}) => {
-      setLoading(true);
+      const page = opts.page || pagination.current;
+      const limit = opts.limit || pagination.pageSize;
+      const search = opts.search ?? filters.search ?? "";
+      const cacheKey = `waivers:customers:${page}:${limit}:${search}:${filters.startDate || ""}:${filters.endDate || ""}`;
+
+      const cached = cacheManager.get(cacheKey);
+      if (cached && !opts.force) {
+        setCustomers(cached.customers || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: cached.total || 0,
+        }));
+      } else if (!cached) {
+        setLoading(true);
+      }
+
       try {
         const params = {
-          page: opts.page || pagination.current,
-          limit: opts.limit || pagination.pageSize,
-          search: opts.search ?? filters.search ?? "",
+          page,
+          limit,
+          search,
         };
 
         if (filters.startDate) params.startDate = filters.startDate;
@@ -95,10 +111,14 @@ const WaiverList = () => {
         const res = await customerAPI.getAll(params);
         const data = res.data || res;
         const fetched = data.customers || data.sellers || data.buyers || [];
+        const total = data.pagination?.total || fetched.length;
+
+        cacheManager.set(cacheKey, { customers: fetched, total }, 60);
+
         setCustomers(fetched);
         setPagination((prev) => ({
           ...prev,
-          total: data.pagination?.total || fetched.length,
+          total,
         }));
       } catch (err) {
         console.error("Error fetching customers:", err);
@@ -113,6 +133,20 @@ const WaiverList = () => {
     },
     [filters, pagination]
   );
+
+  // Real-time invalidation listener
+  useEffect(() => {
+    const unsubWaiver = cacheManager.subscribe("waivers", () => {
+      fetchCustomers({ force: true });
+    });
+    const unsubCust = cacheManager.subscribe("customers", () => {
+      fetchCustomers({ force: true });
+    });
+    return () => {
+      unsubWaiver();
+      unsubCust();
+    };
+  }, [fetchCustomers]);
 
   useEffect(() => {
     fetchCustomers({ page: 1, limit: pagination.pageSize });
