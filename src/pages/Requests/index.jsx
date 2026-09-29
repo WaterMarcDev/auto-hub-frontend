@@ -6,8 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Input, Select, Row, Col } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SourceBadge from "../../components/SourceBadge";
-// import { Tabs } from "antd";
-// import axios from "axios";
+import { cacheManager } from "../../utils/cacheManager";
 
 const { Option } = Select;
 
@@ -28,7 +27,8 @@ const PART_REQUEST_SOURCE_OPTIONS = [
 
 
 const Requests = () => {
-    const [requests, setRequests] = useState([]);
+    const [requests, setRequests] = useState(() => cacheManager.get("partRequests") || []);
+    const [loading, setLoading] = useState(() => !cacheManager.get("partRequests"));
     const navigate = useNavigate();
 
     const user = JSON.parse(localStorage.getItem("user"));
@@ -42,7 +42,7 @@ const Requests = () => {
     const [sourceFilter, setSourceFilter] = useState("");  // added by shiva for Search by source
     const [filteredRequests, setFilteredRequests] = useState([]);
     const [noResults, setNoResults] = useState(false);
-    const [junkCars, setJunkCars] = useState([]);
+    const [junkCars, setJunkCars] = useState(() => cacheManager.get("junkCars") || []);
 
     // Message popup — copies the exact same behaviour/state pattern/UI as
     // the Junk Car Request "Condition" column popup
@@ -140,22 +140,37 @@ const Requests = () => {
     };
     //end here
 
-    const fetchRequests = async () => {
+    const fetchRequests = async (force = false) => {
+        const cached = cacheManager.get("partRequests");
+        if (!cached || force) {
+            if (!cached) setLoading(true);
+        }
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`);
             const data = await res.json();
-            setRequests(data.data || []);
+            const list = data.data || [];
+            cacheManager.set("partRequests", list, 120);
+            setRequests(list);
         } catch (error) {
             console.error("Error fetching requests:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
     //Fetch Junk Car API - shiva
     const fetchJunkCars = async () => {
+        const cached = cacheManager.get("junkCars");
+        if (cached) {
+            setJunkCars(cached);
+            return;
+        }
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`);
             const data = await res.json();
-            setJunkCars(data.data || []);
+            const list = data.data || [];
+            cacheManager.set("junkCars", list, 120);
+            setJunkCars(list);
         } catch (error) {
             console.error("Error fetching junk cars : ", error);
         }
@@ -164,8 +179,19 @@ const Requests = () => {
     useEffect(() => {
         fetchRequests();
         fetchJunkCars();  // by shiva
+
+        const unsubPart = cacheManager.subscribe("partRequests", () => {
+            fetchRequests(true);
+        });
+        const unsubJunk = cacheManager.subscribe("junkCars", () => {
+            fetchJunkCars();
+        });
+
+        return () => {
+            unsubPart();
+            unsubJunk();
+        };
     }, []);
-    console.log(requests);
 
     const updateStatus = async (id, status) => {
         try {
@@ -509,6 +535,7 @@ const Requests = () => {
                     </div>
                 )}
                 <Table
+                    loading={loading}
                     columns={columns}
                     dataSource={
                         [...(searched ? filteredRequests : requests)].sort((a, b) => {
