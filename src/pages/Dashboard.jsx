@@ -7,6 +7,7 @@ import EarningGoal from "../components/dashboard/EarningGoal";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
 import { dashboardAPI } from "../utils/api";
+import { cacheManager } from "../utils/cacheManager";
 
 const Dashboard = () => {
   const [range, setRange] = useState("Year");
@@ -152,20 +153,25 @@ const Dashboard = () => {
   const { groupBy, startDate, endDate } = getRangeParams(range);
   const [sellerCount, setSellerCount] = useState(0);
   const [partsOrders, setPartsOrders] = useState(0);
-  const [summaryCounts, setSummaryCounts] = useState({
-    carIntakes: 0,
-    inventoryItems: 0,
-    scrapRecords: 0,
-  });
-  const [countsLoading, setCountsLoading] = useState(true);
+  const cachedCounts = cacheManager.get("dash:summaryCounts");
+  const [summaryCounts, setSummaryCounts] = useState(() => ({
+    carIntakes: cachedCounts?.carIntakes ?? 0,
+    inventoryItems: cachedCounts?.inventoryItems ?? 0,
+    scrapRecords: cachedCounts?.scrapRecords ?? 0,
+  }));
+  const [countsLoading, setCountsLoading] = useState(() => !cachedCounts);
 
   useEffect(() => {
     let mounted = true;
-    const fetch = async () => {
+    const fetchCounts = async (force = false) => {
+      const cached = cacheManager.get("dash:summaryCounts");
+      if (!cached || force) {
+        if (!cached) setCountsLoading(true);
+      }
       try {
-        setCountsLoading(true);
         const res = await dashboardAPI.getSummaryCounts();
         const payload = res.data || res;
+        cacheManager.set("dash:summaryCounts", payload, 60);
         if (!mounted) return;
         setSummaryCounts({
           carIntakes: payload.carIntakes ?? 0,
@@ -173,8 +179,6 @@ const Dashboard = () => {
           scrapRecords: payload.scrapRecords ?? 0,
         });
         setSellerCount(payload.sellerCount ?? 0);
-        // Parts orders could come from inventory items or a separate count
-        // For now, using inventoryItems as parts orders count
         setPartsOrders(payload.inventoryItems ?? 0);
       } catch (err) {
         console.error("Failed to load counts:", err);
@@ -182,9 +186,16 @@ const Dashboard = () => {
         if (mounted) setCountsLoading(false);
       }
     };
-    fetch();
+
+    fetchCounts();
+
+    const unsub = cacheManager.subscribe("dash", () => {
+      fetchCounts(true);
+    });
+
     return () => {
       mounted = false;
+      unsub();
     };
   }, []);
   return (

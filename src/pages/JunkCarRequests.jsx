@@ -6,6 +6,7 @@ import AddJunkCarRequest from "./AddJunkCarRequest";
 import { Modal } from "antd";
 import api from "../utils/api";    // by shiva
 import SourceBadge from "../components/SourceBadge";
+import { cacheManager } from "../utils/cacheManager";
 
 const { Option } = Select;
 
@@ -28,7 +29,9 @@ const JUNK_CAR_SOURCE_OPTIONS = [
 ];
 
 const JunkCarRequests = () => {
-    const [junkCars, setJunkCars] = useState([]);
+    // SWR instant render: restore immediately from memory cache to avoid "0" and "No requests yet" flash
+    const [junkCars, setJunkCars] = useState(() => cacheManager.get("junkCars") || []);
+    const [loading, setLoading] = useState(() => !cacheManager.get("junkCars"));
     const [staffUsers, setStaffUsers] = useState([]);    // by shiva
     const [handledByFilter, setHandledByFilter] = useState("");   // by shiva
     const [sourceFilter, setSourceFilter] = useState("");            // by shiva
@@ -43,16 +46,20 @@ const JunkCarRequests = () => {
         setConditionModalOpen(true);
     };
 
-    const fetchJunkCars = async () => {
+    const fetchJunkCars = async (force = false) => {
+        const cached = cacheManager.get("junkCars");
+        if (!cached || force) {
+            if (!cached) setLoading(true);
+        }
         try {
-
             const res = await api.get("/junk-car");
-
-            setJunkCars(res.data.data || []);
-
+            const data = res.data?.data || [];
+            cacheManager.set("junkCars", data, 120); // 2 minute memory cache
+            setJunkCars(data);
         } catch (error) {
-
-            console.error(error);
+            console.error("Error fetching junk cars:", error);
+        } finally {
+            setLoading(false);
         }
     };
     const user = JSON.parse(localStorage.getItem("user"));
@@ -64,15 +71,9 @@ const JunkCarRequests = () => {
     // Fetch Staff Users by shiva
     const fetchStaffUsers = async () => {
         try {
-
             const res = await api.get("/users/staff");
-
             setStaffUsers(res.data.data || []);
-
-            console.log("STAFF USERS:", res.data);    // temp debug by shiva
-
         } catch (error) {
-
             console.error("Error fetching staff users:", error);
         }
     };
@@ -81,16 +82,19 @@ const JunkCarRequests = () => {
     useEffect(() => {
         fetchJunkCars();
 
-        //     const user = JSON.parse(localStorage.getItem("user"));
+        // Subscribe to real-time updates from WebSocket push
+        const unsub = cacheManager.subscribe("junkCars", () => {
+            fetchJunkCars(true);
+        });
 
-        //     console.log("LOGGED USER:", user);    // temp debug by shiva
+        if (
+            user?.role?.toLowerCase() === "admin" ||
+            user?.role?.toLowerCase() === "manager"
+        ) {
+            fetchStaffUsers();
+        }
 
-            if (
-                user?.role?.toLowerCase() === "admin" ||
-                user?.role?.toLowerCase() === "manager"
-            ) {
-                fetchStaffUsers();
-            }    // added by shiva
+        return () => unsub();
     }, []);
 
     const updateStatus = async (id, status) => {
@@ -526,6 +530,7 @@ const JunkCarRequests = () => {
                 </div>
 
                 <Table
+                    loading={loading}
                     columns={columns}
                     dataSource={
                         junkCars
