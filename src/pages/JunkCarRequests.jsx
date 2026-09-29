@@ -640,7 +640,7 @@ const JunkCarRequests = () => {
                         fetchJunkCars();   // refresh table
                     }}
                 />
-            </Modal>  // end here
+            </Modal>  {/* end here */}
 
             {/* Condition Details popup */}
             <Modal
