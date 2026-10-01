@@ -1,14 +1,27 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, Button, Row, Col, Statistic, Tag, Typography, Spin, App, Divider, Descriptions } from "antd";
-import { SyncOutlined, ReloadOutlined, CheckCircleOutlined, WarningOutlined } from "@ant-design/icons";
+import { SyncOutlined, ReloadOutlined, CheckCircleOutlined, WarningOutlined, CloseCircleOutlined, PauseCircleOutlined } from "@ant-design/icons";
 import api from "../utils/api";
+import EbaySyncedProductsTable from "../components/integrations/EbaySyncedProductsTable";
 
 const { Title, Text } = Typography;
+
+const RUN_STATUS_TAG = {
+  completed: { color: "green", icon: <CheckCircleOutlined /> },
+  failed: { color: "red", icon: <CloseCircleOutlined /> },
+  running: { color: "processing", icon: <SyncOutlined spin /> },
+};
+
+const RunStatusTag = ({ status }) => {
+  const style = RUN_STATUS_TAG[status] || { color: "default", icon: <WarningOutlined /> };
+  return <Tag icon={style.icon} color={style.color}>{status || "Not Run"}</Tag>;
+};
 
 const EbayCatalogSyncStatus = () => {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState(null);
+  const [productsRefreshKey, setProductsRefreshKey] = useState(0);
   const { message } = App.useApp();
 
   const fetchStatus = useCallback(async () => {
@@ -23,6 +36,7 @@ const EbayCatalogSyncStatus = () => {
     try {
       setSyncing(true); const res = await api.post("/ebay/catalog-sync/run");
       message.success(`Sync completed: published=${res.data?.data?.summary?.totalPublished || 0}`);
+      setProductsRefreshKey((k) => k + 1);
       await fetchStatus();
     } catch (err) {
       const errMsg = err.response?.data?.error || err.message;
@@ -42,12 +56,15 @@ const EbayCatalogSyncStatus = () => {
   const configured = status?.data?.configured;
   const missingConfig = status?.data?.missingConfiguration || [];
   const nextScheduled = status?.data?.nextScheduledAt;
+  // Older backends omit scheduleEnabled; only an explicit false means paused.
+  const schedulePaused = status?.data?.scheduleEnabled === false;
+  const lastReconcileRun = status?.data?.lastReconcileRun;
 
   return (
     <div style={{ padding: "20px" }}>
       <Card title={<Title level={4} style={{ margin: 0 }}>eBay Catalog Sync</Title>}
         extra={<Row gutter={8}>
-          <Col><Button icon={<ReloadOutlined />} onClick={fetchStatus} loading={loading}>Refresh</Button></Col>
+          <Col><Button icon={<ReloadOutlined />} onClick={() => { fetchStatus(); setProductsRefreshKey((k) => k + 1); }} loading={loading}>Refresh</Button></Col>
           <Col><Button icon={<SyncOutlined />} onClick={handleDryRun} loading={syncing} disabled={!configured}>Dry Run</Button></Col>
           <Col><Button type="primary" icon={<SyncOutlined />} onClick={handleSyncNow} loading={syncing} disabled={!configured}>Sync Now</Button></Col>
         </Row>}
@@ -57,10 +74,7 @@ const EbayCatalogSyncStatus = () => {
         ) : (<>
           <Descriptions column={2} size="small" bordered style={{ marginBottom: 16 }}>
             <Descriptions.Item label="Sync Status">
-              <Tag icon={lastRun?.status === "completed" ? <CheckCircleOutlined /> : <WarningOutlined />}
-                   color={lastRun?.status === "completed" ? "green" : "default"}>
-                {lastRun?.status || "Not Run"}
-              </Tag>
+              <RunStatusTag status={lastRun?.status} />
             </Descriptions.Item>
             <Descriptions.Item label="Environment">
               <Tag>{status?.data?.environment || "production"}</Tag>
@@ -69,8 +83,21 @@ const EbayCatalogSyncStatus = () => {
               <Tag color={configured ? "green" : "red"}>{configured ? "Ready" : "Incomplete"}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Next Scheduled Sync">
-              {nextScheduled ? new Date(nextScheduled).toLocaleString() : "\u2014"}
+              {schedulePaused ? (
+                <Tag icon={<PauseCircleOutlined />} color="orange">Automatic sync paused</Tag>
+              ) : nextScheduled ? new Date(nextScheduled).toLocaleString() : "\u2014"}
             </Descriptions.Item>
+            {lastReconcileRun && (
+              <Descriptions.Item label={"eBay Listing Import (eBay \u2192 CRM)"} span={2}>
+                <RunStatusTag status={lastReconcileRun.status} />
+                {lastReconcileRun.completedAt && (
+                  <Text type="secondary">{new Date(lastReconcileRun.completedAt).toLocaleString()}</Text>
+                )}
+                {lastReconcileRun.error && (
+                  <div><Text type="danger">{lastReconcileRun.error}</Text></div>
+                )}
+              </Descriptions.Item>
+            )}
           </Descriptions>
 
           {!configured && missingConfig.length > 0 && (
@@ -107,6 +134,9 @@ const EbayCatalogSyncStatus = () => {
             </div>
           )}
         </>)}
+
+        <Divider>Synced Products</Divider>
+        <EbaySyncedProductsTable refreshKey={productsRefreshKey} />
       </Card>
     </div>
   );
