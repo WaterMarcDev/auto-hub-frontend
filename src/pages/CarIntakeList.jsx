@@ -14,6 +14,7 @@ import {
   Select,
   Spin,
   Input,
+  Tooltip,
 } from "antd";
 import {
   EditOutlined,
@@ -21,6 +22,8 @@ import {
   PlusOutlined,
   UploadOutlined,
   SearchOutlined,
+  EyeOutlined,
+  CarOutlined,
 } from "@ant-design/icons";
 import api, { carIntakeAPI, uploadAPI } from "../utils/api";     // added api by shiva
 import getStatusColor from "../utils/statusColors";
@@ -316,53 +319,56 @@ const CarIntakeList = () => {
     {
       title: "Action",
       key: "action",
-      minWidth: 160,
+      minWidth: 170,
       fixed: "right",
       render: (text, record) => (
-        <Space>
-          <Button
-            type="default"
-            size="small"
-            onClick={() => navigate(`/car-intake/${record._id}/details`)}
-          >
-            View
-          </Button>
-          <Button
-            type={
-              NON_EDITABLE_STATUSES.includes(record?.status)
-                ? "default"
-                : "primary"
-            }
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => navigate(`/car-intake/${record._id}`)}
+        <Space size="small">
+          <Tooltip title="View vehicle intake details">
+            <Button
+              type="default"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => navigate(`/car-intake/${record._id}/details`)}
+            >
+              View
+            </Button>
+          </Tooltip>
+          <Tooltip
             title={
               NON_EDITABLE_STATUSES.includes(record?.status)
                 ? "Cannot edit — intake already completed"
-                : "Edit"
+                : "Edit intake record"
             }
-            disabled={NON_EDITABLE_STATUSES.includes(record?.status)}
-          />
+          >
+            <Button
+              type={
+                NON_EDITABLE_STATUSES.includes(record?.status)
+                  ? "default"
+                  : "primary"
+              }
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/car-intake/${record._id}`)}
+              disabled={NON_EDITABLE_STATUSES.includes(record?.status)}
+            />
+          </Tooltip>
 
-          {/* Ready To Scrap Button by shiva */}
-          <Button
-            type="primary"
-            size="small"
-            style={{ background: "#fa8c16" }}
-            onClick={() => handleMoveToReadyToScrap(record._id)}
+          {/* Ready To Scrap Button */}
+          <Tooltip title="Move vehicle to Ready To Scrap">
+            <Button
+              type="primary"
+              size="small"
+              style={{
+                backgroundColor: "#D97706",
+                borderColor: "#D97706",
+                color: "#FFFFFF",
+                fontSize: "12px",
+              }}
+              onClick={() => handleMoveToReadyToScrap(record._id)}
             >
               Ready To Scrap
             </Button>
-            {/* end here */}
-
-          {/* <Button
-            type="primary"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-            title="Delete"
-          /> */}
+          </Tooltip>
         </Space>
       ),
     },
@@ -568,26 +574,57 @@ const CarIntakeList = () => {
       <TitleBox
         title="Car Intake Lists"
         routes={["Scrap Yard", "Car Intake"]}
-        current={"Car Intake Lists"}
+        current="Car Intake Lists"
+        extra={
+          <Space wrap>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate("/car-intake")}
+            >
+              Add New Car
+            </Button>
+            <Button
+              type="default"
+              icon={<UploadOutlined />}
+              onClick={handleBulkUploadOpen}
+            >
+              Bulk Upload
+            </Button>
+          </Space>
+        }
       />
 
       {/* Page Content */}
       <PageContentWrapper>
-        <Card title={<span>Car Intake Lists</span>}>
+        <Card
+          title={
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span>Car Intake Registry</span>
+              {pagination.total > 0 && (
+                <Tag color="geekblue" style={{ borderRadius: 999 }}>
+                  {pagination.total} vehicles
+                </Tag>
+              )}
+            </div>
+          }
+        >
           <div
+            className="requests-toolbar"
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              gap: "16px",
-              marginBottom: 16,
+              gap: "12px",
+              marginBottom: 18,
               flexWrap: "wrap",
             }}
           >
-            <Space.Compact style={{ width: "100%", maxWidth: 600, gap: 8 }} size="middle">
+            <div style={{ display: "flex", gap: "10px", flex: "1 1 380px", maxWidth: "650px", flexWrap: "wrap" }}>
               <Input
                 placeholder="Search by VIN, Make, Model, Trim, or Seller..."
                 value={searchTerm}
+                allowClear
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
                   if (!e.target.value) {
@@ -595,51 +632,49 @@ const CarIntakeList = () => {
                   }
                 }}
                 onPressEnter={() => handleSearch(searchTerm)}
-                size="middle"
-                style={{ width: "100%" }}
+                prefix={<SearchOutlined style={{ color: "#64748B" }} />}
+                style={{ flex: "1 1 240px" }}
               />
               <Button
                 type="primary"
-                icon={<SearchOutlined />}
                 onClick={() => handleSearch(searchTerm)}
-                size="middle"
               >
                 Search
               </Button>
-            </Space.Compact>
-
-            <div style={{ minWidth: 260 }}>
-              <Select
-                placeholder="Filter by status"
-                value={statusFilter}
-                onChange={handleStatusChange}
-                allowClear
-                style={{ width: "100%" }}
-                options={[
-                  { label: "Intake", value: "intake" },
-                  { label: "VIN Fetched", value: "vin-fetched" },
-                  { label: "Details Uploaded", value: "details-uploaded" },
-                  { label: "Images Uploaded", value: "images-uploaded" },
-                  { label: "Parts Uploaded", value: "parts-uploaded" },
-                  { label: "Price Uploaded", value: "price-uploaded" },
-                  { label: "KYC Uploaded", value: "kyc-uploaded" },
-                  { label: "Payment Done", value: "payment-done" },
-                  { label: "Scraped", value: "scraped" },
-                  { label: "Sold", value: "sold" },
-                  { label: "Towed", value: "towed" },
-                ]}
-              />
             </div>
 
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ minWidth: 200, flex: "1 1 180px" }}>
+                <Select
+                  placeholder="Filter by status"
+                  value={statusFilter}
+                  onChange={handleStatusChange}
+                  allowClear
+                  style={{ width: "100%" }}
+                  options={[
+                    { label: "Intake", value: "intake" },
+                    { label: "VIN Fetched", value: "vin-fetched" },
+                    { label: "Details Uploaded", value: "details-uploaded" },
+                    { label: "Images Uploaded", value: "images-uploaded" },
+                    { label: "Parts Uploaded", value: "parts-uploaded" },
+                    { label: "Price Uploaded", value: "price-uploaded" },
+                    { label: "KYC Uploaded", value: "kyc-uploaded" },
+                    { label: "Payment Done", value: "payment-done" },
+                    { label: "Scraped", value: "scraped" },
+                    { label: "Sold", value: "sold" },
+                    { label: "Towed", value: "towed" },
+                  ]}
+                />
+              </div>
+
               <Popover
                 placement="bottomRight"
                 content={() => (
-                  <div style={{ maxWidth: 320 }}>
-                    <div style={{ marginBottom: 8, fontWeight: 600 }}>
-                      Columns
+                  <div style={{ maxWidth: 300, padding: 4 }}>
+                    <div style={{ marginBottom: 10, fontWeight: 600, color: "#F8FAFC" }}>
+                      Toggle Columns
                     </div>
-                    <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                       <Button
                         size="small"
                         onClick={() => selectAllColumns(true)}
@@ -650,10 +685,10 @@ const CarIntakeList = () => {
                         size="small"
                         onClick={() => selectAllColumns(false)}
                       >
-                        Clear
+                        Clear All
                       </Button>
                     </div>
-                    <div style={{ maxHeight: 300, overflow: "auto" }}>
+                    <div style={{ maxHeight: 260, overflowY: "auto", paddingRight: 4 }}>
                       {allColumns.map((col) => {
                         const key = getColKey(col);
                         return (
@@ -673,26 +708,8 @@ const CarIntakeList = () => {
                   </div>
                 )}
               >
-                <Button size="middle">Columns</Button>
+                <Button>Columns</Button>
               </Popover>
-
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => navigate("/car-intake")}
-                size="middle"
-              >
-                Add New Car
-              </Button>
-
-              <Button
-                type="default"
-                icon={<UploadOutlined />}
-                onClick={handleBulkUploadOpen}
-                size="middle"
-              >
-                Bulk Upload
-              </Button>
             </div>
           </div>
 

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Select, Button, Input, Tag } from "antd";
+import { Card, Table, Select, Button, Input, Tag, Modal, Space } from "antd";
 import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import AddJunkCarRequest from "./AddJunkCarRequest";
-import { Modal } from "antd";
 import api from "../utils/api";    // by shiva
 import SourceBadge from "../components/SourceBadge";
 import { cacheManager } from "../utils/cacheManager";
+import TitleBox from "../components/TitleBox";
+import PageContentWrapper from "../components/PageContentWrapper";
 
 const { Option } = Select;
 
@@ -422,116 +423,96 @@ const JunkCarRequests = () => {
     ];
 
     return (
-        <div className="requests-page" style={{ paddingTop: "20px", paddingBottom: "90px" }}>
-            <Card
-                title={
-                    <>
-                        Junk Car Requests
-                        <span className="request-count-pill">{junkCars.length}</span>
-                    </>
-                }
+        <div>
+            <TitleBox
+                title="Junk Car Requests"
+                subtitle="Manage vehicle acquisition leads, valuations, and towing assignments"
+                routes={["Home", "Lead Requests"]}
+                current="Junk Car Requests"
                 extra={
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    <Space wrap>
                         <Button
                             onClick={() => navigate("/")}
                             icon={<ArrowLeftOutlined />}
                         >
                             Back
                         </Button>
-
                         <Button
                             type="primary"
                             onClick={() => setIsModalOpen(true)}
                         >
-                            Add Request
+                            Add Junk Car Request
                         </Button>
-                    </div>
+                    </Space>
                 }
-            >
-                {/* HandledByFilter by shiva */}
-                <div
-                    className="requests-toolbar"
-                    style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: "12px",
-                        alignItems: "center",
-                    }}
+            />
+
+            <PageContentWrapper>
+                <Card
+                    title={
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span>Junk Car Inquiries</span>
+                            <span className="request-count-pill">{junkCars.length}</span>
+                        </div>
+                    }
                 >
-
-                    <Select
-                        placeholder="Filter by Staff"
-                        style={{ width: 220 }}
-                        allowClear
-                        onChange={(value) =>
-                            setHandledByFilter(value || "")
-                        }
+                    <div
+                        className="requests-toolbar"
+                        style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "12px",
+                            alignItems: "center",
+                        }}
                     >
-
-                        {staffUsers.map((staff) => (
-                            <Option
-                                key={staff._id}
-                                value={staff._id}
+                        <div style={{ flex: "1 1 200px" }}>
+                            <Select
+                                placeholder="Filter by Staff"
+                                style={{ width: "100%" }}
+                                allowClear
+                                onChange={(value) => setHandledByFilter(value || "")}
                             >
-                                {staff.first_name} {staff.last_name}
-                            </Option>
-                        ))}
-                    </Select>
+                                {staffUsers.map((staff) => (
+                                    <Option key={staff._id} value={staff._id}>
+                                        {staff.first_name} {staff.last_name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
 
-                    {/* Search by source added by shiva */}
-                    <Select
-                        placeholder="Filter by Source"
-                        style={{
-                            width: 180,
-                            // marginLeft: 10,
-                        }}
-                        allowClear
-                        onChange={(value) =>
-                            setSourceFilter(value || "")
-                        }
-                    >
-                        {/* <Option value="manual">Manual</Option> */}
-                        <Option value="website">Website</Option>
-                        <Option value="instagram">Instagram</Option>
-                        <Option value="facebook">Facebook</Option>
-                        <Option value="whatsApp">WhatsApp</Option>
-                        <Option value="tiktok">TikTok</Option>
-                        <Option value="ebay">eBay</Option>
-                        <Option value="google business">Google Business</Option>
-                        <Option value="sms">SMS</Option>
-                        <Option value="other">Other</Option>
-                    </Select>
+                        <div style={{ flex: "1 1 180px" }}>
+                            <Select
+                                placeholder="Filter by Source"
+                                style={{ width: "100%" }}
+                                allowClear
+                                onChange={(value) => setSourceFilter(value || "")}
+                            >
+                                <Option value="website">Website</Option>
+                                <Option value="instagram">Instagram</Option>
+                                <Option value="facebook">Facebook</Option>
+                                <Option value="whatsApp">WhatsApp</Option>
+                                <Option value="tiktok">TikTok</Option>
+                                <Option value="ebay">eBay</Option>
+                                <Option value="google business">Google Business</Option>
+                                <Option value="sms">SMS</Option>
+                                <Option value="other">Other</Option>
+                            </Select>
+                        </div>
 
-                    {/* Search by Status : added by shiva*/}
-                    <Select
-                        placeholder="Filter by Status"
-                        style={{
-                            width: 180,
-                            // marginLeft: 10,
-                        }}
-                        allowClear
-                        onChange={(value) =>
-                            setStatusFilter(value || "")
-                        }
-                    >
-                        <Option value="pending">
-                            Pending
-                        </Option>
-
-                        <Option value="in progress">
-                            In Progress
-                        </Option>
-
-                        <Option value="completed">
-                            Completed
-                        </Option>
-
-                        <Option value="rejected">
-                            Rejected
-                        </Option>
-                    </Select>
-
-                </div>
+                        <div style={{ flex: "1 1 180px" }}>
+                            <Select
+                                placeholder="Filter by Status"
+                                style={{ width: "100%" }}
+                                allowClear
+                                onChange={(value) => setStatusFilter(value || "")}
+                            >
+                                <Option value="pending">Pending</Option>
+                                <Option value="in progress">In Progress</Option>
+                                <Option value="completed">Completed</Option>
+                                <Option value="rejected">Rejected</Option>
+                            </Select>
+                        </div>
+                    </div>
 
                 <Table
                     loading={loading}
@@ -684,7 +665,7 @@ const JunkCarRequests = () => {
                     </div>
                 )}
             </Modal>
-
+            </PageContentWrapper>
         </div>
     );
 };

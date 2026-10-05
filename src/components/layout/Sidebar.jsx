@@ -20,20 +20,28 @@ import {
   SyncOutlined,
   ContainerOutlined,
   FundOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleDot } from "@fortawesome/free-regular-svg-icons";
 import { useAuth } from "../../hooks/useAuth";
 
-// Custom FontAwesome bullet icon component using circle-dot
+// Custom bullet icon component with subtle opacity
 const BulletIcon = () => (
-  <FontAwesomeIcon
-    icon={faCircleDot}
-    style={{ fontSize: "8px", marginRight: "10px" }}
+  <span
+    style={{
+      display: "inline-block",
+      width: "5px",
+      height: "5px",
+      borderRadius: "50%",
+      backgroundColor: "currentColor",
+      opacity: 0.6,
+      marginRight: "10px",
+    }}
   />
 );
 
-const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) => {
+const Sidebar = ({ isOpen, onClose, unreadCount, junkRequestCount, partRequestCount }) => {
   // console.log("Sidebar Loaded");
 
   const location = useLocation();
@@ -48,6 +56,12 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
   const isAdmin = userRole === "admin";
   const isStaff = userRole === "staff";
   const isScraper = userRole === "scraper";
+
+  const handleNavClick = () => {
+    if (window.innerWidth < 992 && onClose) {
+      onClose();
+    }
+  };
 
   // Setup menu items based on user role
   const getMenuItems = () => {
@@ -101,24 +115,12 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
             label: (
               <Link 
                 to="/part-requests"
-                style={{ flex: 1 }}
+                onClick={handleNavClick}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
               >
-                Part Requests
-
+                <span>Part Requests</span>
                 {partRequestCount > 0 && (
-                  <span
-                    style={{
-                      background: "#3b82f6",
-                      color: "#fff",
-                      borderRadius: "999px",
-                      padding: "2px 8px",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      marginLeft: "8px",
-                    }}
-                  >
-                    {partRequestCount}
-                  </span>
+                  <span className="sidebar-badge-pill">{partRequestCount}</span>
                 )}
               </Link>
             ),
@@ -129,53 +131,30 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
             label: (
               <Link 
                 to="/junk-car-requests"
-                style={{ flex: 1 }}
+                onClick={handleNavClick}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
               >
-                Junk Car Requests
-                
+                <span>Junk Car Requests</span>
                 {junkRequestCount > 0 && (
-                  <span
-                    style={{
-                      background: "#3b82f6",
-                      color: "#fff",
-                      borderRadius: "999px",
-                      padding: "2px 8px",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      marginLeft: "8px",
-                    }}
-                  >
-                    {junkRequestCount}
-                  </span>
+                  <span className="sidebar-badge-pill">{junkRequestCount}</span>
                 )}
               </Link>
             ),
           },
-          // added by shiva Inbox
           {
             key: "/inbox",
             icon: <BulletIcon />,
             label: (
-            // <div style={{
-            //   alignItems: "center",
-            // }}>
-            <Link to="/inbox" style={{ flex: 1 }}>
-              Inbox
-            {unreadCount > 0 && (
-              <span style={{
-                background: "#3b82f6",
-                color: "#fff",
-                borderRadius: "999px",
-                padding: "2px 8px",
-                fontSize: "11px",
-                fontWeight: "600",
-                marginLeft: "8px"
-              }}>
-                {unreadCount}
-              </span>
-            )}
-            </Link>
-            // </div>
+              <Link 
+                to="/inbox" 
+                onClick={handleNavClick}
+                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}
+              >
+                <span>Inbox</span>
+                {unreadCount > 0 && (
+                  <span className="sidebar-badge-pill">{unreadCount}</span>
+                )}
+              </Link>
             ),
           }
           // end here
@@ -667,33 +646,30 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
   return (
     <div className={`vertical-menu ${isOpen ? "show" : ""}`}>
       <div data-simplebar className="h-100">
-        <div
-          className="user-sidebar text-center"
-          style={{
-            background: "url(/assets/images/user-img.png)",
-            backgroundColor: "#525ce5",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            height: "167px",
-          }}
-        >
-          <div className="dropdown">
-            <div className="user-img">
-              <img
-                src="/assets/images/logo-sm1.png"
-                alt=""
-                className="rounded-circle"
-              />
-              <span className="avatar-online bg-success"></span>
+        <div className="user-sidebar">
+          {onClose && (
+            <button
+              type="button"
+              className="sidebar-close-btn"
+              onClick={onClose}
+              title="Close sidebar"
+            >
+              <CloseOutlined />
+            </button>
+          )}
+          <div className="user-avatar-container">
+            <div className="user-avatar-circle">
+              {user?.first_name ? user.first_name[0].toUpperCase() : "A"}
             </div>
-            <div className="user-info">
-              <h5 className="mt-3 font-size-16 text-white">
-                {user ? `${user.first_name} ${user.last_name}` : "User"}
-              </h5>
-              <span className="font-size-13 text-white-50">
-                {user?.role
-                  ? user.role
+            <span className="user-online-badge"></span>
+          </div>
+          <div className="user-profile-details">
+            <h5 className="user-profile-name" title={user ? `${user.first_name} ${user.last_name}` : "User"}>
+              {user ? `${user.first_name} ${user.last_name}` : "AutoHub User"}
+            </h5>
+            <span className="user-profile-role">
+              {user?.role
+                ? user.role
                     .split("_")
                     .map(
                       (part) =>
@@ -701,13 +677,18 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
                         part.slice(1).toLowerCase()
                     )
                     .join(" ")
-                  : "User"}
-              </span>
-            </div>
+                : "Staff"}
+            </span>
           </div>
         </div>
 
-        <div>
+        <div
+          onClick={(e) => {
+            if (e.target.closest("a") && window.innerWidth < 992 && onClose) {
+              onClose();
+            }
+          }}
+        >
           <Menu
             mode="inline"
             selectedKeys={selectedKeys}

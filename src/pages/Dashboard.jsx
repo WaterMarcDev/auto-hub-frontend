@@ -8,6 +8,8 @@ import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
 import { dashboardAPI } from "../utils/api";
 import { cacheManager } from "../utils/cacheManager";
+import TitleBox from "../components/TitleBox";
+import PageContentWrapper from "../components/PageContentWrapper";
 
 const Dashboard = () => {
   const [range, setRange] = useState("Year");
@@ -200,29 +202,15 @@ const Dashboard = () => {
   }, []);
   return (
     <div>
-      {/* Page title */}
-      <div className="page-title-box">
-        <div className="container-fluid">
-          <div className="row align-items-center">
-            <div className="col-sm-6">
-              <div className="page-title">
-                <h4>Dashboard</h4>
-                <ol className="breadcrumb m-0">
-                  <li className="breadcrumb-item">
-                    <a href="#">Scrap Yard</a>
-                  </li>
-                  <li className="breadcrumb-item active">Dashboard</li>
-                </ol>
-              </div>
-            </div>
-            <div className="col-sm-6" />
-          </div>
-        </div>
-      </div>
+      <TitleBox
+        title="Dashboard"
+        subtitle="Real-time yard overview, KPI metrics, and recycling analytics"
+        routes={["Home"]}
+        current="Dashboard"
+      />
 
-      <div className="container-fluid">
-        <div className="page-content-wrapper">
-          {/* Row 1: Scrap Yard Summary - Full Width */}
+      <PageContentWrapper>
+        {/* Row 1: Scrap Yard Summary - Full Width */}
           <div className="row">
             <div className="col-12">
               <div
@@ -520,8 +508,7 @@ const Dashboard = () => {
               <RtxRecycling />
             </div>
           </div>
-        </div>
-      </div>
+        </PageContentWrapper>
     </div>
   );
 };

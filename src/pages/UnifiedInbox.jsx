@@ -13,6 +13,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { conversationService } from "../services/socialApi";
 import { ordersService } from "../services/ordersApi";
 import { customerAPI } from "../utils/api";
+import TitleBox from "../components/TitleBox";
+import PageContentWrapper from "../components/PageContentWrapper";
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -389,70 +391,81 @@ const UnifiedInbox = () => {
   const threadSpan = isDesktop ? (isListCollapsed ? 24 : 16) : mobileView === "thread" ? 24 : 0;
 
   return (
-    <div style={{ padding: "20px", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-      <Card
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <TitleBox
         title="Marketplace Inbox"
+        subtitle="Unified multi-channel customer inquiries from eBay, Facebook, WhatsApp, and more"
+        routes={["Home", "Integrations"]}
+        current="Marketplace Inbox"
         extra={
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/")}>
             Back to Dashboard
           </Button>
         }
-        style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}
-        bodyStyle={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}
-      >
-        <Row style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
-          {/* Conversation List */}
-          {listSpan > 0 && (
-            <Col span={listSpan} style={{ borderRight: "1px solid #303030", height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
-              <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "8px 12px", borderBottom: "1px solid #303030", flexWrap: "wrap" }}>
-                <Input
-                  placeholder="Search conversations..."
-                  prefix={<SearchOutlined />}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  allowClear
-                  style={{ flex: "1 1 160px" }}
-                />
-                <Select
-                  placeholder="Platform"
-                  value={platformFilter || undefined}
-                  onChange={(val) => setPlatformFilter(val || "")}
-                  allowClear
-                  style={{ width: 130 }}
-                >
-                  {Object.keys(PLATFORM_COLORS).map((p) => (
-                    <Option key={p} value={p} style={{ textTransform: "capitalize" }}>
-                      {p}
-                    </Option>
-                  ))}
-                </Select>
-                <Button type={unreadOnly ? "primary" : "default"} onClick={() => setUnreadOnly((v) => !v)}>
-                  Unread
-                </Button>
-              </div>
+      />
 
-              <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
-                {loading ? (
-                  <div style={{ textAlign: "center", padding: 40 }}><Spin /></div>
-                ) : filteredConversations.length === 0 ? (
-                  <Empty description="No conversations" style={{ padding: 40 }} />
-                ) : (
-                  filteredConversations.map((conv) => (
-                    <div
-                      key={conv._id}
-                      onClick={() => handleSelectConversation(conv._id)}
-                      style={{
-                        padding: "12px 16px",
-                        cursor: "pointer",
-                        borderBottom: "1px solid #303030",
-                        background: activeConversation === conv._id ? "#1a1a2e" : "transparent",
-                        transition: "background 0.2s",
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "#2a2a3e"}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = activeConversation === conv._id ? "#1a1a2e" : "transparent";
-                      }}
-                    >
+      <PageContentWrapper style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+        <Card
+          style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "calc(100vh - 240px)", overflow: "hidden" }}
+          bodyStyle={{ flex: 1, display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}
+        >
+          <Row style={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+            {/* Conversation List */}
+            {listSpan > 0 && (
+              <Col span={listSpan} style={{ borderRight: "1px solid var(--color-border)", height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
+                <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "10px 14px", borderBottom: "1px solid var(--color-border)", flexWrap: "wrap", background: "var(--color-surface-sunken)" }}>
+                  <Input
+                    placeholder="Search conversations..."
+                    prefix={<SearchOutlined style={{ color: "#64748B" }} />}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    allowClear
+                    style={{ flex: "1 1 160px" }}
+                  />
+                  <Select
+                    placeholder="Platform"
+                    value={platformFilter || undefined}
+                    onChange={(val) => setPlatformFilter(val || "")}
+                    allowClear
+                    style={{ width: 120 }}
+                  >
+                    {Object.keys(PLATFORM_COLORS).map((p) => (
+                      <Option key={p} value={p} style={{ textTransform: "capitalize" }}>
+                        {p}
+                      </Option>
+                    ))}
+                  </Select>
+                  <Button type={unreadOnly ? "primary" : "default"} onClick={() => setUnreadOnly((v) => !v)}>
+                    Unread
+                  </Button>
+                </div>
+
+                <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
+                  {loading ? (
+                    <div style={{ textAlign: "center", padding: 40 }}><Spin /></div>
+                  ) : filteredConversations.length === 0 ? (
+                    <Empty description="No conversations" style={{ padding: 40 }} />
+                  ) : (
+                    filteredConversations.map((conv) => (
+                      <div
+                        key={conv._id}
+                        onClick={() => handleSelectConversation(conv._id)}
+                        style={{
+                          padding: "12px 16px",
+                          cursor: "pointer",
+                          borderBottom: "1px solid var(--color-border)",
+                          background: activeConversation === conv._id ? "var(--color-primary-subtle)" : "transparent",
+                          transition: "background 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (activeConversation !== conv._id) {
+                            e.currentTarget.style.background = "rgba(82, 91, 229, 0.08)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = activeConversation === conv._id ? "var(--color-primary-subtle)" : "transparent";
+                        }}
+                      >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <Tag color={PLATFORM_COLORS[conv.platform] || "default"} style={{ textTransform: "capitalize" }}>
                           {conv.platform}
@@ -651,6 +664,7 @@ const UnifiedInbox = () => {
           )}
         </Row>
       </Card>
+      </PageContentWrapper>
 
       <Drawer title="Customer" open={customerDrawerOpen} onClose={() => setCustomerDrawerOpen(false)}>
         {customerDrawerLoading ? (

@@ -21,6 +21,8 @@ import {
 } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI, makeAPI } from "../utils/api";
 import getStatusColor from "../utils/statusColors";
+import TitleBox from "../components/TitleBox";
+import PageContentWrapper from "../components/PageContentWrapper";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -574,191 +576,185 @@ const CarIntakeDetails = () => {
     })();
   };
 
+  const vehicleTitle = [
+    car?.carDetails?.year,
+    car?.carDetails?.make,
+    car?.carDetails?.model,
+    car?.carDetails?.trim,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <div>
-      <div className="page-title-box">
-        <div className="page-title">
-          <h4>Car Intake Details</h4>
-          <ol className="breadcrumb m-0">
-            <li className="breadcrumb-item">
-              <a href="javascript: void(0);">Scrap Yard</a>
-            </li>
-            <li className="breadcrumb-item active">Details</li>
-          </ol>
-        </div>
-      </div>
+      <TitleBox
+        title={vehicleTitle || "Car Intake Details"}
+        subtitle={car?.vin ? `VIN: ${car.vin}` : ""}
+        routes={["Scrap Yard", "Car Intake"]}
+        current="Details"
+        extra={
+          <Space wrap>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+              Back
+            </Button>
+            <Button
+              type="primary"
+              icon={<PrinterOutlined />}
+              onClick={openPrintAllDocuments}
+              style={{
+                backgroundColor: "#6366F1",
+                borderColor: "#6366F1",
+              }}
+            >
+              Print Documents
+            </Button>
+          </Space>
+        }
+      />
 
-      <div className="container-fluid">
-        <div className="page-content-wrapper">
-          <Card
-            title={`${car?.vin || "-"} ${car?.carDetails?.make ? `• ${car?.carDetails?.make}` : ""
-              }`}
-            extra={
-              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-                Back
-              </Button>
-            }
+      <PageContentWrapper>
+        {/* Card 1: Vehicle Specifications & Intake Status */}
+        <Card
+          title={
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+              <span>Vehicle Specifications</span>
+              <Tag color={getStatusColor(car?.status)} style={{ textTransform: "capitalize", padding: "2px 10px" }}>
+                {car?.status || "intake"}
+              </Tag>
+            </div>
+          }
+          style={{ marginBottom: 16 }}
+        >
+          <Descriptions
+            column={{ xs: 1, sm: 2, md: 3, lg: 4 }}
+            bordered
+            size="small"
           >
-            <Descriptions column={2} bordered>
-              <Descriptions.Item label="VIN">
-                {car?.vin || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Intake By">
-                {(car?.createdBy &&
-                  `${car?.createdBy?.first_name ||
-                    car?.createdBy?.firstName ||
-                    ""
-                    } ${car?.createdBy?.last_name || car?.createdBy?.lastName || ""
-                    }`.trim()) ||
-                  "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Make">
-                {car?.carDetails?.make || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Model">
-                {car?.carDetails?.model || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Year">
-                {car?.carDetails?.year || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Trim">
-                {car?.carDetails?.trim || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Color">
-                {car?.carDetails?.color || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Body Class">
-                {car?.carDetails?.bodyClass || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Transmission">
-                {car?.carDetails?.transmission || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Drive">
-                {car?.carDetails?.drive || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Fuel Type">
-                {car?.carDetails?.fuelType || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Chassis No.">
-                {car?.carDetails?.chassisNo || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Engine Size">
-                {car?.carDetails?.engine || car?.carDetails?.engineNo || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Scrap Yard">
-                {car?.carDetails?.scrapYardName || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Scrap Yard Location">
-                {car?.carDetails?.scrapYardLocation || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Has Keys">
-                <Tag color={car?.carDetails?.keys ? "blue" : "red"}>
-                  {car?.carDetails?.keys ? "Yes" : "No"}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <Tag color={getStatusColor(car?.status)}>
-                  {car?.status || "intake"}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Final Price">
+            <Descriptions.Item label="VIN">{car?.vin || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Intake By">
+              {(car?.createdBy &&
+                `${car?.createdBy?.first_name || car?.createdBy?.firstName || ""} ${
+                  car?.createdBy?.last_name || car?.createdBy?.lastName || ""
+                }`.trim()) ||
+                "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Make">{car?.carDetails?.make || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Model">{car?.carDetails?.model || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Year">{car?.carDetails?.year || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Trim">{car?.carDetails?.trim || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Color">{car?.carDetails?.color || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Body Class">{car?.carDetails?.bodyClass || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Transmission">{car?.carDetails?.transmission || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Drive">{car?.carDetails?.drive || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Fuel Type">{car?.carDetails?.fuelType || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Chassis No.">{car?.carDetails?.chassisNo || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Engine Size">
+              {car?.carDetails?.engine || car?.carDetails?.engineNo || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Scrap Yard">{car?.carDetails?.scrapYardName || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Location">{car?.carDetails?.scrapYardLocation || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Has Keys">
+              <Tag color={car?.carDetails?.keys ? "blue" : "red"}>
+                {car?.carDetails?.keys ? "Yes" : "No"}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Vehicle Source">{car?.kyc?.vehicleSource || "N/A"}</Descriptions.Item>
+            <Descriptions.Item label="Final Price">
+              <span style={{ color: "#10B981", fontWeight: 600 }}>
                 {car?.price?.finalPrice ? `$${car?.price?.finalPrice}` : "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Vehicle Source">
-                {car?.kyc?.vehicleSource || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Towing Fee">
-                {car?.price?.towingFee ? `$${car?.price?.towingFee}` : "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Payment Method">
-                {car?.payment?.paymentMethod || "N/A"}
-              </Descriptions.Item>
+              </span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Towing Fee">
+              {car?.price?.towingFee ? `$${car?.price?.towingFee}` : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Payment Method">
+              {car?.payment?.paymentMethod ? (
+                <Tag color="cyan">{car?.payment?.paymentMethod}</Tag>
+              ) : (
+                "N/A"
+              )}
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
 
-              <Descriptions.Item label="Seller Name">
-                {car?.kyc?.seller
-                  ? `${car?.kyc?.seller?.firstName || ""} ${car?.kyc?.seller?.lastName || ""
-                    }`.trim() || "N/A"
-                  : "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Seller Phone">
-                {(car?.kyc?.seller &&
-                  (car?.kyc?.seller?.mobileNo || car?.kyc?.seller?.phone)) ||
-                  "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Seller Email">
-                {(car?.kyc?.seller && car?.kyc?.seller?.email) || "N/A"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Seller Description" span={2}>
-                {(car?.kyc?.seller && car?.kyc?.seller?.description) || "N/A"}
-              </Descriptions.Item>
+        {/* Card 2: Seller & Customer Information */}
+        <Card title="Seller & Documentation" style={{ marginBottom: 16 }}>
+          <Descriptions column={{ xs: 1, sm: 2, md: 3 }} bordered size="small">
+            <Descriptions.Item label="Seller Name">
+              {car?.kyc?.seller
+                ? `${car?.kyc?.seller?.firstName || ""} ${car?.kyc?.seller?.lastName || ""}`.trim() || "N/A"
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Seller Phone">
+              {(car?.kyc?.seller && (car?.kyc?.seller?.mobileNo || car?.kyc?.seller?.phone)) || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Seller Email">
+              {(car?.kyc?.seller && car?.kyc?.seller?.email) || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Description" span={3}>
+              {(car?.kyc?.seller && car?.kyc?.seller?.description) || "N/A"}
+            </Descriptions.Item>
+          </Descriptions>
 
-              <Descriptions.Item label="Seller Signature" span={2}>
-                {car?.kyc?.seller?.signatureImage ? (
-                  <div
-                    style={{
-                      padding: 12,
-                      backgroundColor: "#f5f5f5",
-                      borderRadius: 8,
-                      border: "1px solid #d9d9d9",
-                      display: "inline-block",
-                      maxWidth: "100%",
-                    }}
-                  >
-                    <Image
-                      src={car.kyc.seller.signatureImage}
-                      alt="Seller Signature"
-                      style={{
-                        maxWidth: "400px",
-                        maxHeight: "150px",
-                        backgroundColor: "white",
-                        border: "1px solid #d9d9d9",
-                      }}
-                      preview={{
-                        mask: "View Signature",
-                        getContainer: getPreviewContainer,
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <></>
-                )}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Images" span={2}>
-                {renderImages()}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Documents" span={2}>
-                {renderDocuments()}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Parts" span={2}>
-                {renderParts()}
-              </Descriptions.Item>
-            </Descriptions>
-            <div className="d-flex justify-content-between mt-4">
-              <Button
-                size="large"
-                icon={<PrinterOutlined />}
-                onClick={openPrintAllDocuments}
+          {car?.kyc?.seller?.signatureImage && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 8 }}>
+                Seller Signature
+              </div>
+              <div
                 style={{
-                  backgroundColor: "#8b5cf6",
-                  borderColor: "#8b5cf6",
-                  color: "white",
+                  padding: 12,
+                  backgroundColor: "rgba(15, 23, 42, 0.6)",
+                  borderRadius: 8,
+                  border: "1px solid var(--color-border)",
+                  display: "inline-block",
+                  maxWidth: "100%",
                 }}
               >
-                Print documents
-              </Button>
+                <Image
+                  src={car.kyc.seller.signatureImage}
+                  alt="Seller Signature"
+                  style={{
+                    maxWidth: "320px",
+                    maxHeight: "120px",
+                    backgroundColor: "#ffffff",
+                    borderRadius: 4,
+                    padding: 4,
+                  }}
+                  preview={{
+                    mask: "View Signature",
+                    getContainer: getPreviewContainer,
+                  }}
+                />
+              </div>
             </div>
-          </Card>
-          {renderTransaction()}
-        </div>
+          )}
+        </Card>
+
+        {/* Card 3: Photos Gallery */}
+        <Card title="Intake Photos" style={{ marginBottom: 16 }}>
+          {renderImages()}
+        </Card>
+
+        {/* Card 4: Documents */}
+        <Card title="Legal Documents & Papers" style={{ marginBottom: 16 }}>
+          {renderDocuments()}
+        </Card>
+
+        {/* Card 5: Diagnostic & Inventory Parts */}
+        <Card title="Parts & Elements Breakdown" style={{ marginBottom: 16 }}>
+          {renderParts()}
+        </Card>
+
+        {/* Card 6: Transaction Summary */}
+        {renderTransaction()}
+
         <ActionModal
           visible={modalVisible}
           content={modalContent}
           onClose={handleModalClose}
         />
-      </div>
+      </PageContentWrapper>
     </div>
   );
 };

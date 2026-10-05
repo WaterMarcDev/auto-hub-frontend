@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Tag, Modal } from "antd";
-import { Button } from "antd";
-import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
+import { Card, Table, Tag, Modal, Button, Input, Select, Row, Col, Space } from "antd";
+import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined, SearchOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { Input, Select, Row, Col } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
 import SourceBadge from "../../components/SourceBadge";
 import { cacheManager } from "../../utils/cacheManager";
+import TitleBox from "../../components/TitleBox";
+import PageContentWrapper from "../../components/PageContentWrapper";
 
 const { Option } = Select;
 
@@ -402,138 +401,125 @@ const Requests = () => {
     ];
 
     return (
-        <div
-            className="requests-page"
-            style={{
-                paddingTop: "20px",
-                paddingBottom: "90px"
-            }}>
-            <Card
-                title={
-                    <>
-                        Part Requests
-                        <span className="request-count-pill">{requests.length}</span>
-                    </>
-                }
+        <div>
+            <TitleBox
+                title="Part Requests"
+                subtitle="Track customer requests, inventory sourcing, and fulfillments"
+                routes={["Home", "Lead Requests"]}
+                current="Part Requests"
                 extra={
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    <Space wrap>
                         <Button
                             icon={<ArrowLeftOutlined />}
                             onClick={() => navigate("/")}
                         >
                             Back
                         </Button>
-
                         <Button
                             type="primary"
                             onClick={() => navigate("/add-part-request")}
                         >
-                            Add Part
+                            Add Part Request
                         </Button>
-                    </div>
+                    </Space>
                 }
-            >
+            />
 
-                {/* Add Search + Filter Here -> by shiva*/}
+            <PageContentWrapper>
+                <Card
+                    title={
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span>Inquiry Leads</span>
+                            <span className="request-count-pill">{requests.length}</span>
+                        </div>
+                    }
+                >
+                    <div className="requests-toolbar">
+                        <Row gutter={[12, 12]} align="middle">
+                            <Col xs={24} sm={14} md={10}>
+                                <Input
+                                    placeholder="Search by name, email, phone, VIN, or part..."
+                                    value={search}
+                                    allowClear
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onPressEnter={handleSearch}
+                                    prefix={<SearchOutlined style={{ color: "#64748B" }} />}
+                                />
+                            </Col>
 
-                <div className="requests-toolbar">
-                <Row gutter={[12, 12]}>
+                            <Col xs={12} sm={5} md={3}>
+                                <Button
+                                    type="primary"
+                                    block
+                                    onClick={handleSearch}
+                                >
+                                    Search
+                                </Button>
+                            </Col>
 
-                    <Col xs={24} sm={12} md={8}>
-                        <Input
-                            placeholder="Search by Name, Email..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onPressEnter={handleSearch}
-                            size="large"
-                        />
-                    </Col>
+                            <Col xs={12} sm={5} md={5}>
+                                <Select
+                                    placeholder="Filter by Status"
+                                    value={status}
+                                    onChange={handleStatusChange}
+                                    allowClear
+                                    style={{ width: "100%" }}
+                                    options={[
+                                        { value: "pending", label: "Pending" },
+                                        { value: "in progress", label: "In Progress" },
+                                        { value: "completed", label: "Completed" },
+                                        { value: "rejected", label: "Rejected" }
+                                    ]}
+                                />
+                            </Col>
 
-                    <Col xs={24} sm={12} md={4}>
-                        <Button
-                            type="primary"
-                            icon={<SearchOutlined />}
-                            block
-                            onClick={handleSearch}
-                            blocksize="large"
-                        >
-                            Search
-                        </Button>
-                    </Col>
-
-                    <Col xs={24} sm={12} md={8}>
-                        <Select
-                            placeholder="Filter by status"
-                            value={status}
-                            onChange={handleStatusChange}
-                            allowClear
-                            size="large"
-                            style={{ width: "100%" }}
-                            options={[
-                                { value: "pending", label: "Pending" },
-                                { value: "in progress", label: "In Progress" },
-                                { value: "completed", label: "Completed" },
-                                { value: "rejected", label: "Rejected" }
-                            ]}
-                        />
-                    </Col>
-
-                    {/* Search dropdopwn for Source */}
-                    <Col xs={24} sm={12} md={6}>
-                        <Select
-                            placeholder="Filter by Source"
-                            value={sourceFilter || undefined}
-                            onChange={(value) => {
-
-                                setSourceFilter(value || "");
-
-                                if (!value) {
-
-                                    setFilteredRequests([]);
-                                    setSearched(false);
-                                    return;
-                                }
-
-                                const filtered = requests.filter(
-                                    (item) =>
-                                        item.source === value
-                                );
-
-                                setFilteredRequests(filtered);
-                                setSearched(true);
-                            }}
-                            allowClear
-                            size="large"
-                            style={{ width: "100%" }}
-                            options={[
-                                { value: "Online", label: "Website" },
-                                { value: "Offline", label: "Offline" },
-                                { value: "Website", label: "Website" },
-                                { value: "Instagram", label: "Instagram" },
-                                { value: "Facebook", label: "Facebook" },
-                                { value: "WhatsApp", label: "WhatsApp" },
-                                { value: "TikTok", label: "TikTok" },
-                                { value: "eBay", label: "eBay" },
-                                { value: "Google Business", label: "Google Business" },
-                                { value: "SMS", label: "SMS" },
-                                { value: "Other", label: "Other" },
-                            ]}
-                        />
-                    </Col>
-                    {/* end here */}
-                </Row>
-                </div>
-
-                {noResults && (
-                    <div style={{
-                        textAlign: "center",
-                        marginBottom: 10,
-                        color: "#999",
-                        fontWeight: 500
-                    }}>
-                        Item not found
+                            <Col xs={24} sm={12} md={6}>
+                                <Select
+                                    placeholder="Filter by Source"
+                                    value={sourceFilter || undefined}
+                                    onChange={(value) => {
+                                        setSourceFilter(value || "");
+                                        if (!value) {
+                                            setFilteredRequests([]);
+                                            setSearched(false);
+                                            return;
+                                        }
+                                        const filtered = requests.filter(
+                                            (item) => item.source === value
+                                        );
+                                        setFilteredRequests(filtered);
+                                        setSearched(true);
+                                    }}
+                                    allowClear
+                                    style={{ width: "100%" }}
+                                    options={[
+                                        { value: "Online", label: "Website" },
+                                        { value: "Offline", label: "Offline" },
+                                        { value: "Website", label: "Website" },
+                                        { value: "Instagram", label: "Instagram" },
+                                        { value: "Facebook", label: "Facebook" },
+                                        { value: "WhatsApp", label: "WhatsApp" },
+                                        { value: "TikTok", label: "TikTok" },
+                                        { value: "eBay", label: "eBay" },
+                                        { value: "Google Business", label: "Google Business" },
+                                        { value: "SMS", label: "SMS" },
+                                        { value: "Other", label: "Other" },
+                                    ]}
+                                />
+                            </Col>
+                        </Row>
                     </div>
-                )}
+
+                    {noResults && (
+                        <div style={{
+                            textAlign: "center",
+                            marginBottom: 10,
+                            color: "#999",
+                            fontWeight: 500
+                        }}>
+                            Item not found
+                        </div>
+                    )}
                 <Table
                     loading={loading}
                     columns={columns}
@@ -620,6 +606,7 @@ const Requests = () => {
                     </div>
                 )}
             </Modal>
+            </PageContentWrapper>
         </div>
     );
 

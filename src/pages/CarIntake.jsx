@@ -10,6 +10,8 @@ import CarPrice from "../components/CarIntake/CarPrice";
 import UserKYCAndCarDoc from "../components/CarIntake/UserKYCAndCarDoc";
 import Payment from "../components/CarIntake/Payment";
 import CarInventory from "../components/CarIntake/CarInventory";
+import TitleBox from "../components/TitleBox";
+import PageContentWrapper from "../components/PageContentWrapper";
 
 // Map UI steps to backend status enum values
 const STEP_STATUS_MAP = {
@@ -1903,34 +1905,16 @@ const CarIntake = () => {
       )}
       {/* end here */}
 
-      {/* start page title */}
-      <div className="page-title-box">
-        <div className="container-fluid">
-          <div className="row align-items-center">
-            <div className="col-sm-6">
-              <div className="page-title">
-                <h4>Car Intake</h4>
-                <ol className="breadcrumb m-0">
-                  <li className="breadcrumb-item">
-                    {/* added by shiva */}
-                    <span>Scrap Yard</span>    
-                  </li>
-                  <li className="breadcrumb-item">
-                    <span>Car Intake</span>
-                  </li>
-                  {/* end here */}
-                  <li className="breadcrumb-item active">Add New Car</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* end page title */}
+      {/* Modern Page Title */}
+      <TitleBox
+        title="Car Intake Wizard"
+        subtitle={formData.vin ? `VIN: ${formData.vin}` : "Add New Vehicle to Scrap Yard"}
+        routes={["Scrap Yard", "Car Intake"]}
+        current="Add New Car"
+      />
 
-      <div className="container-fluid">
-        <div className="page-content-wrapper">
-          <Card
+      <PageContentWrapper>
+        <Card
             title={
               <div
                 style={{
@@ -2157,9 +2141,8 @@ const CarIntake = () => {
               </div>
             </div>
           </Card>
-        </div>
-      </div>
-    </>
+        </PageContentWrapper>
+      </>
   );
 };
 

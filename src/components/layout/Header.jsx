@@ -1,12 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Dropdown, Badge, Tag, Space } from "antd";
+import {
+  MenuOutlined,
+  BookOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  CarOutlined,
+  CheckCircleOutlined,
+  SafetyCertificateOutlined,
+  TeamOutlined,
+  IdcardOutlined,
+  CompassOutlined,
+  DownOutlined,
+} from "@ant-design/icons";
 
 const Header = ({ onMenuToggle }) => {
   const { user, logout } = useAuth();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+  const navigate = useNavigate();
 
-  // Check user roles
   const userRole = user?.role?.toLowerCase();
   const isManager = userRole === "manager";
   const isFrontDesk = userRole === "front_desk";
@@ -25,244 +39,292 @@ const Header = ({ onMenuToggle }) => {
   const handleLogout = async () => {
     await logout();
   };
-  const navigate = useNavigate();
 
-  const goToDashboard = (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    navigate("/");
+  // Build Guide Menu Items based on role
+  const guideMenuItems = [];
+  if (isAdmin || isManager) {
+    guideMenuItems.push(
+      {
+        key: "group-process",
+        type: "group",
+        label: <span style={{ color: "#94A3B8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase" }}>Process Guides</span>,
+        children: [
+          {
+            key: "guide-car-intake",
+            icon: <CarOutlined style={{ color: "#525BE5" }} />,
+            label: "Car Intake Guide",
+            onClick: () => navigate("/guide/car-intake"),
+          },
+          {
+            key: "guide-checkin",
+            icon: <CheckCircleOutlined style={{ color: "#10B981" }} />,
+            label: "Check-In Guide",
+            onClick: () => navigate("/guide/check-in"),
+          },
+        ],
+      },
+      { type: "divider" },
+      {
+        key: "group-role",
+        type: "group",
+        label: <span style={{ color: "#94A3B8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase" }}>Role Guides</span>,
+        children: [
+          {
+            key: "guide-admin",
+            icon: <SafetyCertificateOutlined style={{ color: "#F59E0B" }} />,
+            label: "Admin Guide",
+            onClick: () => navigate("/guide/admin"),
+          },
+          {
+            key: "guide-manager",
+            icon: <TeamOutlined style={{ color: "#525BE5" }} />,
+            label: "Manager Guide",
+            onClick: () => navigate("/guide/manager"),
+          },
+          {
+            key: "guide-frontdesk",
+            icon: <IdcardOutlined style={{ color: "#06B6D4" }} />,
+            label: "Front Desk Guide",
+            onClick: () => navigate("/guide/front-desk"),
+          },
+          {
+            key: "guide-staff",
+            icon: <UserOutlined style={{ color: "#94A3B8" }} />,
+            label: "Staff Guide",
+            onClick: () => navigate("/guide/staff"),
+          },
+        ],
+      }
+    );
+  } else if (isFrontDesk) {
+    guideMenuItems.push({
+      key: "guide-frontdesk",
+      icon: <IdcardOutlined style={{ color: "#06B6D4" }} />,
+      label: "Front Desk Guide",
+      onClick: () => navigate("/guide/front-desk"),
+    });
+  } else if (isStaff) {
+    guideMenuItems.push({
+      key: "guide-staff",
+      icon: <UserOutlined style={{ color: "#94A3B8" }} />,
+      label: "Staff Guide",
+      onClick: () => navigate("/guide/staff"),
+    });
+  }
+
+  // User Profile Dropdown Menu
+  const userMenuItems = [
+    {
+      key: "user-info",
+      disabled: true,
+      label: (
+        <div style={{ padding: "4px 0", cursor: "default" }}>
+          <div style={{ fontWeight: 600, color: "#F8FAFC" }}>
+            {user ? `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username || "User" : "User"}
+          </div>
+          <div style={{ fontSize: "12px", color: "#94A3B8", marginTop: "2px" }}>
+            {user?.email || ""}
+          </div>
+        </div>
+      ),
+    },
+    { type: "divider" },
+    {
+      key: "logout",
+      icon: <LogoutOutlined style={{ color: "#EF4444" }} />,
+      danger: true,
+      label: "Logout",
+      onClick: handleLogout,
+    },
+  ];
+
+  const getRoleBadgeColor = (role) => {
+    switch (role?.toLowerCase()) {
+      case "admin": return "#525BE5";
+      case "manager": return "#06B6D4";
+      case "front_desk": return "#10B981";
+      case "staff": return "#F59E0B";
+      default: return "#64748B";
+    }
   };
 
   return (
     <header id="page-topbar">
       <div className="navbar-header">
-        <div className="d-flex">
-          {/* LOGO */}
-          <div className="navbar-brand-box">
-            <a href="/" onClick={goToDashboard} className="logo logo-dark">
-              <span className="logo-sm">
-                <img src="/assets/images/logo-sm.png" alt="" height="45" />
-              </span>
-              <span className="logo-lg">
-                <img src="/assets/images/logo-dark.png" alt="" height="40" />
-              </span>
-            </a>
-            <a href="/" onClick={goToDashboard} className="logo logo-light">
-              <span className="logo-sm">
-                <img src="/assets/images/logo-sm.png" alt="" height="45" />
-              </span>
-              <span className="logo-lg">
-                <img src="/assets/images/logo-light.png" alt="" height="40" />
-              </span>
-            </a>
-          </div>
+        {/* Left Section: Brand & Mobile Menu Toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <img
+                src="/assets/images/logo-dark.png"
+                alt="AutoHub"
+                height="34"
+                style={{ objectFit: "contain", filter: "brightness(1.05)" }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/assets/images/logo-sm.png";
+                }}
+              />
+            </span>
+          </Link>
+
           {isMobile && (
             <button
               type="button"
-              className="btn btn-sm px-3 font-size-24 header-item waves-effect"
-              id="vertical-menu-btn"
               onClick={onMenuToggle}
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                borderRadius: "8px",
+                color: "#F8FAFC",
+                padding: "6px 10px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              aria-label="Toggle Navigation"
             >
-              <i className="mdi mdi-menu text-light"></i>
+              <MenuOutlined style={{ fontSize: "16px" }} />
             </button>
           )}
-        </div>
-        <div className="d-flex">
-          {/* Guide Dropdown */}
-          <div className="dropdown d-inline-block me-2">
-            <button
-              type="button"
-              className="btn header-item waves-effect"
-              id="page-header-guide-dropdown"
-              data-bs-toggle="dropdown"
-              aria-haspopup="true"
-              aria-expanded="false"
-            >
-              <i className="mdi mdi-book-open-variant font-size-20 text-light"></i>
-              <span className="d-none d-xl-inline-block ms-1 text-light">
-                Guide
-              </span>
-              <i className="mdi mdi-chevron-down d-none d-xl-inline-block text-light ms-1"></i>
-            </button>
-            <div className="dropdown-menu dropdown-menu-end">
-              {/* Admin and Manager see all guides */}
-              {(isAdmin || isManager) && (
-                <>
-                  <h6 className="dropdown-header">Process Guides</h6>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/car-intake")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-car font-size-16 align-middle me-1"></i>
-                    Car Intake Guide
-                  </button>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/check-in")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-account-check font-size-16 align-middle me-1"></i>
-                    Check-In Guide
-                  </button>
-                  <div className="dropdown-divider"></div>
-                  <h6 className="dropdown-header">Role-Based Guides</h6>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/admin")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-shield-crown font-size-16 align-middle me-1"></i>
-                    Admin Guide
-                  </button>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/manager")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-account-tie font-size-16 align-middle me-1"></i>
-                    Manager Guide
-                  </button>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/front-desk")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-desk font-size-16 align-middle me-1"></i>
-                    Front Desk Guide
-                  </button>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/staff")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-account-hard-hat font-size-16 align-middle me-1"></i>
-                    Staff Guide
-                  </button>
-                </>
-              )}
 
-              {/* Front Desk sees only their guide */}
-              {isFrontDesk && (
-                <>
-                  <h6 className="dropdown-header">Your Guide</h6>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/front-desk")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-desk font-size-16 align-middle me-1"></i>
-                    Front Desk Guide
-                  </button>
-                </>
-              )}
-
-              {/* Staff sees only their guide */}
-              {isStaff && (
-                <>
-                  <h6 className="dropdown-header">Your Guide</h6>
-                  <button
-                    className="dropdown-item"
-                    onClick={() => navigate("/guide/staff")}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      width: "100%",
-                      textAlign: "left",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <i className="mdi mdi-account-hard-hat font-size-16 align-middle me-1"></i>
-                    Staff Guide
-                  </button>
-                </>
-              )}
-            </div>
+          {/* Operational Yard Indicator (hidden on small mobile) */}
+          <div
+            style={{
+              display: isMobile ? "none" : "flex",
+              alignItems: "center",
+              gap: "6px",
+              marginLeft: "12px",
+              padding: "3px 10px",
+              borderRadius: "999px",
+              background: "rgba(16, 185, 129, 0.10)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
+              color: "#34D399",
+              fontSize: "12px",
+              fontWeight: 500,
+            }}
+          >
+            <span
+              style={{
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                background: "#10B981",
+                boxShadow: "0 0 6px rgba(16, 185, 129, 0.8)",
+              }}
+            />
+            Main Yard • AutoHub Express
           </div>
+        </div>
 
-          {/* User Dropdown */}
-          <div className="dropdown d-inline-block">
-            <button
-              type="button"
-              className="btn header-item waves-effect"
-              id="page-header-user-dropdown"
-              data-bs-toggle="dropdown"
-              aria-haspopup="true"
-              aria-expanded="false"
-            >
-              <img
-                className="rounded-circle header-profile-user"
-                src="/assets/images/logo-sm1.png"
-                alt="Header Avatar"
-              />
-              <span className="d-none d-xl-inline-block ms-1 text-light">
-                {user ? `${user.first_name} ${user.last_name}` : "User"}
-              </span>
-              <i className="mdi mdi-chevron-down d-none d-xl-inline-block text-light"></i>
-            </button>
-            <div className="dropdown-menu dropdown-menu-end">
-              <a className="dropdown-item" href="#">
-                <i className="mdi mdi-account-circle-outline font-size-16 align-middle me-1"></i>{" "}
-                Profile
-              </a>
-
-              <div className="dropdown-divider"></div>
+        {/* Right Section: Guides & User Dropdowns */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Guide Dropdown */}
+          {guideMenuItems.length > 0 && (
+            <Dropdown menu={{ items: guideMenuItems }} placement="bottomRight" trigger={["click"]}>
               <button
-                className="dropdown-item text-danger"
-                onClick={handleLogout}
+                type="button"
                 style={{
-                  border: "none",
-                  background: "none",
-                  width: "100%",
-                  textAlign: "left",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "8px",
+                  color: "#CBD5E1",
+                  padding: "7px 12px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+                  e.currentTarget.style.color = "#F8FAFC";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                  e.currentTarget.style.color = "#CBD5E1";
                 }}
               >
-                <i className="mdi mdi-power font-size-16 align-middle me-1 text-danger"></i>{" "}
-                Logout
+                <CompassOutlined style={{ fontSize: "15px", color: "#525BE5" }} />
+                <span style={{ display: isMobile ? "none" : "inline" }}>Guide</span>
+                <DownOutlined style={{ fontSize: "10px", opacity: 0.7 }} />
               </button>
-            </div>
-          </div>
+            </Dropdown>
+          )}
+
+          {/* User Profile Dropdown */}
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={["click"]}>
+            <button
+              type="button"
+              style={{
+                background: "rgba(255, 255, 255, 0.04)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "8px",
+                color: "#F8FAFC",
+                padding: "5px 10px",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+              }}
+            >
+              <div
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #525BE5 0%, #363DA8 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#FFFFFF",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  boxShadow: "0 2px 6px rgba(82, 91, 229, 0.35)",
+                }}
+              >
+                {user?.first_name?.charAt(0)?.toUpperCase() || user?.username?.charAt(0)?.toUpperCase() || "U"}
+              </div>
+
+              {!isMobile && (
+                <div style={{ textAlign: "left", lineHeight: 1.2 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#F8FAFC" }}>
+                    {user ? `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.username || "User" : "User"}
+                  </div>
+                  <Tag
+                    bordered={false}
+                    style={{
+                      background: "rgba(82, 91, 229, 0.15)",
+                      color: getRoleBadgeColor(user?.role),
+                      fontSize: "10.5px",
+                      lineHeight: "15px",
+                      padding: "0 6px",
+                      margin: "2px 0 0 0",
+                      textTransform: "capitalize",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {user?.role?.replace("_", " ") || "Staff"}
+                  </Tag>
+                </div>
+              )}
+
+              <DownOutlined style={{ fontSize: "10px", color: "#94A3B8", marginLeft: "2px" }} />
+            </button>
+          </Dropdown>
         </div>
       </div>
     </header>
