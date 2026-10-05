@@ -583,7 +583,9 @@ export default function Inbox() {
         let socket;
         import("socket.io-client")
             .then(({ io }) => {
-                socket = io(import.meta.env.VITE_SOCKET_URL || "https://api.autohubexpress.us");
+                socket = io(import.meta.env.VITE_SOCKET_URL || "https://api.autohubexpress.us", {
+                    withCredentials: true,
+                });
                 socket.on("new_email", (data) => {
                     const newEmail = data.email || data;
                     setEmails((prev) => [newEmail, ...prev]);
