@@ -1,13 +1,60 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, Input, Button, Form, message, Select } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
+import { useLeadCapture } from "../hooks/useLeadCapture";
+
+const PHONE_PATTERN = /^[0-9]{10}$/;
+const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
+const YEAR_PATTERN = /^\d{4}$/;
+
+// Customer fields saved progressively while the form is being filled in.
+// Status/source are only sent on the final submit.
+const DRAFT_FIELDS = ["name", "phone", "email", "partName", "make", "model", "year", "condition", "message"];
+
+const toPartName = (partName) =>
+    Array.isArray(partName) ? partName.join(", ") : partName;  // we can also do this | -> Engine|Alternator
+
+// Returns the values that are safe to save right now, or null when there's
+// no valid phone/email yet (the API needs one to create the lead). Fields
+// that currently fail validation are left out, so they never overwrite what
+// was saved before.
+const buildDraft = (values) => {
+    const draft = {};
+
+    DRAFT_FIELDS.forEach((field) => {
+        let value = field === "partName" ? toPartName(values[field]) : values[field];
+        value = typeof value === "string" ? value.trim() : value ?? "";
+
+        if (value !== "") {
+            if (field === "phone" && !PHONE_PATTERN.test(value)) return;
+            if (field === "email" && !EMAIL_PATTERN.test(value)) return;
+            if (field === "year" && !YEAR_PATTERN.test(String(value))) return;
+        }
+
+        draft[field] = value;
+    });
+
+    const hasContact = PHONE_PATTERN.test(draft.phone || "") || EMAIL_PATTERN.test(draft.email || "");
+
+    return hasContact ? draft : null;
+};
 
 
 const AddPartRequest = () => {
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const submittingRef = useRef(false);
+
+    // One lead per form session: created on the first valid autosave, then
+    // updated by every later autosave and by the final submit.
+    const lead = useLeadCapture("/part-request", { source: "Offline" });
+
+    const handleValuesChange = () => {
+        if (submittingRef.current) return;
+        lead.scheduleAutosave(() => buildDraft(form.getFieldsValue()));
+    };
 
     // Added by shiva
     const [parts, setParts] = useState([]);
@@ -69,34 +116,29 @@ const AddPartRequest = () => {
 
     const handleSubmit = async (values) => {
         try {
+            submittingRef.current = true;
             setLoading(true);
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    ...values,
-                    // Added by shiva
-                    partName: Array.isArray(values.partName)
-                        ? values.partName.join(", ")  // we can also do this | -> Engine|Alternator
-                        : values.partName,
-                    // end here
-                    source: "Offline",
-                }),
+            // Updates the lead autosave already created (if any) instead of
+            // creating a second one.
+            const result = await lead.submit({
+                ...values,
+                // Added by shiva
+                partName: toPartName(values.partName),
+                // end here
+                source: "Offline",
             });
 
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.message);
+            if (!result.ok) throw new Error(result.data?.message);
 
             message.success("Part Request Created Successfully");
             form.resetFields();
+            lead.reset();
 
         } catch (error) {
             message.error(error.message || "Something went wrong");
         } finally {
+            submittingRef.current = false;
             setLoading(false);
         }
     };
@@ -124,7 +166,7 @@ const AddPartRequest = () => {
                     </Button>
                 </div>
                 <Card title="Add Part Request">
-                    <Form form={form} layout="vertical" onFinish={handleSubmit}>
+                    <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={handleValuesChange}>
 
                         {/* Name */}
                         <Form.Item

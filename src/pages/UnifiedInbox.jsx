@@ -300,7 +300,9 @@ const UnifiedInbox = () => {
     import("socket.io-client")
       .then(({ io }) => {
         if (cancelled) return;
-        socket = io(import.meta.env.VITE_SOCKET_URL || "https://api.autohubexpress.us");
+        socket = io(import.meta.env.VITE_SOCKET_URL || "https://api.autohubexpress.us", {
+          withCredentials: true,
+        });
 
         // Fires on first connect AND automatically after a dropped
         // connection reconnects (socket.io-client's built-in behavior) — a

@@ -18,7 +18,6 @@ import PageContentWrapper from "../../components/PageContentWrapper";
 
 import {
     inventoryAPI,
-    carIntakeAPI,
     uploadAPI,
     assetTagsAPI,
 } from "../../utils/api";
@@ -54,13 +53,6 @@ const AddInventoryPage = () => {
 
     const [tagCache, setTagCache] = useState({});
     const searchDebounceRef = useRef(null);
-
-    // All originally-selected part keys and the set already present in
-    // active Inventory at load time — kept outside component state since
-    // they're only needed as read-only reference data when computing
-    // completion after submission, not for rendering.
-    const selectedKeysAtLoadRef = useRef([]);
-    const existingPartNamesAtLoadRef = useRef(new Set());
 
     useEffect(() => {
         if (!state?.record) {
@@ -104,8 +96,6 @@ const AddInventoryPage = () => {
                 };
             });
 
-            selectedKeysAtLoadRef.current = allSelectedKeys;
-            existingPartNamesAtLoadRef.current = existingPartNames;
 
             setInventoryRecord(record);
             setInventoryParts(parts);
@@ -210,9 +200,20 @@ const AddInventoryPage = () => {
 
         setLoading(true);
         try {
-            const createdKeys = new Set();
-            for (const p of partsToCreate) {
-                const res = await inventoryAPI.create({
+            // One request for the whole car (one request per part tripped the
+            // API rate limit). Only the parts ticked "Extracted" are sent; the
+            // server skips parts already in inventory, adds each of the others
+            // on its own, attaches asset tags, and moves the car to
+            // "part-added-to-inventory" once every selected part is in.
+            const res = await inventoryAPI.bulkCreate({
+                carIntakeId: inventoryRecord._id,
+                vin: inventoryRecord.vin,
+                make: inventoryRecord.carDetails.make,
+                model: inventoryRecord.carDetails.model,
+                trim: inventoryRecord.carDetails.trim,
+                year: inventoryRecord.carDetails.year,
+                color: inventoryRecord.carDetails.color,
+                parts: partsToCreate.map((p) => ({
                     partName: p.label,
                     unit: p.unit,
                     cleaned: p.cleaned,
@@ -220,50 +221,47 @@ const AddInventoryPage = () => {
                     location: p.placed,
                     weight: p.weight,
                     dimensions: p.dimensions,
-                    make: inventoryRecord.carDetails.make,
-                    model: inventoryRecord.carDetails.model,
-                    trim: inventoryRecord.carDetails.trim,
-                    year: inventoryRecord.carDetails.year,
-                    vin: inventoryRecord.vin,
-                    color: inventoryRecord.carDetails.color,
                     image: partImages[p.key] || null,
-                });
-                const inventoryId = res.data?.data?._id || res.data?._id || res._id;
-                createdKeys.add(p.key);
+                    assetTagId: p.assetTagId || null,
+                })),
+            });
 
-                const selectedTagId = p.assetTagId;
-                if (selectedTagId) {
-                    await assetTagsAPI.attach(selectedTagId, { inventoryId: inventoryId });
-                }
+            const { created = 0, failed = 0, results = [], stillMissing = [] } = res.data || {};
+            const tagProblems = results.filter((r) => r.tagMessage).map((r) => toTitle(r.partName));
+
+            if (tagProblems.length) {
+                message.warning(`Asset tag not attached for: ${tagProblems.join(", ")}`);
             }
 
-            // Only mark the car complete once every originally-selected part is
-            // accounted for (already existed at load, or was just created here).
-            // A partial submission must leave the car visible in Add to
-            // Inventory so the remaining missing parts can still be added.
-            const nowCovered = new Set([
-                ...existingPartNamesAtLoadRef.current,
-                ...createdKeys,
-            ]);
-            const stillMissing = selectedKeysAtLoadRef.current.filter(
-                (k) => !nowCovered.has(k)
-            );
+            if (failed > 0) {
+                // Stay on the page with only the parts that still need adding,
+                // so Submit can simply be pressed again.
+                const failedNames = results.filter((r) => r.status === "failed").map((r) => r.partName);
+                const done = new Set(results.filter((r) => r.status !== "failed").map((r) => r.partName));
+                setInventoryParts((prev) => {
+                    const next = {};
+                    for (const k of Object.keys(prev)) {
+                        if (!done.has(prev[k].label)) next[k] = prev[k];
+                    }
+                    return next;
+                });
+                message.error(
+                    `Added ${created} part(s). ${failed} part(s) could not be added: ${failedNames.map(toTitle).join(", ")}`
+                );
+                return;
+            }
 
             if (stillMissing.length === 0) {
-                await carIntakeAPI.updateStatus(
-                    inventoryRecord._id,
-                    "part-added-to-inventory"
-                );
                 message.success("Inventory added successfully");
             } else {
                 message.success(
-                    `Added ${createdKeys.size} part(s) — ${stillMissing.length} part(s) still missing`
+                    `Added ${created} part(s) — ${stillMissing.length} part(s) still missing`
                 );
             }
 
             navigate(-1);
-        } catch {
-            message.error("Failed to add inventory");
+        } catch (err) {
+            message.error(err?.response?.data?.message || "Failed to add inventory");
         } finally {
             setLoading(false);
         }

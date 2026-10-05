@@ -224,6 +224,10 @@ const JunkCarRequests = () => {
             render: (_, record) => record.engineOrVin || "none",
         },
         {
+            title: "Location",
+            render: (_, record) => record.location || "none",
+        },
+        {
             title: "Condition",
             width: 110,
             render: (_, record) => {
