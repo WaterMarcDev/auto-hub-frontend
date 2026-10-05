@@ -132,6 +132,9 @@ export const partAPI = {
 
 export const inventoryAPI = {
   create: (data) => api.post("/inventory", data),
+  // All of one car's parts in a single request; longer timeout since the
+  // server adds them one by one.
+  bulkCreate: (data) => api.post("/inventory/bulk", data, { timeout: 60000 }),
   getByVIN: (vin) => api.get(`/inventory/vin/${vin}`),
   getPartsMaster: (params = {}) => api.get(`/inventory/parts`, { params }),
   getAll: (params = {}) => api.get("/inventory", { params }),

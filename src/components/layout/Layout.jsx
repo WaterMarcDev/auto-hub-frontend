@@ -26,7 +26,7 @@ const Layout = ({ children }) => {
           (import.meta.env.VITE_API_URL
             ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
             : "https://api.autohubexpress.us");
-        socket = io(socketUrl);
+        socket = io(socketUrl, { withCredentials: true });
         cacheManager.initSocket(socket);
       })
       .catch((err) => {
