@@ -18,6 +18,13 @@ import { partAPI, makeAPI } from "../../utils/api";
 const { Text } = Typography;
 const { Option } = Select;
 
+// A1 (converter) and A2 (catalytic converter) are never selected at intake:
+// they always start (and stay) off with 0 units. The backend enforces the
+// same rule in utils/intakePartExclusions.js.
+const INTAKE_DESELECTED_PARTS = new Set(["a1", "a2"]);
+const isIntakeDeselectedPart = (key) =>
+  INTAKE_DESELECTED_PARTS.has(String(key || "").trim().toLowerCase());
+
 const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
   const [partsList, setPartsList] = useState([]);
   const [makesList, setMakesList] = useState([]);
@@ -99,6 +106,15 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
 
     partsList.forEach((p) => {
       const key = p.key;
+      if (isIntakeDeselectedPart(key)) {
+        // Always off with 0 units, including on cars saved before this rule
+        const current = updated[key] || {};
+        if (current.selected !== false || current.unit !== 0) {
+          updated[key] = { ...current, selected: false, unit: 0 };
+          changed = true;
+        }
+        return;
+      }
       if (!updated[key]) {
         // If missing entirely, set defaults: selected true and unit from API (or 1)
         updated[key] = {
@@ -201,10 +217,14 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       width: 80,
       render: (_, record) => {
         const selected = getPartData(record.key, "selected") === true;
+        const locked = isIntakeDeselectedPart(record.key);
         return (
           <Switch
             checked={selected}
+            disabled={locked}
+            title={locked ? "A1 and A2 are not selected at intake" : undefined}
             onChange={(checked) => {
+              if (locked) return;
               // compute new unit in one go to avoid state race where
               // two consecutive updates overwrite each other
               const curUnit = getPartData(record.key, "unit");
