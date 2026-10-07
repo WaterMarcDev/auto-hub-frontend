@@ -7,8 +7,37 @@ import { Input, Select, Row, Col } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SourceBadge from "../../components/SourceBadge";
 import { cacheManager } from "../../utils/cacheManager";
+import ExportButton from "../../components/ExportButton";
+import { formatExportDate } from "../../utils/exportUtils";
 
 const { Option } = Select;
+
+const PART_REQUEST_EXPORT_COLUMNS = [
+    { header: "Date", render: (r) => formatExportDate(r.createdAt), width: 18 },
+    { header: "Customer Name", key: "name", width: 22 },
+    { header: "Phone", key: "phone", width: 18 },
+    { header: "Email", key: "email", width: 28 },
+    { header: "Make", key: "make", width: 16 },
+    { header: "Model", key: "model", width: 16 },
+    { header: "Year", key: "year", width: 10 },
+    { header: "Part Name", key: "partName", width: 25 },
+    { header: "Message", render: (r) => r.message || "-", width: 35 },
+    { header: "Remark", render: (r) => r.remark || "-", width: 35 },
+    {
+        header: "Source",
+        render: (r) => (r.source === "Online" ? "Website" : r.source || "Website"),
+        width: 16,
+    },
+    {
+        header: "Created By",
+        render: (r) =>
+            r.createdBy && typeof r.createdBy === "object" && r.createdBy.first_name
+                ? `${r.createdBy.first_name} ${r.createdBy.last_name || ""}`.trim()
+                : "-",
+        width: 20,
+    },
+    { header: "Status", render: (r) => r.status || "-", width: 16 },
+];
 
 // "Online"/"Offline" are assigned automatically at creation (organic website
 // submission vs staff-entered) and were never selectable here — preserved
@@ -401,6 +430,16 @@ const Requests = () => {
         },
     ];
 
+    const displayedRequests = [...(searched ? filteredRequests : requests)].sort((a, b) => {
+        const aCompleted = a.status?.toLowerCase() === "completed";
+        const bCompleted = b.status?.toLowerCase() === "completed";
+
+        if (aCompleted && !bCompleted) return 1;
+        if (!aCompleted && bCompleted) return -1;
+
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
     return (
         <div
             className="requests-page"
@@ -416,7 +455,15 @@ const Requests = () => {
                     </>
                 }
                 extra={
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <ExportButton
+                            data={displayedRequests}
+                            columns={PART_REQUEST_EXPORT_COLUMNS}
+                            baseFilename="Part_Requests"
+                            sheetName="Part Requests"
+                            label="Download"
+                        />
+
                         <Button
                             icon={<ArrowLeftOutlined />}
                             onClick={() => navigate("/")}
@@ -537,20 +584,7 @@ const Requests = () => {
                 <Table
                     loading={loading}
                     columns={columns}
-                    dataSource={
-                        [...(searched ? filteredRequests : requests)].sort((a, b) => {
-                            const aCompleted =
-                                a.status?.toLowerCase() === "completed";
-
-                            const bCompleted =
-                                b.status?.toLowerCase() === "completed";
-
-                            if (aCompleted && !bCompleted) return 1;
-                            if (!aCompleted && bCompleted) return -1;
-
-                            return new Date(b.createdAt) - new Date(a.createdAt);
-                        })
-                    }
+                    dataSource={displayedRequests}
                     // columns={columns}
                     // dataSource={searched ? filteredRequests : requests}
                     // rowKey="_id"

@@ -7,8 +7,67 @@ import { Modal } from "antd";
 import api from "../utils/api";    // by shiva
 import SourceBadge from "../components/SourceBadge";
 import { cacheManager } from "../utils/cacheManager";
+import ExportButton from "../components/ExportButton";
+import { formatExportDate } from "../utils/exportUtils";
 
 const { Option } = Select;
+
+const JUNK_CAR_EXPORT_COLUMNS = [
+    { header: "Date", render: (r) => formatExportDate(r.createdAt), width: 18 },
+    { header: "Customer Name", key: "name", width: 22 },
+    { header: "Phone", key: "phone", width: 18 },
+    { header: "Email", key: "email", width: 28 },
+    { header: "Make", key: "make", width: 16 },
+    { header: "Model", key: "model", width: 16 },
+    { header: "Year", key: "year", width: 10 },
+    { header: "VIN / Engine", render: (r) => r.engineOrVin || "-", width: 22 },
+    { header: "Location", render: (r) => r.location || "-", width: 20 },
+    {
+        header: "Condition",
+        render: (r) => {
+            if (!r.condition || r.condition === "none") return "-";
+            if (typeof r.condition === "object") {
+                try {
+                    return Object.entries(r.condition)
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join("; ");
+                } catch {
+                    return String(r.condition);
+                }
+            }
+            return String(r.condition);
+        },
+        width: 35,
+    },
+    { header: "Message", render: (r) => r.message || "-", width: 35 },
+    { header: "Remark", render: (r) => r.remark || "-", width: 35 },
+    {
+        header: "Source",
+        render: (r) => {
+            const src = (r.source || "website").toString().toLowerCase();
+            return src === "website" ? "Website" : (r.source || "Website");
+        },
+        width: 16,
+    },
+    {
+        header: "Created By",
+        render: (r) =>
+            r.createdBy && typeof r.createdBy === "object" && r.createdBy.first_name
+                ? `${r.createdBy.first_name} ${r.createdBy.last_name || ""}`.trim()
+                : "-",
+        width: 20,
+    },
+    {
+        header: "Handled By",
+        render: (r) =>
+            r.assignedTo && typeof r.assignedTo === "object" && r.assignedTo.first_name
+                ? `${r.assignedTo.first_name} ${r.assignedTo.last_name || ""}`.trim()
+                : "Vijay Kumar",
+        width: 20,
+    },
+    { header: "Status", render: (r) => r.status || "-", width: 16 },
+    { header: "Payment Status", render: (r) => r.paymentStatus || "Not Paid", width: 16 },
+];
 
 // Mirrors the selectable list on the Part Request page (see
 // src/pages/Requests/index.jsx), plus "Manual" which — unlike Part Request's
@@ -421,6 +480,33 @@ const JunkCarRequests = () => {
         },
     ];
 
+    const displayedJunkCars = junkCars
+        .filter((car) => {
+            const handledMatch =
+                !handledByFilter ||
+                (car.assignedTo &&
+                    typeof car.assignedTo === "object" &&
+                    car.assignedTo._id === handledByFilter);
+
+            const sourceMatch =
+                !sourceFilter || car.source === sourceFilter;
+
+            const statusMatch =
+                !statusFilter ||
+                car.status?.toLowerCase() === statusFilter.toLowerCase();
+
+            return handledMatch && sourceMatch && statusMatch;
+        })
+        .sort((a, b) => {
+            const aCompleted = a.status?.toLowerCase() === "completed";
+            const bCompleted = b.status?.toLowerCase() === "completed";
+
+            if (aCompleted && !bCompleted) return 1;
+            if (!aCompleted && bCompleted) return -1;
+
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
     return (
         <div className="requests-page" style={{ paddingTop: "20px", paddingBottom: "90px" }}>
             <Card
@@ -431,7 +517,15 @@ const JunkCarRequests = () => {
                     </>
                 }
                 extra={
-                    <div style={{ display: "flex", gap: "10px" }}>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                        <ExportButton
+                            data={displayedJunkCars}
+                            columns={JUNK_CAR_EXPORT_COLUMNS}
+                            baseFilename="Junk_Car_Requests"
+                            sheetName="Junk Cars"
+                            label="Download"
+                        />
+
                         <Button
                             onClick={() => navigate("/")}
                             icon={<ArrowLeftOutlined />}
@@ -536,42 +630,7 @@ const JunkCarRequests = () => {
                 <Table
                     loading={loading}
                     columns={columns}
-                    dataSource={
-                        junkCars
-                            .filter((car) => {
-
-                                const handledMatch =
-                                    !handledByFilter ||
-                                    (
-                                        car.assignedTo &&
-                                        typeof car.assignedTo === "object" &&
-                                        car.assignedTo._id === handledByFilter
-                                    );
-                                
-                                const sourceMatch =
-                                    !sourceFilter ||
-                                    car.source === sourceFilter;
-
-                                const statusMatch =
-                                    !statusFilter ||
-                                    car.status?.toLowerCase() ===
-                                    statusFilter.toLowerCase();
-
-                                return handledMatch && sourceMatch && statusMatch;
-                            })
-                            .sort((a, b) => {
-                                const aCompleted =
-                                    a.status?.toLowerCase() === "completed";
-
-                                const bCompleted =
-                                    b.status?.toLowerCase() === "completed";
-
-                                if (aCompleted && !bCompleted) return 1;
-                                if (!aCompleted && bCompleted) return -1;
-
-                                return new Date(b.createdAt) - new Date(a.createdAt);
-                            })
-                    }
+                    dataSource={displayedJunkCars}
                     // dataSource={
                     //     junkCars.filter((car) => {
 
