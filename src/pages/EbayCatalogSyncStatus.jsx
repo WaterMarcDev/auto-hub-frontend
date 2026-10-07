@@ -53,6 +53,8 @@ const EbayCatalogSyncStatus = () => {
   };
 
   const lastRun = status?.data?.lastRun;
+  // Current totals from the database; older backends don't send them.
+  const totals = status?.data?.catalogTotals;
   const configured = status?.data?.configured;
   const missingConfig = status?.data?.missingConfiguration || [];
   const nextScheduled = status?.data?.nextScheduledAt;
@@ -106,26 +108,45 @@ const EbayCatalogSyncStatus = () => {
             </Card>
           )}
 
-          {lastRun && (<>
-            <Divider>Last Run Summary</Divider>
+          {totals && (<>
+            <Divider>Catalog Totals (current)</Divider>
             <Row gutter={[16, 16]}>
-              <Col span={6}><Statistic title="Discovered" value={lastRun.totalDiscovered || 0} /></Col>
-              <Col span={6}><Statistic title="Eligible" value={lastRun.totalEligible || 0} /></Col>
-              <Col span={6}><Statistic title="Published" value={lastRun.totalPublished || 0} valueStyle={{ color: "#3f8600" }} /></Col>
-              <Col span={6}><Statistic title="Failed" value={lastRun.totalFailed || 0} valueStyle={{ color: "#cf1322" }} /></Col>
+              <Col span={6}><Statistic title="Discovered" value={totals.discovered} /></Col>
+              <Col span={6}><Statistic title="Excluded" value={totals.excluded} /></Col>
+              <Col span={6}><Statistic title="Published (Created + Updated)" value={totals.published} valueStyle={{ color: "#3f8600" }} /></Col>
+              <Col span={6}><Statistic title="Failed" value={totals.failed} valueStyle={{ color: "#cf1322" }} /></Col>
             </Row>
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-              <Col span={6}><Statistic title="Excluded" value={lastRun.totalExcluded || 0} /></Col>
-              <Col span={6}><Statistic title="Updated" value={lastRun.totalUpdated || 0} /></Col>
-              <Col span={6}><Statistic title="Created" value={lastRun.totalCreated || 0} /></Col>
-              <Col span={6}><Statistic title="Duration" value={lastRun.durationMs ? `${Math.round(lastRun.durationMs / 1000)}s` : "\u2014"} /></Col>
+              <Col span={6}><Statistic title="Created" value={totals.created} /></Col>
+              <Col span={6}><Statistic title="Updated" value={totals.updated} /></Col>
+              <Col span={6}><Statistic title="Not Yet Synced" value={totals.notSynced} /></Col>
+              <Col span={6}><Statistic title="Live on eBay (Marketplace Listing)" value={totals.liveOnEbay} /></Col>
             </Row>
-            {lastRun.completedAt && (
-              <div style={{ marginTop: 8 }}>
-                <Text type="secondary">Ran at: {new Date(lastRun.completedAt).toLocaleString()}</Text>
-                {lastRun.error && <div><Text type="danger">Error: {lastRun.error}</Text></div>}
-              </div>
-            )}
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary">
+                Discovered = Excluded + Published + Failed + Not Yet Synced. Published counts every product
+                the CRM has live on eBay; Live on eBay also includes listings created directly on eBay.
+              </Text>
+            </div>
+          </>)}
+
+          {lastRun && (<>
+            <Divider>Last Sync Run</Divider>
+            <Descriptions column={4} size="small" bordered>
+              <Descriptions.Item label="Discovered">{lastRun.totalDiscovered || 0}</Descriptions.Item>
+              <Descriptions.Item label="Eligible">{lastRun.totalEligible || 0}</Descriptions.Item>
+              <Descriptions.Item label="Excluded">{lastRun.totalExcluded || 0}</Descriptions.Item>
+              <Descriptions.Item label="Unchanged">{lastRun.totalUnchanged || 0}</Descriptions.Item>
+              <Descriptions.Item label="Published">{lastRun.totalPublished || 0}</Descriptions.Item>
+              <Descriptions.Item label="Created">{lastRun.totalCreated || 0}</Descriptions.Item>
+              <Descriptions.Item label="Updated">{lastRun.totalUpdated || 0}</Descriptions.Item>
+              <Descriptions.Item label="Failed">{lastRun.totalFailed || 0}</Descriptions.Item>
+              <Descriptions.Item label="Duration">{lastRun.durationMs ? `${Math.round(lastRun.durationMs / 1000)}s` : "\u2014"}</Descriptions.Item>
+              <Descriptions.Item label="Ran at" span={3}>
+                {lastRun.completedAt ? new Date(lastRun.completedAt).toLocaleString() : "\u2014"}
+              </Descriptions.Item>
+            </Descriptions>
+            {lastRun.error && <div style={{ marginTop: 8 }}><Text type="danger">Error: {lastRun.error}</Text></div>}
           </>)}
 
           {!lastRun && configured && (
