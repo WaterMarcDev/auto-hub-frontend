@@ -169,16 +169,19 @@ const UnifiedInbox = () => {
     activeConversationRef.current = activeConversation;
   }, [activeConversation]);
 
-  const fetchConversations = async () => {
+  // `silent` refreshes (background poll, socket reconnect, after a reply)
+  // update the list in place: no spinner swap, no error toast — the next
+  // refresh simply retries. Only the first load shows the spinner.
+  const fetchConversations = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await conversationService.getAll({ limit: 100 });
       setConversations(res.data?.data || []);
     } catch (err) {
       console.error("Failed to fetch conversations:", err);
-      message.error("Failed to load conversations");
+      if (!silent) message.error("Failed to load conversations");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -201,7 +204,7 @@ const UnifiedInbox = () => {
       message.success("Reply sent");
       justSentRef.current = true;
       await fetchMessages(activeConversation);
-      await fetchConversations();
+      await fetchConversations({ silent: true });
     } catch (err) {
       // Surface the backend's actual failure reason (e.g. which prerequisite
       // was missing, or the real marketplace error) instead of a generic
@@ -305,14 +308,20 @@ const UnifiedInbox = () => {
         // connection reconnects (socket.io-client's built-in behavior) — a
         // safety net for anything missed while disconnected.
         socket.on("connect", () => {
-          fetchConversations();
+          fetchConversations({ silent: true });
           if (activeConversationRef.current) fetchMessages(activeConversationRef.current);
         });
 
         socket.on("new_message", ({ conversationId: incomingConvId, message: incomingMessage, conversation: convSummary }) => {
           setConversations((prev) => {
             const idx = prev.findIndex((c) => c._id === incomingConvId);
-            if (idx === -1) return prev; // picked up by the next poll/reconnect refresh
+            if (idx === -1) {
+              // First message of a conversation the list hasn't loaded yet
+              // (e.g. a new eBay buyer): show it right away instead of
+              // waiting for the next background refresh.
+              if (!convSummary?._id) return prev;
+              return [{ ...convSummary, unreadCount: convSummary.unreadCount ?? 1 }, ...prev];
+            }
 
             const isActive = activeConversationRef.current === incomingConvId;
             const existing = prev[idx];
@@ -341,15 +350,28 @@ const UnifiedInbox = () => {
         // polling backstop below keeps the inbox fresh regardless.
       });
 
-    const pollInterval = setInterval(() => {
-      fetchConversations();
+    // Silent background backstop (WhatsApp messages have no socket push yet;
+    // eBay messages arrive via the backend message-sync job + `new_message`).
+    // Skipped while the tab is hidden so idle tabs put no load on the server,
+    // with one catch-up refresh when the tab becomes visible again.
+    const backgroundRefresh = () => {
+      fetchConversations({ silent: true });
       if (activeConversationRef.current) fetchMessages(activeConversationRef.current);
+    };
+    const pollInterval = setInterval(() => {
+      if (document.hidden) return;
+      backgroundRefresh();
     }, 30000);
+    const onVisibilityChange = () => {
+      if (!document.hidden) backgroundRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       cancelled = true;
       socket?.disconnect();
       clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
 
