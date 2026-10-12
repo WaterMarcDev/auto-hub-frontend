@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
@@ -94,6 +95,18 @@ const Layout = ({ children }) => {
     };
   }, []);
 // end here
+
+  // Opening Part Requests / Junk Car Requests clears that badge: hide it now
+  // and record "seen" so only leads arriving afterwards are counted again.
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const badge = { "/part-requests": "partRequests", "/junk-car-requests": "junkCars" }[pathname];
+    if (!badge) return;
+    const clear = () => (badge === "partRequests" ? setPartRequestCount : setJunkRequestCount)(0);
+    clear();
+    // Clear again once saved, in case a badge poll landed before the save.
+    api.post("/system/badge-seen", { badge }).then(clear).catch(() => {});
+  }, [pathname]);
 
   return (
     <div id="layout-wrapper">
