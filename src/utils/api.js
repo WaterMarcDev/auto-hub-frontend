@@ -89,6 +89,14 @@ export const carIntakeAPI = {
     api.patch(`/car-intake/${id}/status`, { status }),
 
   getStats: (params = {}) => api.get("/car-intake/stats", { params }),
+
+  // Scrap workflow: Car Inventory for Scrap → Ready To Scrap → Scrapped
+  moveToReadyToScrap: (id) => api.patch(`/car-intake/${id}/ready-to-scrap`),
+  // body: { elements: [{ elementName, unit, weight, quality, dimensions }], scrapRemarks, removePartIds }
+  moveToScrapped: (id, body) => api.patch(`/car-intake/${id}/move-to-scrapped`, body),
+  addScrapElements: (id, body) => api.post(`/car-intake/${id}/scrap-elements`, body),
+  getScrapDetails: (id) => api.get(`/car-intake/${id}/scrap-details`),
+
   bulkUpload: (fileUrl) => api.post("/car-intake/bulk-upload", { fileUrl }),
   // Accept either a string (fileUrl) or an object { fileUrl, defaultYard, defaultYardLocation }
   bulkUploadScraped: (payload) =>

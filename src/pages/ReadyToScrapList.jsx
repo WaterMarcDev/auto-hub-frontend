@@ -22,7 +22,9 @@ import {
   UploadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import api, { carIntakeAPI, uploadAPI } from "../utils/api";
+import { carIntakeAPI, uploadAPI } from "../utils/api";
+import { useAuth } from "../hooks/useAuth";
+import ExtractElementsModal from "../components/Scrap/ExtractElementsModal";
 import getStatusColor from "../utils/statusColors";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
@@ -38,9 +40,11 @@ const ReadyToScrapList = () => {
   });
 
   // Remarks state for Move To Scrapped action by shiva
-  const [remarkModalVisible, setRemarkModalVisible] = useState(false);
-  const [selectedCarId, setSelectedCarId] = useState(null);
-  const [scrapRemark, setScrapRemark] = useState("");
+  // Move To Scrapped opens the Extract Elements popup (scraper/admin only;
+  // the backend enforces the same roles).
+  const [scrapCar, setScrapCar] = useState(null);
+  const { user } = useAuth();
+  const canMoveToScrapped = ["scraper", "admin"].includes(user?.role?.toLowerCase());
   // end here
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -345,18 +349,11 @@ const ReadyToScrapList = () => {
             disabled={record?.status === "payment-done"}
           />
 
-          {/* Move To Scrapped by shiva */}
-          <Button
-            danger
-            size="small"
-            onClick={() => {
-              setSelectedCarId(record._id);
-              setRemarkModalVisible(true);
-            }}
-            // onClick={() => handleMoveToScrapped(record._id)}
-          >
-            Move To Scrapped
-          </Button>
+          {canMoveToScrapped && (
+            <Button danger size="small" onClick={() => setScrapCar(record)}>
+              Move To Scrapped
+            </Button>
+          )}
 
           {/* <Button
             type="primary"
@@ -403,34 +400,6 @@ const ReadyToScrapList = () => {
 
   // `minWidth` is handled via CSS with tableLayout="auto" elsewhere; keep columns as-is
 
-  // handleMoveToScrapped function by shiva
-  const handleMoveToScrapped = async (id) => {
-
-    try {
-
-      await api.patch(`/car-intake/${selectedCarId}/move-to-scrapped`,
-        {
-          scrapRemarks: scrapRemark,
-        }
-      );
-
-      message.success("Car moved to Scrapped");
-
-      setRemarkModalVisible(false);
-      setScrapRemark("");
-      setSelectedCarId(null);
-
-      fetchCarIntakes();
-    } catch (error) {
-      console.error("Move To Scrapped Error:", error);
-
-      message.error(
-        error.response?.data?.message ||
-        "Failed to move car to Scrapped"
-      );
-    }
-  };
-  // end here
 
 
   // Fetch car intakes data
@@ -878,26 +847,16 @@ const ReadyToScrapList = () => {
             )}
           </Modal>
 
-          {/* Remark Modal by shiva */}
-          <Modal
-            open={remarkModalVisible}
-            title="Scrap Remarks"
-            onCancel={() => {
-              setRemarkModalVisible(false);
-              setScrapRemark("");
-              setSelectedCarId(null);
+          <ExtractElementsModal
+            open={!!scrapCar}
+            car={scrapCar}
+            mode="scrap"
+            onCancel={() => setScrapCar(null)}
+            onDone={() => {
+              setScrapCar(null);
+              fetchCarIntakes();
             }}
-            onOk={handleMoveToScrapped}
-            okText="Move To Scrapped"
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder="Enter scrap remarks..."
-              value={scrapRemark}
-              onChange={(e) => setScrapRemark(e.target.value)}
-            />
-          </Modal>
-          {/* end here */}
+          />
         </Card>
       </PageContentWrapper>
     </div>
