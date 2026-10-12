@@ -5,6 +5,10 @@ import {
     MailOutlined,
     CloseOutlined,
     SendOutlined,
+    LeftOutlined,
+    RightOutlined,
+    DoubleLeftOutlined,
+    DoubleRightOutlined,
 } from "@ant-design/icons";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -547,6 +551,9 @@ export default function Inbox() {
     const indexOfFirstEmail = indexOfLastEmail - emailsPerPage;
     const currentEmails = filteredEmails.slice(indexOfFirstEmail, indexOfLastEmail);
     const totalPages = Math.ceil(filteredEmails.length / emailsPerPage);
+    // Three page numbers around the current page (shifted at the ends).
+    const windowStart = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
+    const pageWindow = Array.from({ length: Math.min(3, totalPages) }, (_, i) => windowStart + i);
 
     useEffect(() => { selectedEmailRef.current = selectedEmail; }, [selectedEmail]);
 
@@ -691,6 +698,7 @@ export default function Inbox() {
                 .inbox-composer-box:focus-within { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
                 .inbox-cc-input:focus { border-color: #3b82f6 !important; }
                 .inbox-remove-btn:hover { opacity: 0.75; }
+                .inbox-page-btn:not(:disabled):not([aria-current]):hover { border-color: #5b3fa6 !important; color: #f1f5f9 !important; }
             `}</style>
 
             <div style={{ padding: "16px", color: "#cbd5e1", paddingBottom: "80px", minHeight: "100vh" }}>
@@ -730,43 +738,43 @@ export default function Inbox() {
                     </div>
 
                     {/* Pagination */}
+                    {/* « ‹ Prev [n-1] [n] [n+1] Next › » — at most 3 page numbers */}
                     {totalPages > 1 && (
-                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <span
-                                onClick={() => currentPage > 1 && setCurrentPage((p) => p - 1)}
-                                style={{
-                                    cursor: currentPage > 1 ? "pointer" : "default",
-                                    opacity: currentPage > 1 ? 1 : 0.3,
-                                    fontSize: "20px", color: "#94a3b8", padding: "4px 6px",
-                                    lineHeight: 1,
-                                }}
-                            >‹</span>
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                <span
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    style={{
-                                        minWidth: "30px", height: "30px", display: "flex",
-                                        alignItems: "center", justifyContent: "center",
-                                        borderRadius: "6px", cursor: "pointer", fontSize: "13px",
-                                        border: page === currentPage ? "1px solid #3b82f6" : "1px solid transparent",
-                                        color: page === currentPage ? "#fff" : "#94a3b8",
-                                        background: page === currentPage ? "#1e3a6e" : "transparent",
-                                        fontWeight: page === currentPage ? 600 : 400,
-                                    }}
-                                >
-                                    {page}
-                                </span>
-                            ))}
-                            <span
-                                onClick={() => currentPage < totalPages && setCurrentPage((p) => p + 1)}
-                                style={{
-                                    cursor: currentPage < totalPages ? "pointer" : "default",
-                                    opacity: currentPage < totalPages ? 1 : 0.3,
-                                    fontSize: "20px", color: "#94a3b8", padding: "4px 6px",
-                                    lineHeight: 1,
-                                }}
-                            >›</span>
+                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "6px" }}>
+                            {[
+                                { key: "first", label: <DoubleLeftOutlined />, page: 1, title: "First page" },
+                                { key: "prev", label: <><LeftOutlined /> Prev</>, page: currentPage - 1, title: "Previous page" },
+                                ...pageWindow.map((p) => ({ key: p, label: p, page: p, title: `Page ${p}` })),
+                                { key: "next", label: <>Next <RightOutlined /></>, page: currentPage + 1, title: "Next page" },
+                                { key: "last", label: <DoubleRightOutlined />, page: totalPages, title: "Last page" },
+                            ].map(({ key, label, page, title }) => {
+                                const active = key === currentPage;
+                                const disabled = typeof key === "string" && (page < 1 || page > totalPages || page === currentPage);
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        title={title}
+                                        className="inbox-page-btn"
+                                        disabled={disabled}
+                                        aria-current={active ? "page" : undefined}
+                                        onClick={() => setCurrentPage(page)}
+                                        style={{
+                                            minWidth: "36px", height: "36px", padding: "0 12px",
+                                            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                                            borderRadius: "8px", fontSize: "13px", fontWeight: active ? 600 : 500,
+                                            border: `1px solid ${active ? "#5b3fa6" : "#334155"}`,
+                                            background: active ? "#5b3fa6" : "#1e293b",
+                                            color: active ? "#fff" : "#cbd5e1",
+                                            cursor: disabled ? "default" : "pointer",
+                                            opacity: disabled ? 0.4 : 1,
+                                            transition: "all 0.15s",
+                                        }}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
