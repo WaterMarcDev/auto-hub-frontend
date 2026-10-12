@@ -10,12 +10,20 @@ import {
   Popover,
   Checkbox,
   Input,
+  Alert,
+  Typography,
+  Drawer,
 } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import { carIntakeAPI, uploadAPI, scrapElementAPI } from "../../utils/api";
+import { carIntakeAPI, uploadAPI } from "../../utils/api";
+import { useAuth } from "../../hooks/useAuth";
+import ExtractElementsModal from "../../components/Scrap/ExtractElementsModal";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
+
+// Part keys are stored in camelCase (e.g. "acCompressor") → "Ac Compressor".
+const toTitle = (s) => String(s || "").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, (c) => c.toUpperCase());
 
 const ScrapList = () => {
   const [loading, setLoading] = useState(false);
@@ -31,10 +39,13 @@ const ScrapList = () => {
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
-  const [viewElementsModalVisible, setViewElementsModalVisible] =
-    useState(false);
-  const [viewElementsLoading, setViewElementsLoading] = useState(false);
-  const [viewElementsData, setViewElementsData] = useState([]);
+  // Scrap details (elements + parts kept / removed) and element backfill
+  const [detailsCar, setDetailsCar] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [details, setDetails] = useState(null);
+  const [backfillCar, setBackfillCar] = useState(null);
+  const { user } = useAuth();
+  const canAddElements = ["scraper", "admin"].includes(user?.role?.toLowerCase());
 
   const getPreviewContainer = () => {
     let el = document.getElementById("image-preview-root");
@@ -354,9 +365,9 @@ const ScrapList = () => {
           <Button
             type="primary"
             size="small"
-            onClick={() => openViewElementsModal(record)}
+            onClick={() => openDetails(record)}
           >
-            View Elements
+            Scrap Details
           </Button>
         </Space>
       ),
@@ -428,31 +439,20 @@ const ScrapList = () => {
     fetchCarIntakes();
   }, [pagination.current, pagination.pageSize]);
 
-  const fetchViewElementsByVIN = async (vin) => {
-    if (!vin) return;
-    setViewElementsLoading(true);
+  const openDetails = async (record) => {
+    if (!record?._id) return message.error("No car selected");
+    setDetailsCar(record);
+    setDetails(null);
+    setDetailsLoading(true);
     try {
-      const res = await scrapElementAPI.getByVIN(vin);
-      const data = res.data || res;
-      setViewElementsData(data || []);
-      setViewElementsModalVisible(true);
+      const res = await carIntakeAPI.getScrapDetails(record._id);
+      setDetails(res.data?.data || null);
     } catch (err) {
-      console.error("Failed to fetch scrap elements by VIN", err);
-      message.error(
-        `Failed to fetch elements for VIN ${vin}: ${
-          err.response?.data?.message || err.message
-        }`
-      );
-      setViewElementsData([]);
+      message.error(`Failed to load scrap details: ${err.response?.data?.message || err.message}`);
+      setDetailsCar(null);
     } finally {
-      setViewElementsLoading(false);
+      setDetailsLoading(false);
     }
-  };
-
-  const openViewElementsModal = (record) => {
-    const vin = record?.vin || record?._id || "";
-    if (!vin) return message.error("No VIN available for this record");
-    fetchViewElementsByVIN(vin);
   };
 
   return (
@@ -673,45 +673,120 @@ const ScrapList = () => {
               )}
             </Modal>
 
-            <Modal
-              open={viewElementsModalVisible}
-              title={`Scraped Elements`}
-              onCancel={() => setViewElementsModalVisible(false)}
-              footer={null}
-              width={900}
-              centered
+            <Drawer
+              open={!!detailsCar}
+              title={`Scrap Details${detailsCar?.vin ? ` · ${detailsCar.vin}` : ""}`}
+              placement="right"
+              onClose={() => setDetailsCar(null)}
+              width="min(760px, 100vw)"
+              destroyOnHidden
             >
-              {viewElementsLoading ? (
+              {detailsLoading || !details ? (
                 <div>Loading...</div>
-              ) : viewElementsData && viewElementsData.length > 0 ? (
-                <Table
-                  dataSource={viewElementsData}
-                  rowKey={(r) => r._id || JSON.stringify(r)}
-                  pagination={false}
-                  size="small"
-                  bordered
-                  sticky={{ offsetHeader: 0 }}
-                  scroll={{ y: "calc(70vh - 200px)" }}
-                  columns={[
-                    {
-                      title: "Element",
-                      dataIndex: "elementName",
-                      key: "elementName",
-                    },
-                    { title: "Unit", dataIndex: "unit", key: "unit" },
-                    { title: "Quality", dataIndex: "quality", key: "quality" },
-                    { title: "Weight", dataIndex: "weight", key: "weight" },
-                    {
-                      title: "Dimensions",
-                      dataIndex: "dimensions",
-                      key: "dimensions",
-                    },
-                  ]}
-                />
               ) : (
-                <div>No elements found for this VIN.</div>
+                <>
+                  <Typography.Text strong>Extracted elements</Typography.Text>
+                  {details.elements.length > 0 ? (
+                    <Table
+                      dataSource={details.elements}
+                      rowKey="_id"
+                      pagination={false}
+                      size="small"
+                      bordered
+                      style={{ margin: "8px 0 16px" }}
+                      columns={[
+                        { title: "Element", dataIndex: "elementName", key: "elementName" },
+                        { title: "Unit", dataIndex: "unit", key: "unit" },
+                        { title: "Quality", dataIndex: "quality", key: "quality" },
+                        { title: "Weight", dataIndex: "weight", key: "weight" },
+                        { title: "Dimensions", dataIndex: "dimensions", key: "dimensions" },
+                      ]}
+                    />
+                  ) : (
+                    <Alert
+                      type="warning"
+                      showIcon
+                      style={{ margin: "8px 0 16px" }}
+                      message="No elements found for this VIN."
+                      description={details.car.scrapRemarks ? `Scrap remarks: ${details.car.scrapRemarks}` : undefined}
+                      action={
+                        canAddElements && (
+                          <Button
+                            size="small"
+                            type="primary"
+                            onClick={() => {
+                              setBackfillCar(detailsCar);
+                              setDetailsCar(null);
+                            }}
+                          >
+                            Add Elements
+                          </Button>
+                        )
+                      }
+                    />
+                  )}
+
+                  <Typography.Text strong>Parts kept in inventory ({details.keptParts.length})</Typography.Text>
+                  <div style={{ margin: "8px 0 16px" }}>
+                    {details.keptParts.length > 0 ? (
+                      details.keptParts.map((p) => (
+                        <Tag key={p._id} style={{ marginBottom: 4 }}>
+                          {toTitle(p.partName)}
+                        </Tag>
+                      ))
+                    ) : (
+                      <Typography.Text type="secondary">None</Typography.Text>
+                    )}
+                  </div>
+
+                  <Typography.Text strong>Parts scrapped with the car ({details.removedParts.length})</Typography.Text>
+                  {details.removedParts.some((p) => p.pendingExternalRemoval) && (
+                    <Alert
+                      type="error"
+                      showIcon
+                      style={{ margin: "8px 0" }}
+                      message="Some scrapped parts are still listed on eBay/Wix — end those listings manually."
+                    />
+                  )}
+                  {details.removedParts.length > 0 ? (
+                    <Table
+                      dataSource={details.removedParts}
+                      rowKey="_id"
+                      pagination={false}
+                      size="small"
+                      bordered
+                      style={{ marginTop: 8 }}
+                      columns={[
+                        { title: "Part", dataIndex: "partName", key: "partName", render: toTitle },
+                        { title: "eBay listing", dataIndex: "ebayListingId", key: "ebay", render: (v) => v || "—" },
+                        { title: "Wix", dataIndex: "wixProductId", key: "wix", render: (v) => (v ? "Listed" : "—") },
+                        {
+                          title: "External removal",
+                          key: "pending",
+                          render: (_, p) => (p.pendingExternalRemoval ? <Tag color="red">Pending</Tag> : <Tag>Not listed</Tag>),
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <div style={{ marginTop: 8 }}>
+                      <Typography.Text type="secondary">None</Typography.Text>
+                    </div>
+                  )}
+                </>
               )}
-            </Modal>
+            </Drawer>
+
+            <ExtractElementsModal
+              open={!!backfillCar}
+              car={backfillCar}
+              mode="backfill"
+              onCancel={() => setBackfillCar(null)}
+              onDone={() => {
+                const car = backfillCar;
+                setBackfillCar(null);
+                openDetails(car);
+              }}
+            />
           </Card>
         </div>
       </div>
