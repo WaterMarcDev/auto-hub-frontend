@@ -153,7 +153,8 @@ const Analytics = () => {
   const sysMemPct = Math.round((usedSysMem / totalSysMem) * 100);
 
   return (
-    <div style={{ padding: "16px 24px", minHeight: "100vh" }}>
+    // paddingBottom clears the fixed site footer (same as Orders / SocialLeads).
+    <div style={{ padding: "16px 24px", paddingBottom: "90px", minHeight: "100vh" }}>
       {/* Header Bar */}
       <div
         style={{
@@ -166,7 +167,7 @@ const Analytics = () => {
         }}
       >
         <div>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 24 }}>
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 24, color: "#f1f5f9" }}>
             <LineChartOutlined style={{ marginRight: 10, color: "#1890ff" }} />
             System & Network Analytics
           </h2>
