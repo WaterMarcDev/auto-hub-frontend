@@ -368,7 +368,7 @@ const PartInventoryList = () => {
         page: page || pagination.current,
         limit: limit || pagination.pageSize,
         status:
-          "part-added-to-inventory,elements-scraped,car-added-to-inventory,elements-scraped,scraped",
+          "part-added-to-inventory,ready-to-scrap,elements-scraped,car-added-to-inventory,scraped",
         search: search !== undefined ? search : searchValue,
       });
       const data = res.data || res;

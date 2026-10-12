@@ -8,17 +8,13 @@ import {
   Card,
   Modal,
   Popover,
+  Popconfirm,
   Checkbox,
-  InputNumber,
   Input,
 } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
-import {
-  carIntakeAPI,
-  uploadAPI,
-  elementAPI,
-  scrapElementAPI,
-} from "../../utils/api";
+import { carIntakeAPI, uploadAPI } from "../../utils/api";
+import { useAuth } from "../../hooks/useAuth";
 import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
 
@@ -35,13 +31,10 @@ const CarInventoryList = () => {
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [docModalUrl, setDocModalUrl] = useState(null);
   const [docModalIsPdf, setDocModalIsPdf] = useState(false);
-  // Extract Elements modal state
-  const [extractModalVisible, setExtractModalVisible] = useState(false);
-  const [elementsList, setElementsList] = useState([]);
-  const [elementsLoading, setElementsLoading] = useState(false);
-  const [selectedElementsMap, setSelectedElementsMap] = useState({});
-  const [extractSaving, setExtractSaving] = useState(false);
-  const [activeExtractRecord, setActiveExtractRecord] = useState(null);
+  // Only admins/managers send cars to Ready To Scrap (backend enforces too).
+  const { user } = useAuth();
+  const canSendToScrap = ["admin", "manager"].includes(user?.role?.toLowerCase());
+  const [sendingId, setSendingId] = useState(null);
 
   const getPreviewContainer = () => {
     let el = document.getElementById("image-preview-root");
@@ -312,13 +305,22 @@ const CarInventoryList = () => {
       fixed: "right",
       render: (text, record) => (
         <Space>
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => openExtractElementsModal(record)}
-          >
-            Extract Elements
-          </Button>
+          {canSendToScrap ? (
+            <Popconfirm
+              title="Send this car to Ready To Scrap?"
+              description="The scraper extracts its elements when moving it to Scrapped."
+              okText="Send"
+              onConfirm={() => sendToReadyToScrap(record)}
+            >
+              <Button size="small" type="primary" style={{ background: "#fa8c16" }} loading={sendingId === record._id}>
+                Ready To Scrap
+              </Button>
+            </Popconfirm>
+          ) : (
+            <Button size="small" disabled title="Only admins and managers can send cars to Ready To Scrap">
+              Ready To Scrap
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -389,118 +391,19 @@ const CarInventoryList = () => {
     fetchCarIntakes();
   }, [pagination.current, pagination.pageSize]);
 
-  const openExtractElementsModal = async (record) => {
-    const vin = record?.vin || record?._id || "";
-    if (!vin) {
-      message.error("No VIN available for this record");
-      return;
-    }
-
-    setElementsLoading(true);
-    setActiveExtractRecord(record);
-    setExtractModalVisible(true);
+  const sendToReadyToScrap = async (record) => {
+    setSendingId(record._id);
     try {
-      const res = await elementAPI.getAll({ page: 1, limit: 200 });
-      const data = res.data || res;
-      const items = data.elements || data || [];
-      setElementsList(items);
-
-      // initialize selection map with defaults from element
-      const map = {};
-      items.forEach((el) => {
-        map[el._id || el.id || el.name] = {
-          selected: false,
-          elementName: el.name || el.elementName || "",
-          unit: 1,
-          weight: el.weight || "",
-          dimensions: el.dimensions || "",
-          quality: "",
-        };
-      });
-      setSelectedElementsMap(map);
-    } catch (err) {
-      console.error("Failed to fetch elements", err);
-      message.error("Failed to fetch elements: " + (err.message || ""));
-      setElementsList([]);
-    } finally {
-      setElementsLoading(false);
-    }
-  };
-
-  const handleElementSelectChange = (key, checked) => {
-    setSelectedElementsMap((prev) => ({
-      ...prev,
-      [key]: {
-        ...(prev[key] || {}),
-        selected: checked,
-      },
-    }));
-  };
-
-  const handleElementFieldChange = (key, field, value) => {
-    setSelectedElementsMap((prev) => ({
-      ...prev,
-      [key]: {
-        ...(prev[key] || {}),
-        [field]: value,
-      },
-    }));
-  };
-
-  const submitExtractedElements = async (record) => {
-    const useRecord = record || activeExtractRecord;
-    const vin = useRecord?.vin || useRecord?._id || "";
-    if (!vin) return message.error("No VIN available");
-
-    const entries = Object.entries(selectedElementsMap).filter(
-      ([, v]) => v && v.selected
-    );
-    if (!entries.length) return message.error("No elements selected");
-
-    // Validate that all selected elements have weight
-    const missingWeight = entries.find(
-      ([, val]) => !val.weight || val.weight.toString().trim() === ""
-    );
-    if (missingWeight) {
-      return message.error("Weight is required for all selected elements");
-    }
-
-    setExtractSaving(true);
-    try {
-      for (const [key, val] of entries) {
-        const payload = {
-          elementName: val.elementName || key,
-          unit: val.unit || 1,
-          weight: val.weight || "",
-          dimensions: val.dimensions || "",
-          quality: val.quality || "",
-          vin: vin,
-        };
-
-        await scrapElementAPI.create(payload);
-      }
-
-      // update intake status
-      try {
-        await carIntakeAPI.updateStatus(
-          useRecord._id || useRecord.vin,
-          "elements-scraped"
-        );
-      } catch (sErr) {
-        console.warn("Failed to update car intake status", sErr);
-      }
-
-      message.success("Elements extracted successfully");
-      setActiveExtractRecord(null);
-      setExtractModalVisible(false);
+      await carIntakeAPI.moveToReadyToScrap(record._id);
+      message.success(`${record.vin || "Car"} moved to Ready To Scrap`);
       fetchCarIntakes();
     } catch (err) {
-      console.error("Failed to create scrap elements", err);
-      message.error("Failed to extract elements: " + (err.message || ""));
+      message.error(err.response?.data?.message || "Failed to move car to Ready To Scrap");
     } finally {
-      setExtractSaving(false);
+      setSendingId(null);
     }
   };
+
 
   return (
     <div>
@@ -654,154 +557,6 @@ const CarInventoryList = () => {
               )}
             </Modal>
 
-            <Modal
-              open={extractModalVisible}
-              title={`Extract Elements`}
-              onCancel={() => setExtractModalVisible(false)}
-              footer={null}
-              width={1000}
-              centered
-            >
-              {elementsLoading ? (
-                <div>Loading elements...</div>
-              ) : elementsList && elementsList.length > 0 ? (
-                <Table
-                  dataSource={elementsList}
-                  rowKey={(r) => r._id || r.name || JSON.stringify(r)}
-                  pagination={false}
-                  size="small"
-                  bordered
-                  sticky={{ offsetHeader: 0 }}
-                  scroll={{ y: "calc(70vh - 200px)" }}
-                  columns={[
-                    {
-                      title: "Select",
-                      key: "select",
-                      render: (t, rec) => {
-                        const key = rec._id || rec.name;
-                        const sel = selectedElementsMap[key]?.selected || false;
-                        return (
-                          <Checkbox
-                            checked={sel}
-                            onChange={(e) =>
-                              handleElementSelectChange(key, e.target.checked)
-                            }
-                          />
-                        );
-                      },
-                    },
-                    { title: "Element", dataIndex: "name", key: "name" },
-                    {
-                      title: "Unit",
-                      key: "unit",
-                      render: (t, rec) => {
-                        const key = rec._id || rec.name;
-                        const val = selectedElementsMap[key]?.unit || 1;
-                        return (
-                          <InputNumber
-                            min={1}
-                            value={val}
-                            onChange={(v) =>
-                              handleElementFieldChange(key, "unit", v)
-                            }
-                          />
-                        );
-                      },
-                    },
-                    {
-                      title: "Weight",
-                      key: "weight",
-                      render: (t, rec) => {
-                        const key = rec._id || rec.name;
-                        const val =
-                          selectedElementsMap[key]?.weight || rec.weight || "";
-                        const isSelected =
-                          selectedElementsMap[key]?.selected || false;
-                        const isEmpty = !val || val.toString().trim() === "";
-                        const showError = isSelected && isEmpty;
-
-                        return (
-                          <div style={{ position: "relative" }}>
-                            <Input
-                              type="number"
-                              required
-                              value={val}
-                              status={showError ? "error" : ""}
-                              placeholder={
-                                showError ? "Required" : "Enter weight"
-                              }
-                              style={{
-                                borderColor: showError ? "#ff4d4f" : undefined,
-                                borderWidth: showError ? "2px" : undefined,
-                              }}
-                              onChange={(e) =>
-                                handleElementFieldChange(
-                                  key,
-                                  "weight",
-                                  e.target.value
-                                )
-                              }
-                            />
-                            {showError && (
-                              <div
-                                style={{
-                                  color: "#ff4d4f",
-                                  fontSize: "12px",
-                                  marginTop: "2px",
-                                }}
-                              >
-                                Required
-                              </div>
-                            )}
-                          </div>
-                        );
-                      },
-                    },
-                    {
-                      title: "Dimensions",
-                      key: "dimensions",
-                      render: (t, rec) => {
-                        const key = rec._id || rec.name;
-                        const val =
-                          selectedElementsMap[key]?.dimensions ||
-                          rec.dimensions ||
-                          "";
-                        return (
-                          <Input
-                            value={val}
-                            onChange={(e) =>
-                              handleElementFieldChange(
-                                key,
-                                "dimensions",
-                                e.target.value
-                              )
-                            }
-                          />
-                        );
-                      },
-                    },
-                  ]}
-                />
-              ) : (
-                <div>No elements available</div>
-              )}
-
-              <div style={{ marginTop: 12, textAlign: "right" }}>
-                <Button
-                  onClick={() => setExtractModalVisible(false)}
-                  style={{ marginRight: 8 }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="primary"
-                  loading={extractSaving}
-                  onClick={() => submitExtractedElements(activeExtractRecord)}
-                >
-                  Save
-                </Button>
-              </div>
-            </Modal>
           </Card>
         </div>
       </div>

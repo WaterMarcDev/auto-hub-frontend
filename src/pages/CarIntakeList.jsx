@@ -22,7 +22,7 @@ import {
   UploadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
-import api, { carIntakeAPI, uploadAPI } from "../utils/api";     // added api by shiva
+import { carIntakeAPI, uploadAPI } from "../utils/api";
 import getStatusColor from "../utils/statusColors";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
@@ -45,6 +45,10 @@ const NON_EDITABLE_STATUSES = [
   "sold",
   "towed",
 ];
+
+// Statuses shown on the scrap lists instead of Car Intake. "elements-scraped"
+// is a legacy status from the old Extract Elements → Scrap path.
+const SCRAP_WORKFLOW_STATUSES = ["ready-to-scrap", "elements-scraped", "scraped"];
 
 const CarIntakeList = () => {
   const [loading, setLoading] = useState(false);
@@ -344,17 +348,6 @@ const CarIntakeList = () => {
             disabled={NON_EDITABLE_STATUSES.includes(record?.status)}
           />
 
-          {/* Ready To Scrap Button by shiva */}
-          <Button
-            type="primary"
-            size="small"
-            style={{ background: "#fa8c16" }}
-            onClick={() => handleMoveToReadyToScrap(record._id)}
-            >
-              Ready To Scrap
-            </Button>
-            {/* end here */}
-
           {/* <Button
             type="primary"
             danger
@@ -400,26 +393,6 @@ const CarIntakeList = () => {
 
   // `minWidth` is handled via CSS with tableLayout="auto" elsewhere; keep columns as-is
 
-  // handleMoveToReadyToScrap function by shiva
-  const handleMoveToReadyToScrap = async (id) => {
-
-    try {
-
-      await api.patch(`/car-intake/${id}/ready-to-scrap`);   //added by shiva
-
-      message.success("Car moved to Ready To Scrap");
-
-      fetchCarIntakes();
-    } catch (error) {
-      console.error("Ready To Scrap Error:", error);
-
-      message.error(
-        error.response?.data?.message ||
-        "Failed to move car to Ready To Scrap"
-      );
-    }
-  };
-  // end here
 
 
   // Fetch car intakes data
@@ -436,10 +409,10 @@ const CarIntakeList = () => {
         if (statusToSend) {
           params.status = statusToSend;
         } else {
-          // Cars moved to Ready-to-Scrap belong on that dedicated list, not
-          // here. Exclude them at the query layer (not after paginating)
-          // so `pagination.total`/`pages` match what's actually rendered.
-          params.excludeStatus = "ready-to-scrap";
+          // Cars in the scrap workflow (Ready To Scrap → Scrapped) live on
+          // their own lists, not here. Exclude them at the query layer (not
+          // after paginating) so `pagination.total`/`pages` match the rows.
+          params.excludeStatus = SCRAP_WORKFLOW_STATUSES.join(",");
         }
         // debug
         // console.debug("fetchCarIntakes params:", params);
