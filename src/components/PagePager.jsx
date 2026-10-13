@@ -3,23 +3,25 @@ import { LeftOutlined, RightOutlined, DoubleLeftOutlined, DoubleRightOutlined } 
 /**
  * «  ‹ Prev  [n-1] [n] [n+1]  Next ›  » — at most 3 page numbers around the
  * current page. First/Prev are disabled on page 1, Next/Last on the last page.
- * Hidden when there is only one page.
+ * Hidden when there is only one page. `compact` (for narrow panels) uses
+ * smaller buttons and icon-only Prev/Next so it fits on one line.
  */
-const PagePager = ({ page, totalPages, onChange, disabled = false }) => {
+const PagePager = ({ page, totalPages, onChange, disabled = false, compact = false }) => {
   if (totalPages <= 1) return null;
 
   const windowStart = Math.max(1, Math.min(page - 1, totalPages - 2));
   const pages = Array.from({ length: Math.min(3, totalPages) }, (_, i) => windowStart + i);
   const items = [
     { key: "first", label: <DoubleLeftOutlined />, target: 1, title: "First page" },
-    { key: "prev", label: <><LeftOutlined /> Prev</>, target: page - 1, title: "Previous page" },
+    { key: "prev", label: compact ? <LeftOutlined /> : <><LeftOutlined /> Prev</>, target: page - 1, title: "Previous page" },
     ...pages.map((p) => ({ key: p, label: p, target: p, title: `Page ${p}` })),
-    { key: "next", label: <>Next <RightOutlined /></>, target: page + 1, title: "Next page" },
+    { key: "next", label: compact ? <RightOutlined /> : <>Next <RightOutlined /></>, target: page + 1, title: "Next page" },
     { key: "last", label: <DoubleRightOutlined />, target: totalPages, title: "Last page" },
   ];
+  const size = compact ? "30px" : "36px";
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: compact ? "4px" : "6px", flexWrap: compact ? "nowrap" : "wrap" }}>
       <style>{`.page-pager-btn:not(:disabled):not([aria-current]):hover { border-color: #5b3fa6 !important; color: #f1f5f9 !important; }`}</style>
       {items.map(({ key, label, target, title }) => {
         const active = key === page;
@@ -34,9 +36,9 @@ const PagePager = ({ page, totalPages, onChange, disabled = false }) => {
             aria-current={active ? "page" : undefined}
             onClick={() => onChange(target)}
             style={{
-              minWidth: "36px", height: "36px", padding: "0 12px",
+              minWidth: size, height: size, padding: compact ? "0 6px" : "0 12px",
               display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
-              borderRadius: "8px", fontSize: "13px", fontWeight: active ? 600 : 500,
+              borderRadius: compact ? "6px" : "8px", fontSize: compact ? "12px" : "13px", fontWeight: active ? 600 : 500,
               border: `1px solid ${active ? "#5b3fa6" : "#334155"}`,
               background: active ? "#5b3fa6" : "#1e293b",
               color: active ? "#fff" : "#cbd5e1",
