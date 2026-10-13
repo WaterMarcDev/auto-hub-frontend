@@ -13,7 +13,6 @@ import {
   FileProtectOutlined,
   SettingOutlined,
   ShopOutlined,
-  GlobalOutlined,
   MessageOutlined,
   ApiOutlined,
   ShoppingCartOutlined,
@@ -195,11 +194,6 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
               key: "/unified-inbox",
               icon: <MessageOutlined />,
               label: <Link to="/unified-inbox">Marketplace Inbox</Link>,
-            },
-            {
-              key: "/social-leads",
-              icon: <GlobalOutlined />,
-              label: <Link to="/social-leads">Social Media Leads</Link>,
             },
             {
               key: "/marketplace-leads",
@@ -644,7 +638,6 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/part-requests": "requests",       // added by shiva
       "/junk-car-requests": "requests",   // added by shiva
       "/inbox": "requests",               // added by shiva
-      "/social-leads": "integrations",
       "/marketplace-leads": "integrations",
       "/unified-inbox": "integrations",
       "/orders": "integrations",

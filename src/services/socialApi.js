@@ -7,18 +7,6 @@ import api from "../utils/api";
  * Pattern matches the existing apiService pattern used in the project.
  */
 
-// ─── Social Leads ─────────────────────────────────────────────────────────
-
-export const socialLeadService = {
-  getAll: (params = {}) => api.get("/social-leads", { params }),
-  getById: (id) => api.get(`/social-leads/${id}`),
-  updateStatus: (id, status) => api.patch(`/social-leads/${id}/status`, { status }),
-  assignUser: (id, userId) => api.patch(`/social-leads/${id}/assign`, { userId }),
-  updateNotes: (id, notes) => api.patch(`/social-leads/${id}/notes`, { notes }),
-  updatePriority: (id, priority) => api.patch(`/social-leads/${id}/priority`, { priority }),
-  remove: (id) => api.delete(`/social-leads/${id}`),
-};
-
 // ─── Marketplace Listings ─────────────────────────────────────────────────
 // NOTE: this module was renamed from "Marketplace Leads" to "Marketplace
 // Listings" for clarity (it no longer represents leads). The underlying
