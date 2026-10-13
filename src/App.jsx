@@ -78,7 +78,6 @@ const UserList = React.lazy(() => import("./pages/Users/UserList"));
 const AddUser = React.lazy(() => import("./pages/Users/AddUser"));
 const EntryFeeSetting = React.lazy(() => import("./pages/Admin/EntryFeeSetting"));
 const ErrorCodes = React.lazy(() => import("./pages/ErrorCodes"));
-const SocialLeads = React.lazy(() => import("./pages/SocialLeads"));
 const MarketplaceListings = React.lazy(() => import("./pages/MarketplaceListings"));
 const UnifiedInbox = React.lazy(() => import("./pages/UnifiedInbox"));
 const Orders = React.lazy(() => import("./pages/Orders"));
@@ -378,7 +377,6 @@ function App() {
                         <Route path="/entry-fee" element={<EntryFeeSetting />} />
                         <Route path="/error-codes" element={<ErrorCodes />} />
                         {/* Social & Marketplace Integration Routes */}
-                        <Route path="/social-leads" element={<SocialLeads />} />
                         <Route path="/marketplace-leads" element={<MarketplaceListings />} />
                         <Route path="/unified-inbox" element={<UnifiedInbox />} />
                         <Route path="/orders" element={<Orders />} />
