@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, useCallback, Fragment } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback, Fragment } from "react";
 import { Card, Button, Tag, message, Input, Row, Col, Typography, Spin, Empty, Select, Drawer, Image, Grid } from "antd";
 import {
   ArrowLeftOutlined,
@@ -138,6 +138,26 @@ const UnifiedInbox = () => {
   // user paged away) — keep its summary so the thread header still renders.
   const [openedConversation, setOpenedConversation] = useState(null);
   const listQueryRef = useRef({ page: 1, platform: "", unreadOnly: false, search: "" });
+
+  // The inbox fills the space between its top and the fixed site footer, so
+  // the list and thread scroll inside it and the reply box is never hidden.
+  const pageRef = useRef(null);
+  const [pageHeight, setPageHeight] = useState(null);
+  const [footerHeight, setFooterHeight] = useState(0);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = pageRef.current;
+      if (!el) return;
+      const footer = document.querySelector("footer.footer");
+      const fh = footer ? footer.offsetHeight : 0;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setFooterHeight(fh);
+      setPageHeight(Math.max(520, window.innerHeight - top - fh));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
   const requestIdRef = useRef(0);
 
   // ─── Collapsible list / mobile list↔thread layout (Gmail/Outlook style) ─
@@ -285,6 +305,9 @@ const UnifiedInbox = () => {
   const handleSelectConversation = (id) => {
     setOpenedConversation(conversations.find((c) => c._id === id) || null);
     setActiveConversation(id);
+    // Bring the chat into view if the page itself was scrolled down.
+    const top = pageRef.current?.getBoundingClientRect().top;
+    if (top !== undefined && top < 0) pageRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     fetchMessages(id);
     navigate(`/unified-inbox?conversation=${id}`, { replace: true });
     if (!isDesktop) setMobileView("thread");
@@ -460,7 +483,18 @@ const UnifiedInbox = () => {
   const threadSpan = isDesktop ? (isListCollapsed ? 24 : 16) : mobileView === "thread" ? 24 : 0;
 
   return (
-    <div style={{ padding: "20px", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+    <div
+      ref={pageRef}
+      style={{
+        padding: "16px 20px",
+        height: pageHeight || undefined,
+        marginBottom: footerHeight,
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 0,
+      }}
+    >
       <Card
         title="Marketplace Inbox"
         extra={
@@ -475,21 +509,21 @@ const UnifiedInbox = () => {
           {/* Conversation List */}
           {listSpan > 0 && (
             <Col span={listSpan} style={{ borderRight: "1px solid #303030", height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}>
-              <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "8px 12px", borderBottom: "1px solid #303030", flexWrap: "wrap" }}>
+              <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "12px", borderBottom: "1px solid #303030", flexWrap: "wrap", alignItems: "center" }}>
                 <Input
                   placeholder="Search conversations..."
                   prefix={<SearchOutlined />}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   allowClear
-                  style={{ flex: "1 1 160px" }}
+                  style={{ flex: "1 1 100%" }}
                 />
                 <Select
                   placeholder="Platform"
                   value={platformFilter || undefined}
                   onChange={(val) => setPlatformFilter(val || "")}
                   allowClear
-                  style={{ width: 130 }}
+                  style={{ flex: 1, minWidth: 110 }}
                 >
                   {Object.keys(PLATFORM_COLORS).map((p) => (
                     <Option key={p} value={p} style={{ textTransform: "capitalize" }}>
@@ -502,16 +536,6 @@ const UnifiedInbox = () => {
                 </Button>
               </div>
 
-              {/* Pager (top of the list so it is always visible) — each click loads only that page */}
-              {totalConversations > 0 && (
-                <div style={{ flexShrink: 0, padding: "8px 12px", borderBottom: "1px solid #303030", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalConversations)} of {totalConversations} conversations
-                  </Text>
-                  <PagePager page={page} totalPages={totalPages} onChange={setPage} disabled={loading} />
-                </div>
-              )}
-
               <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
                 {loading ? (
                   <div style={{ textAlign: "center", padding: 40 }}><Spin /></div>
@@ -523,9 +547,10 @@ const UnifiedInbox = () => {
                       key={conv._id}
                       onClick={() => handleSelectConversation(conv._id)}
                       style={{
-                        padding: "12px 16px",
+                        padding: "10px 14px",
                         cursor: "pointer",
                         borderBottom: "1px solid #303030",
+                        borderLeft: `3px solid ${activeConversation === conv._id ? "#525BE5" : "transparent"}`,
                         background: activeConversation === conv._id ? "#1a1a2e" : "transparent",
                         transition: "background 0.2s",
                       }}
@@ -534,26 +559,61 @@ const UnifiedInbox = () => {
                         e.currentTarget.style.background = activeConversation === conv._id ? "#1a1a2e" : "transparent";
                       }}
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <Tag color={PLATFORM_COLORS[conv.platform] || "default"} style={{ textTransform: "capitalize" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <Tag color={PLATFORM_COLORS[conv.platform] || "default"} style={{ textTransform: "capitalize", margin: 0, fontSize: 11, lineHeight: "18px" }}>
                           {conv.platform}
                         </Tag>
-                        {conv.unreadCount > 0 && <Tag color="red">{conv.unreadCount}</Tag>}
+                        <span
+                          style={{
+                            flex: 1, minWidth: 0, color: "#fff",
+                            fontWeight: conv.unreadCount > 0 ? 600 : 500,
+                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {conv.customerName || "Unknown"}
+                        </span>
+                        <span style={{ fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" }}>
+                          {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleDateString() : "—"}
+                        </span>
                       </div>
-                      <div style={{ fontWeight: 500, marginTop: 4, color: "#fff" }}>
-                        {conv.customerName || "Unknown"}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {conv.lastMessage || "No messages yet"}
-                      </div>
-                      <div style={{ fontSize: 11, color: "#4b5563", marginTop: 2 }}>
-                        {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleString() : "—"}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {conv.lastMessage || "No messages yet"}
+                        </span>
+                        {conv.unreadCount > 0 && (
+                          <span
+                            title={`${conv.unreadCount} unread`}
+                            style={{ minWidth: 18, height: 18, padding: "0 5px", borderRadius: 9, background: "#e53238", color: "#fff", fontSize: 11, fontWeight: 600, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                          >
+                            {conv.unreadCount}
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))
                 )}
               </div>
 
+              {/* Pager bar — always visible under the list; each click loads only that page */}
+              {totalConversations > 0 && (
+                <div
+                  style={{
+                    flexShrink: 0,
+                    padding: "8px 12px",
+                    borderTop: "1px solid #303030",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Text type="secondary" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalConversations)} of {totalConversations}
+                  </Text>
+                  <PagePager page={page} totalPages={totalPages} onChange={setPage} disabled={loading} compact />
+                </div>
+              )}
             </Col>
           )}
 
