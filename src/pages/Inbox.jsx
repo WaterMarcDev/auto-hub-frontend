@@ -5,11 +5,8 @@ import {
     MailOutlined,
     CloseOutlined,
     SendOutlined,
-    LeftOutlined,
-    RightOutlined,
-    DoubleLeftOutlined,
-    DoubleRightOutlined,
 } from "@ant-design/icons";
+import PagePager from "../components/PagePager";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -522,8 +519,11 @@ function MessageBubble({ msg }) {
 // ─── Main Inbox Component ────────────────────────────────────────────────────
 
 export default function Inbox() {
-    const [emails, setEmails] = useState([]);
+    const [emails, setEmails] = useState([]); // current page only (server-paginated)
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(null);
+    const [totalPages, setTotalPages] = useState(1);
+    const [counts, setCounts] = useState({ all: 0, unread: 0, read: 0, replied: 0 });
     const [selectedEmail, setSelectedEmail] = useState(null);
     const [replyText, setReplyText] = useState("");
     const [thread, setThread] = useState([]);
@@ -544,16 +544,41 @@ export default function Inbox() {
     const { message } = App.useApp();
     const emailsPerPage = 20;
 
-    const filteredEmails =
-        filter === "all" ? emails : emails.filter((e) => e.status === filter);
-    const unreadCount = filteredEmails.filter((e) => e.status === "unread").length;
-    const indexOfLastEmail = currentPage * emailsPerPage;
-    const indexOfFirstEmail = indexOfLastEmail - emailsPerPage;
-    const currentEmails = filteredEmails.slice(indexOfFirstEmail, indexOfLastEmail);
-    const totalPages = Math.ceil(filteredEmails.length / emailsPerPage);
-    // Three page numbers around the current page (shifted at the ends).
-    const windowStart = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
-    const pageWindow = Array.from({ length: Math.min(3, totalPages) }, (_, i) => windowStart + i);
+    const unreadCount = counts.unread;
+    // Latest page/filter for the socket handler; newest request wins.
+    const listRef = useRef({ page: 1, filter: "all" });
+    const requestIdRef = useRef(0);
+
+    // Load ONE page of emails from the server, newest first. Responses of
+    // older requests (e.g. fast page clicks) are ignored.
+    const fetchPage = useCallback(async (page, status, { silent = false } = {}) => {
+        const requestId = ++requestIdRef.current;
+        if (!silent) setLoading(true);
+        try {
+            const params = new URLSearchParams({ page: String(page), limit: String(emailsPerPage) });
+            if (status !== "all") params.set("status", status);
+            const res = await fetch(`${API_URL}/email/all?${params}`);
+            if (!res.ok) throw new Error(`Server returned ${res.status}`);
+            const data = await res.json();
+            if (requestId !== requestIdRef.current) return;
+            setEmails(Array.isArray(data.emails) ? data.emails : []);
+            setTotalPages(data.totalPages || 1);
+            if (data.counts) setCounts(data.counts);
+            if (data.page && data.page !== page) setCurrentPage(data.page);
+            setLoadError(null);
+        } catch (err) {
+            if (requestId !== requestIdRef.current) return;
+            console.error(err);
+            if (!silent) setLoadError("Could not load emails. Please try again.");
+        } finally {
+            if (requestId === requestIdRef.current) setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        listRef.current = { page: currentPage, filter };
+        fetchPage(currentPage, filter);
+    }, [currentPage, filter, fetchPage]);
 
     useEffect(() => { selectedEmailRef.current = selectedEmail; }, [selectedEmail]);
 
@@ -564,26 +589,6 @@ export default function Inbox() {
         }
     }, [thread.length]);
 
-    useEffect(() => {
-        const total = Math.ceil(filteredEmails.length / emailsPerPage);
-        if (currentPage > total) setCurrentPage(total || 1);
-    }, [emails]);
-
-    useEffect(() => {
-        const fetchEmails = async () => {
-            try {
-                setLoading(true);
-                const res = await fetch(`${API_URL}/email/all`);
-                const data = await res.json();
-                setEmails(data);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchEmails();
-    }, []);
 
     // Real-time socket
     useEffect(() => {
@@ -595,7 +600,8 @@ export default function Inbox() {
                 });
                 socket.on("new_email", (data) => {
                     const newEmail = data.email || data;
-                    setEmails((prev) => [newEmail, ...prev]);
+                    // Refresh the visible page + counts (one small request).
+                    fetchPage(listRef.current.page, listRef.current.filter, { silent: true });
                     if (selectedEmailRef.current?.thread_id === newEmail.thread_id) {
                         setThread((prev) => {
                             if (prev.some((e) => e._id === newEmail._id)) return prev;
@@ -606,7 +612,7 @@ export default function Inbox() {
             })
             .catch(() => { });
         return () => socket?.disconnect();
-    }, []);
+    }, [fetchPage]);
 
     const handleForwardMail = async () => {
         if (!forwardEmail.trim()) { message.warning("Enter recipient email"); return; }
@@ -618,7 +624,8 @@ export default function Inbox() {
             const formData = new FormData();
             formData.append("to", forwardEmail);
             formData.append("message", forwardMessage);
-            formData.append("originalEmail", JSON.stringify(selectedEmail));
+            const fullEmail = thread.find((e) => e._id === selectedEmail._id) || selectedEmail;
+            formData.append("originalEmail", JSON.stringify(fullEmail));
             forwardAttachments.forEach((f) => formData.append("attachments", f));
             const res = await fetch(`${API_URL}/email/forward`, { method: "POST", body: formData });
             const data = await res.json();
@@ -671,11 +678,8 @@ export default function Inbox() {
             setAttachments([]);
             setCcText("");
             setShowCc(false);
-            const [emailsRes, threadRes] = await Promise.all([
-                fetch(`${API_URL}/email/all`),
-                fetch(`${API_URL}/email/thread/${selectedEmail._id}`),
-            ]);
-            setEmails(await emailsRes.json());
+            const threadRes = await fetch(`${API_URL}/email/thread/${selectedEmail._id}`);
+            fetchPage(listRef.current.page, listRef.current.filter, { silent: true });
             const threadData = await threadRes.json();
             setThread(Array.isArray(threadData) ? threadData : []);
         } catch (err) {
@@ -698,7 +702,6 @@ export default function Inbox() {
                 .inbox-composer-box:focus-within { border-color: #3b82f6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
                 .inbox-cc-input:focus { border-color: #3b82f6 !important; }
                 .inbox-remove-btn:hover { opacity: 0.75; }
-                .inbox-page-btn:not(:disabled):not([aria-current]):hover { border-color: #5b3fa6 !important; color: #f1f5f9 !important; }
             `}</style>
 
             <div style={{ padding: "16px", color: "#cbd5e1", paddingBottom: "80px", minHeight: "100vh" }}>
@@ -738,45 +741,10 @@ export default function Inbox() {
                     </div>
 
                     {/* Pagination */}
-                    {/* « ‹ Prev [n-1] [n] [n+1] Next › » — at most 3 page numbers */}
-                    {totalPages > 1 && (
-                        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "6px" }}>
-                            {[
-                                { key: "first", label: <DoubleLeftOutlined />, page: 1, title: "First page" },
-                                { key: "prev", label: <><LeftOutlined /> Prev</>, page: currentPage - 1, title: "Previous page" },
-                                ...pageWindow.map((p) => ({ key: p, label: p, page: p, title: `Page ${p}` })),
-                                { key: "next", label: <>Next <RightOutlined /></>, page: currentPage + 1, title: "Next page" },
-                                { key: "last", label: <DoubleRightOutlined />, page: totalPages, title: "Last page" },
-                            ].map(({ key, label, page, title }) => {
-                                const active = key === currentPage;
-                                const disabled = typeof key === "string" && (page < 1 || page > totalPages || page === currentPage);
-                                return (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        title={title}
-                                        className="inbox-page-btn"
-                                        disabled={disabled}
-                                        aria-current={active ? "page" : undefined}
-                                        onClick={() => setCurrentPage(page)}
-                                        style={{
-                                            minWidth: "36px", height: "36px", padding: "0 12px",
-                                            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px",
-                                            borderRadius: "8px", fontSize: "13px", fontWeight: active ? 600 : 500,
-                                            border: `1px solid ${active ? "#5b3fa6" : "#334155"}`,
-                                            background: active ? "#5b3fa6" : "#1e293b",
-                                            color: active ? "#fff" : "#cbd5e1",
-                                            cursor: disabled ? "default" : "pointer",
-                                            opacity: disabled ? 0.4 : 1,
-                                            transition: "all 0.15s",
-                                        }}
-                                    >
-                                        {label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
+                    {/* « ‹ Prev [n-1] [n] [n+1] Next › » — each click loads that page from the server */}
+                    <div style={{ marginLeft: "auto" }}>
+                        <PagePager page={currentPage} totalPages={totalPages} onChange={setCurrentPage} disabled={loading} />
+                    </div>
                 </div>
 
                 {/* ── Email list ── */}
@@ -802,10 +770,22 @@ export default function Inbox() {
                     ) : emails.length === 0 ? (
                         <div style={{ textAlign: "center", padding: "60px 20px", color: "#64748b" }}>
                             <InboxOutlined style={{ fontSize: "32px", marginBottom: "12px", display: "block", color: "#334155" }} />
-                            <div style={{ fontSize: "15px" }}>No emails yet</div>
+                            <div style={{ fontSize: "15px", color: loadError ? "#f87171" : undefined }}>
+                                {loadError || (filter === "all" ? "No emails yet" : `No ${filter} emails`)}
+                            </div>
+                            {loadError && (
+                                <button
+                                    type="button"
+                                    className="inbox-filter-btn"
+                                    onClick={() => fetchPage(currentPage, filter)}
+                                    style={{ marginTop: "12px", padding: "6px 14px", borderRadius: "6px", border: "none", background: "#2563eb", color: "#fff", cursor: "pointer" }}
+                                >
+                                    Retry
+                                </button>
+                            )}
                         </div>
                     ) : (
-                        currentEmails.map((email, idx) => {
+                        emails.map((email, idx) => {
                             const isSelected = selectedEmail?._id === email._id;
                             const isUnread = email.status === "unread";
                             const name = email.sender_name || email.sender_email.split("@")[0];
@@ -820,9 +800,14 @@ export default function Inbox() {
                                         setReplyText(template);
                                         const res = await fetch(`${API_URL}/email/thread/${email._id}`);
                                         const data = await res.json();
-                                        setThread(Array.isArray(data) ? data : []);
+                                        const threadEmails = Array.isArray(data) ? data : [];
+                                        setThread(threadEmails);
+                                        // List rows carry no body — keep the full email for reply/forward.
+                                        const full = threadEmails.find((e) => e._id === email._id);
+                                        if (full) setSelectedEmail((cur) => (cur?._id === email._id ? { ...full, status: cur.status } : cur));
                                         if (email.status === "unread") {
                                             await fetch(`${API_URL}/email/mark-read/${email._id}`, { method: "PATCH" });
+                                            setCounts((c) => ({ ...c, unread: Math.max(c.unread - 1, 0), read: c.read + 1 }));
                                             setEmails((prev) =>
                                                 prev.map((e) =>
                                                     e._id === email._id
@@ -834,7 +819,7 @@ export default function Inbox() {
                                     }}
                                     style={{
                                         padding: "12px 16px",
-                                        borderBottom: idx < currentEmails.length - 1 ? "1px solid #1a2540" : "none",
+                                        borderBottom: idx < emails.length - 1 ? "1px solid #1a2540" : "none",
                                         borderLeft: isSelected ? "3px solid #3b82f6" : "3px solid transparent",
                                         background: isSelected ? "#1e2d45" : isUnread ? "#172032" : "#111827",
                                         cursor: "pointer",
@@ -893,9 +878,7 @@ export default function Inbox() {
                                             }}>
                                                 {email.status === "replied"
                                                     ? "✓ Replied"
-                                                    : cleanBody(email.body || "")
-                                                        .replace(/<[^>]+>/g, "")
-                                                        .slice(0, 80) || "No preview available"}
+                                                    : (email.preview || "").slice(0, 80) || "No preview available"}
                                             </div>
                                         </div>
                                     </div>
