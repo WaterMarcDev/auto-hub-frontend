@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, Fragment } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback, Fragment } from "react";
 import { Card, Button, Tag, message, Input, Row, Col, Typography, Spin, Empty, Select, Drawer, Image, Grid } from "antd";
 import {
   ArrowLeftOutlined,
@@ -13,6 +13,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { conversationService } from "../services/socialApi";
 import { ordersService } from "../services/ordersApi";
 import { customerAPI } from "../utils/api";
+import PagePager from "../components/PagePager";
+
+// Conversations per page — each page is loaded from the server on demand.
+const PAGE_SIZE = 20;
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -121,11 +125,20 @@ const UnifiedInbox = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // ─── List search/filter (client-side — conversations are already fetched
-  // in full via getAll({limit:100}); no new backend query params needed) ──
+  // ─── List paging + search/filter (server-side: only the visible page is
+  // downloaded; search/platform/unread apply across ALL conversations) ──
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [platformFilter, setPlatformFilter] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalConversations, setTotalConversations] = useState(0);
+  // The open conversation may not be on the visible page (deep link, or the
+  // user paged away) — keep its summary so the thread header still renders.
+  const [openedConversation, setOpenedConversation] = useState(null);
+  const listQueryRef = useRef({ page: 1, platform: "", unreadOnly: false, search: "" });
+  const requestIdRef = useRef(0);
 
   // ─── Collapsible list / mobile list↔thread layout (Gmail/Outlook style) ─
   const screens = Grid.useBreakpoint();
@@ -152,9 +165,22 @@ const UnifiedInbox = () => {
 
   const conversationId = searchParams.get("conversation");
 
+  // Debounce typing so each keystroke doesn't hit the server.
   useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Any filter change starts again from page 1.
+  useEffect(() => {
+    setPage(1);
+  }, [platformFilter, unreadOnly, debouncedSearch]);
+
+  useEffect(() => {
+    listQueryRef.current = { page, platform: platformFilter, unreadOnly, search: debouncedSearch };
     fetchConversations();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, platformFilter, unreadOnly, debouncedSearch]);
 
   useEffect(() => {
     if (conversationId) {
@@ -172,18 +198,29 @@ const UnifiedInbox = () => {
   // `silent` refreshes (background poll, socket reconnect, after a reply)
   // update the list in place: no spinner swap, no error toast — the next
   // refresh simply retries. Only the first load shows the spinner.
-  const fetchConversations = async ({ silent = false } = {}) => {
+  const fetchConversations = useCallback(async ({ silent = false } = {}) => {
+    const { page: p, platform, unreadOnly: unread, search: q } = listQueryRef.current;
+    const requestId = ++requestIdRef.current;
     try {
       if (!silent) setLoading(true);
-      const res = await conversationService.getAll({ limit: 100 });
+      const params = { page: p, limit: PAGE_SIZE };
+      if (platform) params.platform = platform;
+      if (unread) params.unreadOnly = "true";
+      if (q) params.search = q;
+      const res = await conversationService.getAll(params);
+      if (requestId !== requestIdRef.current) return; // a newer page/filter request won
+      const pages = res.data?.pagination?.pages || 1;
       setConversations(res.data?.data || []);
+      setTotalPages(pages);
+      setTotalConversations(res.data?.pagination?.total || 0);
+      if (p > pages && pages >= 1) setPage(pages); // e.g. last page emptied
     } catch (err) {
       console.error("Failed to fetch conversations:", err);
       if (!silent) message.error("Failed to load conversations");
     } finally {
-      if (!silent) setLoading(false);
+      if (!silent && requestId === requestIdRef.current) setLoading(false);
     }
-  };
+  }, []);
 
   const fetchMessages = async (id) => {
     try {
@@ -224,28 +261,29 @@ const UnifiedInbox = () => {
   };
 
   const getActiveConversationData = () => {
-    return conversations.find((c) => c._id === activeConversation);
+    return (
+      conversations.find((c) => c._id === activeConversation) ||
+      (openedConversation?._id === activeConversation ? openedConversation : undefined)
+    );
   };
 
   const activeConv = getActiveConversationData();
 
-  // ─── Client-side filtering over the already-fetched conversation list ───
-  const filteredConversations = useMemo(() => {
-    let list = conversations;
-    if (platformFilter) list = list.filter((c) => c.platform === platformFilter);
-    if (unreadOnly) list = list.filter((c) => (c.unreadCount || 0) > 0);
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      list = list.filter(
-        (c) =>
-          (c.customerName || "").toLowerCase().includes(q) ||
-          (c.lastMessage || "").toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [conversations, platformFilter, unreadOnly, search]);
+  // Filtering happens on the server; the list is exactly the current page.
+  const filteredConversations = conversations;
+
+  // Deep link (?conversation=id) to a conversation that isn't on this page.
+  useEffect(() => {
+    if (!activeConversation || conversations.some((c) => c._id === activeConversation)) return;
+    if (openedConversation?._id === activeConversation) return;
+    conversationService
+      .getById(activeConversation)
+      .then((res) => res.data?.data && setOpenedConversation(res.data.data))
+      .catch(() => {});
+  }, [activeConversation, conversations, openedConversation]);
 
   const handleSelectConversation = (id) => {
+    setOpenedConversation(conversations.find((c) => c._id === id) || null);
     setActiveConversation(id);
     fetchMessages(id);
     navigate(`/unified-inbox?conversation=${id}`, { replace: true });
@@ -313,14 +351,19 @@ const UnifiedInbox = () => {
         });
 
         socket.on("new_message", ({ conversationId: incomingConvId, message: incomingMessage, conversation: convSummary }) => {
+          const q = listQueryRef.current;
+          const onFirstUnfilteredPage = q.page === 1 && !q.platform && !q.unreadOnly && !q.search;
           setConversations((prev) => {
             const idx = prev.findIndex((c) => c._id === incomingConvId);
             if (idx === -1) {
+              // Not on this page: page 1 shows it on top; other pages pick it
+              // up on the next background refresh.
+              if (!onFirstUnfilteredPage) return prev;
               // First message of a conversation the list hasn't loaded yet
               // (e.g. a new eBay buyer): show it right away instead of
               // waiting for the next background refresh.
               if (!convSummary?._id) return prev;
-              return [{ ...convSummary, unreadCount: convSummary.unreadCount ?? 1 }, ...prev];
+              return [{ ...convSummary, unreadCount: convSummary.unreadCount ?? 1 }, ...prev].slice(0, PAGE_SIZE);
             }
 
             const isActive = activeConversationRef.current === incomingConvId;
@@ -333,8 +376,12 @@ const UnifiedInbox = () => {
               unreadCount: isActive ? existing.unreadCount : convSummary?.unreadCount ?? (existing.unreadCount || 0) + 1,
             };
 
-            // Move the just-updated conversation to the top — newest active first.
             const updated = [...prev];
+            if (!onFirstUnfilteredPage) {
+              updated[idx] = merged; // keep this page's order; refreshed by the poll
+              return updated;
+            }
+            // Move the just-updated conversation to the top — newest active first.
             updated.splice(idx, 1);
             updated.unshift(merged);
             return updated;
@@ -373,6 +420,8 @@ const UnifiedInbox = () => {
       clearInterval(pollInterval);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
+    // fetchConversations is stable (useCallback with no deps).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const openCustomerDrawer = async () => {
@@ -453,6 +502,16 @@ const UnifiedInbox = () => {
                 </Button>
               </div>
 
+              {/* Pager (top of the list so it is always visible) — each click loads only that page */}
+              {totalConversations > 0 && (
+                <div style={{ flexShrink: 0, padding: "8px 12px", borderBottom: "1px solid #303030", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalConversations)} of {totalConversations} conversations
+                  </Text>
+                  <PagePager page={page} totalPages={totalPages} onChange={setPage} disabled={loading} />
+                </div>
+              )}
+
               <div style={{ flex: 1, overflow: "auto", minHeight: 0 }}>
                 {loading ? (
                   <div style={{ textAlign: "center", padding: 40 }}><Spin /></div>
@@ -494,6 +553,7 @@ const UnifiedInbox = () => {
                   ))
                 )}
               </div>
+
             </Col>
           )}
 

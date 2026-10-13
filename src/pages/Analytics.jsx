@@ -153,7 +153,7 @@ const Analytics = () => {
   const sysMemPct = Math.round((usedSysMem / totalSysMem) * 100);
 
   return (
-    // paddingBottom clears the fixed site footer (same as Orders / SocialLeads).
+    // paddingBottom clears the fixed site footer (same as Orders / Marketplace Listings).
     <div style={{ padding: "16px 24px", paddingBottom: "90px", minHeight: "100vh" }}>
       {/* Header Bar */}
       <div
