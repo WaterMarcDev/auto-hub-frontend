@@ -251,7 +251,7 @@ const Login = () => {
                               fontWeight: "500",
                             }}
                           >
-                            {loading ? "Logging In..." : "Log In"}
+                            {loading ? "Logging In..." : "Login"}
                           </button>
                         </div>
                       </form>
