@@ -50,6 +50,7 @@ const CarInventoryList = React.lazy(() => import("./pages/CarInventory/List"));
 const AddScrap = React.lazy(() => import("./pages/Scrap/Add"));
 const ScrapList = React.lazy(() => import("./pages/Scrap/List"));
 const ScrapPurchase = React.lazy(() => import("./pages/ScrapPurchase"));
+const SoldProducts = React.lazy(() => import("./pages/SoldProducts"));
 const SellerRegister = React.lazy(() => import("./pages/Seller/Register"));
 const SellerList = React.lazy(() => import("./pages/Seller/List"));
 const BuyerRegister = React.lazy(() => import("./pages/Buyer/Register"));
@@ -83,7 +84,9 @@ const UnifiedInbox = React.lazy(() => import("./pages/UnifiedInbox"));
 const Orders = React.lazy(() => import("./pages/Orders"));
 const IntegrationManager = React.lazy(() => import("./pages/IntegrationManager"));
 const EbayCatalogSync = React.lazy(() => import("./pages/EbayCatalogSyncStatus"));
-const Analytics = React.lazy(() => import("./pages/Analytics"));
+// Analytics commented out (not deleted) — see Sidebar.jsx. Page code is
+// unchanged in src/pages/Analytics.jsx.
+// const Analytics = React.lazy(() => import("./pages/Analytics"));
 
 // Create placeholder components for other routes
 const PlaceholderPage = ({ title }) => (
@@ -307,6 +310,10 @@ function App() {
                           element={<PartInventoryMaster />}
                         />
                         <Route
+                          path="/sold-products"
+                          element={<SoldProducts />}
+                        />
+                        <Route
                           path="/inventory-tags"
                           element={<AssetTags />}
                         />
@@ -382,7 +389,7 @@ function App() {
                         <Route path="/orders" element={<Orders />} />
                         <Route path="/integrations" element={<IntegrationManager />} />
                         <Route path="/ebay-catalog-sync" element={<EbayCatalogSync />} />
-                        <Route path="/analytics" element={<Analytics />} />
+                        {/* <Route path="/analytics" element={<Analytics />} /> */}
                       </Routes>
                     </Suspense>
                   </Layout>

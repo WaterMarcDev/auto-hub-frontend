@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Card, message, Select } from "antd";
+import { Table, Input, Button, Space, Card, message, Select, Tag } from "antd";
+import { Link } from "react-router-dom";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -29,6 +30,9 @@ const MasterList = () => {
   const [selectedTrim, setSelectedTrim] = useState(null);
   const [addInventoryModalVisible, setAddInventoryModalVisible] =
     useState(false);
+  // Stock filter: parts sold on eBay/Wix are out of stock, so the list shows
+  // available parts by default. "sold" / "all" show sold parts too.
+  const [stockFilter, setStockFilter] = useState("available");
 
   const loadMakes = async () => {
     try {
@@ -77,7 +81,8 @@ const MasterList = () => {
     q = search,
     make = selectedMake,
     model = selectedModel,
-    trim = selectedTrim
+    trim = selectedTrim,
+    stock = stockFilter
   ) => {
     setLoading(true);
     try {
@@ -86,6 +91,7 @@ const MasterList = () => {
       if (make) params.make = make;
       if (model) params.model = model;
       if (trim) params.trim = trim;
+      if (stock && stock !== "all") params.saleStatus = stock;
 
       const res = await inventoryAPI.getPartsMaster(params);
       const data = res.data || res;
@@ -110,7 +116,7 @@ const MasterList = () => {
     loadMakes();
     (async () => {
       try {
-        const params = { page: 1, limit };
+        const params = { page: 1, limit, saleStatus: "available" };
         const res = await inventoryAPI.getPartsMaster(params);
         const data = res.data || res;
         setParts(data.parts || []);
@@ -270,6 +276,28 @@ const MasterList = () => {
                 }}
               />
 
+              <Select
+                value={stockFilter}
+                style={{ minWidth: 150 }}
+                options={[
+                  { label: "In stock", value: "available" },
+                  { label: "Sold (eBay/Wix)", value: "sold" },
+                  { label: "All parts", value: "all" },
+                ]}
+                onChange={(val) => {
+                  setStockFilter(val);
+                  fetchParts(
+                    1,
+                    limit,
+                    searchInput,
+                    selectedMake,
+                    selectedModel,
+                    selectedTrim,
+                    val
+                  );
+                }}
+              />
+
               <Button
                 onClick={() => {
                   // clear all filters and search
@@ -280,8 +308,9 @@ const MasterList = () => {
                   setSelectedTrim(null);
                   setModelOptions([]);
                   setTrimOptions([]);
-                  // fetch unfiltered list
-                  fetchParts(1, limit, "", null, null, null);
+                  setStockFilter("available");
+                  // fetch unfiltered list (in-stock parts)
+                  fetchParts(1, limit, "", null, null, null, "available");
                 }}
                 icon={<CloseCircleOutlined />}
               >
@@ -391,6 +420,22 @@ const MasterList = () => {
                 dataIndex: "location",
                 key: "location",
                 minWidth: 100,
+              },
+              {
+                title: "Status",
+                key: "saleStatus",
+                minWidth: 130,
+                render: (_, r) =>
+                  r.saleStatus === "sold" ? (
+                    <Link to="/sold-products">
+                      <Tag color="red">
+                        Sold on {r.sale?.channel === "wix" ? "Wix" : "eBay"}
+                        {r.sale?.orderNumber ? ` #${r.sale.orderNumber}` : ""}
+                      </Tag>
+                    </Link>
+                  ) : (
+                    <Tag color="green">In stock</Tag>
+                  ),
               },
               {
                 title: "SKU",

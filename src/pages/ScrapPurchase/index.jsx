@@ -457,8 +457,20 @@ const ScrapPurchase = () => {
         await ScrapPurchaseService.update(editing._id, payload);
         message.success("Scrap purchase updated");
       } else {
-        await ScrapPurchaseService.create(payload);
-        message.success("Scrap purchase created");
+        const created = await ScrapPurchaseService.create(payload);
+        // Purchased material is added to Element Hub stock by the backend.
+        const posted = created?.elementHubPosted || [];
+        if (created?.elementHubError) {
+          message.warning(`Scrap purchase created, but ${created.elementHubError}`);
+        } else if (posted.length) {
+          message.success(
+            `Scrap purchase created — added to Element Hub: ${posted
+              .map((p) => `${p.elementName} ${p.amount} lb`)
+              .join(", ")}`
+          );
+        } else {
+          message.success("Scrap purchase created");
+        }
       }
       setModalOpen(false);
       fetchRecords(1, pagination.pageSize, search);
