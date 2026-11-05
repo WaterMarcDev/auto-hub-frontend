@@ -51,6 +51,7 @@ const AddScrap = React.lazy(() => import("./pages/Scrap/Add"));
 const ScrapList = React.lazy(() => import("./pages/Scrap/List"));
 const ScrapPurchase = React.lazy(() => import("./pages/ScrapPurchase"));
 const SoldProducts = React.lazy(() => import("./pages/SoldProducts"));
+const InventorySync = React.lazy(() => import("./pages/InventorySync"));
 const SellerRegister = React.lazy(() => import("./pages/Seller/Register"));
 const SellerList = React.lazy(() => import("./pages/Seller/List"));
 const BuyerRegister = React.lazy(() => import("./pages/Buyer/Register"));
@@ -389,6 +390,7 @@ function App() {
                         <Route path="/orders" element={<Orders />} />
                         <Route path="/integrations" element={<IntegrationManager />} />
                         <Route path="/ebay-catalog-sync" element={<EbayCatalogSync />} />
+                        <Route path="/inventory-sync" element={<InventorySync />} />
                         {/* <Route path="/analytics" element={<Analytics />} /> */}
                       </Routes>
                     </Suspense>

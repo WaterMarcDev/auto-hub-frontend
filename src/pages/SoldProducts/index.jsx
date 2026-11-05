@@ -4,7 +4,7 @@
 // eBay and Wix orders. A sold part leaves available stock and is no longer
 // pushed to eBay/Wix. See backend services/marketplaceSales.service.js.
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -36,10 +36,13 @@ import dayjs from "dayjs";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import SoldProductsService from "../../services/soldProductsService";
+import InventorySyncService from "../../services/inventorySyncService";
+import { cacheManager } from "../../utils/cacheManager";
 
 const CHANNEL = {
   ebay: { label: "eBay", color: "blue" },
   wix: { label: "Wix", color: "purple" },
+  crm: { label: "In store", color: "gold" },
 };
 
 const prettyPart = (text) =>
@@ -187,6 +190,36 @@ const SoldProducts = () => {
     loadRows(1, pagination.limit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channel, search, onlyConflicts, dateRange]);
+
+  // Live refresh when any sale, cancellation or return changes stock.
+  const liveRef = useRef(null);
+  liveRef.current = () => {
+    loadSummary();
+    loadRows(pagination.page, pagination.limit);
+  };
+  useEffect(() => {
+    const unsub = cacheManager.subscribe("soldProducts", () => liveRef.current?.());
+    return () => unsub && unsub();
+  }, []);
+
+  // Return handling from the detail drawer. Restock only after the part is
+  // received AND passes inspection — a refund alone never restocks.
+  const [returnBusy, setReturnBusy] = useState(false);
+  const returnAction = async (fn, ok) => {
+    if (!detail) return;
+    setReturnBusy(true);
+    try {
+      await fn();
+      message.success(ok);
+      const res = await SoldProductsService.getOne(detail._id);
+      setDetail(res.data);
+      liveRef.current?.();
+    } catch (err) {
+      message.error(err.response?.data?.message || err.message || "Action failed");
+    } finally {
+      setReturnBusy(false);
+    }
+  };
 
   const handleSync = async () => {
     setSyncing(true);
@@ -345,7 +378,15 @@ const SoldProducts = () => {
         <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
           <Col xs={12} md={6}>
             <Card size="small">
-              <Statistic title="Total sold" value={summary?.total ?? 0} />
+              <Statistic
+                title="Total sold"
+                value={summary?.total ?? 0}
+                suffix={
+                  summary?.crm?.count ? (
+                    <span style={{ fontSize: 13, color: "#999" }}>({summary.crm.count} in store)</span>
+                  ) : null
+                }
+              />
             </Card>
           </Col>
           <Col xs={12} md={6}>
@@ -398,6 +439,7 @@ const SoldProducts = () => {
                 { label: "All", value: "all" },
                 { label: "eBay", value: "ebay" },
                 { label: "Wix", value: "wix" },
+                { label: "In store", value: "crm" },
               ]}
             />
             <Space.Compact style={{ minWidth: 320, flex: 1, maxWidth: 520 }}>
@@ -529,7 +571,81 @@ const SoldProducts = () => {
                 <Descriptions.Item label="Location">{detail.location || "—"}</Descriptions.Item>
                 <Descriptions.Item label="CRM price">{money(detail.crmPrice)}</Descriptions.Item>
                 <Descriptions.Item label="Inventory status">
-                  <Tag color="red">Sold — out of stock</Tag>
+                  {(detail.quantityAvailable ?? 0) > 0 ? (
+                    <Tag color="green">{detail.quantityAvailable} in stock</Tag>
+                  ) : (
+                    <Tag color="red">Sold — out of stock</Tag>
+                  )}
+                </Descriptions.Item>
+                {detail.ebayQuantitySync?.status && (
+                  <Descriptions.Item label="eBay quantity">
+                    <Tag color={{ synced: "green", pending: "blue", failed: "orange", dead: "red" }[detail.ebayQuantitySync.status] || "default"}>
+                      {detail.ebayQuantitySync.status}
+                    </Tag>
+                    {detail.ebayQuantitySync.lastError && (
+                      <div style={{ fontSize: 12, color: "#ff7875" }}>{detail.ebayQuantitySync.lastError}</div>
+                    )}
+                  </Descriptions.Item>
+                )}
+              </Descriptions>
+
+              {/* Returns: stock comes back only when received AND approved. */}
+              <Descriptions title="Return" bordered size="small" column={1}>
+                <Descriptions.Item label="Status">
+                  {detail.returnInfo?.status ? (
+                    <Tag color={{ received: "gold", inspection_passed: "green", inspection_failed: "red" }[detail.returnInfo.status] || "orange"}>
+                      {detail.returnInfo.status.replace(/_/g, " ")}
+                    </Tag>
+                  ) : (
+                    "No return"
+                  )}
+                  {detail.returnInfo?.returnId && (
+                    <div style={{ fontSize: 12, color: "#999" }}>
+                      eBay return {detail.returnInfo.returnId} · {detail.returnInfo.ebayState || ""}
+                    </div>
+                  )}
+                </Descriptions.Item>
+                {detail.returnInfo?.refundStatus && (
+                  <Descriptions.Item label="Refund">{detail.returnInfo.refundStatus} (does not restock)</Descriptions.Item>
+                )}
+                {detail.returnInfo?.inspectionNotes && (
+                  <Descriptions.Item label="Inspection notes">{detail.returnInfo.inspectionNotes}</Descriptions.Item>
+                )}
+                <Descriptions.Item label="Action">
+                  {detail.returnInfo?.status === "received" ? (
+                    <Space>
+                      <Button
+                        type="primary"
+                        size="small"
+                        loading={returnBusy}
+                        onClick={() =>
+                          returnAction(() => InventorySyncService.inspection(detail._id, "pass"), "Approved — part is back in stock")
+                        }
+                      >
+                        Pass inspection — restock
+                      </Button>
+                      <Button
+                        danger
+                        size="small"
+                        loading={returnBusy}
+                        onClick={() =>
+                          returnAction(() => InventorySyncService.inspection(detail._id, "fail"), "Failed — kept out of stock")
+                        }
+                      >
+                        Fail
+                      </Button>
+                    </Space>
+                  ) : ["inspection_passed", "inspection_failed"].includes(detail.returnInfo?.status) ? (
+                    <span style={{ color: "#999" }}>Done</span>
+                  ) : (
+                    <Button
+                      size="small"
+                      loading={returnBusy}
+                      onClick={() => returnAction(() => InventorySyncService.returnReceived(detail._id), "Marked as received — now inspect it")}
+                    >
+                      Part is back — mark received
+                    </Button>
+                  )}
                 </Descriptions.Item>
               </Descriptions>
             </Space>

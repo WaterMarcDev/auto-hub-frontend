@@ -32,6 +32,13 @@ const PLATFORM_COLORS = {
   ebay: "#E53238",
 };
 
+// Platform filter: only the marketplaces in use. PLATFORM_COLORS above still
+// covers every platform so older conversations keep their coloured tag.
+const PLATFORM_FILTER_OPTIONS = [
+  { value: "ebay", label: "eBay" },
+  { value: "amazon", label: "Amazon" },
+];
+
 const STATUS_COLORS = {
   new: "blue",
   open: "green",
@@ -525,9 +532,9 @@ const UnifiedInbox = () => {
                   allowClear
                   style={{ flex: 1, minWidth: 110 }}
                 >
-                  {Object.keys(PLATFORM_COLORS).map((p) => (
-                    <Option key={p} value={p} style={{ textTransform: "capitalize" }}>
-                      {p}
+                  {PLATFORM_FILTER_OPTIONS.map((p) => (
+                    <Option key={p.value} value={p.value}>
+                      {p.label}
                     </Option>
                   ))}
                 </Select>
