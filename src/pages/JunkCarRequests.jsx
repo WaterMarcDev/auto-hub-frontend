@@ -69,23 +69,19 @@ const JUNK_CAR_EXPORT_COLUMNS = [
     { header: "Payment Status", render: (r) => r.paymentStatus || "Not Paid", width: 16 },
 ];
 
-// Mirrors the selectable list on the Part Request page (see
-// src/pages/Requests/index.jsx), plus "Manual" which — unlike Part Request's
-// "Online"/"Offline" — has always been a selectable value here, not just a
-// creation-time default. "eBay"/"Google Business" now included to match the
-// backend's shared BOT_SOURCES whitelist.
+// Only the sources in use (backend: utils/requestSources.js). Old records with
+// a retired source still display it and can be re-tagged to one of these.
 const JUNK_CAR_SOURCE_OPTIONS = [
-    // { value: "manual" },
     { value: "website" },
     { value: "instagram" },
     { value: "facebook" },
-    { value: "whatsApp" },
-    { value: "tiktok" },
-    { value: "ebay" },
-    { value: "google business" },
-    { value: "sms" },
-    { value: "other" },
 ];
+
+// Default "Handled By" person (see the Handled By column). Always returned
+// first by GET /api/users/staff.
+const isDefaultHandler = (u) =>
+    u?.first_name?.trim().toLowerCase() === "vijay" &&
+    u?.last_name?.trim().toLowerCase() === "kumar";
 
 const JunkCarRequests = () => {
     // SWR instant render: restore immediately from memory cache to avoid "0" and "No requests yet" flash
@@ -480,13 +476,21 @@ const JunkCarRequests = () => {
         },
     ];
 
+    // Vijay Kumar is the default handler: the "Handled By" column shows him
+    // for every unassigned request, so filtering by him also includes
+    // unassigned requests — the filter matches what the table shows.
+    const defaultHandlerId = staffUsers.find(isDefaultHandler)?._id;
+
     const displayedJunkCars = junkCars
         .filter((car) => {
+            const assignedId =
+                car.assignedTo && typeof car.assignedTo === "object"
+                    ? car.assignedTo._id
+                    : car.assignedTo || null;
             const handledMatch =
                 !handledByFilter ||
-                (car.assignedTo &&
-                    typeof car.assignedTo === "object" &&
-                    car.assignedTo._id === handledByFilter);
+                assignedId === handledByFilter ||
+                (handledByFilter === defaultHandlerId && !assignedId);
 
             const sourceMatch =
                 !sourceFilter || car.source === sourceFilter;
@@ -568,6 +572,7 @@ const JunkCarRequests = () => {
                                 value={staff._id}
                             >
                                 {staff.first_name} {staff.last_name}
+                                {isDefaultHandler(staff) ? " (default)" : ""}
                             </Option>
                         ))}
                     </Select>
@@ -584,16 +589,10 @@ const JunkCarRequests = () => {
                             setSourceFilter(value || "")
                         }
                     >
-                        {/* <Option value="manual">Manual</Option> */}
                         <Option value="website">Website</Option>
                         <Option value="instagram">Instagram</Option>
                         <Option value="facebook">Facebook</Option>
-                        <Option value="whatsApp">WhatsApp</Option>
-                        <Option value="tiktok">TikTok</Option>
-                        <Option value="ebay">eBay</Option>
-                        <Option value="google business">Google Business</Option>
-                        <Option value="sms">SMS</Option>
-                        <Option value="other">Other</Option>
+                        <Option value="offline">Offline (added in CRM)</Option>
                     </Select>
 
                     {/* Search by Status : added by shiva*/}

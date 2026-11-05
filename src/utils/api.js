@@ -329,6 +329,8 @@ export const dashboardAPI = {
     api.get("/dashboard/summary-counts", { params }),
   getEarningGoal: (params = {}) =>
     api.get("/dashboard/earning-goal", { params }),
+  // Active Business Records (moved from Analytics)
+  getRecordCounts: () => api.get("/dashboard/record-counts"),
 };
 
 // System & Health Analytics API

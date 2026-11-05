@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Table, Space, Card, InputNumber, message } from "antd";
+import { Button, Table, Space, Card, InputNumber, message, Tag } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
 import PageContentWrapper from "../components/PageContentWrapper";
@@ -166,6 +166,20 @@ const ViewPartsPage = () => {
                                 title: "SKU",
                                 dataIndex: "sku",
                                 render: (t) => <div style={{ minWidth: 120 }}>{t}</div>,
+                            },
+                            {
+                                // Sold on eBay/Wix → out of stock (details on Sold Products)
+                                title: "Status",
+                                key: "saleStatus",
+                                render: (_, r) =>
+                                    r.saleStatus === "sold" ? (
+                                        <Tag color="red" style={{ cursor: "pointer" }} onClick={() => navigate("/sold-products")}>
+                                            Sold on {r.sale?.channel === "wix" ? "Wix" : "eBay"}
+                                            {r.sale?.orderNumber ? ` #${r.sale.orderNumber}` : ""}
+                                        </Tag>
+                                    ) : (
+                                        <Tag color="green">In stock</Tag>
+                                    ),
                             },
                             {
                                 title: "Price",

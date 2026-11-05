@@ -78,13 +78,16 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
     }
 
     // Network & System Health Analytics - Only for Admin
-    if (isAdmin) {
-      items.push({
-        key: "/analytics",
-        icon: <FundOutlined />,
-        label: <Link to="/analytics">Analytics</Link>,
-      });
-    }
+    // Commented out (not deleted): Analytics is hidden for now. Its "Active
+    // Business Records" section moved to the Dashboard. To restore, uncomment
+    // this block and the /analytics route + import in App.jsx.
+    // if (isAdmin) {
+    //   items.push({
+    //     key: "/analytics",
+    //     icon: <FundOutlined />,
+    //     label: <Link to="/analytics">Analytics</Link>,
+    //   });
+    // }
 
     if (isManager || isAdmin) {
       // added by shiva
@@ -215,6 +218,11 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
               icon: <SyncOutlined />,
               label: <Link to="/ebay-catalog-sync">eBay Catalog Sync</Link>,
             },
+            {
+              key: "/inventory-sync",
+              icon: <SyncOutlined />,
+              label: <Link to="/inventory-sync">Inventory Sync</Link>,
+            },
           ],
         });
       }
@@ -294,6 +302,13 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
         key: "/inventory-master",
         icon: <BulletIcon />,
         label: <Link to="/inventory-master">Master Parts</Link>,
+      });
+
+      // Parts sold on eBay / Wix, with full order details
+      carPartsChildren.push({
+        key: "/sold-products",
+        icon: <BulletIcon />,
+        label: <Link to="/sold-products">Sold Products</Link>,
       });
 
       carPartsChildren.push({
@@ -613,6 +628,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/add-inventory": "carPartsInventory",
       "/inventory-list": "carPartsInventory",
       "/inventory-master": "carPartsInventory",
+      "/sold-products": "carPartsInventory",
       "/car-inventory": "carInventory",
       "/add-scrap": "scrapCar",
       "/scrap-list": "scrapCar",
@@ -643,6 +659,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/orders": "integrations",
       "/integrations": "integrations",
       "/ebay-catalog-sync": "integrations",
+      "/inventory-sync": "integrations",
     };
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {

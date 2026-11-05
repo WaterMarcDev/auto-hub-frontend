@@ -6,6 +6,7 @@ import OurProcess from "../components/dashboard/OurProcess";
 import EarningGoal from "../components/dashboard/EarningGoal";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
 import RtxRecycling from "../components/dashboard/RtxRecycling";
+import BusinessRecordCounts from "../components/dashboard/BusinessRecordCounts";
 import { dashboardAPI } from "../utils/api";
 import { cacheManager } from "../utils/cacheManager";
 
@@ -363,6 +364,13 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Active Business Records — moved here from Analytics */}
+          <div className="row">
+            <div className="col-12">
+              <BusinessRecordCounts />
             </div>
           </div>
 

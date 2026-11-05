@@ -3,7 +3,7 @@ import { Card, Table, Tag, Modal } from "antd";
 import { Button } from "antd";
 import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { Input, Select, Row, Col } from "antd";
+import { Input, Select, Space } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import SourceBadge from "../../components/SourceBadge";
 import { cacheManager } from "../../utils/cacheManager";
@@ -42,17 +42,22 @@ const PART_REQUEST_EXPORT_COLUMNS = [
 // "Online"/"Offline" are assigned automatically at creation (organic website
 // submission vs staff-entered) and were never selectable here — preserved
 // from the previous <Select> implementation's commented-out Options.
+// Only the sources in use (backend: utils/requestSources.js). Old records with
+// a retired source still display it and can be re-tagged to one of these.
 const PART_REQUEST_SOURCE_OPTIONS = [
     { value: "Website" },
     { value: "Instagram" },
     { value: "Facebook" },
-    { value: "WhatsApp" },
-    { value: "TikTok" },
-    { value: "eBay" },
-    { value: "Google Business" },
-    { value: "SMS" },
-    { value: "Other" },
 ];
+
+// Filter: "Website" covers both website-form requests (stored "Online") and
+// requests staff tagged "Website".
+const SOURCE_FILTER_MATCHES = {
+    Website: ["Online", "Website"],
+    Offline: ["Offline"],
+    Instagram: ["Instagram"],
+    Facebook: ["Facebook"],
+};
 
 
 const Requests = () => {
@@ -65,11 +70,10 @@ const Requests = () => {
         user?.role?.toLowerCase() === "admin" ||
         user?.role?.toLowerCase() === "manager";
 
-    const [search, setSearch] = useState("");
-    const [searched, setSearched] = useState("");
+    const [search, setSearch] = useState("");               // text in the search box
+    const [appliedSearch, setAppliedSearch] = useState(""); // applied on Enter / Search
     const [status, setStatus] = useState(null);
     const [sourceFilter, setSourceFilter] = useState("");  // added by shiva for Search by source
-    const [filteredRequests, setFilteredRequests] = useState([]);
     const [noResults, setNoResults] = useState(false);
     const [junkCars, setJunkCars] = useState(() => cacheManager.get("junkCars") || []);
 
@@ -87,87 +91,10 @@ const Requests = () => {
         setMessageModalOpen(true);
     };
 
-    // Filter requests based on search and status by shiva
-    const handleSearch = () => {
-
-        // If empty search then show warning
-        if (!search.trim()) {
-            setFilteredRequests([]);
-            setSearched(false);
-
-            return;
-        }
-        // end here
-        
-        // if (filteredRequests.length === 0) {
-        //     message.warning("Item not found")
-        // }
-
-        const searchText = search.trim().toLowerCase();
-
-        // const filtered = requests.filter((item) => {
-        //     return (
-        //         item.name?.toLowerCase().includes(searchText) ||
-        //         item.email?.toLowerCase().includes(searchText) ||
-        //         item.phone?.toLowerCase().includes(searchText) ||
-        //         item.make?.toLowerCase().includes(searchText) ||
-        //         item.model?.toLowerCase().includes(searchText) ||
-        //         item.partName?.toLowerCase().includes(searchText) ||
-        //         String(item.year || "").toLowerCase().includes(searchText)
-        //     );
-        // });
-
-        // Filtered by search bar added by shiva
-
-        const filtered = requests.filter((item) => {
-
-            return [
-                item.createdAt
-                    ? new Date(item.createdAt)
-                        .toLocaleDateString()
-                    : "",
-                item.name,
-                item.make,
-                item.date,
-                item.model,
-                item.year,
-                item.partName,
-                item.email,
-                item.phone,
-                item.remark,
-                item.source,
-                item.status
-            ]
-
-                .some((field) =>
-                    String(field || "")
-                        .toLowerCase()
-                        .includes(searchText)
-                );
-        });
-        // end here
-        setFilteredRequests(filtered);
-        setSearched(true);
-    };
-
-    // Status filter function by shiva
-    const handleStatusChange = (value) => {
-        setStatus(value);
-
-        if (!value) {
-            setFilteredRequests([]);
-            setSearched(false);
-            return;
-        }
-
-        const filtered = requests.filter(
-            (item) => item.status?.toLowerCase() === value.toLowerCase()
-        );
-
-        setFilteredRequests(filtered);
-        setSearched(true);
-    };
-    //end here
+    // Search runs on Enter / Search click; clearing the box clears it.
+    // Source and Status apply as soon as they change. All three combine —
+    // see displayedRequests below.
+    const handleSearch = () => setAppliedSearch(search.trim());
 
     const fetchRequests = async (force = false) => {
         const cached = cacheManager.get("partRequests");
@@ -430,7 +357,35 @@ const Requests = () => {
         },
     ];
 
-    const displayedRequests = [...(searched ? filteredRequests : requests)].sort((a, b) => {
+    // Search, Source and Status combine (same as Junk Car Requests): a row is
+    // shown only if it matches every filter that is set.
+    const searchText = appliedSearch.toLowerCase();
+    const sourceMatches = sourceFilter ? SOURCE_FILTER_MATCHES[sourceFilter] || [sourceFilter] : null;
+    const isFiltering = Boolean(searchText || status || sourceFilter);
+
+    const displayedRequests = requests.filter((item) => {
+        const searchMatch =
+            !searchText ||
+            [
+                item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "",
+                item.name,
+                item.make,
+                item.date,
+                item.model,
+                item.year,
+                item.partName,
+                item.email,
+                item.phone,
+                item.remark,
+                item.source,
+                item.status,
+            ].some((field) => String(field || "").toLowerCase().includes(searchText));
+
+        const statusMatch = !status || item.status?.toLowerCase() === status.toLowerCase();
+        const sourceMatch = !sourceMatches || sourceMatches.includes(item.source || "Online");
+
+        return searchMatch && statusMatch && sourceMatch;
+    }).sort((a, b) => {
         const aCompleted = a.status?.toLowerCase() === "completed";
         const bCompleted = b.status?.toLowerCase() === "completed";
 
@@ -481,94 +436,61 @@ const Requests = () => {
                 }
             >
 
-                {/* Add Search + Filter Here -> by shiva*/}
-
-                <div className="requests-toolbar">
-                <Row gutter={[12, 12]}>
-
-                    <Col xs={24} sm={12} md={8}>
+                {/* Filters — same layout as Junk Car Requests: one wrapping row,
+                    same control sizes. Search, Source and Status combine. */}
+                <div
+                    className="requests-toolbar"
+                    style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "12px",
+                        alignItems: "center",
+                    }}
+                >
+                    <Space size={8}>
                         <Input
-                            placeholder="Search by Name, Email..."
+                            placeholder="Search by Name, Email, Part..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            allowClear
+                            style={{ width: 240 }}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                if (!e.target.value) setAppliedSearch("");
+                            }}
                             onPressEnter={handleSearch}
-                            size="large"
                         />
-                    </Col>
-
-                    <Col xs={24} sm={12} md={4}>
-                        <Button
-                            type="primary"
-                            icon={<SearchOutlined />}
-                            block
-                            onClick={handleSearch}
-                            blocksize="large"
-                        >
+                        <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
                             Search
                         </Button>
-                    </Col>
+                    </Space>
 
-                    <Col xs={24} sm={12} md={8}>
-                        <Select
-                            placeholder="Filter by status"
-                            value={status}
-                            onChange={handleStatusChange}
-                            allowClear
-                            size="large"
-                            style={{ width: "100%" }}
-                            options={[
-                                { value: "pending", label: "Pending" },
-                                { value: "in progress", label: "In Progress" },
-                                { value: "completed", label: "Completed" },
-                                { value: "rejected", label: "Rejected" }
-                            ]}
-                        />
-                    </Col>
+                    <Select
+                        placeholder="Filter by Source"
+                        style={{ width: 180 }}
+                        allowClear
+                        value={sourceFilter || undefined}
+                        onChange={(value) => setSourceFilter(value || "")}
+                        options={[
+                            { value: "Website", label: "Website" },
+                            { value: "Instagram", label: "Instagram" },
+                            { value: "Facebook", label: "Facebook" },
+                            { value: "Offline", label: "Offline (added in CRM)" },
+                        ]}
+                    />
 
-                    {/* Search dropdopwn for Source */}
-                    <Col xs={24} sm={12} md={6}>
-                        <Select
-                            placeholder="Filter by Source"
-                            value={sourceFilter || undefined}
-                            onChange={(value) => {
-
-                                setSourceFilter(value || "");
-
-                                if (!value) {
-
-                                    setFilteredRequests([]);
-                                    setSearched(false);
-                                    return;
-                                }
-
-                                const filtered = requests.filter(
-                                    (item) =>
-                                        item.source === value
-                                );
-
-                                setFilteredRequests(filtered);
-                                setSearched(true);
-                            }}
-                            allowClear
-                            size="large"
-                            style={{ width: "100%" }}
-                            options={[
-                                { value: "Online", label: "Website" },
-                                { value: "Offline", label: "Offline" },
-                                { value: "Website", label: "Website" },
-                                { value: "Instagram", label: "Instagram" },
-                                { value: "Facebook", label: "Facebook" },
-                                { value: "WhatsApp", label: "WhatsApp" },
-                                { value: "TikTok", label: "TikTok" },
-                                { value: "eBay", label: "eBay" },
-                                { value: "Google Business", label: "Google Business" },
-                                { value: "SMS", label: "SMS" },
-                                { value: "Other", label: "Other" },
-                            ]}
-                        />
-                    </Col>
-                    {/* end here */}
-                </Row>
+                    <Select
+                        placeholder="Filter by Status"
+                        style={{ width: 180 }}
+                        allowClear
+                        value={status || undefined}
+                        onChange={(value) => setStatus(value || null)}
+                        options={[
+                            { value: "pending", label: "Pending" },
+                            { value: "in progress", label: "In Progress" },
+                            { value: "completed", label: "Completed" },
+                            { value: "rejected", label: "Rejected" },
+                        ]}
+                    />
                 </div>
 
                 {noResults && (
@@ -606,7 +528,7 @@ const Requests = () => {
                         emptyText: (
                             <div className="requests-empty-state">
                                 <InboxOutlined />
-                                <span>{searched ? "No matching requests found" : "No requests yet"}</span>
+                                <span>{isFiltering ? "No matching requests found" : "No requests yet"}</span>
                             </div>
                         )
                     }}

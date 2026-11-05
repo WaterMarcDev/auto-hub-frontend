@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Card, message, Select } from "antd";
+import React, { useState, useEffect, useRef } from "react";
+import { Table, Input, Button, Space, Card, message, Select, Tag, Tooltip } from "antd";
+import { Link } from "react-router-dom";
+import StockActions from "../../components/inventory/StockActions";
+import { cacheManager } from "../../utils/cacheManager";
+
+const SALE_CHANNEL_LABEL = { ebay: "on eBay", wix: "on Wix", crm: "in store" };
 import {
   PlusOutlined,
   SearchOutlined,
@@ -29,6 +34,19 @@ const MasterList = () => {
   const [selectedTrim, setSelectedTrim] = useState(null);
   const [addInventoryModalVisible, setAddInventoryModalVisible] =
     useState(false);
+  // Stock filter: parts sold on eBay/Wix are out of stock, so the list shows
+  // available parts by default. "sold" / "all" show sold parts too.
+  const [stockFilter, setStockFilter] = useState("available");
+
+  // Stock adjustments are for admins/managers; anyone can record a sale.
+  const canAdjust = (() => {
+    try {
+      const role = JSON.parse(localStorage.getItem("user"))?.role?.toLowerCase();
+      return role === "admin" || role === "manager";
+    } catch {
+      return false;
+    }
+  })();
 
   const loadMakes = async () => {
     try {
@@ -77,7 +95,8 @@ const MasterList = () => {
     q = search,
     make = selectedMake,
     model = selectedModel,
-    trim = selectedTrim
+    trim = selectedTrim,
+    stock = stockFilter
   ) => {
     setLoading(true);
     try {
@@ -86,6 +105,7 @@ const MasterList = () => {
       if (make) params.make = make;
       if (model) params.model = model;
       if (trim) params.trim = trim;
+      if (stock && stock !== "all") params.saleStatus = stock;
 
       const res = await inventoryAPI.getPartsMaster(params);
       const data = res.data || res;
@@ -110,7 +130,7 @@ const MasterList = () => {
     loadMakes();
     (async () => {
       try {
-        const params = { page: 1, limit };
+        const params = { page: 1, limit, saleStatus: "available" };
         const res = await inventoryAPI.getPartsMaster(params);
         const data = res.data || res;
         setParts(data.parts || []);
@@ -139,6 +159,15 @@ const MasterList = () => {
     setSelectedTrim(null);
     setTrimOptions([]);
   }, [selectedModel]);
+
+  // Live refresh: any stock change (eBay/Wix sale, in-store sale, return,
+  // adjustment) re-loads the current page with the current filters.
+  const refreshRef = useRef(null);
+  refreshRef.current = () => fetchParts(page, limit);
+  useEffect(() => {
+    const unsub = cacheManager.subscribe("inventory", () => refreshRef.current?.());
+    return () => unsub && unsub();
+  }, []);
 
   const handleSearch = () => {
     setSearch(searchInput);
@@ -270,6 +299,28 @@ const MasterList = () => {
                 }}
               />
 
+              <Select
+                value={stockFilter}
+                style={{ minWidth: 150 }}
+                options={[
+                  { label: "In stock", value: "available" },
+                  { label: "Sold / out of stock", value: "sold" },
+                  { label: "All parts", value: "all" },
+                ]}
+                onChange={(val) => {
+                  setStockFilter(val);
+                  fetchParts(
+                    1,
+                    limit,
+                    searchInput,
+                    selectedMake,
+                    selectedModel,
+                    selectedTrim,
+                    val
+                  );
+                }}
+              />
+
               <Button
                 onClick={() => {
                   // clear all filters and search
@@ -280,8 +331,9 @@ const MasterList = () => {
                   setSelectedTrim(null);
                   setModelOptions([]);
                   setTrimOptions([]);
-                  // fetch unfiltered list
-                  fetchParts(1, limit, "", null, null, null);
+                  setStockFilter("available");
+                  // fetch unfiltered list (in-stock parts)
+                  fetchParts(1, limit, "", null, null, null, "available");
                 }}
                 icon={<CloseCircleOutlined />}
               >
@@ -393,11 +445,68 @@ const MasterList = () => {
                 minWidth: 100,
               },
               {
+                title: "Qty",
+                key: "qty",
+                minWidth: 70,
+                render: (_, r) => (
+                  <Tooltip title={r.quantitySold ? `${r.quantitySold} sold so far` : undefined}>
+                    <strong>{r.quantityAvailable ?? 1}</strong>
+                  </Tooltip>
+                ),
+              },
+              {
+                title: "Status",
+                key: "saleStatus",
+                minWidth: 150,
+                render: (_, r) => (
+                  <Space direction="vertical" size={2}>
+                    {r.saleStatus === "sold" ? (
+                      <Link to="/sold-products">
+                        <Tag color="red">
+                          {r.sale?.channel
+                            ? `Sold ${SALE_CHANNEL_LABEL[r.sale.channel] || ""}`
+                            : "Out of stock"}
+                          {r.sale?.orderNumber ? ` #${r.sale.orderNumber}` : ""}
+                        </Tag>
+                      </Link>
+                    ) : (
+                      <Tag color="green">In stock</Tag>
+                    )}
+                    {r.returnStatus && !["inspection_passed", "closed"].includes(r.returnStatus) && (
+                      <Link to="/inventory-sync">
+                        <Tag color={r.returnStatus === "inspection_failed" ? "red" : "gold"}>
+                          Return: {r.returnStatus.replace(/_/g, " ")}
+                        </Tag>
+                      </Link>
+                    )}
+                    {r.ebayQuantitySync && r.ebayQuantitySync.status !== "synced" && r.ebayQuantitySync.status !== "skipped" && (
+                      <Tooltip title={r.ebayQuantitySync.lastError || "Waiting to update eBay"}>
+                        <Tag color={["failed", "dead"].includes(r.ebayQuantitySync.status) ? "red" : "blue"}>
+                          eBay {r.ebayQuantitySync.status === "pending" ? "update pending" : "update failed"}
+                        </Tag>
+                      </Tooltip>
+                    )}
+                  </Space>
+                ),
+              },
+              {
                 title: "SKU",
                 dataIndex: "sku",
                 key: "sku",
                 minWidth: 100,
+              },
+              {
+                title: "Stock",
+                key: "stockActions",
                 fixed: "right",
+                minWidth: 170,
+                render: (_, r) => (
+                  <StockActions
+                    part={r}
+                    canAdjust={canAdjust}
+                    onDone={() => fetchParts(page, limit)}
+                  />
+                ),
               },
             ]}
             className="dark-table"

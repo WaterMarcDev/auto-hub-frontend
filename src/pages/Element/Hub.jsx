@@ -34,6 +34,9 @@ const Hub = () => {
     React.useState(false);
   const [history, setHistory] = React.useState([]);
   const [historyLoading, setHistoryLoading] = React.useState(false);
+  // Stock coming in: car extractions + Scrap Purchases (and their corrections)
+  const [stockIn, setStockIn] = React.useState([]);
+  const [stockInLoading, setStockInLoading] = React.useState(false);
   const [taxAmount, setTaxAmount] = React.useState(0);
   const [totalAmount, setTotalAmount] = React.useState(0);
 
@@ -81,7 +84,27 @@ const Hub = () => {
   React.useEffect(() => {
     fetchItems();
     fetchHistory();
+    fetchStockIn();
   }, [fetchItems]);
+
+  const fetchStockIn = async () => {
+    setStockInLoading(true);
+    try {
+      const [adds, adjusts] = await Promise.all([
+        ElementHubService.getHistory({ type: "add" }),
+        ElementHubService.getHistory({ type: "adjust" }),
+      ]);
+      setStockIn(
+        [...adds, ...adjusts].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        )
+      );
+    } catch (e) {
+      api.error({ message: "Error fetching stock history", description: e.message });
+    } finally {
+      setStockInLoading(false);
+    }
+  };
 
   const fetchHistory = async () => {
     setHistoryLoading(true);
@@ -342,6 +365,63 @@ const Hub = () => {
     },
   ];
 
+  const stockInColumns = [
+    {
+      title: "S. No.",
+      key: "srNo",
+      minWidth: 70,
+      render: (text, record, index) => index + 1,
+    },
+    {
+      title: "Element Name",
+      dataIndex: "elementName",
+      key: "elementName",
+      minWidth: 120,
+      render: (text) => <strong>{text || "N/A"}</strong>,
+    },
+    {
+      title: "Change",
+      dataIndex: "amount",
+      key: "amount",
+      minWidth: 100,
+      render: (val) => (
+        <Tag color={val >= 0 ? "green" : "red"} style={{ fontSize: 13 }}>
+          {val >= 0 ? "+" : ""}
+          {val} lb
+        </Tag>
+      ),
+    },
+    {
+      title: "Source",
+      key: "source",
+      minWidth: 160,
+      render: (_, record) =>
+        record.source === "scrap-purchase" ? (
+          <Tag color="gold">Scrap Purchase</Tag>
+        ) : record.sourceVin ? (
+          <span>
+            <Tag color="blue">Car</Tag> VIN {record.sourceVin}
+          </span>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      title: "Note",
+      dataIndex: "note",
+      key: "note",
+      minWidth: 200,
+      render: (text) => text || "-",
+    },
+    {
+      title: "Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      minWidth: 150,
+      render: (date) => (date ? new Date(date).toLocaleString() : "N/A"),
+    },
+  ];
+
   return (
     <React.Fragment>
       {contextHolder}
@@ -391,6 +471,32 @@ const Hub = () => {
                     dataSource={history}
                     tableLayout="auto"
                     loading={historyLoading}
+                    rowKey={(record) => record._id}
+                    scroll={{
+                      y: "calc(100vh - 510px)",
+                    }}
+                    pagination={{
+                      showSizeChanger: true,
+                      showQuickJumper: true,
+                      showTotal: (total, range) =>
+                        `${range[0]}-${range[1]} of ${total} items`,
+                    }}
+                    size="small"
+                    bordered
+                    className="dark-table"
+                    sticky
+                  />
+                ),
+              },
+              {
+                key: "stockIn",
+                label: "Stock In History",
+                children: (
+                  <Table
+                    columns={stockInColumns}
+                    dataSource={stockIn}
+                    tableLayout="auto"
+                    loading={stockInLoading}
                     rowKey={(record) => record._id}
                     scroll={{
                       y: "calc(100vh - 510px)",

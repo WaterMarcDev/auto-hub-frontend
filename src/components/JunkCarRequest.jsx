@@ -43,7 +43,9 @@ const JunkCarRequest = (props) => {
 
     // One lead per form session: created on the first valid autosave, then
     // updated by every later autosave and by the final submit.
-    const lead = useLeadCapture("/junk-car");   // added by shiva (from "/api/junk-car")
+    // Requests added here (in the CRM) are tagged "offline"; the website form
+    // gets "website" from the backend.
+    const lead = useLeadCapture("/junk-car", { source: "offline" });
 
     const handleValuesChange = () => {
         if (submittingRef.current) return;
@@ -59,7 +61,7 @@ const JunkCarRequest = (props) => {
             const result = await lead.submit({
                 ...values,
                 year: values.year ? parseInt(values.year) : null,
-                source: "Manual",
+                source: "offline",
             });
 
             if (!result.ok || !result.data?.success) {
