@@ -218,6 +218,11 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
               icon: <SyncOutlined />,
               label: <Link to="/ebay-catalog-sync">eBay Catalog Sync</Link>,
             },
+            {
+              key: "/inventory-sync",
+              icon: <SyncOutlined />,
+              label: <Link to="/inventory-sync">Inventory Sync</Link>,
+            },
           ],
         });
       }
@@ -654,6 +659,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/orders": "integrations",
       "/integrations": "integrations",
       "/ebay-catalog-sync": "integrations",
+      "/inventory-sync": "integrations",
     };
     const parentKey = routeMapping[path];
     if (parentKey && !openKeys.includes(parentKey)) {
