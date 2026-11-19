@@ -473,7 +473,7 @@ const MasterList = () => {
                       <Tag color="green">In stock</Tag>
                     )}
                     {r.returnStatus && !["inspection_passed", "closed"].includes(r.returnStatus) && (
-                      <Link to="/inventory-sync">
+                      <Link to="/sold-products">
                         <Tag color={r.returnStatus === "inspection_failed" ? "red" : "gold"}>
                           Return: {r.returnStatus.replace(/_/g, " ")}
                         </Tag>
