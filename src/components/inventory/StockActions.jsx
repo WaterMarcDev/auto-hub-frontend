@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button, Form, Input, InputNumber, Modal, Space, message } from "antd";
 import InventorySyncService, { newRequestId } from "../../services/inventorySyncService";
+import { formatPhoneNumber, US_PHONE_MAX_LENGTH, US_PHONE_REGEX } from "../../utils/phone";
 
 const StockActions = ({ part, canAdjust, onDone, size = "small" }) => {
   const [mode, setMode] = useState(null); // "sell" | "adjust"
@@ -76,8 +77,26 @@ const StockActions = ({ part, canAdjust, onDone, size = "small" }) => {
               <Form.Item label="Buyer name" name="buyerName">
                 <Input />
               </Form.Item>
-              <Form.Item label="Buyer phone" name="buyerPhone">
-                <Input />
+              {/* Optional; when entered it must be a 10-digit US number,
+                  formatted as (XXX) XXX-XXXX while typing. */}
+              <Form.Item
+                label="Buyer phone"
+                name="buyerPhone"
+                normalize={(value, prevValue) => formatPhoneNumber(value, prevValue || "")}
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      !value || US_PHONE_REGEX.test(value)
+                        ? Promise.resolve()
+                        : Promise.reject(new Error("Enter a 10-digit US phone number: (XXX) XXX-XXXX")),
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="(XXX) XXX-XXXX"
+                  maxLength={US_PHONE_MAX_LENGTH}
+                  inputMode="tel"
+                />
               </Form.Item>
               <Form.Item label="Note" name="note">
                 <Input.TextArea rows={2} />
