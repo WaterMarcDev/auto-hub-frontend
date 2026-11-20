@@ -18,30 +18,8 @@ import {
   DEFAULT_CUSTOMER_TYPE,
   getCustomerTypeLabel,
 } from "./customerTypeOptions";
-
-// Formats 10 digits as (XXX) XXX-XXXX
-const formatPhoneNumber = (value, previousValue = "") => {
-  if (!value) return "";
-  let raw = value;
-  // If user hit backspace on ') ' or '-' or ')', remove the preceding digit
-  if (previousValue && previousValue.length > value.length) {
-    if (previousValue.endsWith(") ") && value === previousValue.slice(0, -1)) {
-      raw = value.slice(0, -2);
-    } else if (previousValue.endsWith(")") && value === previousValue.slice(0, -1)) {
-      raw = value.slice(0, -1);
-    } else if (previousValue.endsWith("-") && value === previousValue.slice(0, -1)) {
-      raw = value.slice(0, -1);
-    }
-  }
-  const digits = raw.replace(/\D/g, "").slice(0, 10);
-  if (!digits) return "";
-  if (digits.length < 3) return `(${digits}`;
-  if (digits.length === 3) {
-    return value.length > (previousValue || "").length ? `(${digits}) ` : `(${digits}`;
-  }
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-};
+// Formats 10 digits as (XXX) XXX-XXXX (shared with Sell in store).
+import { formatPhoneNumber } from "../../utils/phone";
 
 // Waiver customer form: Customer Type dropdown on first row, two-column layout from second row
 const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
