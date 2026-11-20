@@ -37,10 +37,8 @@ const Hub = () => {
   // Stock coming in: car extractions + Scrap Purchases (and their corrections)
   const [stockIn, setStockIn] = React.useState([]);
   const [stockInLoading, setStockInLoading] = React.useState(false);
-  const [taxAmount, setTaxAmount] = React.useState(0);
+  // Element Hub sales carry no sales tax: the total is the sale value.
   const [totalAmount, setTotalAmount] = React.useState(0);
-
-  const TAX_RATE = 0.06625; // 6.625%
 
   const [form] = Form.useForm();
   const [api, contextHolder] = notification.useNotification();
@@ -138,7 +136,6 @@ const Hub = () => {
   const openSell = (row) => {
     setSelected(row);
     form.resetFields();
-    setTaxAmount(0);
     setTotalAmount(0);
     setSellModalOpen(true);
     // Load initial customers
@@ -146,15 +143,7 @@ const Hub = () => {
   };
 
   const handleSaleValueChange = (value) => {
-    if (value && value > 0) {
-      const tax = Number((value * TAX_RATE).toFixed(2));
-      const total = Number((value + tax).toFixed(2));
-      setTaxAmount(tax);
-      setTotalAmount(total);
-    } else {
-      setTaxAmount(0);
-      setTotalAmount(0);
-    }
+    setTotalAmount(value && value > 0 ? Number(value.toFixed(2)) : 0);
   };
 
   const doSell = async () => {
@@ -162,17 +151,13 @@ const Hub = () => {
     try {
       const values = await form.validateFields();
       const saleValue = values.saleValue;
-      const tax = Number((saleValue * TAX_RATE).toFixed(2));
-      const total = Number((saleValue + tax).toFixed(2));
 
+      // No tax fields are sent: the server records the sale with no tax.
       const payload = {
         elementName: selected.elementName,
         amount: values.amount,
         unit: selected.unit,
         saleValue: saleValue,
-        taxRate: TAX_RATE,
-        taxAmount: tax,
-        totalAmount: total,
         paymentMethod: values.paymentMethod,
         note: values.note,
         customerId: values.customerId,
@@ -184,7 +169,6 @@ const Hub = () => {
       });
       setSellModalOpen(false);
       form.resetFields();
-      setTaxAmount(0);
       setTotalAmount(0);
       fetchItems();
       fetchHistory();
@@ -634,7 +618,8 @@ const Hub = () => {
               />
             </Form.Item>
 
-            {taxAmount > 0 && (
+            {/* No sales tax on Element Hub sales: Total = Sale Value. */}
+            {totalAmount > 0 && (
               <div
                 style={{
                   marginBottom: 16,
@@ -650,36 +635,6 @@ const Hub = () => {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    marginBottom: 10,
-                    color: "#e0e7ff",
-                    fontSize: "14px",
-                  }}
-                >
-                  <span>Subtotal:</span>
-                  <strong style={{ color: "#fff" }}>
-                    ${form.getFieldValue("saleValue")?.toFixed(2) || "0.00"}
-                  </strong>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: 10,
-                    color: "#e0e7ff",
-                    fontSize: "14px",
-                  }}
-                >
-                  <span>Tax (6.625%):</span>
-                  <strong style={{ color: "#fff" }}>
-                    ${taxAmount.toFixed(2)}
-                  </strong>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    paddingTop: 12,
-                    borderTop: "1px solid rgba(255,255,255,0.2)",
                   }}
                 >
                   <span
