@@ -279,9 +279,11 @@ const AddPartRequest = () => {
                         {/* Status */}
                         <Form.Item label="Status" name="status" initialValue="Pending">
                             <Select>
+                                {/* Same statuses as the Part Requests list (backend: utils/partRequestLeads.js). */}
                                 <Select.Option value="Pending">Pending</Select.Option>
-                                <Select.Option value="In Progress">In Progress</Select.Option>
-                                <Select.Option value="Completed">Completed</Select.Option>
+                                <Select.Option value="Lead Converted">Lead Converted</Select.Option>
+                                <Select.Option value="Lead Lost">Lead Lost</Select.Option>
+                                <Select.Option value="Lead Closed">Lead Closed</Select.Option>
                             </Select>
                         </Form.Item>
 
