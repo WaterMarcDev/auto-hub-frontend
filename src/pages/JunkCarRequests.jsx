@@ -12,6 +12,52 @@ import { formatExportDate } from "../utils/exportUtils";
 
 const { Option } = Select;
 
+// Statuses a lead can be set to — used by both the Status column and the
+// Status filter (backend: utils/junkCarLeads.js). Stored lowercase; the
+// labels are what users see.
+const JUNK_CAR_STATUS_OPTIONS = [
+    { value: "pending", label: "Pending" },
+    { value: "lead converted", label: "Lead Converted" },
+    { value: "lead lost", label: "Lead Lost" },
+    { value: "lead closed", label: "Lead Closed" },
+];
+
+// Retired status still on some older leads: shown (not selectable) until a
+// new status is picked.
+const LEGACY_STATUS_LABELS = { "in progress": "In Progress" };
+
+// Completed leads are not wanted: the backend no longer returns them and
+// scripts/removeCompletedRejectedLeads.js deletes them. Also skipped here so
+// none show while an older backend is still running.
+const REMOVED_STATUSES = new Set(["completed"]);
+
+// Lead Converted / Lead Closed sink to the bottom of the default list. They
+// are never hidden — the Status filter shows them.
+const BOTTOM_STATUSES = new Set(["lead converted", "lead closed"]);
+
+const normalizeStatus = (status) =>
+    (status || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
+
+const statusLabel = (status) =>
+    JUNK_CAR_STATUS_OPTIONS.find((s) => s.value === normalizeStatus(status))?.label ||
+    LEGACY_STATUS_LABELS[normalizeStatus(status)] ||
+    status ||
+    "-";
+
+// "First Last" for a populated user, "" otherwise.
+const personName = (person) =>
+    person && typeof person === "object" && person.first_name
+        ? `${person.first_name} ${person.last_name || ""}`.trim()
+        : "";
+
+// The Staff filter: always exactly these names, in this order, even before
+// they have a user account (backend: utils/junkCarLeads.js). A lead matches
+// when its assignee's first + last name is this name, so once an account
+// with the same name exists, leads assigned to it show up here.
+const NAMED_STAFF = ["Ankit Dewan", "Jaspreet Singh", "Vijay Kumar"];
+
+const nameKey = (name) => (name || "").trim().toLowerCase().replace(/\s+/g, " ");
+
 const JUNK_CAR_EXPORT_COLUMNS = [
     { header: "Date", render: (r) => formatExportDate(r.createdAt), width: 18 },
     { header: "Customer Name", key: "name", width: 22 },
@@ -57,15 +103,9 @@ const JUNK_CAR_EXPORT_COLUMNS = [
                 : "-",
         width: 20,
     },
-    {
-        header: "Handled By",
-        render: (r) =>
-            r.assignedTo && typeof r.assignedTo === "object" && r.assignedTo.first_name
-                ? `${r.assignedTo.first_name} ${r.assignedTo.last_name || ""}`.trim()
-                : "Vijay Kumar",
-        width: 20,
-    },
-    { header: "Status", render: (r) => r.status || "-", width: 16 },
+    { header: "Assigned To", render: (r) => personName(r.assignedTo) || "Unassigned", width: 20 },
+    { header: "Lead Assigned By", render: (r) => personName(r.assignedBy) || "-", width: 20 },
+    { header: "Status", render: (r) => statusLabel(r.status), width: 16 },
     { header: "Payment Status", render: (r) => r.paymentStatus || "Not Paid", width: 16 },
 ];
 
@@ -77,18 +117,12 @@ const JUNK_CAR_SOURCE_OPTIONS = [
     { value: "facebook" },
 ];
 
-// Default "Handled By" person (see the Handled By column). Always returned
-// first by GET /api/users/staff.
-const isDefaultHandler = (u) =>
-    u?.first_name?.trim().toLowerCase() === "vijay" &&
-    u?.last_name?.trim().toLowerCase() === "kumar";
-
 const JunkCarRequests = () => {
     // SWR instant render: restore immediately from memory cache to avoid "0" and "No requests yet" flash
     const [junkCars, setJunkCars] = useState(() => cacheManager.get("junkCars") || []);
     const [loading, setLoading] = useState(() => !cacheManager.get("junkCars"));
     const [staffUsers, setStaffUsers] = useState([]);    // by shiva
-    const [handledByFilter, setHandledByFilter] = useState("");   // by shiva
+    const [staffFilter, setStaffFilter] = useState("");   // by shiva
     const [sourceFilter, setSourceFilter] = useState("");            // by shiva
     const [statusFilter, setStatusFilter] = useState("");             // by shiva
     const navigate = useNavigate();
@@ -123,6 +157,9 @@ const JunkCarRequests = () => {
         user?.role?.toLowerCase() === "admin" ||
         user?.role?.toLowerCase() === "manager";
 
+    // Admins and managers assign leads; everyone can filter by staff.
+    const canAssignStaff = canEditSource;
+
     // Fetch Staff Users by shiva
     const fetchStaffUsers = async () => {
         try {
@@ -142,10 +179,9 @@ const JunkCarRequests = () => {
             fetchJunkCars(true);
         });
 
-        if (
-            user?.role?.toLowerCase() === "admin" ||
-            user?.role?.toLowerCase() === "manager"
-        ) {
+        // Staff list for the assignment dropdown (admins / managers only).
+        // The Staff filter does not need it — see NAMED_STAFF.
+        if (canAssignStaff) {
             fetchStaffUsers();
         }
 
@@ -206,9 +242,11 @@ const JunkCarRequests = () => {
     const assignStaff = async (id, assignedTo) => {
         try {
 
+            // null unassigns. The backend records the logged-in user as
+            // "Lead Assigned By".
             await api.patch(
                 `/junk-car/${id}/assign`,
-                { assignedTo }
+                { assignedTo: assignedTo || null }
             );
 
             fetchJunkCars();
@@ -341,23 +379,26 @@ const JunkCarRequests = () => {
 
         {
             title: "Status",
-            render: (_, record) => (
-                <Select
-                    placeholder="Select"
-                    value={record.status}
-                    onChange={(value) =>
-                        updateStatus(record._id, value)
-                    }
-                    style={{ width: 150 }}
-                    disabled={
-                        record.status?.toLowerCase() === "completed"
-                    }
-                >
-                    <Option value="pending">Pending</Option>
-                    <Option value="in progress">In Progress</Option>
-                    <Option value="completed">Completed</Option>
-                </Select>
-            ),
+            render: (_, record) => {
+                const current = normalizeStatus(record.status);
+                // A retired status (In Progress) is shown as the current
+                // value but can't be picked again.
+                const options = LEGACY_STATUS_LABELS[current]
+                    ? [...JUNK_CAR_STATUS_OPTIONS, { value: current, label: LEGACY_STATUS_LABELS[current], disabled: true }]
+                    : JUNK_CAR_STATUS_OPTIONS;
+
+                return (
+                    <Select
+                        placeholder="Select"
+                        value={current || undefined}
+                        onChange={(value) =>
+                            updateStatus(record._id, value)
+                        }
+                        style={{ width: 160 }}
+                        options={options}
+                    />
+                );
+            },
         },
         {
             title: "Source",
@@ -401,58 +442,69 @@ const JunkCarRequests = () => {
             },
         },
         {
-            title: "Handled By",
+            // Staff member the lead is assigned to — shows whoever it is
+            // actually assigned to (no default name).
+            title: "Assigned To",
             render: (_, record) => {
+                const assignee =
+                    record.assignedTo && typeof record.assignedTo === "object"
+                        ? record.assignedTo
+                        : null;
 
-                // ─── TEMPORARY DEFAULT ──────────────────────────────────
-                // Current requirement: default "Handled By" display to
-                // "Vijay Kumar" for now, regardless of actual assignment.
-                //
-                // ORIGINAL ACCOUNT-BASED "HANDLED BY" LOGIC IS PRESERVED
-                // BELOW, COMMENTED OUT — NOT DELETED. Re-enable it (restore
-                // `assignedStaff` and the Select's `placeholder`/
-                // `defaultValue` below) when Completed requests need to show
-                // the handler according to the user's account again.
-                //
-                // const assignedStaff =
-                //     record.assignedTo &&
-                //         typeof record.assignedTo === "object" &&
-                //         record.assignedTo.first_name
-                //         ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
-                //         : "Unassigned";
-                const assignedStaff = "Vijay Kumar";
+                if (!canAssignStaff) {
+                    return personName(assignee) || (
+                        <span style={{ color: "#999" }}>Unassigned</span>
+                    );
+                }
 
-                // The underlying assignment mechanism (assignStaff / the
-                // Select's onChange / staffUsers options) is left fully
-                // intact and functional — only the displayed placeholder/
-                // defaultValue is temporarily overridden, so real staff
-                // assignment still works and persists exactly as before.
+                const options = staffUsers.map((staff) => ({
+                    value: staff._id,
+                    label: personName(staff),
+                }));
+                // Named staff without an account yet are shown but can't be
+                // picked — an assignment needs a user account.
+                NAMED_STAFF.forEach((name) => {
+                    if (!staffUsers.some((s) => nameKey(personName(s)) === nameKey(name))) {
+                        options.push({ value: `pending:${name}`, label: `${name} (no account yet)`, disabled: true });
+                    }
+                });
+                // Keep the current assignee selectable/visible even when they
+                // are not in the staff list (e.g. an admin who worked it).
+                if (assignee?._id && !options.some((o) => o.value === assignee._id)) {
+                    options.push({ value: assignee._id, label: personName(assignee) || "Unknown user" });
+                }
+
                 return (
                     <Select
-                        defaultValue={
-                            // record.assignedTo &&
-                            //     typeof record.assignedTo === "object" &&
-                            //     record.assignedTo.first_name
-                            //     ? `${record.assignedTo.first_name} ${record.assignedTo.last_name || ""}`
-                            //     : undefined
-                            undefined
-                        }
-                        placeholder={assignedStaff}
+                        value={assignee?._id}
+                        placeholder="Unassigned"
+                        allowClear
+                        options={options}
                         onChange={(value) =>
                             assignStaff(record._id, value)
                         }
                         style={{ width: 180 }}
                         disabled={record.status === "completed"}
-                    >
-                        {staffUsers.map((staff) => (
-                            <Option
-                                key={staff._id}
-                                value={staff._id}
-                            >
-                                {staff.first_name} {staff.last_name}
-                            </Option>
-                        ))}
-                    </Select>
+                    />
+                );
+            },
+        },
+        {
+            // Who made the current assignment, tracked separately from the
+            // assignee. "-" for leads assigned before this was recorded.
+            title: "Lead Assigned By",
+            render: (_, record) => {
+                const name = personName(record.assignedBy);
+                if (!name) return "-";
+                return (
+                    <div>
+                        {name}
+                        {record.assignedAt && (
+                            <div style={{ fontSize: 11, color: "#888" }}>
+                                {new Date(record.assignedAt).toLocaleDateString()}
+                            </div>
+                        )}
+                    </div>
                 );
             },
         },
@@ -476,37 +528,36 @@ const JunkCarRequests = () => {
         },
     ];
 
-    // Vijay Kumar is the default handler: the "Handled By" column shows him
-    // for every unassigned request, so filtering by him also includes
-    // unassigned requests — the filter matches what the table shows.
-    const defaultHandlerId = staffUsers.find(isDefaultHandler)?._id;
+    // Every lead the page shows (Completed leads are left out).
+    const visibleJunkCars = junkCars.filter(
+        (car) => !REMOVED_STATUSES.has(normalizeStatus(car.status))
+    );
 
-    const displayedJunkCars = junkCars
+    const displayedJunkCars = visibleJunkCars
         .filter((car) => {
-            const assignedId =
-                car.assignedTo && typeof car.assignedTo === "object"
-                    ? car.assignedTo._id
-                    : car.assignedTo || null;
-            const handledMatch =
-                !handledByFilter ||
-                assignedId === handledByFilter ||
-                (handledByFilter === defaultHandlerId && !assignedId);
+            // Staff filter: leads assigned to the selected staff member,
+            // matched by the assignee's name.
+            const staffMatch =
+                !staffFilter ||
+                nameKey(personName(car.assignedTo)) === staffFilter;
 
             const sourceMatch =
                 !sourceFilter || car.source === sourceFilter;
 
             const statusMatch =
                 !statusFilter ||
-                car.status?.toLowerCase() === statusFilter.toLowerCase();
+                normalizeStatus(car.status) === statusFilter;
 
-            return handledMatch && sourceMatch && statusMatch;
+            return staffMatch && sourceMatch && statusMatch;
         })
         .sort((a, b) => {
-            const aCompleted = a.status?.toLowerCase() === "completed";
-            const bCompleted = b.status?.toLowerCase() === "completed";
+            // Lead Converted / Lead Closed go to the bottom;
+            // newest first within each group.
+            const aBottom = BOTTOM_STATUSES.has(normalizeStatus(a.status));
+            const bBottom = BOTTOM_STATUSES.has(normalizeStatus(b.status));
 
-            if (aCompleted && !bCompleted) return 1;
-            if (!aCompleted && bCompleted) return -1;
+            if (aBottom && !bBottom) return 1;
+            if (!aBottom && bBottom) return -1;
 
             return new Date(b.createdAt) - new Date(a.createdAt);
         });
@@ -517,7 +568,7 @@ const JunkCarRequests = () => {
                 title={
                     <>
                         Junk Car Requests
-                        <span className="request-count-pill">{junkCars.length}</span>
+                        <span className="request-count-pill">{visibleJunkCars.length}</span>
                     </>
                 }
                 extra={
@@ -546,7 +597,7 @@ const JunkCarRequests = () => {
                     </div>
                 }
             >
-                {/* HandledByFilter by shiva */}
+                {/* Staff filter by shiva */}
                 <div
                     className="requests-toolbar"
                     style={{
@@ -562,20 +613,10 @@ const JunkCarRequests = () => {
                         style={{ width: 220 }}
                         allowClear
                         onChange={(value) =>
-                            setHandledByFilter(value || "")
+                            setStaffFilter(value || "")
                         }
-                    >
-
-                        {staffUsers.map((staff) => (
-                            <Option
-                                key={staff._id}
-                                value={staff._id}
-                            >
-                                {staff.first_name} {staff.last_name}
-                                {isDefaultHandler(staff) ? " (default)" : ""}
-                            </Option>
-                        ))}
-                    </Select>
+                        options={NAMED_STAFF.map((name) => ({ value: nameKey(name), label: name }))}
+                    />
 
                     {/* Search by source added by shiva */}
                     <Select
@@ -606,23 +647,8 @@ const JunkCarRequests = () => {
                         onChange={(value) =>
                             setStatusFilter(value || "")
                         }
-                    >
-                        <Option value="pending">
-                            Pending
-                        </Option>
-
-                        <Option value="in progress">
-                            In Progress
-                        </Option>
-
-                        <Option value="completed">
-                            Completed
-                        </Option>
-
-                        <Option value="rejected">
-                            Rejected
-                        </Option>
-                    </Select>
+                        options={JUNK_CAR_STATUS_OPTIONS}
+                    />
 
                 </div>
 
@@ -656,7 +682,8 @@ const JunkCarRequests = () => {
                     rowKey="_id"
                     rowClassName={(record) => {
 
-                        if (record.status === "completed") {
+                        // Lead Converted / Lead Closed are faded.
+                        if (BOTTOM_STATUSES.has(normalizeStatus(record.status))) {
                             return "completed-row";
                         }
 
@@ -673,7 +700,7 @@ const JunkCarRequests = () => {
                             <div className="requests-empty-state">
                                 <InboxOutlined />
                                 <span>
-                                    {handledByFilter || sourceFilter || statusFilter
+                                    {staffFilter || sourceFilter || statusFilter
                                         ? "No matching requests found"
                                         : "No junk car requests yet"}
                                 </span>

@@ -12,6 +12,30 @@ import { formatExportDate } from "../../utils/exportUtils";
 
 const { Option } = Select;
 
+// Statuses a part request can be set to — used by both the Status column and
+// the Status filter (backend: utils/partRequestLeads.js).
+const PART_REQUEST_STATUS_OPTIONS = [
+    { value: "Pending", label: "Pending" },
+    { value: "Lead Converted", label: "Lead Converted" },
+    { value: "Lead Lost", label: "Lead Lost" },
+    { value: "Lead Closed", label: "Lead Closed" },
+];
+
+// Retired status still on some older requests: shown (not selectable) until
+// a new status is picked.
+const LEGACY_STATUSES = ["In Progress"];
+
+// Completed / Rejected requests are not wanted: the backend no longer
+// returns them and scripts/removeCompletedRejectedLeads.js deletes them.
+// Also skipped here so none show while an older backend is still running.
+const REMOVED_STATUSES = new Set(["completed", "rejected"]);
+
+// Lead Converted / Lead Closed sink to the bottom of the default list.
+const BOTTOM_STATUSES = new Set(["lead converted", "lead closed"]);
+
+const normalizeStatus = (status) =>
+    (status || "").toString().trim().toLowerCase().replace(/\s+/g, " ");
+
 const PART_REQUEST_EXPORT_COLUMNS = [
     { header: "Date", render: (r) => formatExportDate(r.createdAt), width: 18 },
     { header: "Customer Name", key: "name", width: 22 },
@@ -337,23 +361,24 @@ const Requests = () => {
         },
         {
             title: "Status",
-            render: (_, record) => (
-                <Select
-                    value={record.status}
-                    onChange={(value) =>
-                        updateStatus(record._id, value)
-                    }
-                    style={{ width: 150 }}
-                    disabled={
-                        record.status?.toLowerCase() === "completed"
-                    }
-                >
-                    <Option value="Pending">Pending</Option>
-                    <Option value="In Progress">In Progress</Option>
-                    <Option value="Completed">Completed</Option>
-                    <Option value="Rejected">Rejected</Option>
-                </Select>
-            ),
+            render: (_, record) => {
+                // A retired status (In Progress) is shown as the current
+                // value but can't be picked again.
+                const options = LEGACY_STATUSES.includes(record.status)
+                    ? [...PART_REQUEST_STATUS_OPTIONS, { value: record.status, label: record.status, disabled: true }]
+                    : PART_REQUEST_STATUS_OPTIONS;
+
+                return (
+                    <Select
+                        value={record.status}
+                        onChange={(value) =>
+                            updateStatus(record._id, value)
+                        }
+                        style={{ width: 160 }}
+                        options={options}
+                    />
+                );
+            },
         },
     ];
 
@@ -363,7 +388,12 @@ const Requests = () => {
     const sourceMatches = sourceFilter ? SOURCE_FILTER_MATCHES[sourceFilter] || [sourceFilter] : null;
     const isFiltering = Boolean(searchText || status || sourceFilter);
 
-    const displayedRequests = requests.filter((item) => {
+    // Every request the page shows (Completed / Rejected are left out).
+    const visibleRequests = requests.filter(
+        (item) => !REMOVED_STATUSES.has(normalizeStatus(item.status))
+    );
+
+    const displayedRequests = visibleRequests.filter((item) => {
         const searchMatch =
             !searchText ||
             [
@@ -381,16 +411,18 @@ const Requests = () => {
                 item.status,
             ].some((field) => String(field || "").toLowerCase().includes(searchText));
 
-        const statusMatch = !status || item.status?.toLowerCase() === status.toLowerCase();
+        const statusMatch = !status || normalizeStatus(item.status) === normalizeStatus(status);
         const sourceMatch = !sourceMatches || sourceMatches.includes(item.source || "Online");
 
         return searchMatch && statusMatch && sourceMatch;
     }).sort((a, b) => {
-        const aCompleted = a.status?.toLowerCase() === "completed";
-        const bCompleted = b.status?.toLowerCase() === "completed";
+        // Lead Converted / Lead Closed go to the bottom; newest first within
+        // each group.
+        const aBottom = BOTTOM_STATUSES.has(normalizeStatus(a.status));
+        const bBottom = BOTTOM_STATUSES.has(normalizeStatus(b.status));
 
-        if (aCompleted && !bCompleted) return 1;
-        if (!aCompleted && bCompleted) return -1;
+        if (aBottom && !bBottom) return 1;
+        if (!aBottom && bBottom) return -1;
 
         return new Date(b.createdAt) - new Date(a.createdAt);
     });
@@ -406,7 +438,7 @@ const Requests = () => {
                 title={
                     <>
                         Part Requests
-                        <span className="request-count-pill">{requests.length}</span>
+                        <span className="request-count-pill">{visibleRequests.length}</span>
                     </>
                 }
                 extra={
@@ -484,12 +516,7 @@ const Requests = () => {
                         allowClear
                         value={status || undefined}
                         onChange={(value) => setStatus(value || null)}
-                        options={[
-                            { value: "pending", label: "Pending" },
-                            { value: "in progress", label: "In Progress" },
-                            { value: "completed", label: "Completed" },
-                            { value: "rejected", label: "Rejected" },
-                        ]}
+                        options={PART_REQUEST_STATUS_OPTIONS}
                     />
                 </div>
 
