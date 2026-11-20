@@ -32,6 +32,11 @@ const BulletIcon = () => (
   />
 );
 
+// The "Integrations" sidebar menu (Marketplace Inbox / Listings / Orders,
+// Platform Connections, eBay Catalog Sync) is hidden for now. Its code is
+// kept — set this to true to show it again.
+const SHOW_INTEGRATIONS_MENU = false;
+
 const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) => {
   // console.log("Sidebar Loaded");
 
@@ -187,7 +192,9 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
 
       // Social & Marketplace Integrations - Admin and Manager
       // Moved here (between Requests and Master) per request.
-      if (isAdmin || isManager) {
+      // Hidden for now (code kept): set SHOW_INTEGRATIONS_MENU to true to
+      // bring the menu back. The pages and routes are unchanged.
+      if (SHOW_INTEGRATIONS_MENU && (isAdmin || isManager)) {
         items.push({
           key: "integrations",
           icon: <ApiOutlined />,
