@@ -52,11 +52,15 @@ const personName = (person) =>
 
 // The Staff filter: always exactly these names, in this order, even before
 // they have a user account (backend: utils/junkCarLeads.js). A lead matches
-// when its assignee's first + last name is this name, so once an account
-// with the same name exists, leads assigned to it show up here.
+// when its "Lead Assigned By" user's first + last name is this name, so once
+// an account with the same name exists, leads it works show up here.
 const NAMED_STAFF = ["Ankit Dewan", "Jaspreet Singh", "Vijay Kumar"];
 
 const nameKey = (name) => (name || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+// The "Assigned To" column (table and download) is hidden — only "Lead
+// Assigned By" is shown. Its code is kept; set this to true to show it again.
+const SHOW_ASSIGNED_TO_COLUMN = false;
 
 const JUNK_CAR_EXPORT_COLUMNS = [
     { header: "Date", render: (r) => formatExportDate(r.createdAt), width: 18 },
@@ -103,7 +107,9 @@ const JUNK_CAR_EXPORT_COLUMNS = [
                 : "-",
         width: 20,
     },
-    { header: "Assigned To", render: (r) => personName(r.assignedTo) || "Unassigned", width: 20 },
+    ...(SHOW_ASSIGNED_TO_COLUMN
+        ? [{ header: "Assigned To", render: (r) => personName(r.assignedTo) || "Unassigned", width: 20 }]
+        : []),
     { header: "Lead Assigned By", render: (r) => personName(r.assignedBy) || "-", width: 20 },
     { header: "Status", render: (r) => statusLabel(r.status), width: 16 },
     { header: "Payment Status", render: (r) => r.paymentStatus || "Not Paid", width: 16 },
@@ -179,9 +185,10 @@ const JunkCarRequests = () => {
             fetchJunkCars(true);
         });
 
-        // Staff list for the assignment dropdown (admins / managers only).
-        // The Staff filter does not need it — see NAMED_STAFF.
-        if (canAssignStaff) {
+        // Staff list for the Assigned To dropdown (admins / managers only,
+        // and only while that column is shown). The Staff filter does not
+        // need it — see NAMED_STAFF.
+        if (canAssignStaff && SHOW_ASSIGNED_TO_COLUMN) {
             fetchStaffUsers();
         }
 
@@ -442,8 +449,8 @@ const JunkCarRequests = () => {
             },
         },
         {
-            // Staff member the lead is assigned to — shows whoever it is
-            // actually assigned to (no default name).
+            // Staff member the lead is assigned to — only set by picking a
+            // name here (status / payment changes don't fill it).
             title: "Assigned To",
             render: (_, record) => {
                 const assignee =
@@ -490,8 +497,9 @@ const JunkCarRequests = () => {
             },
         },
         {
-            // Who made the current assignment, tracked separately from the
-            // assignee. "-" for leads assigned before this was recorded.
+            // The user who last changed the status, payment or assignee
+            // (set by the backend every time), separate from Assigned To.
+            // "-" until someone works the lead.
             title: "Lead Assigned By",
             render: (_, record) => {
                 const name = personName(record.assignedBy);
@@ -535,11 +543,11 @@ const JunkCarRequests = () => {
 
     const displayedJunkCars = visibleJunkCars
         .filter((car) => {
-            // Staff filter: leads assigned to the selected staff member,
-            // matched by the assignee's name.
+            // Staff filter: leads whose "Lead Assigned By" is the selected
+            // staff member, matched by name (Assigned To is hidden).
             const staffMatch =
                 !staffFilter ||
-                nameKey(personName(car.assignedTo)) === staffFilter;
+                nameKey(personName(car.assignedBy)) === staffFilter;
 
             const sourceMatch =
                 !sourceFilter || car.source === sourceFilter;
@@ -654,7 +662,11 @@ const JunkCarRequests = () => {
 
                 <Table
                     loading={loading}
-                    columns={columns}
+                    columns={
+                        SHOW_ASSIGNED_TO_COLUMN
+                            ? columns
+                            : columns.filter((col) => col.title !== "Assigned To")
+                    }
                     dataSource={displayedJunkCars}
                     // dataSource={
                     //     junkCars.filter((car) => {
