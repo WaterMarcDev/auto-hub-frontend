@@ -4,3 +4,4 @@ export { default as AdminGuide } from "./AdminGuide";
 export { default as ManagerGuide } from "./ManagerGuide";
 export { default as FrontDeskGuide } from "./FrontDeskGuide";
 export { default as StaffGuide } from "./StaffGuide";
+export { default as ScraperGuide } from "./ScraperGuide";

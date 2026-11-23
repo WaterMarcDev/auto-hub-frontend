@@ -72,6 +72,7 @@ const AdminGuide = React.lazy(() => import("./pages/Guide/AdminGuide"));
 const ManagerGuide = React.lazy(() => import("./pages/Guide/ManagerGuide"));
 const FrontDeskGuide = React.lazy(() => import("./pages/Guide/FrontDeskGuide"));
 const StaffGuide = React.lazy(() => import("./pages/Guide/StaffGuide"));
+const ScraperGuide = React.lazy(() => import("./pages/Guide/ScraperGuide"));
 const CustomerRegister = React.lazy(() => import("./pages/Customer/Register"));
 const CustomerList = React.lazy(() => import("./pages/Customer/List"));
 
@@ -376,6 +377,7 @@ function App() {
                           element={<FrontDeskGuide />}
                         />
                         <Route path="/guide/staff" element={<StaffGuide />} />
+                        <Route path="/guide/scraper" element={<ScraperGuide />} />
 
                         {/* User Management */}
                         <Route path="/users/list" element={<UserList />} />

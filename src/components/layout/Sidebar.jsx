@@ -441,8 +441,8 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       });
     }
 
-    // Customer - visible for Front Desk, Scraper and Admin
-    if (isFrontDesk || isScraper || isAdmin || isManager) {
+    // Customer - visible for Front Desk, Admin and Manager (hidden for Scraper)
+    if (isFrontDesk || isAdmin || isManager) {
       items.push({
         key: "customer",
         icon: <UserOutlined />,
@@ -462,8 +462,8 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       });
     }
 
-    // Check-In - visible for Front Desk, Scraper and Admin
-    if (isFrontDesk || isScraper || isAdmin || isManager) {
+    // Check-In - visible for Front Desk, Admin and Manager (hidden for Scraper)
+    if (isFrontDesk || isAdmin || isManager) {
       items.push({
         key: "checkin",
         icon: <CarOutlined />,
@@ -484,8 +484,8 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
     }
 
 
-    // Waiver - visible for Front Desk, Scraper and Admin
-    if (isFrontDesk || isScraper || isAdmin || isManager) {
+    // Waiver - visible for Front Desk, Admin and Manager (hidden for Scraper)
+    if (isFrontDesk || isAdmin || isManager) {
       items.push({
         key: "waiver",
         icon: <FileProtectOutlined />,
@@ -577,6 +577,11 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
           key: "/guide/staff",
           icon: <BulletIcon />,
           label: <Link to="/guide/staff">Staff Guide</Link>,
+        },
+        {
+          key: "/guide/scraper",
+          icon: <BulletIcon />,
+          label: <Link to="/guide/scraper">Scraper Guide</Link>,
         }
       );
     } else if (isFrontDesk) {
@@ -587,11 +592,11 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
         label: <Link to="/guide/front-desk">Front Desk Guide</Link>,
       });
     } else if (isScraper) {
-      // Scraper sees Front Desk guide for now
+      // Scraper sees only their guide
       guideChildren.push({
-        key: "/guide/front-desk",
+        key: "/guide/scraper",
         icon: <BulletIcon />,
-        label: <Link to="/guide/front-desk">Front Desk Guide</Link>,
+        label: <Link to="/guide/scraper">Scraper Guide</Link>,
       });
     } else if (isStaff) {
       // Staff sees only their guide
@@ -652,6 +657,7 @@ const Sidebar = ({ isOpen, unreadCount, junkRequestCount, partRequestCount }) =>
       "/guide/manager": "userGuides",
       "/guide/front-desk": "userGuides",
       "/guide/staff": "userGuides",
+      "/guide/scraper": "userGuides",
       "/entry-fee": "entryFee",
       "/part-requests": "requests",       // added by shiva
       "/junk-car-requests": "requests",   // added by shiva
