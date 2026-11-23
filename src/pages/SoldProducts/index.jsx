@@ -39,6 +39,12 @@ import SoldProductsService from "../../services/soldProductsService";
 import InventorySyncService from "../../services/inventorySyncService";
 import { cacheManager } from "../../utils/cacheManager";
 
+// The "Parts sold on eBay & Wix" heading, the "Sync now" button and the
+// eBay / Wix sync status lines are hidden for now (sales still sync
+// automatically every 15 minutes). The code is kept; set this to true to show
+// them again.
+const SHOW_SOLD_HEADER_AND_SYNC = false;
+
 const CHANNEL = {
   ebay: { label: "eBay", color: "blue" },
   wix: { label: "Wix", color: "purple" },
@@ -419,17 +425,21 @@ const SoldProducts = () => {
         </Row>
 
         <Card
-          title="Parts sold on eBay & Wix"
+          title={SHOW_SOLD_HEADER_AND_SYNC ? "Parts sold on eBay & Wix" : undefined}
           extra={
-            <Button type="primary" icon={<SyncOutlined spin={syncing} />} loading={syncing} onClick={handleSync}>
-              Sync now
-            </Button>
+            SHOW_SOLD_HEADER_AND_SYNC ? (
+              <Button type="primary" icon={<SyncOutlined spin={syncing} />} loading={syncing} onClick={handleSync}>
+                Sync now
+              </Button>
+            ) : undefined
           }
         >
-          <Space direction="vertical" size={4} style={{ width: "100%", marginBottom: 12 }}>
-            <SyncLine name="ebay" sync={summary?.sync?.ebay} />
-            <SyncLine name="wix" sync={summary?.sync?.wix} />
-          </Space>
+          {SHOW_SOLD_HEADER_AND_SYNC && (
+            <Space direction="vertical" size={4} style={{ width: "100%", marginBottom: 12 }}>
+              <SyncLine name="ebay" sync={summary?.sync?.ebay} />
+              <SyncLine name="wix" sync={summary?.sync?.wix} />
+            </Space>
+          )}
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
             <Segmented

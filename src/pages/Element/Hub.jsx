@@ -21,10 +21,15 @@ import ElementHubService from "../../services/elementHubService";
 import { customerAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import { useAuth } from "../../hooks/useAuth";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 const Hub = () => {
+  // Scraper users can view the Element Hub but cannot sell from it.
+  const { user } = useAuth();
+  const canSell = user?.role?.toLowerCase() !== "scraper";
+
   const [items, setItems] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [sellModalOpen, setSellModalOpen] = React.useState(false);
@@ -134,6 +139,7 @@ const Hub = () => {
   };
 
   const openSell = (row) => {
+    if (!canSell) return;
     setSelected(row);
     form.resetFields();
     setTotalAmount(0);
@@ -232,7 +238,8 @@ const Hub = () => {
         <Button
           type="primary"
           onClick={() => openSell(record)}
-          disabled={record.totalWeight <= 0}
+          disabled={!canSell || record.totalWeight <= 0}
+          title={canSell ? undefined : "Scraper users cannot sell from the Element Hub"}
           size="small"
         >
           Sell

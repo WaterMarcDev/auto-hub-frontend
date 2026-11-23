@@ -12,6 +12,7 @@ const Header = ({ onMenuToggle }) => {
   const isFrontDesk = userRole === "front_desk";
   const isAdmin = userRole === "admin";
   const isStaff = userRole === "staff";
+  const isScraper = userRole === "scraper";
 
   useEffect(() => {
     const handleResize = () => {
@@ -174,6 +175,20 @@ const Header = ({ onMenuToggle }) => {
                     <i className="mdi mdi-account-hard-hat font-size-16 align-middle me-1"></i>
                     Staff Guide
                   </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/scraper")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-recycle font-size-16 align-middle me-1"></i>
+                    Scraper Guide
+                  </button>
                 </>
               )}
 
@@ -215,6 +230,27 @@ const Header = ({ onMenuToggle }) => {
                   >
                     <i className="mdi mdi-account-hard-hat font-size-16 align-middle me-1"></i>
                     Staff Guide
+                  </button>
+                </>
+              )}
+
+              {/* Scraper sees only their guide */}
+              {isScraper && (
+                <>
+                  <h6 className="dropdown-header">Your Guide</h6>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => navigate("/guide/scraper")}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      width: "100%",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <i className="mdi mdi-recycle font-size-16 align-middle me-1"></i>
+                    Scraper Guide
                   </button>
                 </>
               )}
