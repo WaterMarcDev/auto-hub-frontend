@@ -239,3 +239,84 @@ body {
   }
 }
 /* end premium polish */
+/* Long text without spaces (e.g. "aaaaaaaa..." or long numbers) wraps
+   inside text boxes and description displays instead of running outside. */
+textarea,
+.ant-input-textarea textarea,
+.ant-descriptions-item-content,
+.ant-modal-body .ant-typography,
+.ant-alert-message,
+.ant-alert-description,
+.ant-form-item-explain-error,
+.ant-tooltip-inner {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Text areas keep their text inside: they scroll instead of growing past
+   the page width. */
+textarea {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Number boxes (.intake-number-box: Car Intake Weight / Height / Width /
+   Length; .crm-number-box: e.g. Check-In Amount) use the
+   app's text-box theme (assets/css/custom-layout.css: .ant-input), so they
+   look like "Where": same fill, border, text colour, corners, placeholder and
+   blue focus ring. The "lbs" / "in" label is joined to the box. */
+:is(.intake-number-box, .crm-number-box).ant-input-number,
+:is(.intake-number-box, .crm-number-box) .ant-input-number {
+  background-color: #374151 !important;
+  border: 1px solid #4a5568 !important;
+  color: #d6dae5 !important;
+  border-radius: 0.375rem !important;
+  box-shadow: none !important;
+}
+:is(.intake-number-box, .crm-number-box) .ant-input-number-input {
+  color: #d6dae5 !important;
+  background-color: transparent !important;
+}
+:is(.intake-number-box, .crm-number-box) .ant-input-number-input::placeholder {
+  color: #d1d5db !important;
+  opacity: 0.8;
+}
+
+/* Box with the "lbs" / "in" label: one rounded shape. */
+:is(.intake-number-box, .crm-number-box) .ant-input-number-group > .ant-input-number {
+  border-right: none !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+:is(.intake-number-box, .crm-number-box) .ant-input-number-group-addon {
+  background-color: #374151 !important;
+  border: 1px solid #4a5568 !important;
+  border-left: none !important;
+  color: #d6dae5 !important;
+  border-top-right-radius: 0.375rem !important;
+  border-bottom-right-radius: 0.375rem !important;
+}
+
+/* Plain text boxes have no up / down arrows. */
+:is(.intake-number-box, .crm-number-box) .ant-input-number-handler-wrap {
+  display: none !important;
+}
+
+/* Focus: same blue border and ring as the theme's text boxes. */
+:is(.intake-number-box, .crm-number-box).ant-input-number-focused,
+:is(.intake-number-box, .crm-number-box) .ant-input-number-focused,
+:is(.intake-number-box, .crm-number-box) .ant-input-number:focus-within {
+  border-color: #2b6cb0 !important;
+  box-shadow: 0 0 0 0.2rem rgba(43, 108, 176, 0.25) !important;
+}
+:is(.intake-number-box, .crm-number-box) .ant-input-number-group:focus-within .ant-input-number-group-addon {
+  border-color: #2b6cb0 !important;
+}
+
+/* Keep the red border when the box shows an error. */
+:is(.intake-number-box, .crm-number-box).ant-input-number-status-error,
+:is(.intake-number-box, .crm-number-box) .ant-input-number-status-error,
+.ant-form-item-has-error :is(.intake-number-box, .crm-number-box) .ant-input-number,
+.ant-form-item-has-error :is(.intake-number-box, .crm-number-box) .ant-input-number-group-addon {
+  border-color: #ff4d4f !important;
+}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Table,
   Button,
@@ -16,12 +16,15 @@ import { useNavigate } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { useAuth } from "../../hooks/useAuth";
+import { passwordRules, PASSWORD_MAX_LENGTH } from "../../utils/password";
 
 const UserList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [resetModalVisible, setResetModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetForm] = Form.useForm();
   const navigate = useNavigate();
   const [notificationApi, contextHolder] = notification.useNotification();
   const { user: currentUser } = useAuth();
@@ -46,18 +49,37 @@ const UserList = () => {
     }
   };
 
+  // One click = one request = one message: ignore further submits while a
+  // reset is in flight (the ref guards against clicks before re-render).
+  const resetInFlight = useRef(false);
+
+  const closeResetModal = () => {
+    setResetModalVisible(false);
+    setSelectedUser(null);
+    resetForm.resetFields();
+  };
+
   const handleResetPassword = async (values) => {
+    if (resetInFlight.current || !selectedUser) return;
+    resetInFlight.current = true;
+    setResetting(true);
     try {
       await userAPI.resetPassword(selectedUser._id, values.password);
-      notificationApi.success({ message: "Password reset successfully" });
-      setResetModalVisible(false);
-      setSelectedUser(null);
+      notificationApi.success({
+        key: "reset-password",
+        message: "Password reset successfully",
+      });
+      closeResetModal();
     } catch (err) {
       console.error(err);
       notificationApi.error({
+        key: "reset-password",
         message: "Failed to reset password",
         description: err.response?.data?.error || err.message,
       });
+    } finally {
+      resetInFlight.current = false;
+      setResetting(false);
     }
   };
 
@@ -167,21 +189,26 @@ const UserList = () => {
           title={`Reset Password for ${selectedUser?.first_name}`}
           open={resetModalVisible}
           onCancel={() => {
-            setResetModalVisible(false);
-            setSelectedUser(null);
+            if (!resetting) closeResetModal();
           }}
+          afterClose={() => resetForm.resetFields()}
+          maskClosable={!resetting}
           footer={null}
         >
-          <Form onFinish={handleResetPassword} layout="vertical">
+          <Form
+            form={resetForm}
+            onFinish={handleResetPassword}
+            layout="vertical"
+            autoComplete="off"
+          >
             <Form.Item
               name="password"
               label="New Password"
               rules={[
-                { required: true, message: "Please enter new password" },
-                { min: 6, message: "Password must be at least 6 characters" },
+                ...passwordRules,
               ]}
             >
-              <Input.Password />
+              <Input.Password autoComplete="new-password" maxLength={PASSWORD_MAX_LENGTH} />
             </Form.Item>
             <Form.Item
                 name="confirm"
@@ -203,10 +230,15 @@ const UserList = () => {
                   }),
                 ]}
               >
-                <Input.Password />
+                <Input.Password autoComplete="new-password" maxLength={PASSWORD_MAX_LENGTH} />
               </Form.Item>
             <div style={{ textAlign: "right" }}>
-              <Button type="primary" htmlType="submit">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={resetting}
+                disabled={resetting}
+              >
                 Reset Password
               </Button>
             </div>

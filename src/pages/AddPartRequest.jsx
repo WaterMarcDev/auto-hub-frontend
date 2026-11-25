@@ -3,6 +3,7 @@ import { Card, Input, Button, Form, message, Select } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useLeadCapture } from "../hooks/useLeadCapture";
+import { emailRule, normalizeEmail } from "../utils/email";
 
 const PHONE_PATTERN = /^[0-9]{10}$/;
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
@@ -65,7 +66,6 @@ const AddPartRequest = () => {
             "Fuel Tank",
             "Steering",
             "Dashboard (Complete)",
-            "Windscreen (Windshield)",
             "Coolant Bottle (Reservoir)",
             "Radiator",
             "Fuel Pump",
@@ -108,7 +108,6 @@ const AddPartRequest = () => {
             "Heated Seats",
             "Heated Side Mirrors",
             "Heated Steering",
-            "Heated Windshield",
             "Rear Windshield"
         ].sort((a, b) => a.localeCompare(b)));
     }, []);
@@ -195,9 +194,8 @@ const AddPartRequest = () => {
                         <Form.Item
                             label="Email"
                             name="email"
-                            rules={[
-                                { type: "email", message: "Invalid email" },
-                            ]}
+                            normalize={normalizeEmail}
+                            rules={[emailRule]}
                         >
                             <Input placeholder="Enter email" />
                         </Form.Item>

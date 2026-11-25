@@ -1,6 +1,14 @@
 import { Col, Form, Input, Modal, Row, Select } from "antd";
 import React from "react";
 import { makeAPI, modelAPI, trimAPI } from "../../utils/api";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+
+// Search the dropdown by the visible name (case-insensitive, spaces around
+// the typed text ignored). filterOption={true} matched the hidden _id value.
+const filterByLabel = (input, option) =>
+  String(option?.label ?? "")
+    .toLowerCase()
+    .includes(String(input ?? "").trim().toLowerCase());
 
 const TrimForm = ({ open, setOpen, trim, setTrim, setSuccess, setError }) => {
   const [form] = Form.useForm();
@@ -91,7 +99,8 @@ const TrimForm = ({ open, setOpen, trim, setTrim, setSuccess, setError }) => {
                 placeholder="Select car make"
                 showSearch
                 allowClear
-                filterOption={true}
+                optionFilterProp="label"
+                filterOption={filterByLabel}
                 options={makes.map((make) => ({
                   label: make.name,
                   value: make._id,
@@ -105,7 +114,8 @@ const TrimForm = ({ open, setOpen, trim, setTrim, setSuccess, setError }) => {
                 placeholder="Select car model"
                 showSearch
                 allowClear
-                filterOption={true}
+                optionFilterProp="label"
+                filterOption={filterByLabel}
                 options={models.map((model) => ({
                   label: model.name,
                   value: model._id,
@@ -124,8 +134,8 @@ const TrimForm = ({ open, setOpen, trim, setTrim, setSuccess, setError }) => {
             </Form.Item>
           </Col>
           <Col span={24}>
-            <Form.Item label="Description" name="description">
-              <Input.TextArea placeholder="Enter description" rows={4} />
+            <Form.Item rules={[descriptionRule]} label="Description" name="description">
+              <Input.TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount placeholder="Enter description" rows={4} />
             </Form.Item>
           </Col>
         </Row>

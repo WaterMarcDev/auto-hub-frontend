@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, Steps, message } from "antd";
+import { Card, Modal, Steps, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { customerAPI } from "../../utils/api";
 import { DEFAULT_CUSTOMER_TYPE } from "./customerTypeOptions";
@@ -38,12 +38,14 @@ const AddWaiver = () => {
         lastName: data.lastName || undefined,
         email: data.email || undefined,
         mobileNo: data.mobileNo || undefined,
+        waiverDate: data.waiverDate || undefined,
         idProofType: data.idProofType || undefined,
         idProofNumber: data.idProofNumber || undefined,
         idProofImage: data.idProofImage || undefined,
         // The backend persists the captured signature in `signatureImage`
         // (the same field used by Customer/Seller/Buyer registration).
         signatureImage: data.signature || undefined,
+        description: data.description || undefined,
         linkedSeller: data.linkedSeller || null,
         linkedBuyer: data.linkedBuyer || null,
       };
@@ -103,14 +105,45 @@ const AddWaiver = () => {
       const customerRes = await customerAPI.create(customerPayload);
       const createdCustomer = customerRes.data || customerRes;
 
-      console.log("Customer created via waiver form:", createdCustomer);
       message.success("Customer created successfully");
       setCreatedCustomer(createdCustomer);
       setCheckInModalOpen(true);
     } catch (err) {
+      // Returning customer: the server found a customer with the same phone
+      // number or ID (409) and sent it back. No copy is created; the user can
+      // carry on with the existing customer and check them in.
+      const existing = err.response?.status === 409 ? err.response?.data?.existingCustomer : null;
+      if (existing) {
+        await new Promise((resolve) => {
+          Modal.confirm({
+            title: "Customer already exists",
+            content: (
+              <div>
+                <p style={{ marginBottom: 8 }}>{err.response.data.error}</p>
+                <p style={{ marginBottom: 0 }}>
+                  Continue with the existing customer and check them in? No new customer will be created.
+                </p>
+              </div>
+            ),
+            okText: "Continue with existing customer",
+            cancelText: "Back to form",
+            centered: true,
+            onOk: () => {
+              setCreatedCustomer(existing);
+              setCheckInModalOpen(true);
+              resolve();
+            },
+            onCancel: () => resolve(),
+          });
+        });
+        return;
+      }
       console.error("Error creating waiver/customer:", err);
       const errMsg =
-        err.response?.data?.error || err.message || "Failed to create waiver";
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to create waiver";
       message.error(errMsg);
     } finally {
       // finished

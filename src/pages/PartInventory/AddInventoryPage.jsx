@@ -15,6 +15,10 @@ import { DeleteOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import TitleBox from "../../components/TitleBox";
 import CameraUpload from "../../components/CameraUpload";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import { isRemovedPart } from "../../utils/removedParts";
+import UnitInput from "../../components/UnitInput";
+import NumericInput from "../../components/NumericInput";
+import { TEXT_LIMITS, cleanText, weightError } from "../../components/inventory/fieldRules";
 
 import {
     inventoryAPI,
@@ -22,19 +26,44 @@ import {
     assetTagsAPI,
 } from "../../utils/api";
 
-const EditableCell = ({ value: initial, onCommit, placeholder }) => {
+const EditableCell = ({ value: initial, onCommit, placeholder, numeric = false, maxLength }) => {
     const [val, setVal] = useState(initial ?? "");
 
     useEffect(() => setVal(initial ?? ""), [initial]);
 
+    // Weight: numbers only, 0 - 10,000 with up to 2 decimals.
+    if (numeric) {
+        const error = weightError(val);
+        return (
+            <>
+                <NumericInput
+                    size="small"
+                    value={val}
+                    placeholder={placeholder}
+                    maxLength={8}
+                    status={error ? "error" : undefined}
+                    onChange={setVal}
+                    onBlur={() => onCommit(val)}
+                    onPressEnter={() => onCommit(val)}
+                />
+                {error && (
+                    <div style={{ color: "#ff4d4f", fontSize: 12, marginTop: 2 }}>{error}</div>
+                )}
+            </>
+        );
+    }
+
+    // Text: spaces at the ends are dropped when the value is committed.
+    const commit = () => onCommit(cleanText(val) ?? "");
     return (
         <Input
             size="small"
             value={val}
             placeholder={placeholder}
+            maxLength={maxLength}
             onChange={(e) => setVal(e.target.value)}
-            onBlur={() => onCommit(val)}
-            onPressEnter={() => onCommit(val)}
+            onBlur={commit}
+            onPressEnter={commit}
         />
     );
 };
@@ -74,7 +103,9 @@ const AddInventoryPage = () => {
             }
 
             const allSelectedKeys = Object.keys(record.partDetails.parts || {}).filter(
-                (key) => record.partDetails.parts[key]?.selected
+                // Parts removed from the CRM (A1, A2, Windshield, Heated Windshield)
+                // are not added to inventory.
+                (key) => record.partDetails.parts[key]?.selected && !isRemovedPart(key)
             );
 
             const parts = {};
@@ -198,6 +229,12 @@ const AddInventoryPage = () => {
             return;
         }
 
+        const badWeight = partsToCreate.find((p) => weightError(p.weight));
+        if (badWeight) {
+            message.error(`${toTitle(badWeight.label)}: ${weightError(badWeight.weight)}`);
+            return;
+        }
+
         setLoading(true);
         try {
             // One request for the whole car (one request per part tripped the
@@ -218,9 +255,9 @@ const AddInventoryPage = () => {
                     unit: p.unit,
                     cleaned: p.cleaned,
                     quality: p.quality,
-                    location: p.placed,
-                    weight: p.weight,
-                    dimensions: p.dimensions,
+                    location: cleanText(p.placed),
+                    weight: cleanText(p.weight),
+                    dimensions: cleanText(p.dimensions),
                     image: partImages[p.key] || null,
                     assetTagId: p.assetTagId || null,
                 })),
@@ -236,7 +273,10 @@ const AddInventoryPage = () => {
             if (failed > 0) {
                 // Stay on the page with only the parts that still need adding,
                 // so Submit can simply be pressed again.
-                const failedNames = results.filter((r) => r.status === "failed").map((r) => r.partName);
+                // Name each failed part with the server's reason (e.g. a bad weight).
+                const failedNames = results
+                    .filter((r) => r.status === "failed")
+                    .map((r) => (r.message ? `${toTitle(r.partName)} (${r.message})` : toTitle(r.partName)));
                 const done = new Set(results.filter((r) => r.status !== "failed").map((r) => r.partName));
                 setInventoryParts((prev) => {
                     const next = {};
@@ -246,7 +286,7 @@ const AddInventoryPage = () => {
                     return next;
                 });
                 message.error(
-                    `Added ${created} part(s). ${failed} part(s) could not be added: ${failedNames.map(toTitle).join(", ")}`
+                    `Added ${created} part(s). ${failed} part(s) could not be added: ${failedNames.join(", ")}`
                 );
                 return;
             }
@@ -420,7 +460,7 @@ const AddInventoryPage = () => {
             title: "Unit",
             width: 90,
             render: (_, r) => (
-                <InputNumber
+                <UnitInput
                     size="small"
                     min={0}
                     style={{ width: "100%" }}
@@ -455,6 +495,7 @@ const AddInventoryPage = () => {
                 <EditableCell
                     value={inventoryParts[r.key]?.placed}
                     placeholder="Location"
+                    maxLength={TEXT_LIMITS.location}
                     onCommit={(v) => handleInventoryChange(r.key, "placed", v)}
                 />
             ),
@@ -467,6 +508,7 @@ const AddInventoryPage = () => {
                     value={inventoryParts[r.key]?.weight}
                     placeholder="Weight"
                     onCommit={(v) => handleInventoryChange(r.key, "weight", v)}
+                    numeric
                 />
             ),
         },
@@ -477,6 +519,7 @@ const AddInventoryPage = () => {
                 <EditableCell
                     value={inventoryParts[r.key]?.dimensions}
                     placeholder="Dimensions"
+                    maxLength={TEXT_LIMITS.dimensions}
                     onCommit={(v) => handleInventoryChange(r.key, "dimensions", v)}
                 />
             ),
@@ -487,12 +530,22 @@ const AddInventoryPage = () => {
             render: (_, r) => {
                 const img = partImages[r.key];
 
+                // Thumbnail and delete button side by side (the button used
+                // to sit on top of the image's corner: QA 039).
                 return img ? (
-                    <div style={{ position: "relative", width: 70 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <img
                             src={uploadAPI.getImageUrl(img)}
                             alt="Part"
-                            style={{ width: 60, cursor: "pointer" }}
+                            title="Click to preview"
+                            style={{
+                                width: 60,
+                                height: 45,
+                                objectFit: "cover",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                                flexShrink: 0,
+                            }}
                             onClick={() =>
                                 handlePreviewImage(uploadAPI.getImageUrl(img))
                             }
@@ -502,12 +555,10 @@ const AddInventoryPage = () => {
                             type="text"
                             size="small"
                             danger
+                            title="Remove image"
+                            aria-label="Remove image"
                             onClick={() => handleRemoveImage(r.key)}
-                            style={{
-                                position: "absolute",
-                                top: -6,
-                                right: -6,
-                            }}
+                            style={{ flexShrink: 0 }}
                         />
                     </div>
                 ) : (

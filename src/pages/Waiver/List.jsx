@@ -18,6 +18,7 @@ import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { getCustomerTypeLabel } from "./customerTypeOptions";
 import { cacheManager } from "../../utils/cacheManager";
+import CellText from "../Customer/CellText";
 
 const { RangePicker } = DatePicker;
 
@@ -84,7 +85,8 @@ const WaiverList = () => {
     async (opts = {}) => {
       const page = opts.page || pagination.current;
       const limit = opts.limit || pagination.pageSize;
-      const search = opts.search ?? filters.search ?? "";
+      // Spaces around the search text are ignored (the server also trims).
+      const search = String(opts.search ?? filters.search ?? "").trim();
       const cacheKey = `waivers:customers:${page}:${limit}:${search}:${filters.startDate || ""}:${filters.endDate || ""}`;
 
       const cached = cacheManager.get(cacheKey);
@@ -213,12 +215,13 @@ const WaiverList = () => {
       key: "name",
       minWidth: 160,
       render: (fn, rec) => (
+        // Long names stay on one line with "..." (full name in a tooltip).
         <Button
           type="link"
           size="small"
           onClick={() => navigate(`/waivers/${rec._id}`)}
         >
-          {`${fn || ""} ${rec.lastName || ""}`.trim() || "N/A"}
+          <CellText text={`${fn || ""} ${rec.lastName || ""}`.trim()} maxWidth={220} />
         </Button>
       ),
     },
@@ -227,28 +230,28 @@ const WaiverList = () => {
       dataIndex: "email",
       key: "email",
       minWidth: 140,
-      render: (e) => e || "N/A",
+      render: (e) => <CellText text={e} maxWidth={220} />,
     },
     {
       title: "Mobile",
       dataIndex: "mobileNo",
       key: "mobileNo",
       minWidth: 120,
-      render: (m) => m || "N/A",
+      render: (m) => <CellText text={m} maxWidth={160} />,
     },
     {
       title: "ID Type",
       dataIndex: "idProofType",
       key: "idProofType",
       width: 150,
-      render: (t) => t || "N/A",
+      render: (t) => <CellText text={t} maxWidth={140} />,
     },
     {
       title: "ID Number",
       dataIndex: "idProofNumber",
       key: "idProofNumber",
       width: 150,
-      render: (n) => n || "N/A",
+      render: (n) => <CellText text={n} maxWidth={140} />,
     },
     {
       title: "ID Image",
@@ -345,6 +348,7 @@ const WaiverList = () => {
           >
             <Input
               placeholder="Search by name, email, or mobile"
+              maxLength={100}
               value={filters.search}
               onChange={(e) =>
                 setFilters((p) => ({ ...p, search: e.target.value }))

@@ -36,7 +36,8 @@ const Model = () => {
       page: pagination.page,
       limit: pagination.limit,
     };
-    if (search) params.search = search;
+    // Leading / trailing spaces are ignored.
+    if (search.trim()) params.search = search.trim();
     if (selectedMake) params.make = selectedMake;
     const { data } = await modelAPI.getAll(params);
     setModels(data.models);

@@ -12,8 +12,18 @@ import { userAPI } from "../../utils/api";
 import { useNavigate, useParams } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import { emailRule, normalizeEmail } from "../../utils/email";
+import { passwordRules, PASSWORD_MAX_LENGTH } from "../../utils/password";
 
 const { Option } = Select;
+
+// Same limit as the backend (utils/userName.js, User model maxlength).
+const MAX_NAME_LENGTH = 50;
+const nameRules = (label) => [
+  { required: true, whitespace: true, message: `${label} is required` },
+  { max: MAX_NAME_LENGTH, message: `${label} can be at most ${MAX_NAME_LENGTH} characters` },
+];
+const trimName = (v) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ") : v);
 
 const AddUser = () => {
   const [form] = Form.useForm();
@@ -54,7 +64,12 @@ const AddUser = () => {
     }
   };
 
-  const onFinish = async (values) => {
+  const onFinish = async (formValues) => {
+    const values = {
+      ...formValues,
+      first_name: trimName(formValues.first_name),
+      last_name: trimName(formValues.last_name),
+    };
     setLoading(true);
     try {
       if (isEdit) {
@@ -105,18 +120,18 @@ const AddUser = () => {
                 <Form.Item
                   name="first_name"
                   label="First Name"
-                  rules={[{ required: true, message: "First name is required" }]}
+                  rules={nameRules("First name")}
                 >
-                  <Input placeholder="John" />
+                  <Input placeholder="John" maxLength={MAX_NAME_LENGTH} />
                 </Form.Item>
               </div>
               <div className="col-md-6">
                 <Form.Item
                   name="last_name"
                   label="Last Name"
-                  rules={[{ required: true, message: "Last name is required" }]}
+                  rules={nameRules("Last name")}
                 >
-                  <Input placeholder="Doe" />
+                  <Input placeholder="Doe" maxLength={MAX_NAME_LENGTH} />
                 </Form.Item>
               </div>
             </div>
@@ -126,9 +141,10 @@ const AddUser = () => {
                 <Form.Item
                   name="email"
                   label="Email"
+                  normalize={normalizeEmail}
                   rules={[
                     { required: true, message: "Email is required" },
-                    { type: "email", message: "Please enter a valid email" },
+                    emailRule,
                   ]}
                 >
                   <Input placeholder="john@example.com" />
@@ -157,12 +173,13 @@ const AddUser = () => {
                   <Form.Item
                     name="password"
                     label="Password"
-                    rules={[
-                      { required: true, message: "Password is required" },
-                      { min: 6, message: "Password must be at least 6 characters" },
-                    ]}
+                    rules={passwordRules}
                   >
-                    <Input.Password placeholder="******" />
+                    <Input.Password
+                      placeholder="******"
+                      maxLength={PASSWORD_MAX_LENGTH}
+                      autoComplete="new-password"
+                    />
                   </Form.Item>
                 </div>
               </div>

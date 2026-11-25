@@ -13,6 +13,8 @@ import {
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { NEGOTIATION_OPTIONS, VEHICLE_SOURCE_OPTIONS } from "./intakeConstants";
+import { MAX_DESCRIPTION_LENGTH } from "../../utils/descriptionLimit";
+import NumericInput from "../NumericInput";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -140,9 +142,16 @@ const CarPrice = ({
               name="actualWeight"
               label={<Text style={{ color: "white" }}>Weight (lbs)</Text>}
               extra={formData.weight}
-              rules={[{ required: true, message: "Weight is required" }]}
+              // Required and > 0 (the old "0" default passed a bare
+              // `required` check, so Next never complained).
+              rules={
+                validationRules?.actualWeight || [
+                  { required: true, message: "Weight is required" },
+                ]
+              }
             >
-              <InputNumber
+              <NumericInput
+                mode="number"
                 placeholder="Enter Car Weight in pounds"
                 className="weight-input"
                 style={{
@@ -558,7 +567,7 @@ const CarPrice = ({
             <Form.Item
               label={<Text style={{ color: "white" }}>Description</Text>}
             >
-              <TextArea
+              <TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
                 rows={4}
                 placeholder="Enter price description"
                 value={formData.priceDescription}

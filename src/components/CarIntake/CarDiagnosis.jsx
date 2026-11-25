@@ -11,9 +11,12 @@ import {
   Typography,
   Space,
   Table,
+  Checkbox,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { partAPI, makeAPI } from "../../utils/api";
+import UnitInput from "../UnitInput";
+import NumericInput from "../NumericInput";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -24,6 +27,77 @@ const { Option } = Select;
 const INTAKE_DESELECTED_PARTS = new Set(["a1", "a2"]);
 const isIntakeDeselectedPart = (key) =>
   INTAKE_DESELECTED_PARTS.has(String(key || "").trim().toLowerCase());
+
+const QUALITY_OPTIONS = ["Good", "Average", "OK", "Broken", "Scratches"];
+
+// These are defined OUTSIDE CarDiagnosis on purpose. When they were created
+// inside the component (and inline in the Table `components` prop), every
+// re-render - i.e. every keystroke in a Unit box, which updates formData -
+// produced new component types, so React unmounted and remounted every table
+// row / cell. The table briefly lost its height and the page jumped while
+// typing or pressing Backspace in Unit (and the box lost focus).
+const DiagnosisHeaderCell = (props) => (
+  <th {...props} style={{ backgroundColor: "#374151", borderColor: "#6b7280" }} />
+);
+const DiagnosisBodyRow = (props) => (
+  <tr {...props} style={{ backgroundColor: "#374151" }} />
+);
+const DiagnosisBodyCell = (props) => (
+  <td {...props} style={{ backgroundColor: "#374151", borderColor: "#6b7280" }} />
+);
+const DIAGNOSIS_TABLE_COMPONENTS = {
+  header: { cell: DiagnosisHeaderCell },
+  body: { row: DiagnosisBodyRow, cell: DiagnosisBodyCell },
+};
+
+// Editable cell: keeps local typing state and commits on blur / Enter.
+const EditableCell = ({
+  value: initial,
+  onCommit,
+  disabled,
+  placeholder,
+  numeric = false, // weight: numbers only
+}) => {
+  const [val, setVal] = useState(initial ?? "");
+
+  useEffect(() => {
+    setVal(initial ?? "");
+  }, [initial]);
+
+  const commit = () => {
+    if (onCommit) onCommit(val);
+  };
+
+  const style = {
+    backgroundColor: disabled ? undefined : "#4b5563",
+    borderColor: "#6b7280",
+    color: "white",
+  };
+  if (numeric) {
+    return (
+      <NumericInput
+        value={val}
+        onChange={setVal}
+        onBlur={commit}
+        onPressEnter={commit}
+        disabled={disabled}
+        placeholder={placeholder}
+        style={style}
+      />
+    );
+  }
+  return (
+    <Input
+      value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={commit}
+      onPressEnter={commit}
+      disabled={disabled}
+      placeholder={placeholder}
+      style={style}
+    />
+  );
+};
 
 const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
   const [partsList, setPartsList] = useState([]);
@@ -74,7 +148,19 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
             );
           };
 
-          const mapped = apiParts.map((p) => {
+          // The catalog can hold the same part twice (e.g. two "Transmission"
+          // records). Rows are keyed by the normalised name, so duplicates
+          // would share one key and tick / untick together: keep only the
+          // first part per key.
+          const seenKeys = new Set();
+          const uniqueParts = apiParts.filter((p) => {
+            const k = normalizeKey(p.name);
+            if (!k || seenKeys.has(k)) return false;
+            seenKeys.add(k);
+            return true;
+          });
+
+          const mapped = uniqueParts.map((p) => {
             const rawKey = p.name;
             const key = normalizeKey(rawKey);
             const parsed = Number(p.unit);
@@ -144,39 +230,8 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
     if (changed) updateFormData({ diagnosis: updated });
   }, [partsList, formData.diagnosis, updateFormData]);
 
-  // Editable cell component to keep local typing state and commit on blur/enter
-  const EditableCell = ({
-    value: initial,
-    onCommit,
-    disabled,
-    placeholder,
-  }) => {
-    const [val, setVal] = useState(initial ?? "");
-
-    useEffect(() => {
-      setVal(initial ?? "");
-    }, [initial]);
-
-    const commit = () => {
-      if (onCommit) onCommit(val);
-    };
-
-    return (
-      <Input
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onBlur={commit}
-        onPressEnter={commit}
-        disabled={disabled}
-        placeholder={placeholder}
-        style={{
-          backgroundColor: disabled ? undefined : "#4b5563",
-          borderColor: "#6b7280",
-          color: "white",
-        }}
-      />
-    );
-  };
+  // EditableCell and the table's cell components (DIAGNOSIS_TABLE_COMPONENTS)
+  // live at module level, see the note there.
 
   const updatePartData = (partKey, field, value) => {
     const currentDiagnosis = formData.diagnosis || {};
@@ -207,6 +262,32 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
   const getPartData = (partKey, field) => {
     // return raw value (could be boolean, number, string, or undefined)
     return formData.diagnosis?.[partKey]?.[field];
+  };
+
+  // "Select all" for Quality: applies to every part that is switched on.
+  const selectedPartKeys = partsList
+    .map((p) => p.key)
+    .filter((k) => getPartData(k, "selected") === true);
+
+  const qualityState = (quality) => {
+    const count = selectedPartKeys.filter((k) => getPartData(k, "quality") === quality).length;
+    return {
+      checked: selectedPartKeys.length > 0 && count === selectedPartKeys.length,
+      indeterminate: count > 0 && count < selectedPartKeys.length,
+    };
+  };
+
+  // Checked: every selected part gets this quality. Unchecked: parts that
+  // have this quality are cleared (so all can be deselected again).
+  const setAllQuality = (quality, checked) => {
+    const currentDiagnosis = formData.diagnosis || {};
+    const next = { ...currentDiagnosis };
+    selectedPartKeys.forEach((k) => {
+      const part = currentDiagnosis[k] || {};
+      if (checked) next[k] = { ...part, quality };
+      else if (part.quality === quality) next[k] = { ...part, quality: undefined };
+    });
+    updateFormData({ diagnosis: next });
   };
 
   const columns = [
@@ -285,7 +366,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       key: "unit",
       width: 100,
       render: (_, record) => (
-        <InputNumber
+        <UnitInput
           value={getPartData(record.key, "unit") ?? 0}
           onChange={(value) => {
             const max = record.unit || Number.MAX_SAFE_INTEGER;
@@ -321,17 +402,18 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       render: (_, record) => (
         <Select
           placeholder="Select Quality"
+          allowClear
           value={getPartData(record.key, "quality") || undefined}
           onChange={(value) => updatePartData(record.key, "quality", value)}
           disabled={getPartData(record.key, "selected") !== true}
           style={{ width: "100%" }}
           dropdownStyle={{ backgroundColor: "#374151" }}
         >
-          <Option value="Good">Good</Option>
-          <Option value="Average">Average</Option>
-          <Option value="OK">OK</Option>
-          <Option value="Broken">Broken</Option>
-          <Option value="Scratches">Scratches</Option>
+          {QUALITY_OPTIONS.map((q) => (
+            <Option key={q} value={q}>
+              {q}
+            </Option>
+          ))}
         </Select>
       ),
     },
@@ -346,6 +428,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
         <EditableCell
           value={getPartData(record.key, "weight")}
           onCommit={(v) => updatePartData(record.key, "weight", v)}
+          numeric
           disabled={getPartData(record.key, "selected") !== true}
           placeholder={`Enter ${record.name} Weight`}
         />
@@ -406,6 +489,37 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           borderRadius: "8px",
         }}
       >
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "bold" }}>
+            Select all quality:
+          </Text>
+          {QUALITY_OPTIONS.map((q) => {
+            const { checked, indeterminate } = qualityState(q);
+            return (
+              <Checkbox
+                key={q}
+                checked={checked}
+                indeterminate={indeterminate}
+                disabled={!selectedPartKeys.length}
+                onChange={(e) => setAllQuality(q, e.target.checked)}
+                style={{ color: "white" }}
+              >
+                All {q}
+              </Checkbox>
+            );
+          })}
+          <Text style={{ color: "#9ca3af", fontSize: 12 }}>
+            Applies to the selected parts; untick to clear it.
+          </Text>
+        </div>
         <Table
           columns={columns}
           dataSource={partsList}
@@ -417,27 +531,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
             border: "1px solid #6b7280",
           }}
           className="diagnosis-table"
-          components={{
-            header: {
-              cell: (props) => (
-                <th
-                  {...props}
-                  style={{ backgroundColor: "#374151", borderColor: "#6b7280" }}
-                />
-              ),
-            },
-            body: {
-              row: (props) => (
-                <tr {...props} style={{ backgroundColor: "#374151" }} />
-              ),
-              cell: (props) => (
-                <td
-                  {...props}
-                  style={{ backgroundColor: "#374151", borderColor: "#6b7280" }}
-                />
-              ),
-            },
-          }}
+          components={DIAGNOSIS_TABLE_COMPONENTS}
         />
 
         <div

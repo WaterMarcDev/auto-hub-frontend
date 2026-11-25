@@ -30,10 +30,28 @@ import {
 } from "@ant-design/icons";
 import CameraUpload from "../CameraUpload";
 import { getNegotiationLabel } from "./intakeConstants";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
 const { Option } = Select;
+
+// Pull type (You Pull / We Pull) is now chosen in Step 1 (Car Details).
+const SHOW_PICKUP_TYPE_IN_KYC = false;
+
+// True when nothing has been drawn on the canvas (every pixel transparent;
+// the white background is CSS only). Same check as components/SignatureCanvas.
+const isCanvasBlank = (canvas) => {
+  try {
+    const { data } = canvas
+      .getContext("2d")
+      .getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return false;
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 const UserKYCAndCarDoc = ({
   formData = {},
@@ -54,6 +72,7 @@ const UserKYCAndCarDoc = ({
   const [sigModalVisible, setSigModalVisible] = useState(false);
   const [sigModalUrl, setSigModalUrl] = useState(null);
   const canvasRef = useRef(null);
+  const hasInk = useRef(false); // something was drawn since the last clear
   const drawing = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
 
@@ -191,6 +210,7 @@ const UserKYCAndCarDoc = ({
     ctx.moveTo(lastPos.current.x, lastPos.current.y);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
+    hasInk.current = true;
     lastPos.current = pos;
   };
 
@@ -211,6 +231,7 @@ const UserKYCAndCarDoc = ({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasInk.current = false;
     setSignaturePreview(null);
     updateFormData({ sellerSignature: null });
     if (form && form.setFieldsValue)
@@ -247,6 +268,13 @@ const UserKYCAndCarDoc = ({
   const saveSignature = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Never save an empty signature (Save on a blank pad used to upload a
+    // blank image and show it as the "Saved Signature").
+    if (!hasInk.current || isCanvasBlank(canvas)) {
+      message.error("Please draw the seller's signature before saving");
+      return;
+    }
 
     // Convert canvas to blob
     const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
@@ -304,16 +332,22 @@ const UserKYCAndCarDoc = ({
     }
   };
 
-  const doSearch = async (q) => {
-    // Search customers endpoint for type 'seller' to find seller records
-    if (!q || q.length < 2) return;
+  const doSearch = async (rawQuery) => {
+    // Search all customers. The waiver form is buyer-only now, so new
+    // customers are no longer saved as type "seller"; filtering by seller
+    // would hide every new customer from car intake.
+    // Leading / trailing spaces (e.g. pasted numbers) are ignored.
+    const q = String(rawQuery ?? "").trim();
+    if (q.length < 2) {
+      if (String(rawQuery ?? "").length) message.info("Type at least 2 characters to search");
+      return;
+    }
     setSearchLoading(true);
     try {
       const api = await import("../../utils/api");
       // customer API returns { customers, pagination }
       const res = await api.customerAPI.getAll({
         search: q,
-        type: "seller",
         limit: 10,
       });
       const customers = (res && res.data && res.data.customers) || [];
@@ -482,6 +516,7 @@ const UserKYCAndCarDoc = ({
             multiple={false}
             showPreview={true}
             autoUpload={true}
+            adjustBeforeUpload
             className="document-upload"
           />
         )}
@@ -787,6 +822,7 @@ const UserKYCAndCarDoc = ({
               />
             </Form.Item>
           </Col>
+          {SHOW_PICKUP_TYPE_IN_KYC && (
           <Col span={12}>
             <Form.Item
               name="pickUpType"
@@ -807,15 +843,16 @@ const UserKYCAndCarDoc = ({
               </Select>
             </Form.Item>
           </Col>
+          )}
         </Row>
 
         <Row>
           <Col span={24}>
-            <Form.Item
+            <Form.Item rules={[descriptionRule]}
               name="kycDescription"
               label={<Text style={{ color: "white" }}>Description</Text>}
             >
-              <TextArea
+              <TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
                 rows={3}
                 value={formData.kycDescription}
                 onChange={(e) =>
@@ -872,8 +909,8 @@ const UserKYCAndCarDoc = ({
             >
               <strong>Declaration:</strong> I certify I own the vehicle as
               described above. I warrant I have the right to sell it, and it is
-              free of liens. I sell all my rights in this vehicle to RTX
-              Recycling LLC. I release RTX Recycling LLC from any liability
+              free of liens. I sell all my rights in this vehicle to Autohub
+              Recycling LLC. I release Autohub Recycling LLC from any liability
               related to this vehicle. This agreement supersedes all prior
               agreements. This agreement is governed by the laws of the State of
               New Jersey.

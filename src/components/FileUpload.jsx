@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { uploadAPI } from "../utils/api";
+import { checkImageFileFully, showImageError, showUploadError } from "../utils/imageRules";
 
 const FileUpload = ({
   onFileSelect,
@@ -31,31 +32,17 @@ const FileUpload = ({
   const handleSelectedFiles = async (selectedFiles) => {
     setError("");
 
-    // Filter by accepted mime types (basic)
-    const validFiles = selectedFiles.filter((f) => {
-      if (accept && !f.type.match(accept.replace("*", ".*"))) {
-        return false;
-      }
-      return true;
-    });
+    if (selectedFiles.length === 0) return;
 
-    if (validFiles.length === 0) {
-      setError("No valid files selected");
-      return;
-    }
-
-    // Validate size and type and optionally auto upload
-    for (const file of validFiles) {
-      if (!file.type.startsWith("image/")) {
-        setError("Please select only image files");
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        setError("File size must be less than 5MB");
+    // Wrong image format, too large or damaged: tell the user in a popup.
+    for (const file of selectedFiles) {
+      const problem = await checkImageFileFully(file);
+      if (problem) {
+        showImageError(problem);
         return;
       }
     }
+    const validFiles = selectedFiles;
 
     if (autoUpload && validFiles.length > 0) {
       setUploading(true);
@@ -91,9 +78,7 @@ const FileUpload = ({
         return;
       } catch (err) {
         console.error("Auto-upload error:", err);
-        setError(
-          err.response?.data?.error || err.message || "Failed to upload files"
-        );
+        showUploadError(err, "Failed to upload files");
         setUploading(false);
         // fall through to preview behavior
       }
@@ -167,9 +152,7 @@ const FileUpload = ({
       setFiles([]);
     } catch (err) {
       console.error("Upload error:", err);
-      setError(
-        err.response?.data?.error || err.message || "Failed to upload files"
-      );
+      showUploadError(err, "Failed to upload files");
     } finally {
       setUploading(false);
     }

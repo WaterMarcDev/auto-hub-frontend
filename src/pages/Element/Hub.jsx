@@ -22,8 +22,8 @@ import { customerAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { useAuth } from "../../hooks/useAuth";
+import { printInvoiceFromApi } from "../../utils/printCheckInInvoice";
 
-const VITE_API_URL = import.meta.env.VITE_API_URL;
 
 const Hub = () => {
   // Scraper users can view the Element Hub but cannot sell from it.
@@ -48,28 +48,14 @@ const Hub = () => {
   const [form] = Form.useForm();
   const [api, contextHolder] = notification.useNotification();
 
-  const handlePrintInvoice = (record) => {
-    const baseURL = VITE_API_URL || "http://192.168.1.4:5000/api";
-    const url = `${baseURL}/element-hub/history/${record._id}/print-invoice?autoPrint=1`;
-
-    // Create a hidden iframe to load and print the invoice
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = url;
-    document.body.appendChild(iframe);
-
-    iframe.onload = () => {
-      try {
-        iframe.contentWindow.print();
-      } catch (e) {
-        console.error("Print error:", e);
-      }
-    };
-
-    // Clean up iframe after printing
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 1000);
+  // Fetches the invoice first (so an error is shown instead of being
+  // printed) and prints it once; see utils/printCheckInInvoice.js.
+  const handlePrintInvoice = async (record) => {
+    try {
+      await printInvoiceFromApi(`/element-hub/history/${record._id}/print-invoice`);
+    } catch (e) {
+      api.error({ message: "Could not print the invoice", description: e.message });
+    }
   };
 
   const fetchItems = React.useCallback(async () => {

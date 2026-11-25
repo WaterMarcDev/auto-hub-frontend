@@ -2,6 +2,15 @@ import { Col, Form, Input, Modal, Row } from "antd";
 import React from "react";
 import { partAPI } from "../../utils/api";
 import FileUpload from "../../components/FileUpload";
+import UnitInput from "../../components/UnitInput";
+import NumericInput from "../../components/NumericInput";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+import {
+  TEXT_LIMITS,
+  cleanText,
+  optionalTextRules,
+  weightRule,
+} from "../../components/inventory/fieldRules";
 
 const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
   const [form] = Form.useForm();
@@ -17,6 +26,9 @@ const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
             values.image.imageUrl || values.image.filename || values.image;
         }
       }
+      // Blank / spaces-only weight and dimensions are sent as "" (cleared).
+      values.weight = cleanText(values.weight) ?? "";
+      values.dimensions = cleanText(values.dimensions) ?? "";
       if (part) {
         await partAPI.update(part._id, values);
       } else {
@@ -70,7 +82,7 @@ const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
             <Form.Item
               label="Part Name"
               name="name"
-              rules={[{ required: true, message: "Please enter part name" }]}
+              rules={[{ required: true, whitespace: true, message: "Please enter part name" }]}
             >
               <Input placeholder="Enter part name" />
             </Form.Item>
@@ -79,7 +91,7 @@ const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
             <Form.Item
               label="Short Name"
               name="shortName"
-              rules={[{ required: true, message: "Please enter short name" }]}
+              rules={[{ required: true, whitespace: true, message: "Please enter short name" }]}
             >
               <Input placeholder="Enter short name" />
             </Form.Item>
@@ -90,17 +102,22 @@ const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
               name="unit"
               rules={[{ required: true, message: "Please enter part unit" }]}
             >
-              <Input placeholder="Enter part unit" />
+              <UnitInput min={1} style={{ width: "100%" }} placeholder="Enter part unit" />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="Part Weight" name="weight">
-              <Input placeholder="Enter part weight" />
+            {/* 0 - 10,000 lb, up to 2 decimals (server rejects anything else). */}
+            <Form.Item label="Part Weight" name="weight" rules={[weightRule]}>
+              <NumericInput placeholder="Enter part weight" maxLength={8} />
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="Part Dimensions" name="dimensions">
-              <Input placeholder="Enter part dimensions" />
+            <Form.Item
+              label="Part Dimensions"
+              name="dimensions"
+              rules={optionalTextRules("Part dimensions", TEXT_LIMITS.dimensions)}
+            >
+              <Input placeholder="Enter part dimensions" maxLength={TEXT_LIMITS.dimensions} />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -112,8 +129,8 @@ const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
             </Form.Item>
           </Col>
           <Col span={24}>
-            <Form.Item label="Description" name="description">
-              <Input.TextArea
+            <Form.Item rules={[descriptionRule]} label="Description" name="description">
+              <Input.TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
                 placeholder="Enter description"
                 autoSize={{ minRows: 3, maxRows: 6 }}
               />

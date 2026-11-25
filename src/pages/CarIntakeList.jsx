@@ -14,6 +14,7 @@ import {
   Select,
   Spin,
   Input,
+  Tooltip,
 } from "antd";
 import {
   EditOutlined,
@@ -27,6 +28,9 @@ import getStatusColor from "../utils/statusColors";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
 import PageContentWrapper from "../components/PageContentWrapper";
+import PickupTypeTag from "../components/CarIntake/PickupTypeTag";
+import { formatCarDimensions, formatCarWeight } from "../utils/carDimensions";
+import { getFilledIntakeDescriptions } from "../utils/intakeDescriptions";
 
 // Statuses at which the intake wizard is already fully complete — payment
 // done, and (for the ones after it) parts already moved into real Inventory
@@ -49,6 +53,29 @@ const NON_EDITABLE_STATUSES = [
 // Statuses shown on the scrap lists instead of Car Intake. "elements-scraped"
 // is a legacy status from the old Extract Elements → Scrap path.
 const SCRAP_WORKFLOW_STATUSES = ["ready-to-scrap", "elements-scraped", "scraped"];
+
+// Long free text (Make, Model, Trim, Color, Body Class) is cut with "…" so
+// the column cannot stretch the table; the full value shows on hover.
+const renderTruncated = (maxWidth) => {
+  const TruncatedCell = (text) => {
+    if (text === undefined || text === null || String(text).trim() === "") return "N/A";
+    return (
+      <Tooltip title={String(text)} placement="topLeft">
+        <div
+          style={{
+            maxWidth,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {String(text)}
+        </div>
+      </Tooltip>
+    );
+  };
+  return TruncatedCell;
+};
 
 const CarIntakeList = () => {
   const [loading, setLoading] = useState(false);
@@ -123,7 +150,7 @@ const CarIntakeList = () => {
       dataIndex: ["carDetails", "make"],
       key: "make",
       minWidth: 100,
-      render: (text) => text || "N/A",
+      render: renderTruncated(160),
     },
     {
       title: "Year",
@@ -137,21 +164,21 @@ const CarIntakeList = () => {
       dataIndex: ["carDetails", "model"],
       key: "model",
       minWidth: 100,
-      render: (text) => text || "N/A",
+      render: renderTruncated(160),
     },
     {
       title: "Trim",
       dataIndex: ["carDetails", "trim"],
       key: "trim",
       minWidth: 100,
-      render: (text) => text || "N/A",
+      render: renderTruncated(160),
     },
     {
       title: "Color",
       dataIndex: ["carDetails", "color"],
       key: "color",
       minWidth: 100,
-      render: (text) => text || "N/A",
+      render: renderTruncated(120),
     },
     {
       title: "Body Class",
@@ -159,7 +186,7 @@ const CarIntakeList = () => {
       key: "bodyClass",
       minWidth: 100,
       maxWidth: 250,
-      render: (text) => text || "N/A",
+      render: renderTruncated(220),
     },
     {
       title: "Transmission",
@@ -218,6 +245,63 @@ const CarIntakeList = () => {
         const hasKeys = cd.keys ?? cd.hasKeys ?? false;
         return (
           <Tag color={hasKeys ? "blue" : "red"}>{hasKeys ? "Yes" : "No"}</Tag>
+        );
+      },
+    },
+    {
+      title: "Pull Type",
+      dataIndex: ["kyc", "pickupType"],
+      key: "pickupType",
+      minWidth: 110,
+      render: (v) => <PickupTypeTag value={v} />,
+    },
+    {
+      title: "Weight",
+      dataIndex: ["carDetails", "weight"],
+      key: "weight",
+      minWidth: 100,
+      render: (w) => formatCarWeight(w) || "N/A",
+    },
+    {
+      title: "Dimensions",
+      key: "dimensions",
+      minWidth: 150,
+      render: (_, record) => formatCarDimensions(record.carDetails) || "N/A",
+    },
+    {
+      title: "Description",
+      key: "description",
+      minWidth: 220,
+      render: (_, record) => {
+        const filled = getFilledIntakeDescriptions(record);
+        if (!filled.length) return "N/A";
+        // First description inline; all of them on hover.
+        return (
+          <Tooltip
+            placement="topLeft"
+            title={
+              <div>
+                {filled.map((d) => (
+                  <div key={d.label} style={{ marginBottom: 4, whiteSpace: "pre-wrap" }}>
+                    <strong>{d.label}:</strong> {d.value}
+                  </div>
+                ))}
+              </div>
+            }
+          >
+            <div
+              style={{
+                maxWidth: 260,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                cursor: "help",
+              }}
+            >
+              {filled[0].value}
+              {filled.length > 1 ? ` (+${filled.length - 1} more)` : ""}
+            </div>
+          </Tooltip>
         );
       },
     },

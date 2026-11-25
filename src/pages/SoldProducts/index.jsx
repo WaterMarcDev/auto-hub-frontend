@@ -578,6 +578,7 @@ const SoldProducts = () => {
                 <Descriptions.Item label="Vehicle">{vehicleOf(detail)}</Descriptions.Item>
                 <Descriptions.Item label="VIN">{detail.vin || "—"}</Descriptions.Item>
                 <Descriptions.Item label="SKU">{detail.sku || "—"}</Descriptions.Item>
+                {s.assetTag && <Descriptions.Item label="Asset Tag">{s.assetTag}</Descriptions.Item>}
                 <Descriptions.Item label="Location">{detail.location || "—"}</Descriptions.Item>
                 <Descriptions.Item label="CRM price">{money(detail.crmPrice)}</Descriptions.Item>
                 <Descriptions.Item label="Inventory status">

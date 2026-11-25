@@ -126,7 +126,10 @@ const MasterList = () => {
   };
 
   useEffect(() => {
-    // initial load: makes + parts (inline to avoid stale-deps warnings)
+    // initial load only: makes + parts (inline to avoid stale-deps warnings).
+    // It must NOT re-run when the page size changes: fetchParts (pagination
+    // onChange) already loads the new page size with the search and filters,
+    // and re-running this unfiltered load wiped the search results (QA 040).
     loadMakes();
     (async () => {
       try {
@@ -143,7 +146,8 @@ const MasterList = () => {
         console.error("Failed to fetch master parts", err);
       }
     })();
-  }, [limit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // when make changes, reload models and clear dependent filters
@@ -494,6 +498,28 @@ const MasterList = () => {
                 dataIndex: "sku",
                 key: "sku",
                 minWidth: 100,
+              },
+              {
+                title: "Asset Tag",
+                dataIndex: "assetTag",
+                key: "assetTag",
+                minWidth: 120,
+                render: (v) => (v ? <Tag color="geekblue">{v}</Tag> : <span style={{ color: "#999" }}>Unassigned</span>),
+              },
+              {
+                title: "Remarks",
+                dataIndex: "remarks",
+                key: "remarks",
+                minWidth: 160,
+                ellipsis: { showTitle: false },
+                render: (v) =>
+                  v ? (
+                    <Tooltip title={v} placement="topLeft">
+                      {v}
+                    </Tooltip>
+                  ) : (
+                    "-"
+                  ),
               },
               {
                 title: "Stock",

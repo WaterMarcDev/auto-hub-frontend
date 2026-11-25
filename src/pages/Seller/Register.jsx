@@ -3,6 +3,8 @@ import { Card, Form, Input, Button, notification, Row, Col } from "antd";
 import { customerAPI, uploadAPI } from "../../utils/api";
 import CameraUpload from "../../components/CameraUpload";
 import SignatureCanvas from "../../components/SignatureCanvas";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+import { emailRule, normalizeEmail } from "../../utils/email";
 
 const SellerRegister = () => {
   const [loading, setLoading] = useState(false);
@@ -155,12 +157,8 @@ const SellerRegister = () => {
                   <Form.Item
                     label="Email"
                     name="email"
-                    rules={[
-                      {
-                        type: "email",
-                        message: "Enter a valid e-mail",
-                      },
-                    ]}
+                    normalize={normalizeEmail}
+                    rules={[emailRule]}
                   >
                     <Input placeholder="Enter a valid e-mail (optional)" />
                   </Form.Item>
@@ -292,8 +290,8 @@ const SellerRegister = () => {
                 </Col>
               </Row>
 
-              <Form.Item label="Description" name="description">
-                <Input.TextArea rows={6} />
+              <Form.Item rules={[descriptionRule]} label="Description" name="description">
+                <Input.TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount rows={6} />
               </Form.Item>
 
               <Form.Item>

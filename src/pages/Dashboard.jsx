@@ -5,7 +5,7 @@ import RevenueCard from "../components/dashboard/RevenueCard";
 import OurProcess from "../components/dashboard/OurProcess";
 import EarningGoal from "../components/dashboard/EarningGoal";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
-import RtxRecycling from "../components/dashboard/RtxRecycling";
+import AutohubRecycling from "../components/dashboard/AutohubRecycling";
 import BusinessRecordCounts from "../components/dashboard/BusinessRecordCounts";
 import { dashboardAPI } from "../utils/api";
 import { cacheManager } from "../utils/cacheManager";
@@ -514,7 +514,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Row 3: Our Process, Popular Parts, RTX Recycling */}
+          {/* Row 3: Our Process, Popular Parts, Autohub Recycling */}
           <div className="row">
             <div className="col-xl-4 col-lg-4">
               <OurProcess />
@@ -525,7 +525,7 @@ const Dashboard = () => {
             </div>
 
             <div className="col-xl-4 col-lg-4">
-              <RtxRecycling />
+              <AutohubRecycling />
             </div>
           </div>
         </div>

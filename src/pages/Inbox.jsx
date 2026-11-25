@@ -7,6 +7,7 @@ import {
     SendOutlined,
 } from "@ant-design/icons";
 import PagePager from "../components/PagePager";
+import { emailError, isValidEmail } from "../utils/email";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -616,8 +617,8 @@ export default function Inbox() {
 
     const handleForwardMail = async () => {
         if (!forwardEmail.trim()) { message.warning("Enter recipient email"); return; }
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(forwardEmail)) { message.warning("Enter a valid email address"); return; }
+        const forwardError = emailError(forwardEmail);
+        if (forwardError) { message.warning(forwardError); return; }
         if (isForwarding) return;
         try {
             setIsForwarding(true);
@@ -649,12 +650,11 @@ export default function Inbox() {
 
         // Cc is optional — split on comma/semicolon and validate client-side
         // before sending, mirroring the forward modal's email check.
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
         const ccList = ccText
             .split(/[,;]/)
             .map((v) => v.trim())
             .filter(Boolean);
-        const invalidCc = ccList.find((addr) => !emailRegex.test(addr));
+        const invalidCc = ccList.find((addr) => !isValidEmail(addr));
         if (invalidCc) { message.warning(`Invalid Cc email: ${invalidCc}`); return; }
 
         try {

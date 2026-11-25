@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { uploadAPI } from "../utils/api";
 import { Modal, Tabs, Button } from "antd";
+import ImageAdjustModal from "./ImageEnhance/ImageAdjustModal";
+import { checkImageFileFully, showImageError, showUploadError } from "../utils/imageRules";
 
 const CameraUpload = ({
   onImageCapture,
@@ -10,7 +12,11 @@ const CameraUpload = ({
   disabled = false,
   showPreview = true,
   autoUpload = true, // New prop to control auto-upload
+  // Show the "Adjust photo" step (crop / rotate / Enhance) before each
+  // picked or captured photo is used.
+  adjustBeforeUpload = false,
 }) => {
+  const [adjustFile, setAdjustFile] = useState(null);
   const [isCamera, setIsCamera] = useState(false);
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -149,15 +155,20 @@ const CameraUpload = ({
     }
   };
 
-  // Handle individual image file
-  const handleImageFile = async (file) => {
-    if (!file.type.startsWith("image/")) {
-      setError("Please select only image files");
+  // Handle individual image file. With adjustBeforeUpload the photo first
+  // goes through the Adjust step, which calls this again with adjusted=true.
+  const handleImageFile = async (file, adjusted = false) => {
+    // Wrong format, too large or damaged: tell the user in a popup.
+    const problem = await checkImageFileFully(file);
+    if (problem) {
+      setError("");
+      showImageError(problem);
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File size must be less than 5MB");
+    if (adjustBeforeUpload && !adjusted) {
+      setError("");
+      setAdjustFile(file);
       return;
     }
 
@@ -183,9 +194,7 @@ const CameraUpload = ({
         return;
       } catch (err) {
         console.error("Auto-upload error:", err);
-        setError(
-          err.response?.data?.error || err.message || "Failed to upload image"
-        );
+        showUploadError(err);
         setUploading(false);
       }
     }
@@ -244,9 +253,7 @@ const CameraUpload = ({
       setImages([]);
     } catch (err) {
       console.error("Upload error:", err);
-      setError(
-        err.response?.data?.error || err.message || "Failed to upload images"
-      );
+      showUploadError(err, "Failed to upload images");
     } finally {
       setUploading(false);
     }
@@ -331,46 +338,6 @@ const CameraUpload = ({
         </Button>
       </div>
 
-      {/* Alerts */}
-      {error && (
-        <div
-          className="alert alert-danger alert-dismissible fade show"
-          role="alert"
-        >
-          {error}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setError("")}
-          ></button>
-        </div>
-      )}
-
-      {uploadSuccess && (
-        <div
-          className="alert alert-success alert-dismissible fade show"
-          role="alert"
-        >
-          <i className="fas fa-check-circle me-2"></i>
-          Image uploaded successfully: {uploadSuccess}
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setUploadSuccess(null)}
-          ></button>
-        </div>
-      )}
-
-      {uploading && (
-        <div className="alert alert-info" role="alert">
-          <span
-            className="spinner-border spinner-border-sm me-2"
-            role="status"
-          ></span>
-          Uploading image...
-        </div>
-      )}
-
       {/* Antd Modal with Tabs */}
       <Modal
         open={showModal}
@@ -380,6 +347,46 @@ const CameraUpload = ({
         centered
         width={800}
       >
+        {/* Alerts: shown inside the popup, not behind it. */}
+        {error && (
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
+            {error}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setError("")}
+            ></button>
+          </div>
+        )}
+
+        {uploadSuccess && (
+          <div
+            className="alert alert-success alert-dismissible fade show"
+            role="alert"
+          >
+            <i className="fas fa-check-circle me-2"></i>
+            Image uploaded successfully: {uploadSuccess}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setUploadSuccess(null)}
+            ></button>
+          </div>
+        )}
+
+        {uploading && (
+          <div className="alert alert-info" role="alert">
+            <span
+              className="spinner-border spinner-border-sm me-2"
+              role="status"
+            ></span>
+            Uploading image...
+          </div>
+        )}
+
         <Tabs activeKey={activeTab} onChange={handleTabChange}>
           <Tabs.TabPane tab="Camera" key="camera">
             {isCamera ? (
@@ -466,6 +473,17 @@ const CameraUpload = ({
             )}
           </Tabs.TabPane>
         </Tabs>
+
+        {adjustFile && (
+          <ImageAdjustModal
+            file={adjustFile}
+            onCancel={() => setAdjustFile(null)}
+            onDone={(f) => {
+              setAdjustFile(null);
+              handleImageFile(f, true);
+            }}
+          />
+        )}
 
         {/* Canvas for capturing (hidden) */}
         <canvas ref={canvasRef} style={{ display: "none" }}></canvas>

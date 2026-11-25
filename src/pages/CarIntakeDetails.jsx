@@ -21,6 +21,10 @@ import {
 } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI, makeAPI } from "../utils/api";
 import getStatusColor from "../utils/statusColors";
+import PickupTypeTag from "../components/CarIntake/PickupTypeTag";
+import EnhanceableImage from "../components/ImageEnhance/EnhanceableImage";
+import { formatCarDimensions, formatCarWeight } from "../utils/carDimensions";
+import { getIntakeDescriptions } from "../utils/intakeDescriptions";
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
 
@@ -137,7 +141,7 @@ const CarIntakeDetails = () => {
           return (
             <Col key={idx}>
               {isImage ? (
-                <Image
+                <EnhanceableImage
                   width={120}
                   src={url}
                   alt={`doc-${idx}`}
@@ -219,7 +223,7 @@ const CarIntakeDetails = () => {
       <Row gutter={[12, 12]}>
         {images.map((img, idx) => (
           <Col key={idx}>
-            <Image
+            <EnhanceableImage
               width={120}
               src={uploadAPI.getImageUrl(img)}
               alt={`${car?.model || car?.make || "car"}-img-${idx}`}
@@ -651,6 +655,12 @@ const CarIntakeDetails = () => {
               <Descriptions.Item label="Scrap Yard Location">
                 {car?.carDetails?.scrapYardLocation || "N/A"}
               </Descriptions.Item>
+              <Descriptions.Item label="Vehicle Weight">
+                {formatCarWeight(car?.carDetails?.weight) || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Dimensions">
+                {formatCarDimensions(car?.carDetails) || "N/A"}
+              </Descriptions.Item>
               <Descriptions.Item label="Has Keys">
                 <Tag color={car?.carDetails?.keys ? "blue" : "red"}>
                   {car?.carDetails?.keys ? "Yes" : "No"}
@@ -663,6 +673,9 @@ const CarIntakeDetails = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Final Price">
                 {car?.price?.finalPrice ? `$${car?.price?.finalPrice}` : "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Pull Type (You Pull / We Pull)">
+                <PickupTypeTag value={car?.kyc?.pickupType} />
               </Descriptions.Item>
               <Descriptions.Item label="Vehicle Source">
                 {car?.kyc?.vehicleSource || "N/A"}
@@ -723,6 +736,13 @@ const CarIntakeDetails = () => {
                   <></>
                 )}
               </Descriptions.Item>
+
+              {/* Every description entered during the intake. */}
+              {getIntakeDescriptions(car).map((d) => (
+                <Descriptions.Item key={d.label} label={d.label} span={2}>
+                  <span style={{ whiteSpace: "pre-wrap" }}>{d.value || "N/A"}</span>
+                </Descriptions.Item>
+              ))}
 
               <Descriptions.Item label="Images" span={2}>
                 {renderImages()}

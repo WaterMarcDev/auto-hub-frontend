@@ -1,6 +1,6 @@
 import React from "react";
 
-const defaultRtxSlides = [
+const defaultAutohubSlides = [
   "assets/images/AutoHub/Junk Yard 1.png",
   "assets/images/AutoHub/Junk Yard 2.png",
   "assets/images/AutoHub/Junk Yard 3.jpeg",
@@ -11,17 +11,17 @@ const defaultRtxSlides = [
   "assets/images/AutoHub/Junk Yard 8.jpeg",
 ];
 
-const RtxRecycling = ({ rtxSlides }) => {
-  const slides = rtxSlides || defaultRtxSlides;
+const AutohubRecycling = ({ autohubSlides }) => {
+  const slides = autohubSlides || defaultAutohubSlides;
   return (
     <div
       className="card"
       style={{ backgroundColor: "#1F293D", color: "#D6D9E6" }}
     >
       <div className="card-body">
-        <h4 className="header-title mb-4">RTX Recycling</h4>
+        <h4 className="header-title mb-4">Autohub Recycling</h4>
         <div
-          id="rtxCarousel"
+          id="autohubCarousel"
           className="carousel slide"
           data-bs-ride="carousel"
         >
@@ -30,7 +30,7 @@ const RtxRecycling = ({ rtxSlides }) => {
               <button
                 key={idx}
                 type="button"
-                data-bs-target="#rtxCarousel"
+                data-bs-target="#autohubCarousel"
                 data-bs-slide-to={idx}
                 className={idx === 0 ? "active" : ""}
                 aria-current={idx === 0 ? "true" : undefined}
@@ -73,4 +73,4 @@ const RtxRecycling = ({ rtxSlides }) => {
   );
 };
 
-export default RtxRecycling;
+export default AutohubRecycling;

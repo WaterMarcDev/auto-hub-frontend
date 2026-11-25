@@ -2,7 +2,19 @@ import React, { useRef, useEffect, useState } from "react";
 import { Button, Space, message } from "antd";
 import { uploadAPI } from "../utils/api";
 
+// True when nothing has been drawn on the canvas (every pixel transparent).
+const isCanvasBlank = (canvas) => {
+  try {
+    const { data } = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return false;
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const SignatureCanvas = ({ value, onChange, disabled = false }) => {
+  const hasInk = useRef(false); // something was drawn since the last clear
   const canvasRef = useRef(null);
   const drawing = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
@@ -16,6 +28,18 @@ const SignatureCanvas = ({ value, onChange, disabled = false }) => {
       setSignaturePreview(value);
     }
   }, [value, signaturePreview]);
+
+  // When the parent clears a value it had set (e.g. a form reset), clear the
+  // saved preview too. Only a change from set -> empty counts, so forms that
+  // never pass the value back keep working as before.
+  const prevValue = useRef(value);
+  useEffect(() => {
+    if (prevValue.current && !value) {
+      setSignaturePreview(null);
+      setCanvasKey((k) => k + 1);
+    }
+    prevValue.current = value;
+  }, [value]);
 
   const initializeCanvas = () => {
     // Initialize canvas for high DPI screens
@@ -41,6 +65,7 @@ const SignatureCanvas = ({ value, onChange, disabled = false }) => {
 
   useEffect(() => {
     initializeCanvas();
+    hasInk.current = false;
   }, [canvasKey]);
 
   const getCanvasPos = (e) => {
@@ -93,6 +118,7 @@ const SignatureCanvas = ({ value, onChange, disabled = false }) => {
     ctx.moveTo(lastPos.current.x, lastPos.current.y);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
+    hasInk.current = true;
     lastPos.current = pos;
   };
 
@@ -123,6 +149,12 @@ const SignatureCanvas = ({ value, onChange, disabled = false }) => {
   const saveSignature = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Never save an empty signature.
+    if (!hasInk.current || isCanvasBlank(canvas)) {
+      message.error("Please draw your signature before saving");
+      return;
+    }
 
     // Convert canvas to blob
     const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
