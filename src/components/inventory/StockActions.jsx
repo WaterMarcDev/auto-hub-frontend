@@ -175,7 +175,7 @@ const StockActions = ({ part, canAdjust, onDone, size = "small" }) => {
               >
                 <UnitInput min={1} max={Math.min(available, 100)} style={{ width: "100%" }} />
               </Form.Item>
-              {/* Optional; 0 – 1,000,000, up to 2 decimals. */}
+              {/* Optional; 0 – 2,000, up to 2 decimals. */}
               <Form.Item label="Sale price ($)" name="price" rules={[priceRule]}>
                 <InputNumber
                   min={0}

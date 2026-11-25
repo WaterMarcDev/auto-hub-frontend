@@ -106,7 +106,7 @@ const PartForm = ({ open, setOpen, part, setPart, setSuccess, setError }) => {
             </Form.Item>
           </Col>
           <Col span={12}>
-            {/* 0 - 10,000 lb, up to 2 decimals (server rejects anything else). */}
+            {/* 0 - 15,000 lb, up to 2 decimals (server rejects anything else). */}
             <Form.Item label="Part Weight" name="weight" rules={[weightRule]}>
               <NumericInput placeholder="Enter part weight" maxLength={8} />
             </Form.Item>

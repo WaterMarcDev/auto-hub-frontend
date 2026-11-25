@@ -444,7 +444,7 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
           </Col>
 
           <Col xs={24} sm={12}>
-            {/* 0 - 10,000 lb, up to 2 decimals; no letters, "-" or units. */}
+            {/* 0 - 15,000 lb, up to 2 decimals; no letters, "-" or units. */}
             <Form.Item name="weight" label="Weight (lb)" rules={[weightRule]}>
               <NumericInput placeholder="Enter weight" maxLength={8} />
             </Form.Item>

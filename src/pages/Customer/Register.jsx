@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Card, Form, Input, Button, notification, Row, Col, Select } from "antd";
 import { customerAPI, uploadAPI } from "../../utils/api";
+import { useNavigate } from "react-router-dom";
 import CameraUpload from "../../components/CameraUpload";
 import SignatureCanvas from "../../components/SignatureCanvas";
 import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
@@ -21,6 +22,7 @@ import {
 } from "./customerFormUtils";
 
 const CustomerRegister = () => {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const savingRef = useRef(false); // blocks a second submit while saving
     const [form] = Form.useForm();
@@ -71,6 +73,33 @@ const CustomerRegister = () => {
                 clearForm();
             } catch (custErr) {
                 console.error("Customer creation failed:", custErr);
+                // Duplicate: no new customer is created; point to the existing one.
+                const existing =
+                    custErr?.response?.status === 409 ? custErr?.response?.data?.existingCustomer : null;
+                if (existing) {
+                    const name =
+                        [existing.firstName, existing.lastName].filter(Boolean).join(" ") || "This customer";
+                    const key = "existing-customer";
+                    notificationApi.info({
+                        key,
+                        message: "Customer already exists",
+                        description: `${name}${existing.mobileNo ? ` (${existing.mobileNo})` : ""} is already registered. No duplicate was created; please use the existing customer.`,
+                        duration: 8,
+                        btn: (
+                            <Button
+                                type="primary"
+                                size="small"
+                                onClick={() => {
+                                    notificationApi.destroy(key);
+                                    navigate(`/waivers/${existing._id}`);
+                                }}
+                            >
+                                View existing customer
+                            </Button>
+                        ),
+                    });
+                    return;
+                }
                 const duplicate = custErr?.response?.status === 409;
                 notificationApi.error({
                     message: duplicate ? "Customer already exists" : "Error",

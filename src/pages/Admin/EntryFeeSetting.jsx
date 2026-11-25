@@ -19,7 +19,7 @@ const { Text } = Typography;
 
 // Same limits as the server (controllers/entryFee.controller.js).
 const ENTRY_FEE_MIN = 0;
-const ENTRY_FEE_MAX = 1000;
+const ENTRY_FEE_MAX = 10;
 const ENTRY_FEE_ERROR = `Entry fee must be a number from $${ENTRY_FEE_MIN} to $${ENTRY_FEE_MAX} with at most 2 decimal places`;
 
 const validateEntryFee = (_, value) => {

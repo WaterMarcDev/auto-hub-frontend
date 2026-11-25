@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, Modal, Steps, message } from "antd";
+import { Card, Steps, message } from "antd";
 import { useNavigate } from "react-router-dom";
 import { customerAPI } from "../../utils/api";
 import { DEFAULT_CUSTOMER_TYPE } from "./customerTypeOptions";
@@ -110,32 +110,17 @@ const AddWaiver = () => {
       setCheckInModalOpen(true);
     } catch (err) {
       // Returning customer: the server found a customer with the same phone
-      // number or ID (409) and sent it back. No copy is created; the user can
-      // carry on with the existing customer and check them in.
+      // number or ID (409) and sent it back. No duplicate is created: the
+      // existing customer is used as-is and goes straight to Check-In.
       const existing = err.response?.status === 409 ? err.response?.data?.existingCustomer : null;
       if (existing) {
-        await new Promise((resolve) => {
-          Modal.confirm({
-            title: "Customer already exists",
-            content: (
-              <div>
-                <p style={{ marginBottom: 8 }}>{err.response.data.error}</p>
-                <p style={{ marginBottom: 0 }}>
-                  Continue with the existing customer and check them in? No new customer will be created.
-                </p>
-              </div>
-            ),
-            okText: "Continue with existing customer",
-            cancelText: "Back to form",
-            centered: true,
-            onOk: () => {
-              setCreatedCustomer(existing);
-              setCheckInModalOpen(true);
-              resolve();
-            },
-            onCancel: () => resolve(),
-          });
-        });
+        const name = [existing.firstName, existing.lastName].filter(Boolean).join(" ") || "this customer";
+        message.info(
+          `Existing customer found: ${name}${existing.mobileNo ? ` (${existing.mobileNo})` : ""}. Continuing with the existing customer.`,
+          5
+        );
+        setCreatedCustomer(existing);
+        setCheckInModalOpen(true);
         return;
       }
       console.error("Error creating waiver/customer:", err);

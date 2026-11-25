@@ -1,8 +1,8 @@
 // antd Form rules for inventory parts and in-store sales. The server applies
 // the same limits (auto-hub-backend/utils/inventoryFieldRules.js).
 
-export const MAX_PART_WEIGHT = 10000; // lb
-export const MAX_SALE_PRICE = 1000000;
+export const MAX_PART_WEIGHT = 15000; // lb
+export const MAX_SALE_PRICE = 2000;
 export const TEXT_LIMITS = {
   location: 100,
   dimensions: 100,

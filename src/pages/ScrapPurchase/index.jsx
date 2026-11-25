@@ -46,7 +46,7 @@ const MATERIAL_UNITS = "lb";
 // Input limits (mirrored in the backend scrapPurchase / scrapPurchaseSeller
 // controllers). Weight and price take at most 2 decimals.
 const MAX_WEIGHT_LBS = 200000;
-const MAX_PRICE_PER_LB = 1000;
+const MAX_PRICE_PER_LB = 2000;
 const MAX_TOTAL = 10000000;
 const MAX_DECIMALS = 2;
 const MAX_MATERIAL_NAME = 100;
