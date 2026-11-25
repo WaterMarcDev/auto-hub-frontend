@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import CellText from "./CellText";
 
 const CustomerList = () => {
     const [customers, setCustomers] = useState([]);
@@ -77,7 +78,7 @@ const CustomerList = () => {
         try {
             const page = Number(params.page ?? pagination.page ?? 1);
             const limit = Number(params.limit ?? pagination.limit ?? 10);
-            const search = params.search ?? searchValue ?? "";
+            const search = String(params.search ?? searchValue ?? "").trim();
 
             const res = await customerAPI.getAll({
                 page,
@@ -149,21 +150,34 @@ const CustomerList = () => {
             title: "Name",
             dataIndex: "firstName",
             key: "name",
-            render: (firstName, rec) => `${firstName || ""} ${rec.lastName || ""}`,
+            // Long names stay on one line with "..." (full name in a tooltip).
+            render: (firstName, rec) => (
+                <CellText text={`${firstName || ""} ${rec.lastName || ""}`.trim()} maxWidth={220} />
+            ),
         },
-        { title: "Email", dataIndex: "email", key: "email" },
-        { title: "Mobile", dataIndex: "mobileNo", key: "mobileNo" },
+        {
+            title: "Email",
+            dataIndex: "email",
+            key: "email",
+            render: (e) => <CellText text={e} maxWidth={220} />,
+        },
+        {
+            title: "Mobile",
+            dataIndex: "mobileNo",
+            key: "mobileNo",
+            render: (m) => <CellText text={m} maxWidth={160} />,
+        },
         {
             title: "ID Type",
             dataIndex: "idProofType",
             key: "idProofType",
-            render: (t) => t || "N/A",
+            render: (t) => <CellText text={t} maxWidth={160} />,
         },
         {
             title: "ID Number",
             dataIndex: "idProofNumber",
             key: "idProofNumber",
-            render: (n) => n || "N/A",
+            render: (n) => <CellText text={n} maxWidth={160} />,
         },
         {
             title: "ID Image",
@@ -366,6 +380,7 @@ const CustomerList = () => {
                         <Space.Compact style={{ flex: 1, maxWidth: 600 }} size="middle">
                             <Input
                                 placeholder="Search customers by name, email, or mobile..."
+                                maxLength={100}
                                 value={searchValue}
                                 onChange={(e) => {
                                     setSearchValue(e.target.value);

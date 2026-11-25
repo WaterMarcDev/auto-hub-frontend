@@ -13,7 +13,7 @@ import {
 } from "../utils/api";
 import OurProcess from "../components/dashboard/OurProcess";
 import PopularPartsCarousel from "../components/dashboard/PopularPartsCarousel";
-import RtxRecycling from "../components/dashboard/RtxRecycling";
+import AutohubRecycling from "../components/dashboard/AutohubRecycling";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import ComingSoonModal from "../components/ComingSoonModal";
@@ -500,9 +500,9 @@ const Dashboard2 = () => {
             <OurProcess />
           </div>
 
-          {/* RTX Recycling */}
+          {/* Autohub Recycling */}
           <div className="col-xl-4 col-lg-6 col-md-12 mb-4">
-            <RtxRecycling />
+            <AutohubRecycling />
           </div>
           {/* Earning Goal */}
           <div className="col-xl-4 col-lg-12 col-md-12 mb-4">

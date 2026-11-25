@@ -26,6 +26,7 @@ import {
 import dayjs from "dayjs";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import NumericInput from "../../components/NumericInput";
 import ScrapPurchaseService from "../../services/scrapPurchaseService";
 
 const { Option } = Select;
@@ -41,6 +42,86 @@ const MATERIAL_OPTIONS = [
 ];
 
 const MATERIAL_UNITS = "lb";
+
+// Input limits (mirrored in the backend scrapPurchase / scrapPurchaseSeller
+// controllers). Weight and price take at most 2 decimals.
+const MAX_WEIGHT_LBS = 200000;
+const MAX_PRICE_PER_LB = 2000;
+const MAX_TOTAL = 10000000;
+const MAX_DECIMALS = 2;
+const MAX_MATERIAL_NAME = 100;
+const MAX_NOTE = 1000;
+const MAX_SELLER_NAME = 100;
+const MAX_SELLER_PHONE = 25;
+
+const fmtLimit = (n) => Number(n).toLocaleString("en-US");
+
+// Why `text` breaks the limits (too many decimals / above max), or null.
+const numberLimitError = (text, max, label) => {
+  const clean = String(text ?? "").replace(/,/g, "");
+  const frac = clean.includes(".") ? clean.split(".")[1] : "";
+  if (frac.length > MAX_DECIMALS) {
+    return `${label} can have at most ${MAX_DECIMALS} decimal places`;
+  }
+  if (Number(clean) > max) return `${label} cannot be more than ${fmtLimit(max)}`;
+  return null;
+};
+
+const showLimitWarning = (text) =>
+  message.warning({ content: text, key: "scrap-purchase-limit" });
+
+// Key/paste guards for number boxes: block input that would exceed `max` or
+// add a third decimal digit (antd InputNumber only rounds on blur).
+const limitGuards = (max, label) => ({
+  onKeyDown: (e) => {
+    if (e.defaultPrevented || e.key.length > 1 || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!/^[\d.]$/.test(e.key)) return;
+    const el = e.currentTarget;
+    const cur = String(el.value ?? "");
+    const start = el.selectionStart ?? cur.length;
+    const end = el.selectionEnd ?? cur.length;
+    const err = numberLimitError(cur.slice(0, start) + e.key + cur.slice(end), max, label);
+    if (err) {
+      e.preventDefault();
+      showLimitWarning(err);
+    }
+  },
+  onPaste: (e) => {
+    if (e.defaultPrevented) return;
+    const el = e.currentTarget;
+    const cur = String(el.value ?? "");
+    const start = el.selectionStart ?? cur.length;
+    const end = el.selectionEnd ?? cur.length;
+    const pasted = e.clipboardData?.getData("text")?.trim() ?? "";
+    const err = numberLimitError(cur.slice(0, start) + pasted + cur.slice(end), max, label);
+    if (err) {
+      e.preventDefault();
+      showLimitWarning(err);
+    }
+  },
+});
+
+const WEIGHT_GUARDS = limitGuards(MAX_WEIGHT_LBS, "Weight (lb)");
+const PRICE_GUARDS = limitGuards(MAX_PRICE_PER_LB, "Price per lb ($)");
+const TOTAL_GUARDS = limitGuards(MAX_TOTAL, "Grand total ($)");
+
+// Single-line text with ellipsis; full text in a tooltip.
+const EllipsisText = ({ text, maxWidth = 220 }) => (
+  <Tooltip title={text}>
+    <span
+      style={{
+        display: "inline-block",
+        maxWidth,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        verticalAlign: "bottom",
+      }}
+    >
+      {text}
+    </span>
+  </Tooltip>
+);
 
 // Calculate a single material line total. Kept at module scope so it is stable
 // (no re-creation per render) and reused for display, validation and payload.
@@ -376,6 +457,9 @@ const ScrapPurchase = () => {
         Number(w) <= 0
       ) {
         errs.push(`${label}: weight must be a number greater than 0`);
+      } else {
+        const wErr = numberLimitError(w, MAX_WEIGHT_LBS, "weight (lb)");
+        if (wErr) errs.push(`${label}: ${wErr}`);
       }
 
       const p = it.pricePerLb;
@@ -389,6 +473,16 @@ const ScrapPurchase = () => {
         Number(p) < 0
       ) {
         errs.push(`${label}: price per lb must be 0 or greater`);
+      } else {
+        const pErr = numberLimitError(p, MAX_PRICE_PER_LB, "price per lb ($)");
+        if (pErr) errs.push(`${label}: ${pErr}`);
+      }
+
+      if (name && name.length > MAX_MATERIAL_NAME) {
+        errs.push(`Row ${idx + 1}: material name can be at most ${MAX_MATERIAL_NAME} characters`);
+      }
+      if (lineTotalOf(it) > MAX_TOTAL) {
+        errs.push(`${label}: line total cannot be more than $${fmtLimit(MAX_TOTAL)}`);
       }
     });
     return errs;
@@ -429,6 +523,11 @@ const ScrapPurchase = () => {
     // when the calculated sum is zero); otherwise persist the exact sum.
     const grandTotal =
       totalOverridden || itemsSum === 0 ? enteredTotal : itemsSum;
+    if (grandTotal > MAX_TOTAL || itemsSum > MAX_TOTAL) {
+      const msg = `Grand total cannot be more than $${fmtLimit(MAX_TOTAL)}`;
+      message.error(msg);
+      throw { errorFields: [{ name: "totalAmount", errors: [msg] }] };
+    }
 
     const first = payloadItems[0];
 
@@ -549,7 +648,7 @@ const ScrapPurchase = () => {
         <Space size={4} wrap>
           {recordMaterialNames(r).map((name, i) => (
             <Tag color="blue" key={`${name}-${i}`}>
-              {name}
+              <EllipsisText text={name} maxWidth={160} />
             </Tag>
           ))}
         </Space>
@@ -584,18 +683,16 @@ const ScrapPurchase = () => {
       render: (_, r) => {
         const s = r.supplier || r.supplierSnapshot;
         if (!s) return "—";
-        return (
-          s.name ||
-          [s.firstName, s.lastName].filter(Boolean).join(" ") ||
-          "—"
-        );
+        const name =
+          s.name || [s.firstName, s.lastName].filter(Boolean).join(" ");
+        return name ? <EllipsisText text={name} /> : "—";
       },
     },
     {
       title: "Payment",
       dataIndex: "paymentMethod",
       key: "paymentMethod",
-      render: (v) => v || "—",
+      render: (v) => (v ? <EllipsisText text={v} maxWidth={140} /> : "—"),
     },
     {
       title: "Date",
@@ -784,6 +881,7 @@ const ScrapPurchase = () => {
                 >
                   <Input
                     value={it.customName}
+                    maxLength={MAX_MATERIAL_NAME}
                     placeholder="e.g. Brass, Lead, Mixed Scrap"
                     onChange={(e) =>
                       updateItem(index, { customName: e.target.value })
@@ -798,11 +896,15 @@ const ScrapPurchase = () => {
                   required
                   style={{ flex: 1, minWidth: 150 }}
                 >
-                  <InputNumber
+                  <NumericInput
+                    mode="number"
                     min={0}
+                    max={MAX_WEIGHT_LBS}
+                    precision={MAX_DECIMALS}
                     step={0.01}
                     style={{ width: "100%" }}
                     value={it.weightLbs}
+                    {...WEIGHT_GUARDS}
                     onChange={(v) => updateItem(index, { weightLbs: v })}
                   />
                 </Form.Item>
@@ -811,11 +913,16 @@ const ScrapPurchase = () => {
                   required
                   style={{ flex: 1, minWidth: 150 }}
                 >
-                  <InputNumber
+                  <NumericInput
+                    mode="number"
                     min={0}
+                    max={MAX_PRICE_PER_LB}
+                    precision={MAX_DECIMALS}
                     step={0.01}
+                    errorMessage="Please enter a numeric price"
                     style={{ width: "100%" }}
                     value={it.pricePerLb}
+                    {...PRICE_GUARDS}
                     onChange={(v) => updateItem(index, { pricePerLb: v })}
                   />
                 </Form.Item>
@@ -826,6 +933,7 @@ const ScrapPurchase = () => {
                 >
                   <InputNumber
                     min={0}
+                    precision={2}
                     step={0.01}
                     style={{ width: "100%" }}
                     value={Number(it.totalAmount || 0)}
@@ -841,11 +949,23 @@ const ScrapPurchase = () => {
             name="totalAmount"
             label="Grand Total ($)"
             tooltip="Sum of all material line totals. Edit to override the printed total."
-            rules={[{ required: true, message: "Enter grand total" }]}
+            rules={[
+              { required: true, message: "Enter grand total" },
+              {
+                type: "number",
+                max: MAX_TOTAL,
+                message: `Grand total cannot be more than $${fmtLimit(MAX_TOTAL)}`,
+              },
+            ]}
           >
-            <InputNumber
+            <NumericInput
+              mode="number"
               min={0}
+              max={MAX_TOTAL}
+              precision={MAX_DECIMALS}
               step={0.01}
+              errorMessage="Please enter a numeric amount"
+              {...TOTAL_GUARDS}
               style={{ width: "100%" }}
               onChange={(v) => {
                 const entered = Number(v || 0);
@@ -882,7 +1002,7 @@ const ScrapPurchase = () => {
                 loading={false}
               >
                 {customers.map((c) => (
-                  <Option key={c._id} value={c._id}>
+                  <Option key={c._id} value={c._id} title={c.name || c.phone || c._id}>
                     {c.name || c.phone || c._id}
                   </Option>
                 ))}
@@ -907,8 +1027,22 @@ const ScrapPurchase = () => {
             </Form.Item>
           </Space>
 
-          <Form.Item name="note" label="Note">
-            <Input.TextArea rows={2} placeholder="Optional note for the bill" />
+          <Form.Item
+            name="note"
+            label="Note"
+            rules={[
+              {
+                max: MAX_NOTE,
+                message: `Note can be at most ${MAX_NOTE} characters. Please shorten it.`,
+              },
+            ]}
+          >
+            <Input.TextArea
+              rows={2}
+              maxLength={MAX_NOTE}
+              showCount
+              placeholder="Optional note for the bill"
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -944,9 +1078,17 @@ const ScrapPurchase = () => {
                     ? Promise.resolve()
                     : Promise.reject(new Error("Enter the seller name")),
               },
+              {
+                max: MAX_SELLER_NAME,
+                message: `Seller name can be at most ${MAX_SELLER_NAME} characters`,
+              },
             ]}
           >
-            <Input placeholder="e.g. Ramesh or Ramesh Kumar" />
+            <Input
+              maxLength={MAX_SELLER_NAME}
+              showCount
+              placeholder="e.g. Ramesh or Ramesh Kumar"
+            />
           </Form.Item>
           <Form.Item
             name="phone"
@@ -967,7 +1109,7 @@ const ScrapPurchase = () => {
               },
             ]}
           >
-            <Input placeholder="e.g. 201-555-0123" />
+            <Input maxLength={MAX_SELLER_PHONE} placeholder="e.g. 201-555-0123" />
           </Form.Item>
         </Form>
       </Modal>

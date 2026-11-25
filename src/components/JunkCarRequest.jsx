@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Form, Input, Button, Row, Col, message } from "antd";
 import { useLeadCapture } from "../hooks/useLeadCapture";
+import { emailRule, normalizeEmail } from "../utils/email";
 
 const PHONE_PATTERN = /^[0-9]{10}$/;
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
@@ -112,9 +113,8 @@ const JunkCarRequest = (props) => {
                             <Form.Item
                                 name="email"
                                 label="Email"
-                                rules={[
-                                    { type: "email", message: "Enter valid email" },
-                                ]}
+                                normalize={normalizeEmail}
+                                rules={[emailRule]}
                             >
                                 <Input placeholder="Enter email" />
                             </Form.Item>

@@ -15,6 +15,7 @@ import { ArrowLeftOutlined } from "@ant-design/icons";
 import { customerAPI, uploadAPI } from "../../utils/api";
 import dayjs from "dayjs";
 import { getCustomerTypeLabel } from "./customerTypeOptions";
+import EnhanceableImage from "../../components/ImageEnhance/EnhanceableImage";
 
 const WaiverDetails = () => {
   const { id } = useParams();
@@ -101,14 +102,27 @@ const WaiverDetails = () => {
                 {customer.email || "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Name">
-                {customer.firstName} {customer.lastName}
+                <span style={{ overflowWrap: "anywhere" }}>
+                  {[customer.firstName, customer.lastName].filter(Boolean).join(" ") || "-"}
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="Mobile">
                 {customer.mobileNo || "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="Description" span={2}>
-                {customer.description || "-"}
-              </Descriptions.Item>
+              {customer.waiverDate && (
+                <Descriptions.Item label="Waiver Date">
+                  {dayjs(customer.waiverDate).format("MM/DD/YYYY")}
+                </Descriptions.Item>
+              )}
+              {/* Description is not on the U-Pull form (hidden there); it is
+                  shown whenever the customer has one, e.g. from registration. */}
+              {customer.description && String(customer.description).trim() && (
+                <Descriptions.Item label="Description" span={2}>
+                  <span style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                    {customer.description}
+                  </span>
+                </Descriptions.Item>
+              )}
             </Descriptions>
           </Card>
 
@@ -128,7 +142,7 @@ const WaiverDetails = () => {
                   <strong>ID Proof Image:</strong>
                   <br />
                   {customer.idProofImage ? (
-                    <Image
+                    <EnhanceableImage
                       width={200}
                       src={getImageUrl(customer.idProofImage)}
                       alt="ID Proof"

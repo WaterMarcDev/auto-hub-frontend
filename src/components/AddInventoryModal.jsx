@@ -3,13 +3,25 @@ import {
   Modal,
   Form,
   Select,
-  InputNumber,
   Input,
   Button,
   message,
   Row,
   Col,
+  AutoComplete,
 } from "antd";
+import UnitInput from "./UnitInput";
+import NumericInput from "./NumericInput";
+import {
+  TEXT_LIMITS,
+  MAX_YEAR,
+  cleanText,
+  normalizeVin,
+  optionalTextRules,
+  vinRule,
+  weightRule,
+  yearRule,
+} from "./inventory/fieldRules";
 import {
   makeAPI,
   modelAPI,
@@ -20,8 +32,13 @@ import {
 
 const { Option } = Select;
 
+// Value of the "Other" choice in the Part select: lets the user type part
+// details that are not in the parts catalog.
+const OTHER_PART = "__other__";
+
 const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
   const [form] = Form.useForm();
+  const isOtherPart = Form.useWatch("partName", form) === OTHER_PART;
   const [parts, setParts] = useState([]);
   const [makes, setMakes] = useState([]);
   const [models, setModels] = useState([]);
@@ -127,6 +144,30 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
     }
   };
 
+  // "Other" parts: Make / Model / Trim are typed (or picked from the
+  // existing lists) and optional; blanks are saved as "Unknown".
+  const nameOptions = (list) =>
+    [...new Set(list.map((x) => x.name).filter(Boolean))].map((name) => ({ value: name }));
+  const matchName = (input, option) =>
+    String(option?.value || "").toLowerCase().includes(String(input || "").toLowerCase());
+  const findByName = (list, name) =>
+    list.find((x) => String(x.name || "").toLowerCase() === String(name || "").trim().toLowerCase());
+
+  const onOtherMakeChange = (value) => {
+    form.setFieldsValue({ otherModel: undefined, otherTrim: undefined });
+    setModels([]);
+    setTrims([]);
+    const known = findByName(makes, value);
+    if (known) loadModels(known._id);
+  };
+
+  const onOtherModelChange = (value) => {
+    form.setFieldsValue({ otherTrim: undefined });
+    setTrims([]);
+    const known = findByName(models, value);
+    if (known) loadTrims(known._id);
+  };
+
   const handleMakeChange = (value) => {
     form.setFieldsValue({ model: undefined, trim: undefined });
     setModels([]);
@@ -150,21 +191,27 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
         (p) => String(p._id) === String(values.partName)
       );
 
+      const otherPart = values.partName === OTHER_PART;
+
       const payload = {
-        partId: values.partName,
-        partName: selectedPart?.name || values.partName,
+        partId: otherPart ? undefined : values.partName,
+        partName: otherPart
+          ? values.otherPartName?.trim()
+          : selectedPart?.name || values.partName,
+        remarks: values.remarks?.trim() || undefined,
+        otherPart: otherPart || undefined,
         unit: values.unit,
         cleaned: !!values.cleaned,
         quality: values.quality,
-        location: values.location,
-        weight: values.weight,
-        dimensions: values.dimensions,
-        make: values.make,
-        model: values.model,
-        trim: values.trim,
-        vin: values.vin,
-        year: values.year,
-        color: values.color,
+        location: cleanText(values.location),
+        weight: cleanText(values.weight),
+        dimensions: cleanText(values.dimensions),
+        make: otherPart ? cleanText(values.otherMake) : values.make,
+        model: otherPart ? cleanText(values.otherModel) : values.model,
+        trim: otherPart ? cleanText(values.otherTrim) : values.trim,
+        vin: cleanText(values.vin),
+        year: values.year ?? undefined,
+        color: cleanText(values.color),
       };
 
       await inventoryAPI.create(payload);
@@ -217,10 +264,85 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
                     {p.name}
                   </Option>
                 ))}
+                <Option key={OTHER_PART} value={OTHER_PART}>
+                  Other
+                </Option>
               </Select>
             </Form.Item>
           </Col>
 
+          {isOtherPart && (
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="otherPartName"
+                label="Part Details"
+                rules={[
+                  {
+                    required: true,
+                    whitespace: true,
+                    message: "Please enter the part details",
+                  },
+                ]}
+              >
+                <Input placeholder="Enter the car part" maxLength={100} />
+              </Form.Item>
+            </Col>
+          )}
+
+          {isOtherPart && (
+            <>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  name="otherMake"
+                  label="Make (optional)"
+                  rules={optionalTextRules("Make", TEXT_LIMITS.vehicleName)}
+                >
+                  <AutoComplete
+                    allowClear
+                    placeholder="Type or pick a make (leave blank if unknown)"
+                    options={nameOptions(makes)}
+                    filterOption={matchName}
+                    onChange={onOtherMakeChange}
+                    maxLength={100}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  name="otherModel"
+                  label="Model (optional)"
+                  rules={optionalTextRules("Model", TEXT_LIMITS.vehicleName)}
+                >
+                  <AutoComplete
+                    allowClear
+                    placeholder="Type or pick a model (leave blank if unknown)"
+                    options={nameOptions(models)}
+                    filterOption={matchName}
+                    onChange={onOtherModelChange}
+                    maxLength={100}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  name="otherTrim"
+                  label="Trim (optional)"
+                  rules={optionalTextRules("Trim", TEXT_LIMITS.vehicleName)}
+                >
+                  <AutoComplete
+                    allowClear
+                    placeholder="Type or pick a trim (leave blank if unknown)"
+                    options={nameOptions(trims)}
+                    filterOption={matchName}
+                    maxLength={100}
+                  />
+                </Form.Item>
+              </Col>
+            </>
+          )}
+
+          {!isOtherPart && (
+          <>
           <Col xs={24} sm={12}>
             <Form.Item
               name="make"
@@ -282,6 +404,8 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
               </Select>
             </Form.Item>
           </Col>
+          </>
+          )}
 
           <Col xs={24} sm={12}>
             <Form.Item
@@ -289,7 +413,7 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
               label="Unit"
               rules={[{ required: true, message: "Enter unit quantity" }]}
             >
-              <InputNumber
+              <UnitInput
                 style={{ width: "100%" }}
                 min={1}
                 max={partMaxUnit || undefined}
@@ -310,38 +434,74 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
           </Col>
 
           <Col xs={24} sm={12}>
-            <Form.Item name="location" label="Location">
-              <Input />
+            <Form.Item
+              name="location"
+              label="Location"
+              rules={optionalTextRules("Location", TEXT_LIMITS.location)}
+            >
+              <Input maxLength={TEXT_LIMITS.location} />
             </Form.Item>
           </Col>
 
           <Col xs={24} sm={12}>
-            <Form.Item name="weight" label="Weight">
-              <Input />
+            {/* 0 - 15,000 lb, up to 2 decimals; no letters, "-" or units. */}
+            <Form.Item name="weight" label="Weight (lb)" rules={[weightRule]}>
+              <NumericInput placeholder="Enter weight" maxLength={8} />
             </Form.Item>
           </Col>
 
           <Col xs={24} sm={12}>
-            <Form.Item name="dimensions" label="Dimensions">
-              <Input />
+            <Form.Item
+              name="dimensions"
+              label="Dimensions"
+              rules={optionalTextRules("Dimensions", TEXT_LIMITS.dimensions)}
+            >
+              <Input maxLength={TEXT_LIMITS.dimensions} />
             </Form.Item>
           </Col>
 
           <Col xs={24} sm={12}>
-            <Form.Item name="vin" label="VIN">
-              <Input />
+            {/* Optional; 17 letters/digits without I, O, Q. One VIN can have
+                many parts, but the same part twice for one VIN is refused
+                by the server. */}
+            <Form.Item
+              name="vin"
+              label="VIN"
+              normalize={normalizeVin}
+              rules={[vinRule]}
+            >
+              <Input maxLength={17} placeholder="17-character VIN (optional)" />
             </Form.Item>
           </Col>
 
           <Col xs={24} sm={12}>
-            <Form.Item name="year" label="Year">
-              <InputNumber style={{ width: "100%" }} />
+            <Form.Item name="year" label="Year" rules={[yearRule]}>
+              <UnitInput style={{ width: "100%" }} maxLength={4} placeholder={`1900 - ${MAX_YEAR}`} />
             </Form.Item>
           </Col>
 
           <Col xs={24} sm={12}>
-            <Form.Item name="color" label="Color">
-              <Input />
+            <Form.Item
+              name="color"
+              label="Color"
+              rules={optionalTextRules("Color", TEXT_LIMITS.color)}
+            >
+              <Input maxLength={TEXT_LIMITS.color} />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24}>
+            <Form.Item
+              name="remarks"
+              label="Remarks"
+              rules={optionalTextRules("Remarks", 2000)}
+            >
+              <Input.TextArea
+                rows={3}
+                maxLength={2000}
+                showCount
+                placeholder="Add remarks about this part (optional)"
+              />
             </Form.Item>
           </Col>
         </Row>

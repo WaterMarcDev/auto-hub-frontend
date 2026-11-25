@@ -153,7 +153,7 @@ const AddScrap = () => {
                   If the <strong>What Happen?</strong> column is missing or
                   empty, the row will be saved with status <em>intake</em> and
                   default yard values will be applied (Yard:{" "}
-                  <strong>RTX</strong>, Location: <strong>New Jersey</strong>).
+                  <strong>Autohub</strong>, Location: <strong>New Jersey</strong>).
                 </Typography.Text>
               </div>
 

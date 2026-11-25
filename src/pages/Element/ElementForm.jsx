@@ -1,6 +1,8 @@
 import { Col, Form, Input, Modal, Row } from "antd";
 import React from "react";
 import { elementAPI } from "../../utils/api";
+import NumericInput from "../../components/NumericInput";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 
 const ElementForm = ({
   open,
@@ -83,7 +85,7 @@ const ElementForm = ({
           </Col>
           <Col span={12}>
             <Form.Item label="Element Weight" name="weight">
-              <Input placeholder="Enter element weight" />
+              <NumericInput placeholder="Enter element weight" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -92,8 +94,8 @@ const ElementForm = ({
             </Form.Item>
           </Col>
           <Col span={24}>
-            <Form.Item label="Description" name="description">
-              <Input.TextArea
+            <Form.Item rules={[descriptionRule]} label="Description" name="description">
+              <Input.TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
                 placeholder="Enter description"
                 autoSize={{ minRows: 3, maxRows: 6 }}
               />

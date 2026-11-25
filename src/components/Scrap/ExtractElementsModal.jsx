@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal, Table, Checkbox, InputNumber, Input, Button, Alert, Tag, Typography, message } from "antd";
 import { carIntakeAPI, elementAPI } from "../../utils/api";
+import UnitInput from "../UnitInput";
+import NumericInput from "../NumericInput";
 
 const { Text } = Typography;
 
@@ -107,7 +109,7 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
       title: "Unit",
       key: "unit",
       width: 100,
-      render: (_, el) => <InputNumber min={1} precision={0} value={rows[el._id]?.unit} onChange={(v) => setRow(el._id, { unit: v || 1 })} />,
+      render: (_, el) => <UnitInput min={1} value={rows[el._id]?.unit} onChange={(v) => setRow(el._id, { unit: v || 1 })} />,
     },
     {
       title: "Weight",
@@ -117,13 +119,11 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
         const error = submitted && missingWeight(el._id);
         return (
           <>
-            <Input
-              type="number"
-              min={0}
+            <NumericInput
               value={rows[el._id]?.weight}
               status={error ? "error" : ""}
               placeholder={rows[el._id]?.selected ? "Required" : "Enter weight"}
-              onChange={(e) => setRow(el._id, { weight: e.target.value })}
+              onChange={(v) => setRow(el._id, { weight: v })}
             />
             {error && <div style={{ color: "#ff4d4f", fontSize: 12 }}>Required</div>}
           </>

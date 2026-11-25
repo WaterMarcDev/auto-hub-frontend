@@ -6,6 +6,8 @@ import PageContentWrapper from "../../components/PageContentWrapper";
 import { useParams, useNavigate } from "react-router-dom";
 import CameraUpload from "../../components/CameraUpload";
 import SignatureCanvas from "../../components/SignatureCanvas";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+import { emailRule, normalizeEmail } from "../../utils/email";
 
 const BuyerRegister = () => {
   const [loading, setLoading] = useState(false);
@@ -197,12 +199,8 @@ const BuyerRegister = () => {
                   <Form.Item
                     label="Email"
                     name="email"
-                    rules={[
-                      {
-                        type: "email",
-                        message: "Enter a valid e-mail",
-                      },
-                    ]}
+                    normalize={normalizeEmail}
+                    rules={[emailRule]}
                   >
                     <Input placeholder="Enter a valid e-mail (optional)" />
                   </Form.Item>
@@ -332,8 +330,8 @@ const BuyerRegister = () => {
                 </Col>
               </Row>
 
-              <Form.Item label="Description" name="description">
-                <Input.TextArea rows={6} />
+              <Form.Item rules={[descriptionRule]} label="Description" name="description">
+                <Input.TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount rows={6} />
               </Form.Item>
 
               <Form.Item>

@@ -13,6 +13,7 @@ import {
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { getNegotiationLabel } from "./intakeConstants";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -29,6 +30,7 @@ const Payment = ({
   saveStep,
   nextStep,
   updateFormData,
+  validationRules,
 }) => {
   // Car Intake vehicle purchase: Final Price IS the actual gross vehicle
   // purchase amount. There is NO tax calculation and NO tax deduction here.
@@ -67,27 +69,18 @@ const Payment = ({
   //   [grossAmount, netAmount]
   // );
   // -----------------------------------------------------------------------
-  const handleInventoryClick = async () => {
-    // Save the payment step via saveStep so the backend receives
-    // the step payload and status. Then move to the next UI step.
-    try {
-      if (typeof saveStep === "function") {
-        // Car Intake vehicle purchase: the payment amount is the actual gross
-        // vehicle purchase amount (Final Price). No tax is applied or deducted.
-        const stepPayload = {
-          ...formData,
-          finalPrice: purchaseAmount, // actual vehicle purchase amount
-          paymentAmount: purchaseAmount, // same amount paid
-          paidAmount: purchaseAmount, // same amount paid
-        };
-        await saveStep(6, stepPayload);
-      }
-    } catch (e) {
-      console.error("Failed to save step 6:", e);
-      // continue to next step even if save failed
-    }
-
+  // "Pay Now": nextStep() first validates Paid To + Final Price (required,
+  // number > 0), then saves step 6 (saveStep sends Final Price as the paid
+  // amount) and only moves on when the save succeeded. The previous version
+  // called saveStep() BEFORE any validation, so a blank / spaces-only Final
+  // Price was saved as a $0 payment and the intake marked "payment-done".
+  // PRESERVED (no longer used) — the pre-validation save:
+  //   const stepPayload = { ...formData, finalPrice: purchaseAmount,
+  //     paymentAmount: purchaseAmount, paidAmount: purchaseAmount };
+  //   await saveStep(6, stepPayload);
+  const handleInventoryClick = () => {
     if (typeof nextStep === "function") nextStep();
+    else if (typeof saveStep === "function") saveStep(6, formData);
   };
 
   return (
@@ -295,7 +288,19 @@ const Payment = ({
                     Final Price (Actual Vehicle Purchase Amount)
                   </Text>
                 }
-                rules={[{ required: true, message: "Final Price is required" }]}
+                rules={
+                  validationRules?.paymentFinalPrice || [
+                    { required: true, message: "Final Price is required" },
+                    {
+                      validator: (_, v) =>
+                        v === undefined || v === null || v === "" || Number(v) > 0
+                          ? Promise.resolve()
+                          : Promise.reject(
+                              new Error("Final Price must be a number greater than 0")
+                            ),
+                    },
+                  ]
+                }
                 extra={
                   <Text style={{ color: "#9ca3af", fontSize: "12px" }}>
                     This is the actual gross vehicle purchase amount paid to the
@@ -424,11 +429,11 @@ const Payment = ({
 
           <Row>
             <Col span={24}>
-              <Form.Item
+              <Form.Item rules={[descriptionRule]}
                 name="paymentDescription"
                 label={<Text style={{ color: "white" }}>Description</Text>}
               >
-                <TextArea
+                <TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
                   rows={4}
                   placeholder="Enter payment description"
                   style={{

@@ -35,7 +35,8 @@ const Element = () => {
       const { data } = await elementAPI.getAll({
         page: pagination.page,
         limit: pagination.limit,
-        search,
+        // Leading / trailing spaces are ignored.
+        search: search.trim(),
       });
       setElements(data.elements);
       setPagination(data.pagination);

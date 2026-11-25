@@ -16,6 +16,7 @@ import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { useNavigate } from "react-router-dom";
+import PickupTypeTag from "../../components/CarIntake/PickupTypeTag";
 
 const PartInventoryAdd = () => {
   const navigate = useNavigate();
@@ -87,6 +88,14 @@ const PartInventoryAdd = () => {
       key: "color",
       width: 120,
       render: (v) => v || "N/A",
+    },
+    {
+      // You Pull and We Pull cars both get asset tags on Add To Inventory.
+      title: "Pickup Type",
+      dataIndex: ["kyc", "pickupType"],
+      key: "pickupType",
+      width: 120,
+      render: (v) => (v ? <PickupTypeTag value={v} /> : "N/A"),
     },
     {
       title: "Status",

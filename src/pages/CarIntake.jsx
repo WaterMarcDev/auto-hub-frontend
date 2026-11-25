@@ -10,6 +10,22 @@ import CarPrice from "../components/CarIntake/CarPrice";
 import UserKYCAndCarDoc from "../components/CarIntake/UserKYCAndCarDoc";
 import Payment from "../components/CarIntake/Payment";
 import CarInventory from "../components/CarIntake/CarInventory";
+import { dimensionsPayload, vehicleWeightMax, parseCarWeight } from "../utils/carDimensions";
+import { emailRule } from "../utils/email";
+import { CAR_TEXT_FIELDS, carTextRules, trimCarText } from "../components/CarIntake/intakeConstants";
+
+// A weight / amount that must be a number greater than 0 (blank, spaces and
+// 0 are rejected).
+const positiveNumberRule = (message) => ({
+  validator: (_, value) => {
+    if (value === undefined || value === null || String(value).trim() === "")
+      return Promise.resolve(); // the `required` rule reports blanks
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0
+      ? Promise.resolve()
+      : Promise.reject(new Error(message));
+  },
+});
 
 // Map UI steps to backend status enum values
 const STEP_STATUS_MAP = {
@@ -85,12 +101,15 @@ const CarIntake = () => {
     engineVariant: "",
     drive: "",
     transmission: "",
-    scrapYardName: "RTX",
+    scrapYardName: "Autohub",
     scrapYardLocation: "New Jersey",
     fuelType: "",
     hasKeys: false,
     weight: "",
     dimensions: "",
+    height: "",
+    width: "",
+    length: "",
     description: "",
 
     // Step 2: Car Images - matching original template
@@ -113,7 +132,8 @@ const CarIntake = () => {
 
     // Step 4: Car Price - matching original template
     rate: "6",
-    actualWeight: "0",
+    // Blank (not "0") so the required Weight check fires when it is not entered.
+    actualWeight: "",
     actualPrice: "0",
     ourPrice: "0",
     customerPrice: "0",
@@ -132,7 +152,7 @@ const CarIntake = () => {
     physicalPaper: null,
     titleCertificate: null,
     sellingDate: dayjs(),
-    pickUpType: "You Pull",
+    pickUpType: "", // You Pull / We Pull, chosen in Step 1
     sellerSignature: null,
 
     // Step 6: Payment
@@ -147,7 +167,7 @@ const CarIntake = () => {
 
   // Normalize pickup value from older numeric values to backend enum strings
   const normalizePickup = (val) => {
-    if (val === undefined || val === null) return undefined;
+    if (val === undefined || val === null || val === "") return undefined;
     if (typeof val === "string") {
       const legacyMap = {
         0: "You Pull",
@@ -175,6 +195,18 @@ const CarIntake = () => {
     [form]
   );
 
+  // Each step starts at the top of the page. Without this the scroll position
+  // of a long step (Car Diagnostic) was kept, so the next, shorter step opened
+  // scrolled to the bottom with only the page footer in view.
+  useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.querySelector(".main-content")?.scrollTo?.({ top: 0 });
+    } catch {
+      // ignore (old browsers / tests)
+    }
+  }, [currentStep]);
+
   // Sync form with formData on mount and when formData changes
   useEffect(() => {
     form.setFieldsValue(formData);
@@ -182,8 +214,10 @@ const CarIntake = () => {
 
   // Save a single step to backend. If no serverId, create draft on first save.
   const saveStep = useCallback(
-    async (step, stepData) => {
+    async (step, rawStepData) => {
       console.log(step);
+      // Car Details text is saved trimmed (spaces-only is blocked by the rules).
+      const stepData = step === 1 ? trimCarText(rawStepData) : rawStepData;
       const setStatus = (s, status, error) => {
         setStepSaveStatus((prev) => ({ ...prev, [s]: { status, error } }));
       };
@@ -207,11 +241,12 @@ const CarIntake = () => {
             engineVariant: stepData.engineVariant,
             drive: stepData.drive,
             transmission: stepData.transmission,
+            pickupType: normalizePickup(stepData.pickUpType),
             scrapYardName: stepData.scrapYardName,
             scrapYardLocation: stepData.scrapYardLocation,
             fuelType: stepData.fuelType,
             keys: stepData.hasKeys,
-            dimensions: stepData.dimensions,
+            ...dimensionsPayload(stepData),
             weight: stepData.weight,
             description: stepData.description,
 
@@ -230,7 +265,7 @@ const CarIntake = () => {
             payload.engineVariant = payload.engineVariant || "N/A";
             payload.drive = payload.drive || "Unknown";
             payload.transmission = payload.transmission || "Unknown";
-            payload.scrapYardName = payload.scrapYardName || "RTX";
+            payload.scrapYardName = payload.scrapYardName || "Autohub";
             payload.scrapYardLocation = payload.scrapYardLocation || "New Jersey";
             payload.fuelType = payload.fuelType || "Unknown";
             payload.weight = payload.weight || "Unknown";
@@ -258,12 +293,13 @@ const CarIntake = () => {
               engineVariant: stepData.engineVariant,
               drive: stepData.drive,
               transmission: stepData.transmission,
+              pickupType: normalizePickup(stepData.pickUpType),
               scrapYardName: stepData.scrapYardName,
               scrapYardLocation: stepData.scrapYardLocation,
               fuelType: stepData.fuelType,
               keys: stepData.hasKeys,
               weight: stepData.weight,
-              dimensions: stepData.dimensions,
+              ...dimensionsPayload(stepData),
               description: stepData.description,
 
               manualVinMode: manualVinMode   // added by shiva
@@ -400,11 +436,16 @@ const CarIntake = () => {
         return true;
       } catch (error) {
         console.error("Auto-save step error:", error);
-        setStatus(step, "error", error?.message || String(error));
+        const serverMsg =
+          error?.response?.data?.error || error?.message || String(error);
+        setStatus(step, "error", serverMsg);
+        // The step was NOT saved (e.g. the server rejected a blank field):
+        // say so; nextStep() stays on this step.
+        messageApi.error(`Could not save this step: ${serverMsg}`);
         return false;
       }
     },
-    [serverId, setCurrentStep, manualVinMode] 
+    [serverId, setCurrentStep, manualVinMode, messageApi]
   );
 
   // No auto-save debounce used; saves happen only on explicit actions
@@ -465,14 +506,23 @@ const CarIntake = () => {
         populated.drive = car.carDetails.drive || formData.drive;
         populated.transmission =
           car.carDetails.transmission || formData.transmission;
+        // "RTX" is the old default name: drafts saved before the rename
+        // open with "Autohub" instead.
+        const savedYard = String(car.carDetails.scrapYardName || "").trim();
         populated.scrapYardName =
-          car.carDetails.scrapYardName || formData.scrapYardName;
+          !savedYard || savedYard.toUpperCase() === "RTX"
+            ? formData.scrapYardName || "Autohub"
+            : savedYard;
         populated.scrapYardLocation =
           car.carDetails.scrapYardLocation || formData.scrapYardLocation;
         populated.fuelType = car.carDetails.fuelType || formData.fuelType;
         populated.hasKeys = car.carDetails.keys ?? formData.hasKeys;
-        populated.weight = car.carDetails.weight || formData.weight;
+        // Only a real number is a weight (old records may hold GVWR text).
+        populated.weight = parseCarWeight(car.carDetails.weight) ?? formData.weight;
         populated.dimensions = car.carDetails.dimensions || formData.dimensions;
+        populated.height = car.carDetails.height ?? formData.height;
+        populated.width = car.carDetails.width ?? formData.width;
+        populated.length = car.carDetails.length ?? formData.length;
         populated.description =
           car.carDetails.description || formData.description;
       }
@@ -740,42 +790,39 @@ const CarIntake = () => {
           }`,
       },
     ],
-    make: [
-      { required: true, message: "Make is required" },
-      { min: 2, message: "Make must be at least 2 characters" },
-    ],
-    model: [
-      { required: true, message: "Model is required" },
-      { min: 2, message: "Model must be at least 2 characters" },
-    ],
-    trim: [
-      { required: true, message: "Trim is required" },
-      { min: 1, message: "Trim is required" },
-    ],
-    color: [{ required: true, message: "Color is required" }],
+    // Text fields: blank / spaces-only rejected, length limits (trimmed).
+    ...Object.fromEntries(
+      Object.keys(CAR_TEXT_FIELDS).map((name) => [name, carTextRules(name)])
+    ),
 
     // Weight field (used in both Step 1 and Step 4)
     weight: [
       { required: true, message: "Weight is required" },
       { type: "number", min: 1, message: "Weight must be greater than 0" },
-      ...(vinData?.weightMin
+      // The VIN's GVWR class is the vehicle's maximum loaded weight, so the
+      // car's real weight is only checked against the class maximum (a car
+      // normally weighs less than the class minimum).
+      ...(vehicleWeightMax(vinData)
         ? [
             {
               type: "number",
-              min: vinData.weightMin,
-              message: `Weight must be at least ${vinData.weightMin} lbs for this vehicle class`,
+              max: vehicleWeightMax(vinData),
+              message: `Weight must be at most ${vehicleWeightMax(vinData)} lbs (GVWR) for this vehicle class`,
             },
           ]
         : []),
-      ...(vinData?.weightMax
-        ? [
-            {
-              type: "number",
-              max: vinData.weightMax,
-              message: `Weight must be at most ${vinData.weightMax} lbs for this vehicle class`,
-            },
-          ]
-        : []),
+    ],
+
+    // Step 4: scale weight. 0 / blank / spaces are not a weight.
+    actualWeight: [
+      { required: true, whitespace: true, message: "Weight is required" },
+      positiveNumberRule("Weight must be greater than 0"),
+    ],
+
+    // Step 6: amount paid to the seller ("Pay Now").
+    paymentFinalPrice: [
+      { required: true, whitespace: true, message: "Final Price is required" },
+      positiveNumberRule("Final Price must be a number greater than 0"),
     ],
 
     ourPrice: [
@@ -837,7 +884,7 @@ const CarIntake = () => {
         message: "Invalid mobile number format",
       },
     ],
-    email: [{ type: "email", message: "Invalid email format" }],
+    email: [emailRule],
     dlDocument: [
       // { required: true, message: "Driver's License is required" } // Made optional, handled by custom check
     ],
@@ -877,6 +924,18 @@ const CarIntake = () => {
           response.data.data?.carIntake ||
           response.data;
 
+        // A VIN that did not decode to a vehicle (no make) is not a success.
+        if (
+          !String(vinDetails?.Make || "").trim() &&
+          !String(car?.carDetails?.make || "").trim()
+        ) {
+          const msg =
+            "Invalid VIN: it could not be decoded to a vehicle. Please check the VIN.";
+          messageApi.error(msg);
+          setVinError(msg);
+          return false;
+        }
+
         setVinData(vinDetails);
 
         // Do NOT map VIN data into the form on frontend anymore.
@@ -902,7 +961,13 @@ const CarIntake = () => {
           setCurrentStep(getStepForStatus(car.status));
         }
 
-        messageApi.success("VIN details fetched successfully!");    // messageApi by shiva
+        // One message per lookup (handleVinModalOk no longer adds a second).
+        // Decoded with a warning (e.g. check digit) → warning, not success.
+        if (response.data.warning) {
+          messageApi.warning(`VIN decoded with a warning: ${response.data.warning}`);
+        } else {
+          messageApi.success("VIN details fetched successfully!");    // messageApi by shiva
+        }
         setVinError(null);
         return true;
       }
@@ -952,8 +1017,7 @@ const CarIntake = () => {
         setManualVinMode(false);
         setVinError(null);    // added by shiva
         setIsVinModalVisible(false);
-
-        messageApi.success("VIN loaded successfully!");     // messageApi.success by shiva
+        // fetchVinDetails already showed the success / warning message.
       }
 
     } catch (errorInfo) {
@@ -1001,6 +1065,7 @@ const CarIntake = () => {
           // "engineVariant",
           "drive",
           "transmission",
+          "pickUpType",
           // "scrapYardName",
           // "scrapYardLocation",
           "fuelType",
@@ -1021,6 +1086,7 @@ const CarIntake = () => {
           "engineVariant",
           "drive",
           "transmission",
+          "pickUpType",
           "scrapYardName",
           "scrapYardLocation",
           "fuelType",
@@ -1065,7 +1131,8 @@ const CarIntake = () => {
           // "sellingDate",
           // "pickUpType",
         ];
-      case 6: // Payment - all required fields
+      case 6: // Payment - all required fields (Payment.jsx's Final Price
+      // rules: required, number > 0)
       // added by shiva
       if (manualVinMode) {
         return ["paidTo", "finalPrice"];
@@ -1094,12 +1161,15 @@ const CarIntake = () => {
       engineVariant: "",
       drive: "",
       transmission: "",
-      scrapYardName: "RTX",
+      scrapYardName: "Autohub",
       scrapYardLocation: "New Jersey",
       fuelType: "",
       hasKeys: false,
       weight: "",
       dimensions: "",
+      height: "",
+      width: "",
+      length: "",
       description: "",
 
       // Step 2: Car Images
@@ -1142,7 +1212,7 @@ const CarIntake = () => {
       physicalPaper: null,
       titleCertificate: null,
       sellingDate: dayjs(),
-      pickUpType: "You Pull",
+      pickUpType: "", // You Pull / We Pull, chosen in Step 1
       kycDescription: "",
       sellerSignature: null,
 
@@ -1200,7 +1270,10 @@ const CarIntake = () => {
           // (manualVinMode && formData.sellerId);
 
         if (shouldSave) {
-          await saveStep(currentStep, formData);
+          const saved = await saveStep(currentStep, formData);
+          // Don't move on when the server refused the data (saveStep has
+          // already shown the reason).
+          if (saved === false) return;
         }
       } catch (error) {
         console.error("Auto-save step error:", error.response?.data || error)   // added by shiva      }
@@ -1359,7 +1432,7 @@ const CarIntake = () => {
         scrapYardLocation: formData.scrapYardLocation,
         fuelType: formData.fuelType,
         keys: formData.hasKeys,
-        dimensions: formData.dimensions,
+        ...dimensionsPayload(formData),
         description: formData.description,
 
         manualVinMode: manualVinMode,   // added by shiva
@@ -2083,6 +2156,8 @@ const CarIntake = () => {
                         color: "#ffffff",
                         fontSize: 16,
                         fontWeight: 700,
+                        maxWidth: 240,
+                        overflowWrap: "anywhere",
                       }}
                     >
                       {formData.make || vinData?.Make || "—"}
@@ -2096,6 +2171,8 @@ const CarIntake = () => {
                         color: "#ffffff",
                         fontSize: 16,
                         fontWeight: 700,
+                        maxWidth: 240,
+                        overflowWrap: "anywhere",
                       }}
                     >
                       {formData.model || vinData?.Model || "—"}
@@ -2109,6 +2186,8 @@ const CarIntake = () => {
                         color: "#ffffff",
                         fontSize: 16,
                         fontWeight: 700,
+                        maxWidth: 240,
+                        overflowWrap: "anywhere",
                       }}
                     >
                       {formData.trim || vinData?.Trim || "—"}
@@ -2122,6 +2201,8 @@ const CarIntake = () => {
                         color: "#ffffff",
                         fontSize: 16,
                         fontWeight: 700,
+                        maxWidth: 240,
+                        overflowWrap: "anywhere",
                       }}
                     >
                       {formData.year ||

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   Card,
   Form,
-  InputNumber,
   Button,
   notification,
   Spin,
@@ -14,9 +13,25 @@ import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { entryFeeAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
+import NumericInput from "../../components/NumericInput";
 
 const { Text } = Typography;
-const { confirm } = Modal;
+
+// Same limits as the server (controllers/entryFee.controller.js).
+const ENTRY_FEE_MIN = 0;
+const ENTRY_FEE_MAX = 10;
+const ENTRY_FEE_ERROR = `Entry fee must be a number from $${ENTRY_FEE_MIN} to $${ENTRY_FEE_MAX} with at most 2 decimal places`;
+
+const validateEntryFee = (_, value) => {
+  if (value === undefined || value === null || value === "") return Promise.resolve();
+  const n = Number(value);
+  const ok =
+    Number.isFinite(n) &&
+    n >= ENTRY_FEE_MIN &&
+    n <= ENTRY_FEE_MAX &&
+    /^\d+(\.\d{1,2})?$/.test(String(value));
+  return ok ? Promise.resolve() : Promise.reject(new Error(ENTRY_FEE_ERROR));
+};
 
 const EntryFeeSetting = () => {
   const [form] = Form.useForm();
@@ -53,16 +68,18 @@ const EntryFeeSetting = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const res = await entryFeeAPI.update(values);
+      const res = await entryFeeAPI.update({ entryFee: Number(values.entryFee) });
       notificationApi.success({ message: "Entry fee updated successfully" });
       setSetting(res.data.setting);
+      form.setFieldsValue({ entryFee: res.data.setting?.entryFee });
     } catch (err) {
       console.error(err);
       notificationApi.error({
         message: "Failed to update entry fee",
         description: err.response?.data?.error || err.message,
       });
-      throw err;
+      // Nothing was saved: show the stored fee again.
+      if (setting) form.setFieldsValue({ entryFee: setting.entryFee });
     } finally {
       setLoading(false);
     }
@@ -72,7 +89,7 @@ const EntryFeeSetting = () => {
     modal.confirm({
       title: 'Do you want to update the entry fee?',
       icon: <ExclamationCircleOutlined />,
-      content: `The new entry fee will be $${values.entryFee}. This will affect all new entries.`,
+      content: `The new entry fee will be $${Number(values.entryFee).toFixed(2)}. This will affect all new entries.`,
       okText: 'Update',
       cancelText: 'Cancel',
       onOk: async () => {
@@ -110,18 +127,23 @@ const EntryFeeSetting = () => {
                 <Form.Item
                   name="entryFee"
                   label="Entry Fee (USD)"
+                  extra={`From $${ENTRY_FEE_MIN} to $${ENTRY_FEE_MAX}, at most 2 decimal places.`}
                   rules={[
                     { required: true, message: "Entry fee is required" },
-                    { type: 'number', min: 0, message: "Fee cannot be negative" }
+                    { validator: validateEntryFee },
                   ]}
                 >
-                  <InputNumber
+                  <NumericInput
+                    mode="number"
                     size="large"
-                    min={0}
+                    min={ENTRY_FEE_MIN}
+                    max={ENTRY_FEE_MAX}
+                    precision={2}
                     step={0.5}
-                    formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                    prefix="$"
+                    className="crm-number-box"
                     style={{ width: '100%' }}
+                    errorMessage={ENTRY_FEE_ERROR}
                   />
                 </Form.Item>
 

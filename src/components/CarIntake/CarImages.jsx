@@ -1,24 +1,57 @@
-import React from "react";
-import { Form, Button, Row, Col, Typography, Space, Image, Input } from "antd";
-import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import { Form, Button, Row, Col, Typography, Space, Image, Input, message } from "antd";
+import { ArrowLeftOutlined, ArrowRightOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import CameraUpload from "../CameraUpload";
 import { uploadAPI } from "../../utils/api";
+import { enhanceImageToFile } from "../../utils/imageEnhance";
+import { checkImageFile, showImageError, showUploadError } from "../../utils/imageRules";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
 const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
+  const mapUpload = (uploadResult) => ({
+    name: uploadResult.originalName,
+    url: uploadResult.imageUrl,
+    filename: uploadResult.filename,
+    uploaded: true,
+    size: uploadResult.size,
+  });
+
   const handleImageUpload = (field, uploadResult) => {
     // Update form data with uploaded image information
     updateFormData({
-      [field]: {
-        name: uploadResult.originalName,
-        url: uploadResult.imageUrl,
-        filename: uploadResult.filename,
-        uploaded: true,
-        size: uploadResult.size,
-      },
+      [field]: mapUpload(uploadResult),
     });
+  };
+
+  // Enhance an uploaded photo: the improved (cleaned, sharpened, enlarged)
+  // version is uploaded and replaces the photo in this intake.
+  const [enhancing, setEnhancing] = useState(null); // field being enhanced
+  const handleEnhanceImage = async (field) => {
+    const current = formData[field];
+    if (!current?.url) return;
+    setEnhancing(field);
+    try {
+      const file = await enhanceImageToFile(
+        uploadAPI.getImageUrl(current.url),
+        `${String(current.name || field).replace(/\.[^.]+$/, "")}-enhanced`
+      );
+      const problem = checkImageFile(file);
+      if (problem) {
+        showImageError(problem);
+        return;
+      }
+      const response = await uploadAPI.uploadImage(file);
+      updateFormData({ [field]: { ...mapUpload(response.data), enhanced: true } });
+      message.success("Photo enhanced");
+    } catch (err) {
+      if (err?.response) showUploadError(err);
+      else message.error(err.message || "Could not enhance this photo");
+    } finally {
+      setEnhancing(null);
+    }
   };
 
   const handleRemoveImage = (field) => {
@@ -65,20 +98,35 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
                   mask: <div>Click to preview</div>,
                 }}
               />
-              <Button
-                danger
-                size="small"
-                onClick={() => handleRemoveImage(field)}
+              <Space
+                size={6}
                 style={{
                   position: "absolute",
                   top: "8px",
                   right: "8px",
                   zIndex: 1,
                 }}
-                icon={<i className="fas fa-times"></i>}
               >
-                Remove
-              </Button>
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<ThunderboltOutlined />}
+                  loading={enhancing === field}
+                  disabled={Boolean(enhancing) || formData[field].enhanced}
+                  onClick={() => handleEnhanceImage(field)}
+                >
+                  {formData[field].enhanced ? "Enhanced" : "Enhance"}
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  onClick={() => handleRemoveImage(field)}
+                  disabled={enhancing === field}
+                  icon={<i className="fas fa-times"></i>}
+                >
+                  Remove
+                </Button>
+              </Space>
             </div>
             <Text style={{ color: "#10b981", fontSize: "12px" }}>
               ✓ Uploaded: {formData[field].name}
@@ -90,6 +138,7 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
             multiple={false}
             showPreview={true}
             autoUpload={true}
+            adjustBeforeUpload
             className="car-image-upload"
           />
         )}
@@ -227,11 +276,11 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
 
         <Row>
           <Col span={24}>
-            <Form.Item
+            <Form.Item rules={[descriptionRule]}
               name="imageDescription"
               label={<Text style={{ color: "white" }}>Description</Text>}
             >
-              <TextArea
+              <TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
                 rows={4}
                 placeholder="Enter image description"
                 style={{

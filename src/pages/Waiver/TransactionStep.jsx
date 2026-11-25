@@ -10,6 +10,7 @@ import {
   Space,
 } from "antd";
 import SignatureCanvas from "../../components/SignatureCanvas";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -93,8 +94,8 @@ const TransactionStep = ({ data, onComplete, onBack, loading }) => {
         </Col>
       </Row>
 
-      <Form.Item label="Description" name="description">
-        <TextArea
+      <Form.Item rules={[descriptionRule]} label="Description" name="description">
+        <TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
           rows={4}
           placeholder="Enter transaction description or notes"
         />

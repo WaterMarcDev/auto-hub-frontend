@@ -38,12 +38,14 @@ const AddWaiver = () => {
         lastName: data.lastName || undefined,
         email: data.email || undefined,
         mobileNo: data.mobileNo || undefined,
+        waiverDate: data.waiverDate || undefined,
         idProofType: data.idProofType || undefined,
         idProofNumber: data.idProofNumber || undefined,
         idProofImage: data.idProofImage || undefined,
         // The backend persists the captured signature in `signatureImage`
         // (the same field used by Customer/Seller/Buyer registration).
         signatureImage: data.signature || undefined,
+        description: data.description || undefined,
         linkedSeller: data.linkedSeller || null,
         linkedBuyer: data.linkedBuyer || null,
       };
@@ -103,14 +105,30 @@ const AddWaiver = () => {
       const customerRes = await customerAPI.create(customerPayload);
       const createdCustomer = customerRes.data || customerRes;
 
-      console.log("Customer created via waiver form:", createdCustomer);
       message.success("Customer created successfully");
       setCreatedCustomer(createdCustomer);
       setCheckInModalOpen(true);
     } catch (err) {
+      // Returning customer: the server found a customer with the same phone
+      // number or ID (409) and sent it back. No duplicate is created: the
+      // existing customer is used as-is and goes straight to Check-In.
+      const existing = err.response?.status === 409 ? err.response?.data?.existingCustomer : null;
+      if (existing) {
+        const name = [existing.firstName, existing.lastName].filter(Boolean).join(" ") || "this customer";
+        message.info(
+          `Existing customer found: ${name}${existing.mobileNo ? ` (${existing.mobileNo})` : ""}. Continuing with the existing customer.`,
+          5
+        );
+        setCreatedCustomer(existing);
+        setCheckInModalOpen(true);
+        return;
+      }
       console.error("Error creating waiver/customer:", err);
       const errMsg =
-        err.response?.data?.error || err.message || "Failed to create waiver";
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to create waiver";
       message.error(errMsg);
     } finally {
       // finished

@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Card, Table, Button, Space, Input, Modal, message, Tag } from "antd";
+import PersonsCell from "../../components/CheckIn/PersonsCell";
+import { personsList } from "../../utils/checkInPersons";
 import { PrinterOutlined } from "@ant-design/icons";
 import { checkInAPI } from "../../utils/api";
+import printCheckInInvoice from "../../utils/printCheckInInvoice";
 import { cacheManager } from "../../utils/cacheManager";
 import { useDebounce } from "../../hooks/useDebounce";
 import getStatusColor from "../../utils/statusColors";
@@ -132,59 +135,19 @@ const CheckedInList = () => {
     }
   };
 
-  const handlePrintInvoice = (record) => {
-    if (printingId) return;
+  const handlePrintInvoice = async (record) => {
+    if (printingId || !record?._id) return;
     setPrintingId(record._id);
-
-    const url = checkInAPI.printInvoice(record._id);
-    // Use an off-screen non-zero dimension iframe so browser computes layout immediately without freezing
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "1px";
-    iframe.style.height = "1px";
-    iframe.style.opacity = "0";
-    iframe.style.border = "0";
-    iframe.style.pointerEvents = "none";
-    iframe.src = url;
-    document.body.appendChild(iframe);
-
-    let cleanedUp = false;
-    const cleanup = () => {
-      if (cleanedUp) return;
-      cleanedUp = true;
+    try {
+      await printCheckInInvoice(record._id);
+      // The server marks the invoice as printed; refresh the lists.
+      cacheManager.invalidate("checkins");
+    } catch (err) {
+      console.error("Print invoice error:", err);
+      message.error(err?.message || "Failed to load invoice");
+    } finally {
       setPrintingId(null);
-      try {
-        if (iframe.parentNode) {
-          document.body.removeChild(iframe);
-        }
-      } catch (e) {
-        // ignore
-      }
-    };
-
-    iframe.onload = () => {
-      setPrintingId(null);
-      try {
-        if (iframe.contentWindow) {
-          iframe.contentWindow.focus();
-          iframe.contentWindow.print();
-        }
-      } catch (e) {
-        console.error("Print error:", e);
-        message.error("Failed to open print dialog");
-      }
-      setTimeout(cleanup, 2000);
-    };
-
-    iframe.onerror = () => {
-      message.error("Failed to load invoice");
-      cleanup();
-    };
-
-    // Safety timeout in case print dialog stalls
-    setTimeout(cleanup, 20000);
+    }
   };
 
   const columns = [
@@ -206,10 +169,13 @@ const CheckedInList = () => {
     {
       title: "Persons",
       key: "persons",
-      render: (_, rec) => {
-        const n = rec.numberOfPersons || 0;
-        return `1 + ${n}`;
-      },
+      render: (_, rec) => <PersonsCell checkIn={rec} />,
+    },
+    {
+      title: "Employee",
+      dataIndex: "employeeName",
+      key: "employeeName",
+      render: (v) => v || "-",
     },
     {
       title: "Status",
@@ -310,6 +276,11 @@ const CheckedInList = () => {
                 }?`}
               </div>
               <div>{`Persons: 1 + ${confirmRecord.numberOfPersons || 0}`}</div>
+              {personsList(confirmRecord).map((p, i) => (
+                <div key={i} style={{ fontSize: 12, color: "#9ca3af" }}>
+                  {i + 1}. {p.fullName} · {p.mobileNo}
+                </div>
+              ))}
             </>
           ) : (
             "Are you sure?"

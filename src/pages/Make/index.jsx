@@ -37,7 +37,8 @@ const Make = () => {
     const { data } = await makeAPI.getAll({
       page: pagination.page,
       limit: pagination.limit,
-      search,
+      // Leading / trailing spaces are ignored (" toyota" finds "Toyota").
+      search: search.trim(),
     });
     setMakes(data.makes);
     setPagination(data.pagination);
@@ -91,16 +92,20 @@ const Make = () => {
       title: "Make Name",
       key: "name",
       dataIndex: "name",
+      // Long values (e.g. older records) are cut with "..." and shown in full on hover.
+      ellipsis: { showTitle: true },
     },
     {
       title: "Short Name",
       key: "shortName",
       dataIndex: "shortName",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Description",
       key: "description",
       dataIndex: "description",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Actions",
