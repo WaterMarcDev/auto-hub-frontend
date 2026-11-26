@@ -25,6 +25,7 @@ import {
 import { carIntakeAPI, uploadAPI } from "../utils/api";
 import { useAuth } from "../hooks/useAuth";
 import ExtractElementsModal from "../components/Scrap/ExtractElementsModal";
+import usePersistedColumns from "../components/Scrap/usePersistedColumns";
 import getStatusColor from "../utils/statusColors";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
@@ -377,7 +378,9 @@ const ReadyToScrapList = () => {
         : String(col.dataIndex || "");
 
   // State: which columns are currently visible (by key)
-  const [visibleColumns, setVisibleColumns] = React.useState(
+  // (remembered across refreshes in localStorage)
+  const [visibleColumns, setVisibleColumns] = usePersistedColumns(
+    "autohub.columns.readyToScrap",
     allColumns.map((c) => getColKey(c))
   );
 

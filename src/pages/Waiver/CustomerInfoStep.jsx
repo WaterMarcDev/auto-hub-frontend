@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import {
   Card,
@@ -56,6 +57,7 @@ const splitFullName = (fullName) => {
 };
 
 const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [uploadedIdProof, setUploadedIdProof] = useState(null);
   const [signatureUrl, setSignatureUrl] = useState(null);
@@ -470,7 +472,9 @@ const CustomerInfoStep = ({ initialValues = {}, onComplete }) => {
         </Form.Item>
 
         <Form.Item>
-          <Button style={{ marginRight: 12 }}>Cancel</Button>
+          <Button style={{ marginRight: 12 }} onClick={() => navigate("/waivers")}>
+            Cancel
+          </Button>
           <Button type="primary" htmlType="submit" loading={saving} disabled={saving}>
             Save
           </Button>

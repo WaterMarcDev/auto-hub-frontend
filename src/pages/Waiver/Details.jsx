@@ -16,6 +16,7 @@ import { customerAPI, uploadAPI } from "../../utils/api";
 import dayjs from "dayjs";
 import { getCustomerTypeLabel } from "./customerTypeOptions";
 import EnhanceableImage from "../../components/ImageEnhance/EnhanceableImage";
+import { displayPhone } from "../../utils/phone";
 
 const WaiverDetails = () => {
   const { id } = useParams();
@@ -107,7 +108,7 @@ const WaiverDetails = () => {
                 </span>
               </Descriptions.Item>
               <Descriptions.Item label="Mobile">
-                {customer.mobileNo || "-"}
+                {displayPhone(customer.mobileNo, "-")}
               </Descriptions.Item>
               {customer.waiverDate && (
                 <Descriptions.Item label="Waiver Date">
@@ -116,13 +117,13 @@ const WaiverDetails = () => {
               )}
               {/* Description is not on the U-Pull form (hidden there); it is
                   shown whenever the customer has one, e.g. from registration. */}
-              {customer.description && String(customer.description).trim() && (
+              {String(customer.description || "").trim() ? (
                 <Descriptions.Item label="Description" span={2}>
                   <span style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
-                    {customer.description}
+                    {String(customer.description).trim()}
                   </span>
                 </Descriptions.Item>
-              )}
+              ) : null}
             </Descriptions>
           </Card>
 

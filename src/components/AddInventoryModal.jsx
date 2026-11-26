@@ -16,6 +16,7 @@ import {
   TEXT_LIMITS,
   MAX_YEAR,
   cleanText,
+  colorRules,
   normalizeVin,
   optionalTextRules,
   vinRule,
@@ -484,9 +485,9 @@ const AddInventoryModal = ({ visible, onCancel, onSuccess, initial = {} }) => {
             <Form.Item
               name="color"
               label="Color"
-              rules={optionalTextRules("Color", TEXT_LIMITS.color)}
+              rules={colorRules}
             >
-              <Input maxLength={TEXT_LIMITS.color} />
+              <Input maxLength={TEXT_LIMITS.color} placeholder="e.g. Dark Blue" />
             </Form.Item>
           </Col>
 

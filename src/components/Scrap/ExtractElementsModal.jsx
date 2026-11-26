@@ -1,10 +1,39 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Modal, Table, Checkbox, InputNumber, Input, Button, Alert, Tag, Typography, message } from "antd";
+import { Modal, Table, Checkbox, Input, Select, Button, Alert, Tag, Typography, message } from "antd";
 import { carIntakeAPI, elementAPI } from "../../utils/api";
 import UnitInput from "../UnitInput";
 import NumericInput from "../NumericInput";
 
 const { Text } = Typography;
+
+// Same rules as the server (auto-hub-backend/services/carScrap.service.js).
+const QUALITY_OPTIONS = ["Good", "Average", "OK", "Broken", "Scratches"];
+const MAX_WEIGHT = 15000; // lb
+const MAX_UNIT = 10000;
+const MAX_DIMENSIONS = 100;
+const MAX_REMARKS = 1000;
+const WEIGHT_PATTERN = /^(\d+(\.\d{1,2})?|\.\d{1,2})$/;
+const DIMENSIONS_PATTERN = /^[A-Za-z0-9 .,*/"'()×]+$/;
+
+const weightError = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return "Required";
+  if (!WEIGHT_PATTERN.test(text) || !(Number(text) > 0)) return "Must be greater than 0, max 2 decimals";
+  if (Number(text) > MAX_WEIGHT) return `Max ${MAX_WEIGHT.toLocaleString("en-US")}`;
+  return null;
+};
+
+const dimensionsError = (value) => {
+  const raw = String(value ?? "");
+  const text = raw.trim();
+  if (!raw) return null;
+  if (!text) return "Cannot be only spaces";
+  if (text.length > MAX_DIMENSIONS) return `Max ${MAX_DIMENSIONS} characters`;
+  if (!DIMENSIONS_PATTERN.test(text)) return "Letters, numbers, spaces and . , x * / \" ' ( ) only — no negative numbers";
+  return null;
+};
+
+const FieldError = ({ children }) => (children ? <div style={{ color: "#ff4d4f", fontSize: 12 }}>{children}</div> : null);
 
 /**
  * Extract Elements popup used by the scrap workflow.
@@ -44,7 +73,13 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
         setElements(list);
         const initial = {};
         list.forEach((el) => {
-          initial[el._id] = { selected: false, unit: 1, weight: el.weight || "", quality: "", dimensions: el.dimensions || "" };
+          initial[el._id] = {
+            selected: false,
+            unit: 1,
+            weight: el.weight ? String(el.weight) : "",
+            quality: undefined,
+            dimensions: el.dimensions || "",
+          };
         });
         setRows(initial);
         setParts(detailRes.data?.data?.keptParts || []);
@@ -59,31 +94,45 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
 
   const setRow = (id, patch) => setRows((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
   const selected = useMemo(() => elements.filter((el) => rows[el._id]?.selected), [elements, rows]);
-  const missingWeight = (id) => {
-    const w = Number(rows[id]?.weight);
-    return rows[id]?.selected && !(Number.isFinite(w) && w > 0);
+  // Errors are checked for selected rows only (unselected rows are not saved).
+  const rowErrors = (id) => {
+    const row = rows[id];
+    if (!row?.selected) return {};
+    const unit = Number(row.unit);
+    return {
+      weight: weightError(row.weight),
+      unit: Number.isInteger(unit) && unit >= 1 && unit <= MAX_UNIT ? null : `1 to ${MAX_UNIT.toLocaleString("en-US")}`,
+      dimensions: dimensionsError(row.dimensions),
+    };
   };
+  const hasRowError = (id) => Object.values(rowErrors(id)).some(Boolean);
+  const remarksTrimmed = remarks.trim();
+  const remarksError = remarksTrimmed.length > MAX_REMARKS ? `Remarks must be at most ${MAX_REMARKS} characters` : null;
 
   const handleSubmit = async () => {
     setSubmitted(true);
     if (selected.length === 0) return message.error("Select at least one extracted element.");
-    if (selected.some((el) => missingWeight(el._id))) return message.error("Weight is required for every selected element.");
+    if (selected.some((el) => hasRowError(el._id))) return message.error("Fix the highlighted fields of the selected elements.");
+    if (mode === "scrap" && remarksError) return message.error(remarksError);
 
     const payload = {
-      elements: selected.map((el) => ({
-        elementName: el.name,
-        unit: rows[el._id].unit || 1,
-        weight: Number(rows[el._id].weight),
-        quality: rows[el._id].quality || undefined,
-        dimensions: rows[el._id].dimensions || undefined,
-      })),
+      elements: selected.map((el) => {
+        const dims = String(rows[el._id].dimensions ?? "").trim().replace(/\s+/g, " ");
+        return {
+          elementName: el.name,
+          unit: rows[el._id].unit || 1,
+          weight: Number(String(rows[el._id].weight).trim()),
+          quality: rows[el._id].quality || undefined,
+          dimensions: dims || undefined,
+        };
+      }),
       removePartIds,
     };
 
     setSaving(true);
     try {
       if (mode === "scrap") {
-        await carIntakeAPI.moveToScrapped(car._id, { ...payload, scrapRemarks: remarks });
+        await carIntakeAPI.moveToScrapped(car._id, { ...payload, scrapRemarks: remarksTrimmed });
         message.success("Elements saved and car moved to Scrapped");
       } else {
         await carIntakeAPI.addScrapElements(car._id, payload);
@@ -109,23 +158,38 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
       title: "Unit",
       key: "unit",
       width: 100,
-      render: (_, el) => <UnitInput min={1} value={rows[el._id]?.unit} onChange={(v) => setRow(el._id, { unit: v || 1 })} />,
+      render: (_, el) => {
+        const error = submitted && rowErrors(el._id).unit;
+        return (
+          <>
+            <UnitInput
+              min={1}
+              max={MAX_UNIT}
+              value={rows[el._id]?.unit}
+              status={error ? "error" : ""}
+              onChange={(v) => setRow(el._id, { unit: v || 1 })}
+            />
+            <FieldError>{error}</FieldError>
+          </>
+        );
+      },
     },
     {
       title: "Weight",
       key: "weight",
       width: 140,
       render: (_, el) => {
-        const error = submitted && missingWeight(el._id);
+        const error = submitted && rowErrors(el._id).weight;
         return (
           <>
             <NumericInput
               value={rows[el._id]?.weight}
               status={error ? "error" : ""}
+              maxLength={8}
               placeholder={rows[el._id]?.selected ? "Required" : "Enter weight"}
               onChange={(v) => setRow(el._id, { weight: v })}
             />
-            {error && <div style={{ color: "#ff4d4f", fontSize: 12 }}>Required</div>}
+            <FieldError>{error}</FieldError>
           </>
         );
       },
@@ -133,12 +197,36 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
     {
       title: "Quality",
       key: "quality",
-      render: (_, el) => <Input value={rows[el._id]?.quality} onChange={(e) => setRow(el._id, { quality: e.target.value })} />,
+      width: 140,
+      render: (_, el) => (
+        <Select
+          allowClear
+          placeholder="Select"
+          style={{ width: "100%" }}
+          value={rows[el._id]?.quality || undefined}
+          onChange={(v) => setRow(el._id, { quality: v })}
+          options={QUALITY_OPTIONS.map((q) => ({ value: q, label: q }))}
+        />
+      ),
     },
     {
       title: "Dimensions",
       key: "dimensions",
-      render: (_, el) => <Input value={rows[el._id]?.dimensions} onChange={(e) => setRow(el._id, { dimensions: e.target.value })} />,
+      render: (_, el) => {
+        const error = submitted && rowErrors(el._id).dimensions;
+        return (
+          <>
+            <Input
+              value={rows[el._id]?.dimensions}
+              maxLength={MAX_DIMENSIONS}
+              status={error ? "error" : ""}
+              placeholder='e.g. 10 x 5 x 2"'
+              onChange={(e) => setRow(el._id, { dimensions: e.target.value })}
+            />
+            <FieldError>{error}</FieldError>
+          </>
+        );
+      },
     },
   ];
 
@@ -222,7 +310,17 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
       {mode === "scrap" && (
         <>
           <Text strong>3. Remarks (optional)</Text>
-          <Input.TextArea rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="Enter scrap remarks..." style={{ marginTop: 4 }} />
+          <Input.TextArea
+            rows={3}
+            value={remarks}
+            maxLength={MAX_REMARKS}
+            showCount
+            status={remarksError ? "error" : ""}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="Enter scrap remarks..."
+            style={{ marginTop: 4 }}
+          />
+          <FieldError>{remarksError}</FieldError>
         </>
       )}
 

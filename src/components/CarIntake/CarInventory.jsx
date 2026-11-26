@@ -13,6 +13,7 @@ import {
   Result,
   Modal,
   Spin,
+  message,
 } from "antd";
 import {
   CheckCircleOutlined,

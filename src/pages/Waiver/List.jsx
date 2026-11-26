@@ -19,6 +19,7 @@ import PageContentWrapper from "../../components/PageContentWrapper";
 import { getCustomerTypeLabel } from "./customerTypeOptions";
 import { cacheManager } from "../../utils/cacheManager";
 import CellText from "../Customer/CellText";
+import { displayPhone } from "../../utils/phone";
 
 const { RangePicker } = DatePicker;
 
@@ -87,7 +88,11 @@ const WaiverList = () => {
       const limit = opts.limit || pagination.pageSize;
       // Spaces around the search text are ignored (the server also trims).
       const search = String(opts.search ?? filters.search ?? "").trim();
-      const cacheKey = `waivers:customers:${page}:${limit}:${search}:${filters.startDate || ""}:${filters.endDate || ""}`;
+      // Callers may override the date filters explicitly (Reset passes null),
+      // because the `filters` state captured here can be one render behind.
+      const startDate = "startDate" in opts ? opts.startDate : filters.startDate;
+      const endDate = "endDate" in opts ? opts.endDate : filters.endDate;
+      const cacheKey = `waivers:customers:${page}:${limit}:${search}:${startDate || ""}:${endDate || ""}`;
 
       const cached = cacheManager.get(cacheKey);
       if (cached && !opts.force) {
@@ -107,8 +112,8 @@ const WaiverList = () => {
           search,
         };
 
-        if (filters.startDate) params.startDate = filters.startDate;
-        if (filters.endDate) params.endDate = filters.endDate;
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
 
         const res = await customerAPI.getAll(params);
         const data = res.data || res;
@@ -167,10 +172,17 @@ const WaiverList = () => {
   const handleReset = () => {
     setFilters({ search: "", startDate: null, endDate: null });
     setPagination((prev) => ({ ...prev, current: 1 }));
-    setTimeout(
-      () => fetchCustomers({ page: 1, limit: pagination.pageSize }),
-      100
-    );
+    // Fetch with the cleared values passed explicitly. The previous version
+    // called fetchCustomers from a timeout, but that closure still held the
+    // old search text, so the first Reset reloaded the filtered list and only
+    // a second click showed the full list.
+    fetchCustomers({
+      page: 1,
+      limit: pagination.pageSize,
+      search: "",
+      startDate: null,
+      endDate: null,
+    });
   };
 
   const handleTableChange = (newPagination) => {
@@ -237,7 +249,7 @@ const WaiverList = () => {
       dataIndex: "mobileNo",
       key: "mobileNo",
       minWidth: 120,
-      render: (m) => <CellText text={m} maxWidth={160} />,
+      render: (m) => <CellText text={m ? displayPhone(m) : m} maxWidth={160} />,
     },
     {
       title: "ID Type",

@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Card, Form, Input, Button, notification, Row, Col } from "antd";
-import { customerAPI, uploadAPI } from "../../utils/api";
+import { uploadAPI } from "../../utils/api";
 import CameraUpload from "../../components/CameraUpload";
 import SignatureCanvas from "../../components/SignatureCanvas";
 import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 import { emailRule, normalizeEmail } from "../../utils/email";
+import { useCustomerCreate } from "../../hooks/useCustomerCreate";
 
 const SellerRegister = () => {
   const [loading, setLoading] = useState(false);
@@ -12,6 +13,8 @@ const SellerRegister = () => {
   const [uploadedIdProof, setUploadedIdProof] = useState(null);
   const [signatureUrl, setSignatureUrl] = useState(null);
   const [notificationApi, contextHolder] = notification.useNotification();
+  // Same name as an existing customer: staff compare the profiles first.
+  const { createCustomer, sameNameModal } = useCustomerCreate();
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -39,10 +42,13 @@ const SellerRegister = () => {
       if (signatureUrl) customerPayload.signatureImage = signatureUrl;
 
       try {
-        await customerAPI.create(customerPayload);
+        const result = await createCustomer(customerPayload);
+        if (result.cancelled) return; // popup closed: nothing saved
         notificationApi.success({
           message: "Success",
-          description: "Seller created successfully",
+          description: result.existing
+            ? "Existing customer used. No new seller was created."
+            : "Seller created successfully",
           duration: 3,
         });
         // Clear uploads and signature preview
@@ -78,6 +84,7 @@ const SellerRegister = () => {
   return (
     <div>
       {contextHolder}
+      {sameNameModal}
       <div className="page-title-box">
         <div className="page-title">
           <h4>Register Seller</h4>

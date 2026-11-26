@@ -273,7 +273,11 @@ const Make = () => {
               placeholder="Search Makes"
               value={search}
               variant="outlined"
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                // A new search starts at page 1 (page 3 of the old results may be empty).
+                setSearch(e.target.value);
+                setPagination((p) => (p.page === 1 ? p : { ...p, page: 1 }));
+              }}
               style={{ width: "100%", marginBottom: 16 }}
             />
             <Table

@@ -310,7 +310,11 @@ const Model = () => {
               <Input
                 placeholder="Search models"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  // A new search starts at page 1 (page 3 of the old results may be empty).
+                  setSearch(e.target.value);
+                  setPagination((p) => (p.page === 1 ? p : { ...p, page: 1 }));
+                }}
                 style={{ width: 280 }}
               />
             </div>

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Select, Button, Input, Tag } from "antd";
+import { Card, Table, Select, Button, Input, Tag, message } from "antd";
+
+// Same limit as the server (updateJunkCarRemark).
+const MAX_REMARK_LENGTH = 500;
 import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import AddJunkCarRequest from "./AddJunkCarRequest";
@@ -9,6 +12,8 @@ import SourceBadge from "../components/SourceBadge";
 import { cacheManager } from "../utils/cacheManager";
 import ExportButton from "../components/ExportButton";
 import { formatExportDate } from "../utils/exportUtils";
+import { displayPhone } from "../utils/phone";
+import CellText from "./Customer/CellText";
 
 const { Option } = Select;
 
@@ -271,7 +276,7 @@ const JunkCarRequests = () => {
 
             await api.patch(
                 `/junk-car/${id}/remark`,
-                { remark }
+                { remark: (remark ?? "").trim() }
             );
 
         } catch (error) {
@@ -280,6 +285,7 @@ const JunkCarRequests = () => {
                 "Remark update failed:",
                 error
             );
+            message.error(error.response?.data?.message || error.message || "Could not save remark");
         }
     };
     // end here
@@ -301,6 +307,7 @@ const JunkCarRequests = () => {
         {
             title: "Phone",
             dataIndex: "phone",
+            render: (v) => displayPhone(v, "none"),
         },
         {
             title: "Make",
@@ -325,7 +332,11 @@ const JunkCarRequests = () => {
         },
         {
             title: "Location",
-            render: (_, record) => record.location || "none",
+            // Location sent by the website, the CRM form or the Automation
+            // Bot ("location"): one line, full text on hover.
+            dataIndex: "location",
+            key: "location",
+            render: (_, record) => <CellText text={record.location} maxWidth={180}>{record.location ? undefined : "none"}</CellText>,
         },
         {
             title: "Condition",
@@ -367,6 +378,7 @@ const JunkCarRequests = () => {
                         maxRows: 2,
                     }}
                     placeholder="Add remark..."
+                    maxLength={MAX_REMARK_LENGTH}
                     disabled={
                         record.status === "completed"
                     }

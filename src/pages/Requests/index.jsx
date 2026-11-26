@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Tag, Modal } from "antd";
+import { Card, Table, Tag, Modal, message } from "antd";
 import { Button } from "antd";
 import { ArrowLeftOutlined, FileTextOutlined, InboxOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,23 @@ import SourceBadge from "../../components/SourceBadge";
 import { cacheManager } from "../../utils/cacheManager";
 import ExportButton from "../../components/ExportButton";
 import { formatExportDate } from "../../utils/exportUtils";
+import { displayPhone } from "../../utils/phone";
+import api from "../../utils/api";
+import CellText from "../Customer/CellText";
+
+// One line with "..."; the full text shows on hover.
+const textCell = (maxWidth) => (value) => (
+    <CellText text={value && value !== "none" ? String(value) : ""} maxWidth={maxWidth}>
+        {value && value !== "none" ? undefined : "-"}
+    </CellText>
+);
+
+// Same limit as the server (updatePartRequestRemark).
+const MAX_REMARK_LENGTH = 500;
+
+// Server error text, else a fallback.
+const errorText = (error, fallback) =>
+    error?.response?.data?.message || error?.response?.data?.error || error?.message || fallback;
 
 const { Option } = Select;
 
@@ -126,13 +143,14 @@ const Requests = () => {
             if (!cached) setLoading(true);
         }
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/part-request`);
-            const data = await res.json();
-            const list = data.data || [];
+            // Sent with the staff login (the list is staff only).
+            const res = await api.get("/part-request");
+            const list = res.data?.data || [];
             cacheManager.set("partRequests", list, 120);
             setRequests(list);
         } catch (error) {
             console.error("Error fetching requests:", error);
+            message.error(errorText(error, "Could not load part requests"));
         } finally {
             setLoading(false);
         }
@@ -146,9 +164,8 @@ const Requests = () => {
             return;
         }
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/junk-car`);
-            const data = await res.json();
-            const list = data.data || [];
+            const res = await api.get("/junk-car");
+            const list = res.data?.data || [];
             cacheManager.set("junkCars", list, 120);
             setJunkCars(list);
         } catch (error) {
@@ -175,17 +192,12 @@ const Requests = () => {
 
     const updateStatus = async (id, status) => {
         try {
-            await fetch(`${import.meta.env.VITE_API_URL}/part-request/${id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ status }),
-            });
+            await api.put(`/part-request/${id}`, { status });
 
-            fetchRequests();
+            fetchRequests(true);
         } catch (error) {
             console.error("Error updating status:", error);
+            message.error(errorText(error, "Could not update status"));
         }
     };
 
@@ -193,22 +205,14 @@ const Requests = () => {
     const updateSource = async (id, source) => {
         try {
 
-            await fetch(
-                `${import.meta.env.VITE_API_URL}/part-request/${id}/source`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ source }),
-                }
-            );
+            await api.patch(`/part-request/${id}/source`, { source });
 
-            fetchRequests();
+            fetchRequests(true);
 
         } catch (error) {
 
             console.error("Error updating source:", error);
+            message.error(errorText(error, "Could not update source"));
         }
     };
 
@@ -217,18 +221,9 @@ const Requests = () => {
 
         try {
 
-            await fetch(
-                `${import.meta.env.VITE_API_URL}/part-request/${id}/remark`,
-                {
-                    method: "PATCH",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ remark }),
-                }
-            );
+            await api.patch(`/part-request/${id}/remark`, { remark: (remark ?? "").trim() });
 
-            fetchRequests();
+            fetchRequests(true);
 
         } catch (error) {
 
@@ -236,6 +231,7 @@ const Requests = () => {
                 "Remark update failed:",
                 error
             );
+            message.error(errorText(error, "Could not save remark"));
         }
     };
     // end here
@@ -249,14 +245,17 @@ const Requests = () => {
         {
             title: "Name",
             dataIndex: "name",
+            render: textCell(150),
         },
         {
             title: "Make",
             dataIndex: "make",
+            render: textCell(140),
         },
         {
             title: "Model",
             dataIndex: "model",
+            render: textCell(140),
         },
         {
             title: "Year",
@@ -270,14 +269,17 @@ const Requests = () => {
         {
             title: "Part Name",
             dataIndex: "partName",
+            render: textCell(180),
         },
         {
             title: "Email",
             dataIndex: "email",
+            render: textCell(200),
         },
         {
             title: "Phone",
             dataIndex: "phone",
+            render: (v) => displayPhone(v, "none"),
         },
         {
             title: "Message",
@@ -311,6 +313,7 @@ const Requests = () => {
                         maxRows: 2,
                     }}
                     placeholder="Add remark..."
+                    maxLength={MAX_REMARK_LENGTH}
                     disabled={
                         record.status?.toLowerCase() ===
                         "completed"
@@ -384,7 +387,10 @@ const Requests = () => {
 
     // Search, Source and Status combine (same as Junk Car Requests): a row is
     // shown only if it matches every filter that is set.
-    const searchText = appliedSearch.toLowerCase();
+    // Runs of spaces are collapsed on both sides, so a full name typed with
+    // extra spaces ("John  Smith") still matches.
+    const collapseSpaces = (s) => String(s || "").replace(/\s+/g, " ").toLowerCase();
+    const searchText = collapseSpaces(appliedSearch).trim();
     const sourceMatches = sourceFilter ? SOURCE_FILTER_MATCHES[sourceFilter] || [sourceFilter] : null;
     const isFiltering = Boolean(searchText || status || sourceFilter);
 
@@ -409,7 +415,7 @@ const Requests = () => {
                 item.remark,
                 item.source,
                 item.status,
-            ].some((field) => String(field || "").toLowerCase().includes(searchText));
+            ].some((field) => collapseSpaces(field).includes(searchText));
 
         const statusMatch = !status || normalizeStatus(item.status) === normalizeStatus(status);
         const sourceMatch = !sourceMatches || sourceMatches.includes(item.source || "Online");

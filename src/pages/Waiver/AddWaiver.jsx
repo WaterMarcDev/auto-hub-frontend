@@ -5,6 +5,7 @@ import { customerAPI } from "../../utils/api";
 import { DEFAULT_CUSTOMER_TYPE } from "./customerTypeOptions";
 import CustomerInfoStep from "./CustomerInfoStep";
 import CreateCheckInModal from "../../components/CheckIn/CreateCheckInModal";
+import { useCustomerCreate } from "../../hooks/useCustomerCreate";
 
 const { Step } = Steps;
 
@@ -12,6 +13,8 @@ const AddWaiver = () => {
   const navigate = useNavigate();
   const [checkInModalOpen, setCheckInModalOpen] = useState(false);
   const [createdCustomer, setCreatedCustomer] = useState(null);
+  // Same name as an existing customer: staff compare the profiles first.
+  const { createCustomer, sameNameModal } = useCustomerCreate();
 
   // initial data passed to the step (stateless here)
   const initialData = {
@@ -102,8 +105,16 @@ const AddWaiver = () => {
       }
 
       // Create customer via customerAPI only
-      const customerRes = await customerAPI.create(customerPayload);
-      const createdCustomer = customerRes.data || customerRes;
+      const result = await createCustomer(customerPayload);
+      if (result.cancelled) return; // popup closed: nothing saved
+      if (result.existing) {
+        // Staff confirmed it is the existing customer: no new record.
+        message.info(`Continuing with the existing customer ${[result.customer.firstName, result.customer.lastName].filter(Boolean).join(" ")}.`, 5);
+        setCreatedCustomer(result.customer);
+        setCheckInModalOpen(true);
+        return;
+      }
+      const createdCustomer = result.customer;
 
       message.success("Customer created successfully");
       setCreatedCustomer(createdCustomer);
@@ -169,6 +180,7 @@ const AddWaiver = () => {
         </div>
       </div>
 
+      {sameNameModal}
       <CreateCheckInModal
         open={checkInModalOpen}
         preSelectedCustomer={createdCustomer}

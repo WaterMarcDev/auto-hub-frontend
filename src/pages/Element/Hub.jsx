@@ -23,6 +23,30 @@ import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { useAuth } from "../../hooks/useAuth";
 import { printInvoiceFromApi } from "../../utils/printCheckInInvoice";
+import { weightDecimalsRule } from "../../utils/weightRules";
+import NumericInput from "../../components/NumericInput";
+
+// Same limit as the backend (elementHub.controller.js); the note is printed
+// on the sale invoice.
+const MAX_SALE_NOTE_LENGTH = 500;
+
+// Long notes are cut with "..." in the history tables; full text on hover.
+const renderNote = (text) =>
+  text ? (
+    <div
+      title={text}
+      style={{
+        maxWidth: 260,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {text}
+    </div>
+  ) : (
+    "-"
+  );
 
 
 const Hub = () => {
@@ -138,11 +162,18 @@ const Hub = () => {
     setTotalAmount(value && value > 0 ? Number(value.toFixed(2)) : 0);
   };
 
+  // One click = one sale: ignore clicks while a sale request is running.
+  const sellingRef = React.useRef(false);
+  const [selling, setSelling] = React.useState(false);
+
   const doSell = async () => {
-    if (!selected) return;
+    if (!selected || sellingRef.current) return;
+    sellingRef.current = true;
+    setSelling(true);
     try {
       const values = await form.validateFields();
       const saleValue = values.saleValue;
+      const note = typeof values.note === "string" ? values.note.trim() : values.note;
 
       // No tax fields are sent: the server records the sale with no tax.
       const payload = {
@@ -151,7 +182,7 @@ const Hub = () => {
         unit: selected.unit,
         saleValue: saleValue,
         paymentMethod: values.paymentMethod,
-        note: values.note,
+        note: note || undefined,
         customerId: values.customerId,
       };
       await ElementHubService.sellElement(payload);
@@ -170,6 +201,9 @@ const Hub = () => {
         return;
       }
       api.error({ message: "Error", description: e.message });
+    } finally {
+      sellingRef.current = false;
+      setSelling(false);
     }
   };
 
@@ -310,7 +344,7 @@ const Hub = () => {
       dataIndex: "note",
       key: "note",
       minWidth: 150,
-      render: (text) => text || "-",
+      render: renderNote,
     },
     {
       title: "Date",
@@ -388,7 +422,7 @@ const Hub = () => {
       dataIndex: "note",
       key: "note",
       minWidth: 200,
-      render: (text) => text || "-",
+      render: renderNote,
     },
     {
       title: "Date",
@@ -512,7 +546,7 @@ const Hub = () => {
             setSellModalOpen(false);
             form.resetFields();
           }}
-          confirmLoading={loading}
+          confirmLoading={loading || selling}
           width={550}
           centered
           styles={{
@@ -579,13 +613,16 @@ const Hub = () => {
                   message: `Amount must be between 0.01 and ${selected?.totalWeight || 0
                     }`,
                 },
+                weightDecimalsRule("Amount to sell"),
               ]}
             >
-              <InputNumber
+              <NumericInput
+                mode="number"
                 min={0.01}
                 max={selected?.totalWeight}
                 style={{ width: "100%" }}
                 placeholder="Enter amount to sell"
+                errorMessage="Please enter a numeric weight"
               />
             </Form.Item>
 
@@ -663,9 +700,20 @@ const Hub = () => {
               />
             </Form.Item>
 
-            <Form.Item label="Note (Optional)" name="note">
+            <Form.Item
+              label="Note (Optional)"
+              name="note"
+              rules={[
+                {
+                  max: MAX_SALE_NOTE_LENGTH,
+                  message: `Note can be at most ${MAX_SALE_NOTE_LENGTH} characters`,
+                },
+              ]}
+            >
               <Input.TextArea
                 rows={3}
+                maxLength={MAX_SALE_NOTE_LENGTH}
+                showCount
                 placeholder="Enter any notes about this sale..."
               />
             </Form.Item>

@@ -1,6 +1,8 @@
 /**
  * Shared constants for the Car Intake process
  */
+import dayjs from "dayjs";
+import { weightError } from "../inventory/fieldRules";
 
 export const NEGOTIATION_OPTIONS = [
   { value: "0", label: "0% More" },
@@ -91,6 +93,76 @@ export const getNegotiationLabel = (key) => {
   if (!key) return "Not selected";
   const option = NEGOTIATION_OPTIONS.find((opt) => opt.value === String(key));
   return option ? option.label : key;
+};
+
+/**
+ * Step 3 (Car Diagnosis) part Weight and Dimensions. The parts later go to
+ * inventory (Add To Inventory), so these must be values the inventory
+ * accepts (auto-hub-backend/utils/inventoryFieldRules.js):
+ *  - Weight: optional, a number from 0 to 15,000 with up to 2 decimals
+ *    (the inventory rule: weightError in components/inventory/fieldRules.js).
+ *  - Dimensions: optional free text such as `24 x 12.5 x 6 in`, at most 100
+ *    characters (the inventory limit); every number in it has at most 5
+ *    digits before and 2 after one decimal point ("12.345", "1.2.3" and
+ *    "1..2" are rejected).
+ * The backend checks the same (validateIntakeParts in
+ * auto-hub-backend/controllers/carIntake.controller.js).
+ */
+export const partWeightError = weightError;
+
+export const MAX_PART_DIMENSIONS_LENGTH = 100;
+const DIMENSION_NUMBER = /^(\d{1,5}(\.\d{0,2})?|\.\d{0,2})$/;
+
+export const partDimensionsError = (value) => {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  if (text.length > MAX_PART_DIMENSIONS_LENGTH) {
+    return `Dimensions must be at most ${MAX_PART_DIMENSIONS_LENGTH} characters`;
+  }
+  const numbers = text.split(/[^\d.]+/).filter(Boolean);
+  if (numbers.some((n) => !DIMENSION_NUMBER.test(n))) {
+    return "Dimensions: each number can have only one decimal point and up to 2 decimals (e.g. 24 x 12.5 x 6 in)";
+  }
+  return null;
+};
+
+const partLabel = (key) =>
+  String(key)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+/**
+ * First problem with a selected part's Weight / Dimensions in the Step 3
+ * diagnosis (`{ partKey: { selected, unit, weight, dimensions, ... } }`), as a
+ * message naming the part, or null when all are valid. Parts that are not
+ * selected are not checked (their boxes are disabled and they never go to
+ * inventory).
+ */
+export const findDiagnosisPartError = (diagnosis) => {
+  for (const [key, part] of Object.entries(diagnosis || {})) {
+    if (!part || typeof part !== "object" || part.selected !== true) continue;
+    const err = weightError(part.weight) || partDimensionsError(part.dimensions);
+    if (err) return `${partLabel(key)}: ${err}`;
+  }
+  return null;
+};
+
+/**
+ * Step 5 Date of Selling: today or earlier, never a future day. The backend
+ * rejects a future date too (validateSellingDate in carIntake.controller.js).
+ */
+export const SELLING_DATE_FUTURE_MESSAGE = "Date of Selling cannot be a future date";
+export const isFutureSellingDate = (value) => {
+  if (value === undefined || value === null || value === "") return false;
+  const d = dayjs(value);
+  return d.isValid() && d.isAfter(dayjs(), "day");
+};
+export const sellingDateRule = {
+  validator: (_, value) =>
+    isFutureSellingDate(value)
+      ? Promise.reject(new Error(SELLING_DATE_FUTURE_MESSAGE))
+      : Promise.resolve(),
 };
 
 /**

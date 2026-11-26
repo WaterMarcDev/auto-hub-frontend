@@ -143,22 +143,26 @@ const Trim = () => {
       key: "srNo",
       render: (text, record, index) => index + 1,
     },
-    { title: "Car Make Name", key: "carMake", dataIndex: ["make", "name"] },
-    { title: "Car Model Name", key: "carModel", dataIndex: ["model", "name"] },
+    // Long values (e.g. older records) are cut with "..." and shown in full on hover.
+    { title: "Car Make Name", key: "carMake", dataIndex: ["make", "name"], ellipsis: { showTitle: true } },
+    { title: "Car Model Name", key: "carModel", dataIndex: ["model", "name"], ellipsis: { showTitle: true } },
     {
       title: "Trim Name",
       key: "name",
       dataIndex: "name",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Short Name",
       key: "shortName",
       dataIndex: "shortName",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Description",
       key: "description",
       dataIndex: "description",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Actions",

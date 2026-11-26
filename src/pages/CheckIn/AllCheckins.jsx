@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Card, Table, Input, Select, message, Tag, Button, Space } from "antd";
 import PersonsCell from "../../components/CheckIn/PersonsCell";
+import CellText from "../Customer/CellText";
 import { PrinterOutlined } from "@ant-design/icons";
 import { checkInAPI } from "../../utils/api";
 import printCheckInInvoice from "../../utils/printCheckInInvoice";
@@ -125,10 +126,12 @@ const AllCheckins = () => {
     {
       title: "Customer",
       key: "customer",
-      render: (_, rec) =>
-        `${rec.customer?.firstName || ""} ${
-          rec.customer?.lastName || ""
-        }`.trim() || "N/A",
+      // Long names stay on one line ("...", full name on hover).
+      render: (_, rec) => (
+        <CellText
+          text={`${rec.customer?.firstName || ""} ${rec.customer?.lastName || ""}`.trim()}
+        />
+      ),
     },
     {
       title: "Checked In",
@@ -151,7 +154,7 @@ const AllCheckins = () => {
       title: "Employee",
       dataIndex: "employeeName",
       key: "employeeName",
-      render: (v) => v || "-",
+      render: (v) => <CellText text={v}>{v ? undefined : "-"}</CellText>,
     },
     {
       title: "Status",

@@ -18,6 +18,7 @@ import { SearchOutlined } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import ExtractElementsModal from "../../components/Scrap/ExtractElementsModal";
+import usePersistedColumns from "../../components/Scrap/usePersistedColumns";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
@@ -381,7 +382,9 @@ const ScrapList = () => {
       ? String(col.dataIndex[0])
       : String(col.dataIndex || "");
 
-  const [visibleColumns, setVisibleColumns] = React.useState(
+  // Column choice is remembered across refreshes (localStorage).
+  const [visibleColumns, setVisibleColumns] = usePersistedColumns(
+    "autohub.columns.scrapCarList",
     allColumns.map((c) => getColKey(c))
   );
 

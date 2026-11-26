@@ -12,7 +12,8 @@ import Payment from "../components/CarIntake/Payment";
 import CarInventory from "../components/CarIntake/CarInventory";
 import { dimensionsPayload, vehicleWeightMax, parseCarWeight } from "../utils/carDimensions";
 import { emailRule } from "../utils/email";
-import { CAR_TEXT_FIELDS, carTextRules, trimCarText } from "../components/CarIntake/intakeConstants";
+import { CAR_TEXT_FIELDS, carTextRules, trimCarText, findDiagnosisPartError, isFutureSellingDate, SELLING_DATE_FUTURE_MESSAGE } from "../components/CarIntake/intakeConstants";
+import { weightDecimalsRule } from "../utils/weightRules";
 
 // A weight / amount that must be a number greater than 0 (blank, spaces and
 // 0 are rejected).
@@ -198,10 +199,14 @@ const CarIntake = () => {
   // Each step starts at the top of the page. Without this the scroll position
   // of a long step (Car Diagnostic) was kept, so the next, shorter step opened
   // scrolled to the bottom with only the page footer in view.
+  // The element that actually scrolls is .page-content (layout/Layout.jsx);
+  // window and .main-content are overflow:hidden, so they are reset too only
+  // as a fallback.
   useEffect(() => {
     try {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.querySelector(".page-content")?.scrollTo?.({ top: 0, left: 0, behavior: "auto" });
       document.querySelector(".main-content")?.scrollTo?.({ top: 0 });
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     } catch {
       // ignore (old browsers / tests)
     }
@@ -815,13 +820,14 @@ const CarIntake = () => {
 
     // Step 4: scale weight. 0 / blank / spaces are not a weight.
     actualWeight: [
-      { required: true, whitespace: true, message: "Weight is required" },
+      { required: true, message: "Weight is required" },
       positiveNumberRule("Weight must be greater than 0"),
+      weightDecimalsRule("Weight"),
     ],
 
     // Step 6: amount paid to the seller ("Pay Now").
     paymentFinalPrice: [
-      { required: true, whitespace: true, message: "Final Price is required" },
+      { required: true, message: "Final Price is required" },
       positiveNumberRule("Final Price must be a number greater than 0"),
     ],
 
@@ -1261,6 +1267,23 @@ const CarIntake = () => {
 
       await form.validateFields(stepFields);
 
+      // Step 3: part Weight / Dimensions must be values the inventory
+      // accepts (max 2 decimals etc.), or the parts can't be added later.
+      if (currentStep === 3) {
+        const partError = findDiagnosisPartError(formData.diagnosis);
+        if (partError) {
+          messageApi.error(partError);
+          return;
+        }
+      }
+
+      // Step 5: Date of Selling cannot be in the future (the picker blocks
+      // future days; this also covers a date typed into the box).
+      if (currentStep === 5 && isFutureSellingDate(formData.sellingDate)) {
+        messageApi.error(SELLING_DATE_FUTURE_MESSAGE);
+        return;
+      }
+
       // Force immediate save when moving to next step
       // added by shiva
       try {
@@ -1484,7 +1507,9 @@ const CarIntake = () => {
         sellingDate:
           formData.sellingDate && formData.sellingDate.format
             ? formData.sellingDate.format("YYYY-MM-DD")
-            : formData.sellingDate || new Date().toISOString().split("T")[0],
+            : // Local "today" (toISOString gave the UTC date, i.e. tomorrow
+              // on evenings in New Jersey, which the server now refuses).
+              formData.sellingDate || dayjs().format("YYYY-MM-DD"),
         pickupType: normalizePickup(formData.pickUpType),
         paymentMethod: formData.paidTo || "Cash",
         kycDescription: formData.kycDescription,
