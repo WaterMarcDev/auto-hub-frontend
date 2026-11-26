@@ -47,7 +47,9 @@ const NumericInput = ({
   // True when `text` would be a number bigger than `max`.
   const aboveMax = (text) => {
     if (max === null) return false;
-    const n = Number(String(text).replace(/,/g, ""));
+    // Only digits and the point count, so a formatted box ("$ 1,234.5")
+    // is read as 1234.5.
+    const n = Number(String(text).replace(/[^\d.]/g, ""));
     return Number.isFinite(n) ? n > max : String(text).replace(/\D/g, "").length > 15;
   };
   const pastePattern = decimals ? /^\d*\.?\d*$/ : /^\d*$/;

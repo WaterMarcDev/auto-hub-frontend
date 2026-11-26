@@ -12,7 +12,7 @@ import {
   Card,
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
-import { NEGOTIATION_OPTIONS, VEHICLE_SOURCE_OPTIONS } from "./intakeConstants";
+import { NEGOTIATION_OPTIONS, VEHICLE_SOURCE_OPTIONS, MAX_CAR_PRICE } from "./intakeConstants";
 import { MAX_DESCRIPTION_LENGTH } from "../../utils/descriptionLimit";
 import NumericInput from "../NumericInput";
 
@@ -237,7 +237,10 @@ const CarPrice = ({
               }
               dependencies={["customerPrice"]}
             >
-              <InputNumber
+              {/* Numbers only, at most 2 decimals, up to $999,999.99: typing a
+                  letter, a 3rd decimal or a bigger number is ignored. */}
+              <NumericInput
+                mode="number"
                 style={{
                   width: "100%",
                   backgroundColor: "#4b5563",
@@ -245,11 +248,15 @@ const CarPrice = ({
                   color: "white",
                 }}
                 min={0}
+                max={MAX_CAR_PRICE}
+                precision={2}
                 step={0.01}
                 formatter={(value) =>
                   `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
                 parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                errorMessage="Our Price can contain numbers only"
+                maxMessage={`Our Price can be at most $${MAX_CAR_PRICE.toLocaleString("en-US")}`}
               />
             </Form.Item>
           </Col>
@@ -266,7 +273,10 @@ const CarPrice = ({
                 ]
               }
             >
-              <InputNumber
+              {/* Numbers only, at most 2 decimals, up to $999,999.99: typing a
+                  letter, a 3rd decimal or a bigger number is ignored. */}
+              <NumericInput
+                mode="number"
                 style={{
                   width: "100%",
                   backgroundColor: "#4b5563",
@@ -274,11 +284,15 @@ const CarPrice = ({
                   color: "white",
                 }}
                 min={0}
+                max={MAX_CAR_PRICE}
+                precision={2}
                 step={0.01}
                 formatter={(value) =>
                   `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
                 parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                errorMessage="Customer Price can contain numbers only"
+                maxMessage={`Customer Price can be at most $${MAX_CAR_PRICE.toLocaleString("en-US")}`}
               />
             </Form.Item>
           </Col>

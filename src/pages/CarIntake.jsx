@@ -12,7 +12,7 @@ import Payment from "../components/CarIntake/Payment";
 import CarInventory from "../components/CarIntake/CarInventory";
 import { dimensionsPayload, vehicleWeightMax, parseCarWeight } from "../utils/carDimensions";
 import { emailRule } from "../utils/email";
-import { CAR_TEXT_FIELDS, carTextRules, trimCarText, findDiagnosisPartError, isFutureSellingDate, SELLING_DATE_FUTURE_MESSAGE } from "../components/CarIntake/intakeConstants";
+import { CAR_TEXT_FIELDS, carTextRules, carPriceRule, trimCarText, findDiagnosisPartError, isFutureSellingDate, SELLING_DATE_FUTURE_MESSAGE } from "../components/CarIntake/intakeConstants";
 import { weightDecimalsRule } from "../utils/weightRules";
 
 // A weight / amount that must be a number greater than 0 (blank, spaces and
@@ -834,6 +834,7 @@ const CarIntake = () => {
     ourPrice: [
       { required: true, message: "Our Price is required" },
       { type: "number", min: 0, message: "Our Price must be 0 or greater" },
+      carPriceRule("Our Price"),
       ({ getFieldValue }) => ({
         validator(_, value) {
           if (
@@ -856,6 +857,7 @@ const CarIntake = () => {
         min: 0,
         message: "Customer Price must be 0 or greater",
       },
+      carPriceRule("Customer Price"),
     ],
     rate: [{ required: true, message: "Rate is required" }],
     finalPrice: [

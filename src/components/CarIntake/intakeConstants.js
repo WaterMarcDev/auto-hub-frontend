@@ -89,6 +89,33 @@ export const trimCarText = (data) => {
  * @param {string} key
  * @returns {string}
  */
+/**
+ * Car Price step: Our Price and Customer Price are numbers from 0 to
+ * MAX_CAR_PRICE with at most 2 decimal places. The boxes ignore typing above
+ * the maximum or a 3rd decimal; this rule also catches pasted / loaded
+ * values. The server checks the same (carPriceError in
+ * auto-hub-backend/controllers/carIntake.controller.js).
+ */
+export const MAX_CAR_PRICE = 999999.99;
+export const carPriceRule = (label) => ({
+  validator: (_, value) => {
+    if (value === undefined || value === null || String(value).trim() === "") {
+      return Promise.resolve(); // the required rule reports blanks
+    }
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0) {
+      return Promise.reject(new Error(`${label} must be a number of 0 or more`));
+    }
+    if (n > MAX_CAR_PRICE) {
+      return Promise.reject(new Error(`${label} can be at most $${MAX_CAR_PRICE.toLocaleString("en-US")}`));
+    }
+    if (!/^\d+(\.\d{1,2})?$/.test(String(value).trim())) {
+      return Promise.reject(new Error(`${label} can have at most 2 decimal places`));
+    }
+    return Promise.resolve();
+  },
+});
+
 export const getNegotiationLabel = (key) => {
   if (!key) return "Not selected";
   const option = NEGOTIATION_OPTIONS.find((opt) => opt.value === String(key));
