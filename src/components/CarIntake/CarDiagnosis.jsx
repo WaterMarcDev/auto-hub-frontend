@@ -17,6 +17,11 @@ import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { partAPI, makeAPI } from "../../utils/api";
 import UnitInput from "../UnitInput";
 import NumericInput from "../NumericInput";
+import {
+  partWeightError,
+  partDimensionsError,
+  MAX_PART_DIMENSIONS_LENGTH,
+} from "./intakeConstants";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -29,6 +34,83 @@ const isIntakeDeselectedPart = (key) =>
   INTAKE_DESELECTED_PARTS.has(String(key || "").trim().toLowerCase());
 
 const QUALITY_OPTIONS = ["Good", "Average", "OK", "Broken", "Scratches"];
+
+// Unit of a selected part: a whole number from 1 to 10, and never more than
+// the catalog part's own unit when that is lower. Mirrors the server check in
+// controllers/carIntake.controller.js (validateIntakeParts).
+export const MIN_PART_UNIT = 1;
+export const MAX_PART_UNIT = 10;
+const partUnitMax = (record) => {
+  const catalog = Number(record?.unit);
+  return Number.isFinite(catalog) && catalog >= MIN_PART_UNIT
+    ? Math.min(Math.floor(catalog), MAX_PART_UNIT)
+    : MAX_PART_UNIT;
+};
+
+// The Unit box. Keeps its own text while typing, so backspace can clear it
+// (it used to snap straight back to 0). Valid numbers are saved as typed;
+// an empty box goes back to 1 when the user leaves it; more than the maximum
+// is refused with a message.
+const UnitCell = ({ value, max, disabled, onCommit }) => {
+  const [text, setText] = useState(value ?? "");
+  const [overMax, setOverMax] = useState(false);
+
+  useEffect(() => {
+    setText(value ?? "");
+  }, [value]);
+
+  const commitIfValid = (v) => {
+    const n = Number(v);
+    if (Number.isInteger(n) && n >= MIN_PART_UNIT && n <= max) onCommit(n);
+  };
+
+  return (
+    <>
+      <UnitInput
+        value={text === "" ? null : text}
+        // No antd min/max: antd would hold values above the maximum back
+        // silently; this cell clamps them and says why.
+        disabled={disabled}
+        status={overMax ? "error" : undefined}
+        onChange={(v) => {
+          if (v === null || v === undefined || v === "") {
+            setText("");
+            setOverMax(false);
+            return;
+          }
+          const n = Number(v);
+          if (n > max) {
+            setOverMax(true);
+            setText(max);
+            onCommit(max);
+            return;
+          }
+          setOverMax(false);
+          setText(n);
+          commitIfValid(n);
+        }}
+        onBlur={() => {
+          setOverMax(false);
+          const n = Number(text);
+          if (text === "" || !Number.isInteger(n) || n < MIN_PART_UNIT) {
+            setText(MIN_PART_UNIT);
+            onCommit(MIN_PART_UNIT);
+          }
+        }}
+        style={{
+          width: "100%",
+          backgroundColor: "#4b5563",
+          borderColor: "#6b7280",
+        }}
+      />
+      {overMax && (
+        <div style={{ color: "#ff4d4f", fontSize: 12, marginTop: 2 }}>
+          {`Unit must be from ${MIN_PART_UNIT} to ${max}`}
+        </div>
+      )}
+    </>
+  );
+};
 
 // These are defined OUTSIDE CarDiagnosis on purpose. When they were created
 // inside the component (and inline in the Table `components` prop), every
@@ -57,6 +139,8 @@ const EditableCell = ({
   disabled,
   placeholder,
   numeric = false, // weight: numbers only
+  validate, // (value) => error message or null
+  maxLength,
 }) => {
   const [val, setVal] = useState(initial ?? "");
 
@@ -73,29 +157,47 @@ const EditableCell = ({
     borderColor: "#6b7280",
     color: "white",
   };
+  // Weight / Dimensions rules (intakeConstants.js): the same limits the
+  // inventory accepts, so the part can be added to inventory later.
+  const error = disabled ? null : validate ? validate(val) : null;
+  const errorText = error ? (
+    <div role="alert" style={{ color: "#ff4d4f", fontSize: 12, marginTop: 2 }}>
+      {error}
+    </div>
+  ) : null;
   if (numeric) {
     return (
-      <NumericInput
+      <>
+        <NumericInput
+          value={val}
+          onChange={setVal}
+          onBlur={commit}
+          onPressEnter={commit}
+          disabled={disabled}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          status={error ? "error" : undefined}
+          style={style}
+        />
+        {errorText}
+      </>
+    );
+  }
+  return (
+    <>
+      <Input
         value={val}
-        onChange={setVal}
+        onChange={(e) => setVal(e.target.value)}
         onBlur={commit}
         onPressEnter={commit}
         disabled={disabled}
         placeholder={placeholder}
+        maxLength={maxLength}
+        status={error ? "error" : undefined}
         style={style}
       />
-    );
-  }
-  return (
-    <Input
-      value={val}
-      onChange={(e) => setVal(e.target.value)}
-      onBlur={commit}
-      onPressEnter={commit}
-      disabled={disabled}
-      placeholder={placeholder}
-      style={style}
-    />
+      {errorText}
+    </>
   );
 };
 
@@ -221,7 +323,9 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           p.unit !== null
         ) {
           const parsed = Number(p.unit);
-          updated[key].unit = Number.isFinite(parsed) ? parsed : 1;
+          updated[key].unit = Number.isFinite(parsed)
+            ? Math.min(Math.max(Math.floor(parsed), MIN_PART_UNIT), MAX_PART_UNIT)
+            : 1;
           changed = true;
         }
       }
@@ -310,9 +414,7 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
               // two consecutive updates overwrite each other
               const curUnit = getPartData(record.key, "unit");
               let newUnit;
-              const max = Number.isFinite(Number(record.unit))
-                ? Number(record.unit)
-                : 1;
+              const max = partUnitMax(record);
               if (!checked) {
                 newUnit = 0;
               } else {
@@ -366,29 +468,11 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
       key: "unit",
       width: 100,
       render: (_, record) => (
-        <UnitInput
+        <UnitCell
           value={getPartData(record.key, "unit") ?? 0}
-          onChange={(value) => {
-            const max = record.unit || Number.MAX_SAFE_INTEGER;
-            let v = value;
-            if (v === undefined || v === null) v = 0;
-            v = Number(v) || 0;
-            if (v > max) v = max;
-            if (v < 0) v = 0;
-            updatePartData(record.key, "unit", v);
-          }}
-          min={0}
-          max={
-            Number.isFinite(Number(record.unit))
-              ? Number(record.unit)
-              : undefined
-          }
+          max={partUnitMax(record)}
           disabled={getPartData(record.key, "selected") !== true}
-          style={{
-            width: "100%",
-            backgroundColor: "#4b5563",
-            borderColor: "#6b7280",
-          }}
+          onCommit={(v) => updatePartData(record.key, "unit", v)}
         />
       ),
     },
@@ -429,6 +513,8 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           value={getPartData(record.key, "weight")}
           onCommit={(v) => updatePartData(record.key, "weight", v)}
           numeric
+          validate={partWeightError}
+          maxLength={8}
           disabled={getPartData(record.key, "selected") !== true}
           placeholder={`Enter ${record.name} Weight`}
         />
@@ -447,6 +533,8 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
         <EditableCell
           value={getPartData(record.key, "dimensions")}
           onCommit={(v) => updatePartData(record.key, "dimensions", v)}
+          validate={partDimensionsError}
+          maxLength={MAX_PART_DIMENSIONS_LENGTH}
           disabled={getPartData(record.key, "selected") !== true}
           placeholder={`Enter ${record.name} Dimensions`}
         />

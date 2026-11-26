@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, Form, Input, Button, Row, Col, notification, Spin } from "antd";
-import { buyerAPI, customerAPI, uploadAPI } from "../../utils/api";
+import { buyerAPI, uploadAPI } from "../../utils/api";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { useParams, useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import CameraUpload from "../../components/CameraUpload";
 import SignatureCanvas from "../../components/SignatureCanvas";
 import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 import { emailRule, normalizeEmail } from "../../utils/email";
+import { useCustomerCreate } from "../../hooks/useCustomerCreate";
 
 const BuyerRegister = () => {
   const [loading, setLoading] = useState(false);
@@ -16,6 +17,8 @@ const BuyerRegister = () => {
   const [uploadedIdProof, setUploadedIdProof] = useState(null);
   const [signatureUrl, setSignatureUrl] = useState(null);
   const [api, contextHolder] = notification.useNotification();
+  // Same name as an existing customer: staff compare the profiles first.
+  const { createCustomer, sameNameModal } = useCustomerCreate();
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(id);
@@ -81,10 +84,13 @@ const BuyerRegister = () => {
         if (signatureUrl) customerPayload.signatureImage = signatureUrl;
 
         try {
-          await customerAPI.create(customerPayload);
+          const result = await createCustomer(customerPayload);
+          if (result.cancelled) return; // popup closed: nothing saved
           api.success({
             message: "Success",
-            description: "Buyer created successfully",
+            description: result.existing
+              ? "Existing customer used. No new buyer was created."
+              : "Buyer created successfully",
             placement: "topRight",
           });
           // clear previews
@@ -122,6 +128,7 @@ const BuyerRegister = () => {
   return (
     <div>
       {contextHolder}
+      {sameNameModal}
       <TitleBox
         title={isEditMode ? "Edit Buyer" : "Register Buyer"}
         routes={["Buyers"]}

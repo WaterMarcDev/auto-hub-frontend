@@ -140,10 +140,14 @@ const EntryFeeSetting = () => {
                     max={ENTRY_FEE_MAX}
                     precision={2}
                     step={0.5}
-                    prefix="$"
+                    // No "$" prefix: it wraps the box in an unthemed outer box.
+                    // The label already says USD.
                     className="crm-number-box"
                     style={{ width: '100%' }}
                     errorMessage={ENTRY_FEE_ERROR}
+                    // A number above $10 can't be typed or pasted: the key is
+                    // ignored and the number already in the box stays.
+                    maxMessage={`Entry fee can be at most $${ENTRY_FEE_MAX}`}
                   />
                 </Form.Item>
 

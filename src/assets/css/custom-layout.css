@@ -235,6 +235,42 @@
   color: #d6dae5 !important;
 }
 
+/* Car Intake step boxes ("01. Car Details" ... "07. Car & Parts Inventory"):
+   every box has the same width and height and its text always stays inside
+   (the theme gave each a fixed 180px width, so the long
+   "05. User Identification & Car Doc" spilled out of its box). */
+.twitter-bs-wizard .twitter-bs-wizard-nav .nav-item {
+  min-width: 0 !important;
+}
+
+.twitter-bs-wizard .twitter-bs-wizard-nav .step-number {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100%;
+  min-height: 52px;
+  margin: 0 !important;
+  padding: 6px 10px;
+  line-height: 18px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+@media (max-width: 991.98px) {
+  .twitter-bs-wizard .twitter-bs-wizard-nav .nav-item {
+    flex: 1 1 25% !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .twitter-bs-wizard .twitter-bs-wizard-nav .nav-item {
+    flex: 1 1 50% !important;
+  }
+}
+
 .text-muted {
   color: #b3b7c1 !important;
 }

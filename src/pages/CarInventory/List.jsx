@@ -16,6 +16,7 @@ import { SearchOutlined } from "@ant-design/icons";
 import { carIntakeAPI, uploadAPI } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import TitleBox from "../../components/TitleBox";
+import usePersistedColumns from "../../components/Scrap/usePersistedColumns";
 import getStatusColor from "../../utils/statusColors";
 
 const CarInventoryList = () => {
@@ -333,7 +334,9 @@ const CarInventoryList = () => {
       ? String(col.dataIndex[0])
       : String(col.dataIndex || "");
 
-  const [visibleColumns, setVisibleColumns] = React.useState(
+  // Column choice is remembered across refreshes (localStorage).
+  const [visibleColumns, setVisibleColumns] = usePersistedColumns(
+    "autohub.columns.carInventoryForScrap",
     allColumns.map((c) => getColKey(c))
   );
 

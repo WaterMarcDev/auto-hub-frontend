@@ -643,7 +643,7 @@ const CarIntakeList = () => {
           >
             <Space.Compact style={{ width: "100%", maxWidth: 600, gap: 8 }} size="middle">
               <Input
-                placeholder="Search by VIN, Make, Model, Trim, or Seller..."
+                placeholder="Search by VIN, Make, Model, Year, Trim or Seller (e.g. Toyota Corolla 2017)"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);

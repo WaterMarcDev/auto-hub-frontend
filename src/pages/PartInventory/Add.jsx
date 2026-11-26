@@ -217,7 +217,16 @@ const PartInventoryAdd = () => {
             <Input
               placeholder="Search VIN / Make / Model"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              allowClear
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchValue(value);
+                // Cleared (the "x" or emptied by hand): show the full list
+                // again without having to press Search (QA 076).
+                if (!value.trim() && searchValue.trim()) {
+                  fetchCarIntakes(1, pagination.pageSize, "");
+                }
+              }}
               onPressEnter={() => fetchCarIntakes(1, pagination.pageSize)}
             />
             <Button

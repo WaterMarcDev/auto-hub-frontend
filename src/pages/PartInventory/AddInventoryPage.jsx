@@ -24,7 +24,30 @@ import {
     inventoryAPI,
     uploadAPI,
     assetTagsAPI,
+    partAPI,
 } from "../../utils/api";
+
+const toTitle = (s) =>
+    s.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, (c) => c.toUpperCase());
+
+// Key of a catalog part in an intake's partDetails.parts ("Front Bumper" ->
+// "frontBumper"): the same key the Car Intake Step 3 table (CarDiagnosis.jsx)
+// uses when it saves the parts.
+const intakePartKey = (name) => {
+    const words = String(name || "")
+        .replace(/[^a-zA-Z0-9 ]+/g, " ")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+    if (!words.length) return "";
+    return (
+        words[0].toLowerCase() +
+        words
+            .slice(1)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join("")
+    );
+};
 
 const EditableCell = ({ value: initial, onCommit, placeholder, numeric = false, maxLength }) => {
     const [val, setVal] = useState(initial ?? "");
@@ -102,6 +125,25 @@ const AddInventoryPage = () => {
                 console.error("Failed to load existing inventory for VIN", err);
             }
 
+            // Catalog units, keyed like the Car Intake Step 3 rows, for parts
+            // whose intake record has no unit (see maxUnit below).
+            let catalogUnits = {};
+            try {
+                const res = await partAPI.getAll({ limit: 1000 });
+                const list = res?.data?.parts || res?.data || [];
+                if (Array.isArray(list)) {
+                    list.forEach((cp) => {
+                        const k = intakePartKey(cp.name);
+                        const u = Number(cp.unit);
+                        if (k && !(k in catalogUnits) && Number.isFinite(u) && u > 0) {
+                            catalogUnits[k] = u;
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load parts catalog", err);
+            }
+
             const allSelectedKeys = Object.keys(record.partDetails.parts || {}).filter(
                 // Parts removed from the CRM (A1, A2, Windshield, Heated Windshield)
                 // are not added to inventory.
@@ -115,10 +157,20 @@ const AddInventoryPage = () => {
                 if (existingPartNames.has(key)) return;
 
                 const p = record.partDetails.parts[key];
+                // Unit cannot go above what was recorded for this part at
+                // Car Intake (Step 3 caps that at the catalog unit). When
+                // the intake has no unit, the catalog unit is the cap.
+                // The server applies the same rule (bulkCreateInventory).
+                const recorded = Number(p.unit);
+                const maxUnit =
+                    Number.isFinite(recorded) && recorded > 0
+                        ? recorded
+                        : catalogUnits[key];
                 parts[key] = {
                     extracted: !!p.extracted,
                     cleaned: !!p.cleaned,
                     unit: p.unit || 0,
+                    maxUnit,
                     placed: p.placed || "",
                     dimensions: p.dimensions || "",
                     weight: p.weight || "",
@@ -130,6 +182,19 @@ const AddInventoryPage = () => {
 
             setInventoryRecord(record);
             setInventoryParts(parts);
+
+            // Intakes saved before the Step 3 weight rule may hold weights
+            // the inventory refuses (e.g. 3 decimals): say which, so they
+            // can be fixed in the Weight column before Submit.
+            const badWeights = Object.values(parts)
+                .filter((p) => weightError(p.weight))
+                .map((p) => toTitle(p.label));
+            if (badWeights.length) {
+                message.warning(
+                    `Fix the Weight for: ${badWeights.join(", ")} (a number up to 15,000 with at most 2 decimals) before submitting.`,
+                    8
+                );
+            }
         })();
     }, [state, navigate]);
 
@@ -139,9 +204,6 @@ const AddInventoryPage = () => {
             [key]: { ...prev[key], [field]: value },
         }));
     };
-
-    const toTitle = (s) =>
-        s.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, (c) => c.toUpperCase());
 
     const handleImageUpload = (key, res) => {
         const imageUrl = res?.imageUrl || res?.url || res;
@@ -232,6 +294,26 @@ const AddInventoryPage = () => {
         const badWeight = partsToCreate.find((p) => weightError(p.weight));
         if (badWeight) {
             message.error(`${toTitle(badWeight.label)}: ${weightError(badWeight.weight)}`);
+            return;
+        }
+
+        const tooManyUnits = partsToCreate.find(
+            (p) => p.maxUnit !== undefined && Number(p.unit) > p.maxUnit
+        );
+        if (tooManyUnits) {
+            message.error(
+                `${toTitle(tooManyUnits.label)}: Unit cannot be more than ${tooManyUnits.maxUnit} (recorded at Car Intake)`
+            );
+            return;
+        }
+
+        const longDimensions = partsToCreate.find(
+            (p) => (cleanText(p.dimensions) || "").length > TEXT_LIMITS.dimensions
+        );
+        if (longDimensions) {
+            message.error(
+                `${toTitle(longDimensions.label)}: Dimensions must be at most ${TEXT_LIMITS.dimensions} characters`
+            );
             return;
         }
 
@@ -459,15 +541,25 @@ const AddInventoryPage = () => {
         {
             title: "Unit",
             width: 90,
-            render: (_, r) => (
-                <UnitInput
-                    size="small"
-                    min={0}
-                    style={{ width: "100%" }}
-                    value={inventoryParts[r.key]?.unit}
-                    onChange={(v) => handleInventoryChange(r.key, "unit", v)}
-                />
-            ),
+            render: (_, r) => {
+                // Capped at the unit recorded at Car Intake (QA 077).
+                const max = inventoryParts[r.key]?.maxUnit;
+                return (
+                    <UnitInput
+                        size="small"
+                        min={0}
+                        max={max}
+                        title={max !== undefined ? `Up to ${max} (recorded at Car Intake)` : undefined}
+                        style={{ width: "100%" }}
+                        value={inventoryParts[r.key]?.unit}
+                        onChange={(v) => {
+                            let next = v;
+                            if (max !== undefined && Number(next) > max) next = max;
+                            handleInventoryChange(r.key, "unit", next);
+                        }}
+                    />
+                );
+            },
         },
         {
             title: "Quality",

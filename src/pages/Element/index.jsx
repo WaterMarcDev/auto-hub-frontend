@@ -81,26 +81,32 @@ const Element = () => {
       title: "Element Name",
       dataIndex: "name",
       key: "name",
+      // Long values (e.g. older records) are cut with "..." and shown in full on hover.
+      ellipsis: { showTitle: true },
     },
     {
       title: "Short Name",
       dataIndex: "shortName",
       key: "shortName",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Weight",
       dataIndex: "weight",
       key: "weight",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Dimensions",
       dataIndex: "dimensions",
       key: "dimensions",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Description",
       dataIndex: "description",
       key: "description",
+      ellipsis: { showTitle: true },
     },
     {
       title: "Actions",

@@ -22,12 +22,14 @@ import {
   DeleteOutlined,
   ReloadOutlined,
   UserAddOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import NumericInput from "../../components/NumericInput";
 import ScrapPurchaseService from "../../services/scrapPurchaseService";
+import { normalizePhone, US_PHONE_REGEX, US_PHONE_MESSAGE, US_PHONE_PLACEHOLDER, US_PHONE_MAX_LENGTH } from "../../utils/phone";
 
 const { Option } = Select;
 
@@ -50,11 +52,14 @@ const MAX_PRICE_PER_LB = 2000;
 const MAX_TOTAL = 10000000;
 const MAX_DECIMALS = 2;
 const MAX_MATERIAL_NAME = 100;
-const MAX_NOTE = 1000;
-const MAX_SELLER_NAME = 100;
+const MAX_NOTE = 50;
+const MAX_SELLER_NAME = 30;
 const MAX_SELLER_PHONE = 25;
 
 const fmtLimit = (n) => Number(n).toLocaleString("en-US");
+
+// Payment date may be today or earlier, never a future day.
+const isFutureDay = (d) => Boolean(d) && dayjs(d).isAfter(dayjs(), "day");
 
 // Why `text` breaks the limits (too many decimals / above max), or null.
 const numberLimitError = (text, max, label) => {
@@ -136,20 +141,6 @@ const isLineOverridden = (item) => {
   const stored = item?.totalAmount;
   if (stored === undefined || stored === null || stored === "") return false;
   return Math.abs(Number(stored) - lineTotalOf(item)) > 0.009;
-};
-
-// US phone validation for the New Seller form. Accepts 10 digits, or 11 digits
-// with a leading country code 1, allowing spaces, dashes, parentheses and a
-// leading "+". Rejects any value containing letters. Mirrors the backend check
-// so the user gets immediate feedback.
-const isValidUsPhone = (value) => {
-  if (value === undefined || value === null) return false;
-  const raw = String(value).trim();
-  if (!raw) return false;
-  if (/[a-zA-Z]/.test(raw)) return false;
-  const cleaned = raw.replace(/[\s\-().+]/g, "");
-  if (!/^\d+$/.test(cleaned)) return false;
-  return /^\d{10}$/.test(cleaned) || /^1\d{10}$/.test(cleaned);
 };
 
 const ScrapPurchase = () => {
@@ -260,8 +251,8 @@ const ScrapPurchase = () => {
       message.error("Enter the seller name");
       return;
     }
-    if (!isValidUsPhone(phone)) {
-      message.error("Please enter a valid US phone number.");
+    if (!US_PHONE_REGEX.test(phone)) {
+      message.error(US_PHONE_MESSAGE);
       return;
     }
 
@@ -695,6 +686,28 @@ const ScrapPurchase = () => {
       render: (v) => (v ? <EllipsisText text={v} maxWidth={140} /> : "—"),
     },
     {
+      // The note shows only on hover (an icon in the row), so a long note
+      // never stretches the table.
+      title: "Note",
+      dataIndex: "note",
+      key: "note",
+      align: "center",
+      width: 80,
+      render: (v) =>
+        v && String(v).trim() ? (
+          <Tooltip
+            title={<span style={{ whiteSpace: "pre-line", overflowWrap: "anywhere" }}>{v}</span>}
+            overlayStyle={{ maxWidth: 320 }}
+          >
+            <Tag icon={<FileTextOutlined />} color="blue" style={{ cursor: "pointer", marginInlineEnd: 0 }}>
+              View
+            </Tag>
+          </Tooltip>
+        ) : (
+          "—"
+        ),
+    },
+    {
       title: "Date",
       dataIndex: "paymentDate",
       key: "paymentDate",
@@ -758,7 +771,14 @@ const ScrapPurchase = () => {
             allowClear
             placeholder="Search by material, supplier, or note"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearch(value);
+              // Clearing the box (the allowClear "x" or deleting all text)
+              // reloads the unfiltered list right away. The new value is
+              // passed explicitly because `search` state is not updated yet.
+              if (!value) fetchRecords(1, pagination.pageSize, "");
+            }}
             onPressEnter={() => fetchRecords(1, pagination.pageSize, search)}
             prefix={<SearchOutlined />}
             style={{ width: "100%" }}
@@ -1022,8 +1042,29 @@ const ScrapPurchase = () => {
                 <Option value="Other">Other</Option>
               </Select>
             </Form.Item>
-            <Form.Item name="paymentDate" label="Payment Date" style={{ flex: 1, minWidth: 200 }}>
-              <DatePicker style={{ width: "100%" }} />
+            <Form.Item
+              name="paymentDate"
+              label="Payment Date"
+              style={{ flex: 1, minWidth: 200 }}
+              rules={[
+                {
+                  // Payment date cannot be in the future (also enforced by the
+                  // backend). A legacy record that already has a future date
+                  // can still be edited as long as the date is left unchanged.
+                  validator: (_, value) => {
+                    if (!value || !isFutureDay(value)) return Promise.resolve();
+                    if (
+                      editing?.paymentDate &&
+                      dayjs(editing.paymentDate).isSame(value, "day")
+                    ) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error("Payment date cannot be in the future"));
+                  },
+                },
+              ]}
+            >
+              <DatePicker style={{ width: "100%" }} disabledDate={isFutureDay} />
             </Form.Item>
           </Space>
 
@@ -1093,23 +1134,22 @@ const ScrapPurchase = () => {
           <Form.Item
             name="phone"
             label="Phone Number"
+            normalize={normalizePhone}
             rules={[
               {
                 validator: (_, value) => {
                   if (!value || !String(value).trim()) {
                     return Promise.reject(new Error("Enter the phone number"));
                   }
-                  if (!isValidUsPhone(value)) {
-                    return Promise.reject(
-                      new Error("Please enter a valid US phone number.")
-                    );
+                  if (!US_PHONE_REGEX.test(String(value))) {
+                    return Promise.reject(new Error(US_PHONE_MESSAGE));
                   }
                   return Promise.resolve();
                 },
               },
             ]}
           >
-            <Input maxLength={MAX_SELLER_PHONE} placeholder="e.g. 201-555-0123" />
+            <Input maxLength={US_PHONE_MAX_LENGTH} placeholder={US_PHONE_PLACEHOLDER} inputMode="tel" />
           </Form.Item>
         </Form>
       </Modal>

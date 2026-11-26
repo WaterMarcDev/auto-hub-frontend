@@ -16,6 +16,8 @@ export const TEXT_LIMITS = {
 const WEIGHT_PATTERN = /^(\d{1,5}(\.\d{0,2})?|\.\d{1,2})$/;
 const VIN_PATTERN = /^[A-HJ-NPR-Z0-9]{17}$/;
 const PERSON_NAME_PATTERN = /^[\p{L}][\p{L} .'\-,&]*$/u;
+// Color: letters (any language), spaces and hyphens, starting with a letter.
+const COLOR_PATTERN = /^\p{L}[\p{L} -]*$/u;
 
 const isBlank = (v) => v === undefined || v === null || String(v).trim() === "";
 
@@ -63,13 +65,25 @@ export const vinRule = {
 // Upper-case and drop anything that cannot be in a VIN while typing.
 export const normalizeVin = (v) => String(v ?? "").toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "").slice(0, 17);
 
-export const MAX_YEAR = new Date().getFullYear() + 1;
+// Model year: 1900 to the current year (no future years).
+export const MAX_YEAR = new Date().getFullYear();
 export const yearRule = {
   validator: (_, v) =>
-    isBlank(v) || (Number.isInteger(Number(v)) && Number(v) >= 1900 && Number(v) <= MAX_YEAR)
+    isBlank(v) || (/^\d{4}$/.test(String(v).trim()) && Number(v) >= 1900 && Number(v) <= MAX_YEAR)
       ? Promise.resolve()
-      : Promise.reject(new Error(`Year must be between 1900 and ${MAX_YEAR}`)),
+      : Promise.reject(new Error(`Year must be a 4-digit year between 1900 and ${MAX_YEAR}`)),
 };
+
+// Optional color: not spaces only, max 50, letters / spaces / hyphens only.
+export const colorRules = [
+  ...optionalTextRules("Color", TEXT_LIMITS.color),
+  {
+    validator: (_, v) =>
+      isBlank(v) || COLOR_PATTERN.test(String(v).trim())
+        ? Promise.resolve()
+        : Promise.reject(new Error("Color can contain only letters, spaces and hyphens (-)")),
+  },
+];
 
 export const buyerNameRules = [
   ...optionalTextRules("Buyer name", TEXT_LIMITS.buyerName),

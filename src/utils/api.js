@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getSimplifiedErrorString } from "./errorHandler";
+import { trimTextDeep } from "./trimText";
 
 
 const VITE_API_URL = import.meta.env.VITE_API_URL;
@@ -72,16 +73,18 @@ export const carIntakeAPI = {
     });
   },
 
+  // Text is trimmed before saving: a box holding only spaces is sent as ""
+  // (never saved as spaces; the server also refuses spaces-only text).
   createWithJSON: (jsonData) => {
     // For JSON data, use default Content-Type: application/json
-    return api.post("/car-intake", jsonData);
+    return api.post("/car-intake", trimTextDeep(jsonData));
   },
 
   getAll: (params = {}) => api.get("/car-intake", { params }),
 
   getById: (id) => api.get(`/car-intake/${id}`),
 
-  update: (id, data) => api.put(`/car-intake/${id}`, data),
+  update: (id, data) => api.put(`/car-intake/${id}`, trimTextDeep(data)),
 
   delete: (id) => api.delete(`/car-intake/${id}`),
 

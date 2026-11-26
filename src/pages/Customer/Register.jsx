@@ -1,9 +1,10 @@
 import React, { useRef, useState } from "react";
 import { Card, Form, Input, Button, notification, Row, Col, Select } from "antd";
-import { customerAPI, uploadAPI } from "../../utils/api";
+import { uploadAPI } from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import CameraUpload from "../../components/CameraUpload";
 import SignatureCanvas from "../../components/SignatureCanvas";
+import { useCustomerCreate } from "../../hooks/useCustomerCreate";
 import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
 import { emailRule, normalizeEmail } from "../../utils/email";
 import {
@@ -20,6 +21,7 @@ import {
     canDecodeImage,
     showCorruptImageError,
 } from "./customerFormUtils";
+import { normalizePhone, usPhoneRule, US_PHONE_PLACEHOLDER, US_PHONE_MAX_LENGTH } from "../../utils/phone";
 
 const CustomerRegister = () => {
     const navigate = useNavigate();
@@ -32,6 +34,8 @@ const CustomerRegister = () => {
     // also clears their previews (SignatureCanvas keeps its own preview).
     const [widgetsKey, setWidgetsKey] = useState(0);
     const [notificationApi, contextHolder] = notification.useNotification();
+    // Same name as an existing customer: staff compare the profiles first.
+    const { createCustomer, sameNameModal } = useCustomerCreate();
 
     const idProofType = getIdProofType(Form.useWatch("idProofType", form));
 
@@ -64,7 +68,32 @@ const CustomerRegister = () => {
             if (signatureUrl) customerPayload.signatureImage = signatureUrl;
 
             try {
-                await customerAPI.create(customerPayload);
+                const result = await createCustomer(customerPayload);
+                if (result.cancelled) return; // popup closed: nothing saved
+                if (result.existing) {
+                    // Staff confirmed it is the existing customer: no new record.
+                    const key = "existing-customer";
+                    notificationApi.info({
+                        key,
+                        message: "Existing customer used",
+                        description: `${[result.customer.firstName, result.customer.lastName].filter(Boolean).join(" ")} is already registered. No new customer was created.`,
+                        duration: 8,
+                        btn: (
+                            <Button
+                                type="primary"
+                                size="small"
+                                onClick={() => {
+                                    notificationApi.destroy(key);
+                                    navigate(`/waivers/${result.customer._id}`);
+                                }}
+                            >
+                                View existing customer
+                            </Button>
+                        ),
+                    });
+                    clearForm();
+                    return;
+                }
                 notificationApi.success({
                     message: "Success",
                     description: "Customer registered successfully",
@@ -127,6 +156,7 @@ const CustomerRegister = () => {
     return (
         <div>
             {contextHolder}
+            {sameNameModal}
             <div className="page-title-box">
                 <div className="page-title">
                     <h4>Register Customer</h4>
@@ -175,31 +205,10 @@ const CustomerRegister = () => {
                                     <Form.Item
                                         label="Mobile No."
                                         name="mobileNo"
-                                        rules={[
-                                            {
-                                                validator: (_, value) => {
-                                                    if (!value || !String(value).trim()) return Promise.resolve();
-                                                    const digits = String(value).replace(/[^0-9]/g, "");
-                                                    if (
-                                                        /^1[0-9]{10}$/.test(digits) &&
-                                                        digits.length === 11
-                                                    )
-                                                        return Promise.resolve();
-                                                    if (
-                                                        /^[0-9]{10}$/.test(digits) &&
-                                                        digits.length === 10
-                                                    )
-                                                        return Promise.resolve();
-                                                    return Promise.reject(
-                                                        new Error(
-                                                            "Enter a valid US mobile number (10 digits)"
-                                                        )
-                                                    );
-                                                },
-                                            },
-                                        ]}
+                                        normalize={normalizePhone}
+                                        rules={[usPhoneRule]}
                                     >
-                                        <Input placeholder="Enter Mobile No (optional)" maxLength={MOBILE_MAX_LENGTH} inputMode="tel" />
+                                        <Input placeholder={`${US_PHONE_PLACEHOLDER} (optional)`} maxLength={US_PHONE_MAX_LENGTH} inputMode="tel" />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>

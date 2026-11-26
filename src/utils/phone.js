@@ -29,3 +29,30 @@ export const formatPhoneNumber = (value, previousValue = "") => {
   if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 };
+
+// antd Form.Item helpers for every phone / mobile field in the CRM:
+//   <Form.Item normalize={normalizePhone} rules={[usPhoneRule]}>
+//     <Input placeholder={US_PHONE_PLACEHOLDER} maxLength={US_PHONE_MAX_LENGTH} inputMode="tel" />
+export const US_PHONE_PLACEHOLDER = "(XXX) XXX-XXXX";
+export const US_PHONE_MESSAGE = "Enter a 10-digit US phone number: (XXX) XXX-XXXX";
+
+export const normalizePhone = (value, prevValue) => formatPhoneNumber(value, prevValue || "");
+
+// Optional field: blank is fine; anything typed must be a full US number.
+export const usPhoneRule = {
+  validator: (_, value) =>
+    !value || US_PHONE_REGEX.test(String(value))
+      ? Promise.resolve()
+      : Promise.reject(new Error(US_PHONE_MESSAGE)),
+};
+
+// Shows a stored number in the US format when it is a 10-digit US number
+// (or 11 digits starting with 1); anything else is shown as stored.
+export const displayPhone = (value, empty = "N/A") => {
+  if (value === undefined || value === null || String(value).trim() === "" || value === "none") return empty;
+  let digits = String(value).replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  return digits.length === 10
+    ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+    : String(value);
+};

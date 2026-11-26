@@ -20,6 +20,7 @@ import PersonsDetailsModal from "./PersonsDetailsModal";
 import { emptyPerson, isPersonComplete } from "../../utils/checkInPersons";
 import { customerAPI, checkInAPI, uploadAPI } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
+import { displayPhone } from "../../utils/phone";
 
 const { Option } = Select;
 
@@ -140,7 +141,11 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, preSelectedCustomer]);
 
+  // One click = one check-in: a second click while saving is ignored.
+  const savingRef = React.useRef(false);
   const handleFinish = async (values) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setLoading(true);
     try {
       const payload = {
@@ -172,6 +177,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
         err.response?.data?.error || err.message || "Failed to create check-in"
       );
     } finally {
+      savingRef.current = false;
       setLoading(false);
     }
   };
@@ -268,7 +274,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
                           overflowWrap: "anywhere",
                         }}
                       >
-                        {item.email || "N/A"} • {item.mobileNo || "N/A"}
+                        {item.email || "N/A"} • {displayPhone(item.mobileNo)}
                       </div>
                     </div>
                     <div>
@@ -333,7 +339,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
                 {selectedCustomer.email || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Mobile">
-                {selectedCustomer.mobileNo || "N/A"}
+                {displayPhone(selectedCustomer.mobileNo)}
               </Descriptions.Item>
               <Descriptions.Item label="ID Proof">
                 {selectedCustomer.idProofImage ? (
@@ -504,6 +510,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
             style={{ width: "100%" }}
             placeholder={`${CHECKIN_AMOUNT_MIN} - ${CHECKIN_AMOUNT_MAX}`}
             errorMessage={`Enter a number between ${CHECKIN_AMOUNT_MIN} and ${CHECKIN_AMOUNT_MAX}`}
+            maxMessage={`Entry fee can be at most $${CHECKIN_AMOUNT_MAX}`}
           />
         </Form.Item>
 

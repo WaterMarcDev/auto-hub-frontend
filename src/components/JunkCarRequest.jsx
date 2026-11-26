@@ -1,78 +1,69 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Form, Input, Button, Row, Col, message } from "antd";
-import { useLeadCapture } from "../hooks/useLeadCapture";
+import api from "../utils/api";
 import { emailRule, normalizeEmail } from "../utils/email";
+import { normalizePhone, usPhoneRule, US_PHONE_PLACEHOLDER, US_PHONE_MAX_LENGTH } from "../utils/phone";
+import { yearRule, leadNameRules, LEAD_NAME_MAX_LENGTH, cleanText } from "../utils/leadFormRules";
+import NumericInput from "./NumericInput";
 
-const PHONE_PATTERN = /^[0-9]{10}$/;
-const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
-const YEAR_PATTERN = /^\d{4}$/;
-
-// Customer fields saved progressively while the form is being filled in.
-const DRAFT_FIELDS = ["name", "email", "phone", "year", "make", "model", "engineOrVin", "condition", "location"];
-
-// Returns the values that are safe to save right now, or null when there's
-// no name / valid phone / valid email yet (the API needs one to create the
-// lead). Fields that currently fail validation are left out, so they never
-// overwrite what was saved before.
-const buildDraft = (values) => {
-    const draft = {};
-
-    DRAFT_FIELDS.forEach((field) => {
-        const raw = values[field];
-        const value = typeof raw === "string" ? raw.trim() : raw ?? "";
-
-        if (value !== "") {
-            if (field === "phone" && !PHONE_PATTERN.test(value)) return;
-            if (field === "email" && !EMAIL_PATTERN.test(value)) return;
-            if (field === "year" && !YEAR_PATTERN.test(String(value))) return;
-        }
-
-        draft[field] = field === "year" && value !== "" ? parseInt(value, 10) : value;
-    });
-
-    const hasContact =
-        draft.name ||
-        PHONE_PATTERN.test(draft.phone || "") ||
-        EMAIL_PATTERN.test(draft.email || "");
-
-    return hasContact ? draft : null;
+// Same limits as the server (junkCar.controller.js: JUNK_CAR_TEXT_LIMITS /
+// JUNK_CAR_CRM_LIMITS / MAX_LOCATION_LENGTH).
+const LIMITS = {
+    email: 100,
+    make: 50,
+    model: 50,
+    engineOrVin: 17,
+    condition: 50,
+    location: 200,
 };
+
+const maxRule = (max, label) => ({ max, message: `${label} can be at most ${max} characters` });
+
+// Engine / VIN: letters and digits only (stored in capitals).
+const engineOrVinRule = {
+    pattern: /^[A-Za-z0-9]*$/,
+    message: "Enter letters and digits only (no spaces or symbols)",
+};
+const toEngineOrVin = (value) =>
+    typeof value === "string" ? value.replace(/[^A-Za-z0-9]/g, "").toUpperCase() : value;
 
 const JunkCarRequest = (props) => {
     const [form] = Form.useForm();
+    const [loading, setLoading] = useState(false);
     const submittingRef = useRef(false);
 
-    // One lead per form session: created on the first valid autosave, then
-    // updated by every later autosave and by the final submit.
-    // Requests added here (in the CRM) are tagged "offline"; the website form
-    // gets "website" from the backend.
-    const lead = useLeadCapture("/junk-car", { source: "offline" });
-
-    const handleValuesChange = () => {
-        if (submittingRef.current) return;
-        lead.scheduleAutosave(() => buildDraft(form.getFieldsValue()));
-    };
-
+    // Saved only when Submit is pressed (no autosave while typing, so an
+    // unfinished request never appears in the list or the badge count), as one
+    // request: further clicks are ignored until it finishes, so only one
+    // message is shown. Requests added here (in the CRM) are tagged "offline";
+    // the website form gets "website" from the backend.
     const handleSubmit = async (values) => {
+        if (submittingRef.current) return; // one click = one request
+        submittingRef.current = true;
+        setLoading(true);
         try {
-            submittingRef.current = true;
-
-            // Updates the lead autosave already created (if any) instead of
-            // creating a second one.
-            const result = await lead.submit({
-                ...values,
-                year: values.year ? parseInt(values.year) : null,
+            const payload = {
+                name: cleanText(values.name),
+                email: cleanText(values.email),
+                phone: cleanText(values.phone),
+                year: values.year ? parseInt(values.year, 10) : undefined,
+                make: cleanText(values.make),
+                model: cleanText(values.model),
+                engineOrVin: cleanText(values.engineOrVin),
+                condition: cleanText(values.condition),
+                location: cleanText(values.location),
                 source: "offline",
-            });
+            };
+            Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
-            if (!result.ok || !result.data?.success) {
-                message.error(result.data?.message || "Something went wrong");
+            const res = await api.post("/junk-car", payload);
+            if (!res.data?.success) {
+                message.error(res.data?.message || "Something went wrong");
                 return;
             }
             message.success("Credentials added successfully");
 
             form.resetFields();
-            lead.reset();
 
             // by shiva
             if (props.onSuccess) {
@@ -80,9 +71,10 @@ const JunkCarRequest = (props) => {
             }
         } catch (err) {
             console.error(err);
-            message.error("Something went wrong");
+            message.error(err.response?.data?.message || err.message || "Something went wrong");
         } finally {
             submittingRef.current = false;
+            setLoading(false);
         }
     };
 
@@ -94,18 +86,17 @@ const JunkCarRequest = (props) => {
                 form={form}
                 layout="vertical"
                 onFinish={handleSubmit}
-                onValuesChange={handleValuesChange}
             >
                 <Row gutter={[16, 16]}>
                     <Col xs={24} sm={12} md={8}>
+                        {/* Optional; Name, Phone or Email is needed. */}
                         <Form.Item
                             name="name"
                             label="Name"
-                            rules={[
-                                { required: true, message: "Name is required" }
-                            ]}
+                            dependencies={["phone", "email"]}
+                            rules={leadNameRules}
                         >
-                            <Input placeholder="Enter name" />
+                            <Input placeholder="Enter name" maxLength={LEAD_NAME_MAX_LENGTH} showCount />
                         </Form.Item>
                     </Col>
 
@@ -114,9 +105,9 @@ const JunkCarRequest = (props) => {
                                 name="email"
                                 label="Email"
                                 normalize={normalizeEmail}
-                                rules={[emailRule]}
+                                rules={[emailRule, maxRule(LIMITS.email, "Email")]}
                             >
-                                <Input placeholder="Enter email" />
+                                <Input placeholder="Enter email" maxLength={LIMITS.email} />
                             </Form.Item>
                     </Col>
 
@@ -124,35 +115,26 @@ const JunkCarRequest = (props) => {
                         <Form.Item
                             name="phone"
                             label="Phone"
-                            rules={[
-                                {
-                                    pattern: /^[0-9]{10}$/,
-                                    message: "Enter valid 10 digit phone",
-                                },
-                            ]}
+                            normalize={normalizePhone}
+                            rules={[usPhoneRule]}
                         >
-                            <Input placeholder="Enter phone" />
+                            <Input placeholder={US_PHONE_PLACEHOLDER} maxLength={US_PHONE_MAX_LENGTH} inputMode="tel" />
                         </Form.Item>
                     </Col>
 
                     <Col xs={24} sm={12} md={8}>
+                        {/* 4 digits, 1900 to the current year (no future years). */}
                         <Form.Item
                             name="year"
                             label="Year"
-                            rules={[
-                                
-                                {
-                                    pattern: /^\d{4}$/,
-                                    message: "Enter valid 4 digit year",
-                                },
-                                
-                            ]}
+                            rules={[yearRule]}
                         >
-                            <Input 
-                                type="number"               // added by shiva
+                            <NumericInput
+                                decimals={false}
                                 placeholder="e.g. 2013"
                                 maxLength={4}
-                             />
+                                errorMessage="Enter digits only"
+                            />
                         </Form.Item>
                     </Col>
 
@@ -160,9 +142,9 @@ const JunkCarRequest = (props) => {
                         <Form.Item
                             name="make"
                             label="Make"
-                            rules={[]}
+                            rules={[maxRule(LIMITS.make, "Make")]}
                         >
-                            <Input placeholder="Toyota, Honda..." />
+                            <Input placeholder="Toyota, Honda..." maxLength={LIMITS.make} />
                         </Form.Item>
                     </Col>
 
@@ -170,18 +152,21 @@ const JunkCarRequest = (props) => {
                          <Form.Item
                             name="model"
                             label="Model"
-                            rules={[]}
+                            rules={[maxRule(LIMITS.model, "Model")]}
                         >
-                            <Input placeholder="Civic, Corolla..." />
+                            <Input placeholder="Civic, Corolla..." maxLength={LIMITS.model} />
                         </Form.Item>
                     </Col>
 
                     <Col xs={24} sm={12} md={8}>
+                        {/* Letters and digits only; symbols and spaces are removed as typed. */}
                         <Form.Item
                             name="engineOrVin"
                             label="Engine / VIN Number"
+                            normalize={toEngineOrVin}
+                            rules={[engineOrVinRule, maxRule(LIMITS.engineOrVin, "Engine / VIN number")]}
                         >
-                            <Input placeholder="Optional" />
+                            <Input placeholder="Optional" maxLength={LIMITS.engineOrVin} showCount />
                         </Form.Item>
                     </Col>
 
@@ -189,8 +174,9 @@ const JunkCarRequest = (props) => {
                         <Form.Item
                             name="condition"
                             label="Condition"
+                            rules={[maxRule(LIMITS.condition, "Condition")]}
                         >
-                            <Input placeholder="e.g. Running, Not Running" />
+                            <Input placeholder="e.g. Running, Not Running" maxLength={LIMITS.condition} />
                         </Form.Item>
                     </Col>
 
@@ -198,8 +184,9 @@ const JunkCarRequest = (props) => {
                         <Form.Item
                             name="location"
                             label="Location"
+                            rules={[maxRule(LIMITS.location, "Location")]}
                         >
-                            <Input placeholder="Pickup location (optional)" />
+                            <Input placeholder="Pickup location (optional)" maxLength={LIMITS.location} showCount />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -209,6 +196,8 @@ const JunkCarRequest = (props) => {
                         <Button
                             type="primary"
                             htmlType="submit"
+                            loading={loading}
+                            disabled={loading}
                             style={{ maxWidth: 200 }}
                         >
                             Submit Request

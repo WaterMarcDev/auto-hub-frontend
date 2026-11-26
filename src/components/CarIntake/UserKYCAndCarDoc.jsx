@@ -9,7 +9,6 @@ import {
   Card,
   DatePicker,
   Select,
-  Tabs,
   List,
   Avatar,
   Descriptions,
@@ -29,8 +28,20 @@ import {
   EyeOutlined,
 } from "@ant-design/icons";
 import CameraUpload from "../CameraUpload";
-import { getNegotiationLabel } from "./intakeConstants";
+import dayjs from "dayjs";
+import { getNegotiationLabel, sellingDateRule } from "./intakeConstants";
+import "../../styles/CarIntake.css";
 import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+
+// Every card on this step looks the same: same colours, border, header and
+// title size; cards side by side are the same height.
+const STEP_CARD_STYLE = { backgroundColor: "#374151", borderColor: "#6b7280", height: "100%" };
+const STEP_CARD_HEAD_STYLE = { backgroundColor: "#374151", borderBottom: "1px solid #6b7280" };
+const cardTitle = (text) => (
+  <Title level={4} style={{ color: "white", margin: 0 }}>
+    {text}
+  </Title>
+);
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -708,8 +719,8 @@ const UserKYCAndCarDoc = ({
         </Card>
       ) : (
         <>
-          <Row gutter={12}>
-            <Col span={18}>
+          <Row gutter={[12, 8]}>
+            <Col xs={24} sm={18}>
               <Input
                 placeholder="Search by mobile number or email (min 2 chars)"
                 value={searchQuery}
@@ -717,11 +728,12 @@ const UserKYCAndCarDoc = ({
                 onPressEnter={(e) => doSearch(e.target.value)}
               />
             </Col>
-            <Col span={6}>
+            <Col xs={24} sm={6}>
               <Button
                 onClick={() => doSearch(searchQuery)}
                 loading={searchLoading}
                 type="primary"
+                block
               >
                 Search
               </Button>
@@ -774,8 +786,11 @@ const UserKYCAndCarDoc = ({
             <Input value={formData.sellerId} readOnly />
           </Form.Item>
         </div>
+        {/* Two columns on wide screens, one on narrow ones (tablets in
+            portrait). Date of Selling sits next to the Title Certificate
+            so no row is left half empty (Pick Up Type is hidden here). */}
         <Row gutter={24}>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             {renderDocumentUploadField(
               "dlDocument",
               "Upload DL - DMV",
@@ -783,7 +798,7 @@ const UserKYCAndCarDoc = ({
               false
             )}
           </Col>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             {renderDocumentUploadField(
               "physicalPaper",
               "Upload Physical Paper",
@@ -794,7 +809,7 @@ const UserKYCAndCarDoc = ({
         </Row>
 
         <Row gutter={24}>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             {renderDocumentUploadField(
               "titleCertificate",
               "Upload Title Certificate",
@@ -803,27 +818,31 @@ const UserKYCAndCarDoc = ({
               false
             )}
           </Col>
-        </Row>
-
-        <Row gutter={24}>
-          <Col span={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               name="sellingDate"
               label={<Text style={{ color: "white" }}>Date of Selling</Text>}
               rules={[
                 { required: true, message: "Date of Selling is required" },
+                sellingDateRule,
               ]}
             >
               <DatePicker
                 value={formData.sellingDate}
                 onChange={(d) => updateFormData({ sellingDate: d })}
                 placeholder="Select date"
+                // Today or earlier only (QA 078).
+                disabledDate={(d) => !!d && d.isAfter(dayjs(), "day")}
+                className="intake-date-picker"
                 style={{ width: "100%" }}
               />
             </Form.Item>
           </Col>
+        </Row>
+
+        <Row gutter={24}>
           {SHOW_PICKUP_TYPE_IN_KYC && (
-          <Col span={12}>
+          <Col xs={24} md={12}>
             <Form.Item
               name="pickUpType"
               label={<Text style={{ color: "white" }}>Pick Up Type</Text>}
@@ -871,27 +890,18 @@ const UserKYCAndCarDoc = ({
   return (
     <div>
       <Card
-        style={{
-          backgroundColor: "#374151",
-          borderColor: "#6b7280",
-          marginBottom: 24,
-        }}
+        title={cardTitle("Search Seller")}
+        style={{ ...STEP_CARD_STYLE, marginBottom: 24 }}
+        headStyle={STEP_CARD_HEAD_STYLE}
       >
-        <Tabs defaultActiveKey="search" type="card">
-          <Tabs.TabPane tab="Search Seller" key="search">
-            {renderSearchTab()}
-          </Tabs.TabPane>
-        </Tabs>
+        {renderSearchTab()}
       </Card>
 
       {/* Signature pad - visible for both tabs (select seller / create seller) */}
       <Card
-        title={<Text style={{ color: "white" }}>Seller Signature</Text>}
-        style={{
-          backgroundColor: "#374151",
-          borderColor: "#6b7280",
-          marginBottom: 24,
-        }}
+        title={cardTitle("Seller Signature")}
+        style={{ ...STEP_CARD_STYLE, marginBottom: 24 }}
+        headStyle={STEP_CARD_HEAD_STYLE}
       >
         <div>
           {/* Disclaimer */}
@@ -1025,19 +1035,12 @@ const UserKYCAndCarDoc = ({
         </div>
       </Card>
 
-      <Row gutter={24}>
-        <Col span={12}>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} md={12}>
           <Card
-            title={
-              <Title level={4} style={{ color: "white", margin: 0 }}>
-                Car Details
-              </Title>
-            }
-            style={{ backgroundColor: "#374151", borderColor: "#6b7280" }}
-            headStyle={{
-              backgroundColor: "#374151",
-              borderBottom: "1px solid #6b7280",
-            }}
+            title={cardTitle("Car Details")}
+            style={STEP_CARD_STYLE}
+            headStyle={STEP_CARD_HEAD_STYLE}
           >
             <Form.Item label={<Text style={{ color: "white" }}>VIN No</Text>}>
               <Input
@@ -1102,18 +1105,11 @@ const UserKYCAndCarDoc = ({
           </Card>
         </Col>
 
-        <Col span={12}>
+        <Col xs={24} md={12}>
           <Card
-            title={
-              <Title level={4} style={{ color: "white", margin: 0 }}>
-                Price Details
-              </Title>
-            }
-            style={{ backgroundColor: "#374151", borderColor: "#6b7280" }}
-            headStyle={{
-              backgroundColor: "#374151",
-              borderBottom: "1px solid #6b7280",
-            }}
+            title={cardTitle("Price Details")}
+            style={STEP_CARD_STYLE}
+            headStyle={STEP_CARD_HEAD_STYLE}
           >
             <Form.Item
               label={<Text style={{ color: "white" }}>Actual Price</Text>}

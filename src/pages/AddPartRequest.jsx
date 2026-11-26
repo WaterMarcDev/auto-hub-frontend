@@ -2,44 +2,40 @@ import React, { useState, useEffect, useRef } from "react";
 import { Card, Input, Button, Form, message, Select } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { useLeadCapture } from "../hooks/useLeadCapture";
+import api from "../utils/api";
 import { emailRule, normalizeEmail } from "../utils/email";
+import NumericInput from "../components/NumericInput";
+import { normalizePhone, usPhoneRule, US_PHONE_PLACEHOLDER, US_PHONE_MAX_LENGTH } from "../utils/phone";
+import { yearRule, leadNameRules, LEAD_NAME_MAX_LENGTH, cleanText as clean } from "../utils/leadFormRules";
 
-const PHONE_PATTERN = /^[0-9]{10}$/;
-const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
-const YEAR_PATTERN = /^\d{4}$/;
+// Same limits and choices as the server (controllers/partRequest.controller.js).
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_EMAIL_LENGTH = 30;
+const MAX_MAKE_LENGTH = 30;
+const MAX_MODEL_LENGTH = 30;
+const MAX_PART_LENGTH = 30;        // each part name
+const MAX_PART_NAMES_LENGTH = 200; // all part names together ("A, B, C")
+const CONDITIONS = ["New", "Used", "Damaged"];
 
-// Customer fields saved progressively while the form is being filled in.
-// Status/source are only sent on the final submit.
-const DRAFT_FIELDS = ["name", "phone", "email", "partName", "make", "model", "year", "condition", "message"];
+const maxRule = (max, label) => ({ max, message: `${label} can be at most ${max} characters` });
+
+// Part Name (tags): each part at most 50 characters, all together at most 200.
+const partNameLimitRule = {
+    validator: (_, value) => {
+        const parts = (Array.isArray(value) ? value : value ? [value] : []).map((p) => String(p).trim());
+        if (parts.some((p) => p.length > MAX_PART_LENGTH)) {
+            return Promise.reject(new Error(`Each part name can be at most ${MAX_PART_LENGTH} characters`));
+        }
+        if (parts.filter(Boolean).join(", ").length > MAX_PART_NAMES_LENGTH) {
+            return Promise.reject(new Error(`Part names can be at most ${MAX_PART_NAMES_LENGTH} characters in total`));
+        }
+        return Promise.resolve();
+    },
+};
 
 const toPartName = (partName) =>
     Array.isArray(partName) ? partName.join(", ") : partName;  // we can also do this | -> Engine|Alternator
 
-// Returns the values that are safe to save right now, or null when there's
-// no valid phone/email yet (the API needs one to create the lead). Fields
-// that currently fail validation are left out, so they never overwrite what
-// was saved before.
-const buildDraft = (values) => {
-    const draft = {};
-
-    DRAFT_FIELDS.forEach((field) => {
-        let value = field === "partName" ? toPartName(values[field]) : values[field];
-        value = typeof value === "string" ? value.trim() : value ?? "";
-
-        if (value !== "") {
-            if (field === "phone" && !PHONE_PATTERN.test(value)) return;
-            if (field === "email" && !EMAIL_PATTERN.test(value)) return;
-            if (field === "year" && !YEAR_PATTERN.test(String(value))) return;
-        }
-
-        draft[field] = value;
-    });
-
-    const hasContact = PHONE_PATTERN.test(draft.phone || "") || EMAIL_PATTERN.test(draft.email || "");
-
-    return hasContact ? draft : null;
-};
 
 
 const AddPartRequest = () => {
@@ -48,14 +44,11 @@ const AddPartRequest = () => {
     const [loading, setLoading] = useState(false);
     const submittingRef = useRef(false);
 
-    // One lead per form session: created on the first valid autosave, then
-    // updated by every later autosave and by the final submit.
-    const lead = useLeadCapture("/part-request", { source: "Offline" });
-
-    const handleValuesChange = () => {
-        if (submittingRef.current) return;
-        lead.scheduleAutosave(() => buildDraft(form.getFieldsValue()));
-    };
+    // The CRM form saves only when Submit is pressed (no autosave while
+    // typing, so an unfinished request never appears in the list). It is
+    // sent with the staff login, so the server applies the CRM rules: Part
+    // Name required; Name (max 15), phone and email optional but at least one
+    // of them needed.
 
     // Added by shiva
     const [parts, setParts] = useState([]);
@@ -114,28 +107,35 @@ const AddPartRequest = () => {
     //end here
 
     const handleSubmit = async (values) => {
+        if (submittingRef.current) return; // one click = one request
         try {
             submittingRef.current = true;
             setLoading(true);
 
-            // Updates the lead autosave already created (if any) instead of
-            // creating a second one.
-            const result = await lead.submit({
-                ...values,
+            const payload = {
+                name: clean(values.name),
+                phone: clean(values.phone),
+                email: clean(values.email),
                 // Added by shiva
-                partName: toPartName(values.partName),
+                partName: clean(toPartName(values.partName)),
                 // end here
+                make: clean(values.make),
+                model: clean(values.model),
+                year: clean(values.year),
+                condition: values.condition || undefined,
+                message: clean(values.message),
+                status: values.status,
                 source: "Offline",
-            });
+            };
+            Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
 
-            if (!result.ok) throw new Error(result.data?.message);
+            await api.post("/part-request", payload);
 
             message.success("Part Request Created Successfully");
             form.resetFields();
-            lead.reset();
 
         } catch (error) {
-            message.error(error.message || "Something went wrong");
+            message.error(error.response?.data?.message || error.message || "Something went wrong");
         } finally {
             submittingRef.current = false;
             setLoading(false);
@@ -165,29 +165,26 @@ const AddPartRequest = () => {
                     </Button>
                 </div>
                 <Card title="Add Part Request">
-                    <Form form={form} layout="vertical" onFinish={handleSubmit} onValuesChange={handleValuesChange}>
+                    <Form form={form} layout="vertical" onFinish={handleSubmit}>
 
                         {/* Name */}
                         <Form.Item
                             label="Name"
                             name="name"
-                            rules={[{ required: true, message: "Name is required" }]}
+                            dependencies={["phone", "email"]}
+                            rules={leadNameRules}
                         >
-                            <Input placeholder="Enter name" />
+                            <Input placeholder="Enter name" maxLength={LEAD_NAME_MAX_LENGTH} showCount />
                         </Form.Item>
 
                         {/* Phone */}
                         <Form.Item
                             label="Phone"
                             name="phone"
-                            rules={[
-                                {
-                                    pattern: /^[0-9]{10}$/,
-                                    message: "Phone must be 10 digits",
-                                },
-                            ]}
+                            normalize={normalizePhone}
+                            rules={[usPhoneRule]}
                         >
-                            <Input placeholder="Enter phone" />
+                            <Input placeholder={US_PHONE_PLACEHOLDER} maxLength={US_PHONE_MAX_LENGTH} inputMode="tel" />
                         </Form.Item>
 
                         {/* Email */}
@@ -195,9 +192,9 @@ const AddPartRequest = () => {
                             label="Email"
                             name="email"
                             normalize={normalizeEmail}
-                            rules={[emailRule]}
+                            rules={[emailRule, maxRule(MAX_EMAIL_LENGTH, "Email")]}
                         >
-                            <Input placeholder="Enter email" />
+                            <Input placeholder="Enter email" maxLength={MAX_EMAIL_LENGTH} />
                         </Form.Item>
 
                         {/* Part Name */}
@@ -205,7 +202,8 @@ const AddPartRequest = () => {
                             label="Part Name"
                             name="partName"
                             rules={[
-                                { required: true, message: "Part name required" }
+                                { required: true, message: "Part name required" },
+                                partNameLimitRule,
                             ]}
                         >
                             {/* Added by shiva */}
@@ -231,32 +229,31 @@ const AddPartRequest = () => {
                         {/* Make */}
                         <Form.Item
                             label="Make" 
-                            name="make">
-                            <Input placeholder="Enter make (e.g. Toyota)" />
+                            name="make"
+                            rules={[maxRule(MAX_MAKE_LENGTH, "Make")]}>
+                            <Input placeholder="Enter make (e.g. Toyota)" maxLength={MAX_MAKE_LENGTH} showCount />
                         </Form.Item>
 
                         {/* Model */}
                         <Form.Item 
                             label="Model" 
-                            name="model">
-                            <Input placeholder="Enter model (e.g. Camry)" />
+                            name="model"
+                            rules={[maxRule(MAX_MODEL_LENGTH, "Model")]}>
+                            <Input placeholder="Enter model (e.g. Camry)" maxLength={MAX_MODEL_LENGTH} showCount />
                         </Form.Item>
 
                         {/* Year */}
                         <Form.Item 
                             label="Year" 
                             name="year"
-                            rules={[
-                                {
-                                    pattern: /^\d{4}$/,
-                                    message: "Enter valid 4 digit year",
-                                },
-                            ]}
+                            rules={[yearRule]}
                         >
-                            <Input 
-                                placeholder="Enter year (e.g. 2015)" 
+                            {/* Digits only, 4 at most (type="number" ignored maxLength). */}
+                            <NumericInput
+                                decimals={false}
+                                placeholder="Enter year (e.g. 2015)"
                                 maxLength={4}
-                                type="number"
+                                errorMessage="Enter digits only"
                             />
                         </Form.Item>
 
@@ -264,14 +261,19 @@ const AddPartRequest = () => {
                         <Form.Item 
                             label="Condition" 
                             name="condition">
-                            <Input placeholder="New / Used / Damaged" />
+                            <Select
+                                allowClear
+                                placeholder="Select condition"
+                                options={CONDITIONS.map((c) => ({ value: c, label: c }))}
+                            />
                         </Form.Item>
 
                         {/* Message */}
                         <Form.Item 
                             label="Message" 
-                            name="message">
-                            <Input.TextArea placeholder="Additional details" />
+                            name="message"
+                            rules={[{ max: MAX_MESSAGE_LENGTH, message: `Message can be at most ${MAX_MESSAGE_LENGTH} characters` }]}>
+                            <Input.TextArea placeholder="Additional details" maxLength={MAX_MESSAGE_LENGTH} showCount />
                         </Form.Item>
 
                         {/* Status */}

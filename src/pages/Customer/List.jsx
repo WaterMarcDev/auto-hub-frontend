@@ -21,6 +21,7 @@ import TitleBox from "../../components/TitleBox";
 import getStatusColor from "../../utils/statusColors";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import CellText from "./CellText";
+import { displayPhone } from "../../utils/phone";
 
 const CustomerList = () => {
     const [customers, setCustomers] = useState([]);
@@ -165,7 +166,7 @@ const CustomerList = () => {
             title: "Mobile",
             dataIndex: "mobileNo",
             key: "mobileNo",
-            render: (m) => <CellText text={m} maxWidth={160} />,
+            render: (m) => <CellText text={m ? displayPhone(m) : m} maxWidth={160} />,
         },
         {
             title: "ID Type",
