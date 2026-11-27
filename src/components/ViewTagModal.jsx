@@ -21,7 +21,8 @@ const ViewTagModal = ({ visible, onClose, tag }) => {
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Digits">
-                        {(tag.barcodeString).length}
+                        {/* count only the number part, not the "AUT" prefix */}
+                        {String(tag.barcodeString || "").replace(/\D/g, "").length}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Available">
@@ -30,6 +31,10 @@ const ViewTagModal = ({ visible, onClose, tag }) => {
 
                     <Descriptions.Item label="Inventory ID">
                         {tag.inventoryId || '-'}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Generated On">
+                        {tag.createdAt}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Last Updated">

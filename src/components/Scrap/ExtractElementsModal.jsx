@@ -107,7 +107,12 @@ const ExtractElementsModal = ({ open, car, mode = "scrap", onCancel, onDone }) =
   };
   const hasRowError = (id) => Object.values(rowErrors(id)).some(Boolean);
   const remarksTrimmed = remarks.trim();
-  const remarksError = remarksTrimmed.length > MAX_REMARKS ? `Remarks must be at most ${MAX_REMARKS} characters` : null;
+  const remarksError =
+    remarks.length > 0 && !remarksTrimmed
+      ? "Remarks cannot be only spaces"
+      : remarksTrimmed.length > MAX_REMARKS
+        ? `Remarks must be at most ${MAX_REMARKS} characters`
+        : null;
 
   const handleSubmit = async () => {
     setSubmitted(true);

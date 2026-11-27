@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 import { getCustomerTypeLabel } from "./customerTypeOptions";
 import EnhanceableImage from "../../components/ImageEnhance/EnhanceableImage";
 import { displayPhone } from "../../utils/phone";
+import { SHOW_EXTRA_WAIVER_FIELDS, WAIVER_DATE_FORMAT } from "./CustomerInfoStep";
 
 const WaiverDetails = () => {
   const { id } = useParams();
@@ -89,6 +90,9 @@ const WaiverDetails = () => {
             Back to List
           </Button>
 
+          {/* Fields follow the Fill Waiver Form (Full Name, Phone Number,
+              Date, ID Proof Type, ID Number, Signature). Email, ID Proof
+              Image and Description are hidden like on the form. */}
           <Card title="Customer Information" style={{ marginBottom: 16 }}>
             <Descriptions bordered column={2}>
               <Descriptions.Item label="Customer Type">
@@ -99,25 +103,27 @@ const WaiverDetails = () => {
                   ? dayjs(customer.createdAt).format("MMMM DD, YYYY hh:mm A")
                   : "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="Email">
-                {customer.email || "-"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Name">
+              <Descriptions.Item label="Full Name">
                 <span style={{ overflowWrap: "anywhere" }}>
                   {[customer.firstName, customer.lastName].filter(Boolean).join(" ") || "-"}
                 </span>
               </Descriptions.Item>
-              <Descriptions.Item label="Mobile">
+              <Descriptions.Item label="Phone Number">
                 {displayPhone(customer.mobileNo, "-")}
               </Descriptions.Item>
-              {customer.waiverDate && (
-                <Descriptions.Item label="Waiver Date">
-                  {dayjs(customer.waiverDate).format("MM/DD/YYYY")}
+              <Descriptions.Item label="Date">
+                {customer.waiverDate
+                  ? dayjs(customer.waiverDate).format(WAIVER_DATE_FORMAT)
+                  : "-"}
+              </Descriptions.Item>
+              {SHOW_EXTRA_WAIVER_FIELDS && (
+                <Descriptions.Item label="Email">
+                  <span style={{ overflowWrap: "anywhere" }}>
+                    {customer.email || "-"}
+                  </span>
                 </Descriptions.Item>
               )}
-              {/* Description is not on the U-Pull form (hidden there); it is
-                  shown whenever the customer has one, e.g. from registration. */}
-              {String(customer.description || "").trim() ? (
+              {SHOW_EXTRA_WAIVER_FIELDS && String(customer.description || "").trim() ? (
                 <Descriptions.Item label="Description" span={2}>
                   <span style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
                     {String(customer.description).trim()}
@@ -130,32 +136,38 @@ const WaiverDetails = () => {
           <Card title="ID Proof & Signature" style={{ marginBottom: 16 }}>
             <Descriptions bordered column={2}>
               <Descriptions.Item label="ID Proof Type">
-                {customer.idProofType || "-"}
+                <span style={{ overflowWrap: "anywhere" }}>
+                  {customer.idProofType || "-"}
+                </span>
               </Descriptions.Item>
-              <Descriptions.Item label="ID Proof Number">
-                {customer.idProofNumber || "-"}
+              <Descriptions.Item label="ID Number">
+                <span style={{ overflowWrap: "anywhere" }}>
+                  {customer.idProofNumber || "-"}
+                </span>
               </Descriptions.Item>
             </Descriptions>
 
             <Row gutter={16} style={{ marginTop: 16 }}>
-              <Col span={12}>
+              {SHOW_EXTRA_WAIVER_FIELDS && (
+                <Col span={12}>
+                  <div>
+                    <strong>ID Proof Image:</strong>
+                    <br />
+                    {customer.idProofImage ? (
+                      <EnhanceableImage
+                        width={200}
+                        src={getImageUrl(customer.idProofImage)}
+                        alt="ID Proof"
+                      />
+                    ) : (
+                      <span>No image</span>
+                    )}
+                  </div>
+                </Col>
+              )}
+              <Col span={SHOW_EXTRA_WAIVER_FIELDS ? 12 : 24}>
                 <div>
-                  <strong>ID Proof Image:</strong>
-                  <br />
-                  {customer.idProofImage ? (
-                    <EnhanceableImage
-                      width={200}
-                      src={getImageUrl(customer.idProofImage)}
-                      alt="ID Proof"
-                    />
-                  ) : (
-                    <span>No image</span>
-                  )}
-                </div>
-              </Col>
-              <Col span={12}>
-                <div>
-                  <strong>Customer Signature:</strong>
+                  <strong>Signature:</strong>
                   <br />
                   {customer.signatureImage || customer.signature ? (
                     <div

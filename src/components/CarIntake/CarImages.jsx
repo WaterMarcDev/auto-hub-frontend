@@ -5,7 +5,7 @@ import CameraUpload from "../CameraUpload";
 import { uploadAPI } from "../../utils/api";
 import { enhanceImageToFile } from "../../utils/imageEnhance";
 import { checkImageFile, showImageError, showUploadError } from "../../utils/imageRules";
-import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule, noOnlySpacesRule } from "../../utils/descriptionLimit";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -276,7 +276,7 @@ const CarImages = ({ formData, updateFormData, nextStep, prevStep }) => {
 
         <Row>
           <Col span={24}>
-            <Form.Item rules={[descriptionRule]}
+            <Form.Item rules={[descriptionRule, noOnlySpacesRule()]}
               name="imageDescription"
               label={<Text style={{ color: "white" }}>Description</Text>}
             >

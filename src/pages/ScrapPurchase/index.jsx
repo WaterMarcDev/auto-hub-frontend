@@ -46,9 +46,9 @@ const MATERIAL_OPTIONS = [
 const MATERIAL_UNITS = "lb";
 
 // Input limits (mirrored in the backend scrapPurchase / scrapPurchaseSeller
-// controllers). Weight and price take at most 2 decimals.
-const MAX_WEIGHT_LBS = 200000;
-const MAX_PRICE_PER_LB = 2000;
+// controllers). Weight and price take at most 2 decimals. Weight is at most
+// 15,000 lb (every weight in the CRM); price per lb has no maximum.
+const MAX_WEIGHT_LBS = 15000;
 const MAX_TOTAL = 10000000;
 const MAX_DECIMALS = 2;
 const MAX_MATERIAL_NAME = 100;
@@ -107,7 +107,7 @@ const limitGuards = (max, label) => ({
 });
 
 const WEIGHT_GUARDS = limitGuards(MAX_WEIGHT_LBS, "Weight (lb)");
-const PRICE_GUARDS = limitGuards(MAX_PRICE_PER_LB, "Price per lb ($)");
+const PRICE_GUARDS = limitGuards(Infinity, "Price per lb ($)"); // decimals only
 const TOTAL_GUARDS = limitGuards(MAX_TOTAL, "Grand total ($)");
 
 // Single-line text with ellipsis; full text in a tooltip.
@@ -465,7 +465,7 @@ const ScrapPurchase = () => {
       ) {
         errs.push(`${label}: price per lb must be 0 or greater`);
       } else {
-        const pErr = numberLimitError(p, MAX_PRICE_PER_LB, "price per lb ($)");
+        const pErr = numberLimitError(p, Infinity, "price per lb ($)");
         if (pErr) errs.push(`${label}: ${pErr}`);
       }
 
@@ -868,7 +868,13 @@ const ScrapPurchase = () => {
               placeholder="Select one or more materials"
               value={selectedMaterials}
               onChange={handleMaterialsChange}
-              optionFilterProp="value"
+              // Leading / trailing spaces in the search are ignored (" Iron"
+              // finds Iron); any letter case.
+              filterOption={(input, option) =>
+                String(option?.value ?? "")
+                  .toLowerCase()
+                  .includes(String(input ?? "").trim().toLowerCase())
+              }
             >
               {materialOptions.map((m) => (
                 <Option key={m} value={m}>
@@ -920,6 +926,7 @@ const ScrapPurchase = () => {
                     mode="number"
                     min={0}
                     max={MAX_WEIGHT_LBS}
+                    maxMessage={`Weight can be at most ${fmtLimit(MAX_WEIGHT_LBS)} lb`}
                     precision={MAX_DECIMALS}
                     step={0.01}
                     style={{ width: "100%" }}
@@ -936,7 +943,6 @@ const ScrapPurchase = () => {
                   <NumericInput
                     mode="number"
                     min={0}
-                    max={MAX_PRICE_PER_LB}
                     precision={MAX_DECIMALS}
                     step={0.01}
                     errorMessage="Please enter a numeric price"

@@ -13,7 +13,7 @@ import {
 } from "antd";
 import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { getNegotiationLabel } from "./intakeConstants";
-import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule, noOnlySpacesRule } from "../../utils/descriptionLimit";
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -29,7 +29,6 @@ const Payment = ({
   prevStep,
   saveStep,
   nextStep,
-  updateFormData,
   validationRules,
 }) => {
   // Car Intake vehicle purchase: Final Price IS the actual gross vehicle
@@ -303,18 +302,24 @@ const Payment = ({
                 }
                 extra={
                   <Text style={{ color: "#9ca3af", fontSize: "12px" }}>
-                    This is the actual gross vehicle purchase amount paid to the
-                    seller. No tax is deducted.
+                    The Final Price set in the Car Price step: the actual gross
+                    vehicle purchase amount paid to the seller. No tax is
+                    deducted. To change it, go back to the Car Price step.
                   </Text>
                 }
               >
+                {/* Disabled: the amount paid is always the Final Price agreed
+                    in the Car Price step (typing here used to overwrite it).
+                    The value is still checked and sent on Pay Now. */}
                 <InputNumber
-                  placeholder="Vehicle Purchase Amount"
+                  disabled
+                  placeholder="Set in the Car Price step"
                   style={{
                     width: "100%",
                     backgroundColor: "#4b5563",
                     borderColor: "#6b7280",
-                    color: "white",
+                    color: "#d1d5db",
+                    cursor: "not-allowed",
                   }}
                   min={0}
                   step={0.01}
@@ -322,12 +327,6 @@ const Payment = ({
                     `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                   }
                   parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
-                  onChange={(val) => {
-                    // Keep parent formData in sync so derived values update
-                    if (typeof updateFormData === "function") {
-                      updateFormData({ finalPrice: val });
-                    }
-                  }}
                 />
               </Form.Item>
 
@@ -429,7 +428,7 @@ const Payment = ({
 
           <Row>
             <Col span={24}>
-              <Form.Item rules={[descriptionRule]}
+              <Form.Item rules={[descriptionRule, noOnlySpacesRule()]}
                 name="paymentDescription"
                 label={<Text style={{ color: "white" }}>Description</Text>}
               >
