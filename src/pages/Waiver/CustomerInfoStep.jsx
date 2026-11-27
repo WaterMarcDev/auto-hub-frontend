@@ -44,8 +44,9 @@ const { Title, Text } = Typography;
 // The waiver follows the paper U-PULL FORM: Full Name, Phone Number, Date,
 // ID Proof type, ID Number and Signature (all required). Email, ID Proof
 // Image and Description are not on the paper form; they are hidden (not
-// removed) and come back by setting this to true.
-const SHOW_EXTRA_WAIVER_FIELDS = false;
+// removed) and come back by setting this to true. The Waiver List and
+// Waiver Details pages use the same flag so they show what the form collects.
+export const SHOW_EXTRA_WAIVER_FIELDS = false;
 
 export const WAIVER_DATE_FORMAT = "MM/DD/YYYY";
 

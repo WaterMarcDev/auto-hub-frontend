@@ -514,3 +514,178 @@
 .ant-input-suffix {
   margin-left: 8px;
 }
+
+/* ===================================================================
+   Every box in the CRM looks like the Car Details boxes and keeps its
+   text inside. (Loaded last, so these rules win.)
+   Theme: fill #374151, border #4a5568, text #d6dae5, 0.375rem corners,
+   blue focus ring #2b6cb0, red border on errors.
+   =================================================================== */
+
+/* --- Theme: boxes the rules above did not cover --- */
+
+/* Number box with a prefix / suffix (e.g. "$"): style the outer box only,
+   so there is no second box inside it. */
+.ant-input-number-affix-wrapper {
+  background-color: #374151 !important;
+  border: 1px solid #4a5568 !important;
+  color: #d6dae5 !important;
+  border-radius: 0.375rem !important;
+  box-shadow: none !important;
+}
+.ant-input-number-affix-wrapper .ant-input-number,
+.ant-input-number-affix-wrapper .ant-input-number-input {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.ant-input-number-prefix,
+.ant-input-number-suffix {
+  color: #d6dae5 !important;
+}
+
+/* Number box text, placeholder and focus ring. */
+.ant-input-number .ant-input-number-input {
+  color: #d6dae5 !important;
+  background-color: transparent !important;
+}
+.ant-input-number-focused,
+.ant-input-number:focus-within,
+.ant-input-number-affix-wrapper-focused,
+.ant-input-number-affix-wrapper:focus-within {
+  border-color: #2b6cb0 !important;
+  box-shadow: 0 0 0 0.2rem rgba(43, 108, 176, 0.25) !important;
+}
+
+/* No up / down arrows on number boxes (like Car Details). */
+.ant-input-number-handler-wrap {
+  display: none !important;
+}
+
+/* "lbs" / "in" / "$" labels joined to a box. */
+.ant-input-number-group-addon,
+.ant-input-group-addon {
+  background-color: #374151 !important;
+  border: 1px solid #4a5568 !important;
+  color: #d6dae5 !important;
+}
+
+/* Date pickers. */
+.ant-picker {
+  background-color: #374151 !important;
+  border: 1px solid #4a5568 !important;
+  border-radius: 0.375rem !important;
+}
+.ant-picker .ant-picker-input > input {
+  color: #d6dae5 !important;
+}
+.ant-picker .ant-picker-suffix,
+.ant-picker .ant-picker-clear {
+  color: #d6dae5 !important;
+}
+.ant-picker-focused,
+.ant-picker:focus-within {
+  border-color: #2b6cb0 !important;
+  box-shadow: 0 0 0 0.2rem rgba(43, 108, 176, 0.25) !important;
+}
+
+/* Disabled boxes (e.g. calculated totals): same box, dimmed. */
+.ant-input[disabled],
+.ant-input-number-disabled,
+.ant-select-disabled .ant-select-selector,
+.ant-picker-disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Errors keep their red border (the theme's border rules above used to
+   hide it on some boxes). */
+.ant-input-status-error,
+.ant-input-affix-wrapper-status-error,
+.ant-input-number-status-error,
+.ant-input-number-affix-wrapper-status-error,
+.ant-select-status-error .ant-select-selector,
+.ant-picker-status-error,
+.ant-form-item-has-error .ant-input,
+.ant-form-item-has-error .ant-input-affix-wrapper,
+.ant-form-item-has-error .ant-input-number,
+.ant-form-item-has-error .ant-input-number-affix-wrapper,
+.ant-form-item-has-error .ant-select-selector,
+.ant-form-item-has-error .ant-picker {
+  border-color: #ff4d4f !important;
+}
+
+/* --- Text never runs outside a box --- */
+
+/* Text boxes: a long value is cut with "..." when the box is not being
+   edited (while typing, the box scrolls as usual). */
+.ant-input,
+.ant-input-number-input,
+.ant-picker-input > input {
+  text-overflow: ellipsis;
+}
+
+/* Dropdowns: the chosen value / placeholder / search text stays inside the
+   box (with "..."), never under the arrow or clear icon. */
+.ant-select .ant-select-selector {
+  overflow: hidden;
+}
+.ant-select-single .ant-select-selector .ant-select-selection-item,
+.ant-select-single .ant-select-selector .ant-select-selection-placeholder {
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  min-width: 0;
+  padding-inline-end: 22px !important;
+}
+.ant-select-single .ant-select-selection-search {
+  inset-inline-end: 30px !important;
+  overflow: hidden;
+}
+.ant-select-single .ant-select-selection-search-input {
+  text-overflow: ellipsis;
+}
+
+/* Multi-select chips: a long chip is cut with "..." inside the box. */
+.ant-select-multiple .ant-select-selection-overflow-item {
+  max-width: 100%;
+}
+.ant-select-multiple .ant-select-selection-item {
+  max-width: 100%;
+}
+.ant-select-multiple .ant-select-selection-item-content {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Dropdown list rows: one line with "..." (the full text is the row's
+   tooltip where the option has a title). */
+.ant-select-item-option-content {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Tags: a long tag is cut with "..." instead of widening its cell. */
+.ant-tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Field labels and titles: a long word without spaces wraps instead of
+   running outside (break-word only breaks a word that does not fit, so
+   layouts are not squeezed). */
+.ant-form-item-label > label,
+.ant-card-head-title,
+.ant-modal-title {
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.ant-form-item-label > label {
+  white-space: normal;
+  height: auto !important;
+}

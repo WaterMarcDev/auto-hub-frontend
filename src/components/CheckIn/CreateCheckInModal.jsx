@@ -12,7 +12,10 @@ import {
   Descriptions,
   Checkbox,
   Typography,
+  Tag,
+  Alert,
 } from "antd";
+import dayjs from "dayjs";
 import SignatureCanvas from "../SignatureCanvas";
 import NumericInput from "../NumericInput";
 import UnitInput from "../UnitInput";
@@ -75,6 +78,31 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
   // Changing it remounts the signature pad, so a new check-in never shows
   // (or re-uses) the previous check-in's signature.
   const [signatureKey, setSignatureKey] = useState(0);
+  // Customers already checked in TODAY (still in the yard): customer id ->
+  // { checkInToken, checkInTime }. They can't be checked in again until that
+  // visit is checked out (the server refuses it too — bug 098).
+  const [checkedInToday, setCheckedInToday] = useState(new Map());
+  const loadCheckedInToday = async () => {
+    try {
+      const res = await checkInAPI.getAll({ status: "checked-in", page: 1, limit: 500 });
+      const items = (res.data || res)?.items || [];
+      const map = new Map();
+      items.forEach((ci) => {
+        const id = ci.customer?._id || ci.customer;
+        if (id && ci.checkInTime && dayjs(ci.checkInTime).isSame(dayjs(), "day") && !map.has(String(id))) {
+          map.set(String(id), { checkInToken: ci.checkInToken, checkInTime: ci.checkInTime });
+        }
+      });
+      setCheckedInToday(map);
+    } catch (err) {
+      // Not critical: the server still refuses a second check-in.
+      console.error(err);
+    }
+  };
+  const openVisitOf = (cust) => (cust?._id ? checkedInToday.get(String(cust._id)) : null);
+  const customerName = (cust) =>
+    `${cust?.firstName || ""} ${cust?.lastName || ""}`.trim() || cust?.email || cust?.mobileNo || "This customer";
+
   // Latest search text; answers to older searches are ignored.
   const searchRef = React.useRef("");
   searchRef.current = searchValue;
@@ -124,6 +152,7 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
       setPersons([]);
       setPersonsOpen(false);
       setSignatureKey((k) => k + 1);
+      loadCheckedInToday();
       form.setFieldsValue({
         amount: 2,
         numberOfPersons: 0,
@@ -233,8 +262,15 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
               locale={{ emptyText: "No customers found" }}
               renderItem={(item) => (
                 <List.Item
-                  style={{ cursor: "pointer" }}
+                  style={{ cursor: openVisitOf(item) ? "not-allowed" : "pointer" }}
                   onClick={() => {
+                    const visit = openVisitOf(item);
+                    if (visit) {
+                      message.warning(
+                        `${customerName(item)} is already checked in today (token ${visit.checkInToken}, since ${dayjs(visit.checkInTime).format("h:mm A")}). Check them out first.`
+                      );
+                      return;
+                    }
                     setSelectedCustomer(item);
                     // set form field (and clear its "select a customer" error)
                     form.setFieldsValue({ customer: item._id });
@@ -278,18 +314,24 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
                       </div>
                     </div>
                     <div>
-                      <Button
-                        type={
-                          selectedCustomer && selectedCustomer._id === item._id
-                            ? "primary"
-                            : "default"
-                        }
-                        size="small"
-                      >
-                        {selectedCustomer && selectedCustomer._id === item._id
-                          ? "Selected"
-                          : "Select"}
-                      </Button>
+                      {openVisitOf(item) ? (
+                        <Tag color="orange" style={{ marginInlineEnd: 0 }}>
+                          Checked in today
+                        </Tag>
+                      ) : (
+                        <Button
+                          type={
+                            selectedCustomer && selectedCustomer._id === item._id
+                              ? "primary"
+                              : "default"
+                          }
+                          size="small"
+                        >
+                          {selectedCustomer && selectedCustomer._id === item._id
+                            ? "Selected"
+                            : "Select"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </List.Item>
@@ -307,6 +349,17 @@ const CreateCheckInModal = ({ open, onClose, onCreated, preSelectedCustomer }) =
             <HiddenValue />
           </Form.Item>
         </Form.Item>
+
+        {/* A customer chosen for us (e.g. from the Waiver form) who is
+            already checked in today: they must be checked out first. */}
+        {selectedCustomer && openVisitOf(selectedCustomer) && (
+          <Alert
+            type="warning"
+            showIcon
+            style={{ marginBottom: 12 }}
+            message={`${customerName(selectedCustomer)} is already checked in today (token ${openVisitOf(selectedCustomer).checkInToken}, since ${dayjs(openVisitOf(selectedCustomer).checkInTime).format("h:mm A")}). Check them out before checking them in again.`}
+          />
+        )}
 
         {selectedCustomer ? (
           <Card

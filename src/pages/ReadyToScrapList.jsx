@@ -25,11 +25,13 @@ import {
 import { carIntakeAPI, uploadAPI } from "../utils/api";
 import { useAuth } from "../hooks/useAuth";
 import ExtractElementsModal from "../components/Scrap/ExtractElementsModal";
-import usePersistedColumns from "../components/Scrap/usePersistedColumns";
 import getStatusColor from "../utils/statusColors";
 import { useNavigate } from "react-router-dom";
 import TitleBox from "../components/TitleBox";
 import PageContentWrapper from "../components/PageContentWrapper";
+
+// The status filter is hidden: this list only shows Ready to Scrap cars.
+const SHOW_STATUS_FILTER = false;
 
 const ReadyToScrapList = () => {
   const [loading, setLoading] = useState(false);
@@ -377,10 +379,9 @@ const ReadyToScrapList = () => {
         ? String(col.dataIndex[0])
         : String(col.dataIndex || "");
 
-  // State: which columns are currently visible (by key)
-  // (remembered across refreshes in localStorage)
-  const [visibleColumns, setVisibleColumns] = usePersistedColumns(
-    "autohub.columns.readyToScrap",
+  // State: which columns are currently visible (by key). Not remembered:
+  // a page refresh shows every column again.
+  const [visibleColumns, setVisibleColumns] = useState(() =>
     allColumns.map((c) => getColKey(c))
   );
 
@@ -594,6 +595,8 @@ const ReadyToScrapList = () => {
               </Button>
             </Space.Compact>
 
+            {/* Status filter hidden: this list only has Ready to Scrap cars. */}
+            {SHOW_STATUS_FILTER && (
             <div style={{ minWidth: 260 }}>
               <Select
                 placeholder="Filter by status"
@@ -616,6 +619,7 @@ const ReadyToScrapList = () => {
                 ]}
               />
             </div>
+            )}
 
             <div style={{ display: "flex", gap: 8 }}>
               <Popover

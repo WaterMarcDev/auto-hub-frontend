@@ -22,9 +22,6 @@ const List = () => {
     const [limit, setLimit] = useState(10);
     const [total, setTotal] = useState(0);
     const [generateTagsModalVisible, setGenerateTagsModalVisible] = useState(false);
-    const [start, setStart] = useState(null);
-    const [end, setEnd] = useState(null);
-    const [digits, setDigits] = useState(10);
     const [viewTagModalVisible, setViewTagModalVisible] = useState(false);
     const [selectedTag, setSelectedTag] = useState(null);
 
@@ -42,16 +39,18 @@ const List = () => {
     }
 
 
+    // US date (MM/DD/YYYY) in New Jersey time, whatever the viewer's timezone.
     const formatTagDate = (date) => {
         if (!date) return "";
         const d = new Date(date);
         if (isNaN(d)) return "";
 
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        const yyyy = d.getFullYear();
-
-        return `${mm}-${dd}-${yyyy}`;
+        return d.toLocaleDateString("en-US", {
+            timeZone: "America/New_York",
+            month: "2-digit",
+            day: "2-digit",
+            year: "numeric",
+        });
     };
     const fetchTags = async (p = 1, l = limit) => {
         setLoading(true);
@@ -80,9 +79,13 @@ const List = () => {
                 }
 
                 return {
+                    id: tag.id,
                     barcodeString: tag.barcodeString,
                     isUsed: tag.isUsed ? "Used" : "Available",
                     inventoryId: inventoryDisplay,
+                    // createdAt is when the tag was generated; updatedAt changes
+                    // whenever the tag is assigned, so it is shown separately.
+                    createdAt: formatTagDate(tag.createdAt),
                     updatedAt: formatTagDate(tag.updatedAt),
                 };
             });
@@ -158,7 +161,7 @@ const List = () => {
 
                     <Table
                         dataSource={tags}
-                        rowKey={(r) => r._id}
+                        rowKey={(r) => r.id || r.barcodeString}
                         loading={loading}
                         // onRow={(record) => ({
                         //     onClick: () => {
@@ -241,6 +244,12 @@ const List = () => {
                                 minWidth: 100,
                             },
                             {
+                                title: "Generated On",
+                                dataIndex: "createdAt",
+                                key: "createdAt",
+                                minWidth: 80,
+                            },
+                            {
                                 title: "Last Updated",
                                 dataIndex: "updatedAt",
                                 key: "updatedAt",
@@ -256,11 +265,6 @@ const List = () => {
                         setGenerateTagsModalVisible(false);
                         fetchTags();
 
-                    }}
-                    initial={{
-                        start: start || null,
-                        end: end || null,
-                        digits: digits || null
                     }}
 
                 />

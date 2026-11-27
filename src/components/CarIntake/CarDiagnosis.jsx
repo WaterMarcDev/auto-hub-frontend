@@ -556,7 +556,12 @@ const CarDiagnosis = ({ formData, updateFormData, nextStep, prevStep }) => {
           disabled={getPartData(record.key, "selected") !== true}
           style={{ width: "100%" }}
           dropdownStyle={{ backgroundColor: "#374151" }}
-          optionFilterProp="children"
+          // Spaces before / after the search are ignored (" Toyota"); any case.
+          filterOption={(input, option) =>
+            String(option?.children ?? "")
+              .toLowerCase()
+              .includes(String(input ?? "").trim().toLowerCase())
+          }
         >
           {makesList.map((make) => (
             <Option key={make._id} value={make._id}>

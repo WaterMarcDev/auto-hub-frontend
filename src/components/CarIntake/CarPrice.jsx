@@ -15,6 +15,9 @@ import { ArrowLeftOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { NEGOTIATION_OPTIONS, VEHICLE_SOURCE_OPTIONS, MAX_CAR_PRICE } from "./intakeConstants";
 import { MAX_DESCRIPTION_LENGTH } from "../../utils/descriptionLimit";
 import NumericInput from "../NumericInput";
+import { MAX_CRM_WEIGHT_LBS } from "../../utils/weightRules";
+import { parseCarWeight } from "../../utils/carDimensions";
+import { isOnlySpaces } from "../../utils/descriptionLimit";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -27,13 +30,31 @@ const { Text } = Typography;
 // vehicle purchase amount). Kept here for recovery only.
 // const TAX_RATE = 0.06625; // 6.625%
 
+// Towing Fee (optional): up to $1,000 with at most 2 decimals (server:
+// parseOptionalTowingFee in carIntake.controller.js).
+const MAX_TOWING_FEE = 1000;
+
 const CarPrice = ({
   formData,
   updateFormData,
   nextStep,
   prevStep,
+  form,
   validationRules,
 }) => {
+  // Weight: the car weight entered in step 1 (Car Details) is shown here
+  // already filled in, so it does not have to be typed again (it can still be
+  // changed to the scale weight). Only fills an empty box.
+  React.useEffect(() => {
+    const current = formData.actualWeight;
+    if (current !== undefined && current !== null && String(current).trim() !== "") return;
+    const weight = parseCarWeight(formData.weight);
+    if (weight === null || weight > MAX_CRM_WEIGHT_LBS) return;
+    updateFormData({ actualWeight: weight });
+    form?.setFieldsValue({ actualWeight: weight });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.weight]);
+
   // Calculate actual price whenever weight or rate changes
   React.useEffect(() => {
     const weight = parseFloat(formData.actualWeight) || 0;
@@ -153,6 +174,8 @@ const CarPrice = ({
               <NumericInput
                 mode="number"
                 placeholder="Enter Car Weight in pounds"
+                max={MAX_CRM_WEIGHT_LBS}
+                maxMessage={`Weight can be at most ${MAX_CRM_WEIGHT_LBS.toLocaleString("en-US")} lbs`}
                 className="weight-input"
                 style={{
                   width: "100%",
@@ -402,12 +425,22 @@ const CarPrice = ({
                       return Promise.reject(
                         new Error("Towing Fee cannot be negative")
                       );
+                    if (n > MAX_TOWING_FEE)
+                      return Promise.reject(
+                        new Error(`Towing Fee can be at most $${MAX_TOWING_FEE.toLocaleString("en-US")}`)
+                      );
+                    if (!/^\d+(\.\d{1,2})?$/.test(String(v).trim()))
+                      return Promise.reject(
+                        new Error("Towing Fee can have at most 2 decimal places")
+                      );
                     return Promise.resolve();
                   },
                 },
               ]}
             >
-              <InputNumber
+              {/* Numbers only, at most 2 decimals, up to $1,000. */}
+              <NumericInput
+                mode="number"
                 style={{
                   width: "100%",
                   backgroundColor: "#4b5563",
@@ -416,6 +449,9 @@ const CarPrice = ({
                 }}
                 placeholder="Enter towing fee (optional)"
                 min={0}
+                max={MAX_TOWING_FEE}
+                errorMessage="Towing Fee can contain numbers only"
+                maxMessage={`Towing Fee can be at most $${MAX_TOWING_FEE.toLocaleString("en-US")}`}
                 step={0.01}
                 formatter={(value) =>
                   `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
@@ -580,6 +616,8 @@ const CarPrice = ({
           <Col span={24}>
             <Form.Item
               label={<Text style={{ color: "white" }}>Description</Text>}
+              validateStatus={isOnlySpaces(formData.priceDescription) ? "error" : undefined}
+              help={isOnlySpaces(formData.priceDescription) ? "Description cannot be only spaces" : undefined}
             >
               <TextArea maxLength={MAX_DESCRIPTION_LENGTH} showCount
                 rows={4}

@@ -13,7 +13,17 @@ import CarInventory from "../components/CarIntake/CarInventory";
 import { dimensionsPayload, vehicleWeightMax, parseCarWeight } from "../utils/carDimensions";
 import { emailRule } from "../utils/email";
 import { CAR_TEXT_FIELDS, carTextRules, carPriceRule, trimCarText, findDiagnosisPartError, isFutureSellingDate, SELLING_DATE_FUTURE_MESSAGE } from "../components/CarIntake/intakeConstants";
-import { weightDecimalsRule } from "../utils/weightRules";
+import { weightDecimalsRule, weightLimitRule } from "../utils/weightRules";
+import { isOnlySpaces } from "../utils/descriptionLimit";
+
+// Description box of each step (step 3 has none).
+const STEP_DESCRIPTION_FIELDS = {
+  1: "description",
+  2: "imageDescription",
+  4: "priceDescription",
+  5: "kycDescription",
+  6: "paymentDescription",
+};
 
 // A weight / amount that must be a number greater than 0 (blank, spaces and
 // 0 are rejected).
@@ -804,6 +814,9 @@ const CarIntake = () => {
     weight: [
       { required: true, message: "Weight is required" },
       { type: "number", min: 1, message: "Weight must be greater than 0" },
+      // At most 15,000 lbs with 2 decimals, like every weight in the CRM.
+      weightLimitRule("Weight"),
+      weightDecimalsRule("Weight"),
       // The VIN's GVWR class is the vehicle's maximum loaded weight, so the
       // car's real weight is only checked against the class maximum (a car
       // normally weighs less than the class minimum).
@@ -823,11 +836,13 @@ const CarIntake = () => {
       { required: true, message: "Weight is required" },
       positiveNumberRule("Weight must be greater than 0"),
       weightDecimalsRule("Weight"),
+      weightLimitRule("Weight"),
     ],
 
     // Step 6: amount paid to the seller ("Pay Now").
+    // Read-only here: it is the Final Price from the Car Price step.
     paymentFinalPrice: [
-      { required: true, message: "Final Price is required" },
+      { required: true, message: "Final Price is required. Set it in the Car Price step." },
       positiveNumberRule("Final Price must be a number greater than 0"),
     ],
 
@@ -1268,6 +1283,17 @@ const CarIntake = () => {
       // }
 
       await form.validateFields(stepFields);
+
+      // Every step's Description: text of only spaces is not saved.
+      const descriptionField = STEP_DESCRIPTION_FIELDS[currentStep];
+      if (descriptionField) {
+        const formValue = form.getFieldValue(descriptionField);
+        const value = formValue !== undefined ? formValue : formData[descriptionField];
+        if (isOnlySpaces(value)) {
+          messageApi.error("Description cannot be only spaces");
+          return;
+        }
+      }
 
       // Step 3: part Weight / Dimensions must be values the inventory
       // accepts (max 2 decimals etc.), or the parts can't be added later.

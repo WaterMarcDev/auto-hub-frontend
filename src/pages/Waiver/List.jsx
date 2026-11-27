@@ -20,6 +20,7 @@ import { getCustomerTypeLabel } from "./customerTypeOptions";
 import { cacheManager } from "../../utils/cacheManager";
 import CellText from "../Customer/CellText";
 import { displayPhone } from "../../utils/phone";
+import { SHOW_EXTRA_WAIVER_FIELDS, WAIVER_DATE_FORMAT } from "./CustomerInfoStep";
 
 const { RangePicker } = DatePicker;
 
@@ -221,8 +222,11 @@ const WaiverList = () => {
         );
       },
     },
+    // Columns follow the Fill Waiver Form: Full Name, Phone Number, Date,
+    // ID Proof Type, ID Number, Signature. Email and ID Proof Image are hidden
+    // like on the form (SHOW_EXTRA_WAIVER_FIELDS).
     {
-      title: "Name",
+      title: "Full Name",
       dataIndex: "firstName",
       key: "name",
       minWidth: 160,
@@ -237,22 +241,33 @@ const WaiverList = () => {
         </Button>
       ),
     },
+    ...(SHOW_EXTRA_WAIVER_FIELDS
+      ? [
+          {
+            title: "Email",
+            dataIndex: "email",
+            key: "email",
+            minWidth: 140,
+            render: (e) => <CellText text={e} maxWidth={220} />,
+          },
+        ]
+      : []),
     {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-      minWidth: 140,
-      render: (e) => <CellText text={e} maxWidth={220} />,
-    },
-    {
-      title: "Mobile",
+      title: "Phone Number",
       dataIndex: "mobileNo",
       key: "mobileNo",
       minWidth: 120,
       render: (m) => <CellText text={m ? displayPhone(m) : m} maxWidth={160} />,
     },
     {
-      title: "ID Type",
+      title: "Date",
+      dataIndex: "waiverDate",
+      key: "waiverDate",
+      width: 110,
+      render: (d) => (d ? dayjs(d).format(WAIVER_DATE_FORMAT) : "-"),
+    },
+    {
+      title: "ID Proof Type",
       dataIndex: "idProofType",
       key: "idProofType",
       width: 150,
@@ -265,24 +280,28 @@ const WaiverList = () => {
       width: 150,
       render: (n) => <CellText text={n} maxWidth={140} />,
     },
-    {
-      title: "ID Image",
-      key: "idImage",
-      minWidth: 100,
-      render: (text, rec) => {
-        const idProof =
-          rec.idProofImage ||
-          rec.documents?.idProofImage ||
-          rec.kyc?.documents?.idProofImage;
-        return idProof ? (
-          <Button size="small" onClick={() => openDocModal(idProof)}>
-            Preview
-          </Button>
-        ) : (
-          <span>N/A</span>
-        );
-      },
-    },
+    ...(SHOW_EXTRA_WAIVER_FIELDS
+      ? [
+          {
+            title: "ID Proof Image",
+            key: "idImage",
+            minWidth: 100,
+            render: (text, rec) => {
+              const idProof =
+                rec.idProofImage ||
+                rec.documents?.idProofImage ||
+                rec.kyc?.documents?.idProofImage;
+              return idProof ? (
+                <Button size="small" onClick={() => openDocModal(idProof)}>
+                  Preview
+                </Button>
+              ) : (
+                <span>N/A</span>
+              );
+            },
+          },
+        ]
+      : []),
     {
       title: "Signature",
       key: "signature",
@@ -359,7 +378,11 @@ const WaiverList = () => {
             }}
           >
             <Input
-              placeholder="Search by name, email, or mobile"
+              placeholder={
+                SHOW_EXTRA_WAIVER_FIELDS
+                  ? "Search by name, email, or phone number"
+                  : "Search by name or phone number"
+              }
               maxLength={100}
               value={filters.search}
               onChange={(e) =>

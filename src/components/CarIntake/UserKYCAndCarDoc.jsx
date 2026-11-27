@@ -31,7 +31,7 @@ import CameraUpload from "../CameraUpload";
 import dayjs from "dayjs";
 import { getNegotiationLabel, sellingDateRule } from "./intakeConstants";
 import "../../styles/CarIntake.css";
-import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule, noOnlySpacesRule } from "../../utils/descriptionLimit";
 
 // Every card on this step looks the same: same colours, border, header and
 // title size; cards side by side are the same height.
@@ -867,7 +867,7 @@ const UserKYCAndCarDoc = ({
 
         <Row>
           <Col span={24}>
-            <Form.Item rules={[descriptionRule]}
+            <Form.Item rules={[descriptionRule, noOnlySpacesRule()]}
               name="kycDescription"
               label={<Text style={{ color: "white" }}>Description</Text>}
             >

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Form,
   Input,
@@ -13,8 +13,9 @@ import {
 import { ArrowRightOutlined } from "@ant-design/icons";
 import { vehicleWeightMax } from "../../utils/carDimensions";
 import NumericInput from "../NumericInput";
+import { MAX_CRM_WEIGHT_LBS, MAX_DIMENSION_IN, dimensionRule } from "../../utils/weightRules";
 import { CAR_TEXT_FIELDS, carTextRules } from "./intakeConstants";
-import { MAX_DESCRIPTION_LENGTH, descriptionRule } from "../../utils/descriptionLimit";
+import { MAX_DESCRIPTION_LENGTH, descriptionRule, noOnlySpacesRule } from "../../utils/descriptionLimit";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -27,10 +28,6 @@ const CarDetails = ({ nextStep, vinData, form, validationRules }) => {
 
   // Height / Width / Length: typing or pasting anything but a number shows
   // "Please enter the correct ..." until a valid value is typed.
-  const [dimErrors, setDimErrors] = useState({});
-  const setDimError = (name, bad) =>
-    setDimErrors((prev) => (Boolean(prev[name]) === bad ? prev : { ...prev, [name]: bad }));
-  const isNumberKey = (key) => /^[0-9.]$/.test(key);
   // Check if field should be disabled (populated by VIN data)
   const isVinField = (fieldName) => {
     const vinFields = [
@@ -411,9 +408,11 @@ const CarDetails = ({ nextStep, vinData, form, validationRules }) => {
               ) : null
             }
           >
+            {/* Up to 15,000 lbs with at most 2 decimals. */}
             <NumericInput
               mode="number"
-              decimals={false}
+              max={MAX_CRM_WEIGHT_LBS}
+              maxMessage={`Weight can be at most ${MAX_CRM_WEIGHT_LBS.toLocaleString("en-US")} lbs`}
               placeholder="Enter Car Weight"
               className="intake-number-box"
               style={{ width: "100%" }}
@@ -454,27 +453,15 @@ const CarDetails = ({ nextStep, vinData, form, validationRules }) => {
             <Form.Item
               name={dim.name}
               label={<Text style={{ color: "white" }}>{dim.label} (optional)</Text>}
-              validateStatus={dimErrors[dim.name] ? "error" : undefined}
-              help={dimErrors[dim.name] ? `Please enter the correct ${dim.label}` : undefined}
+              rules={[dimensionRule(dim.label)]}
             >
-              <InputNumber
+              {/* Numbers only, up to 1,000 in with at most 2 decimals. */}
+              <NumericInput
+                mode="number"
                 min={0}
-                onKeyDown={(e) => {
-                  if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
-                  if (isNumberKey(e.key)) {
-                    setDimError(dim.name, false);
-                  } else {
-                    e.preventDefault();
-                    setDimError(dim.name, true);
-                  }
-                }}
-                onPaste={(e) => {
-                  const text = e.clipboardData?.getData("text")?.trim() ?? "";
-                  const bad = !/^\d*\.?\d*$/.test(text);
-                  if (bad) e.preventDefault();
-                  setDimError(dim.name, bad);
-                }}
-                onChange={() => setDimError(dim.name, false)}
+                max={MAX_DIMENSION_IN}
+                errorMessage={`Please enter the correct ${dim.label}`}
+                maxMessage={`${dim.label} can be at most ${MAX_DIMENSION_IN.toLocaleString("en-US")} in`}
                 placeholder={`Enter ${dim.label}`}
                 className="intake-number-box"
                 style={{ width: "100%" }}
@@ -486,7 +473,7 @@ const CarDetails = ({ nextStep, vinData, form, validationRules }) => {
       </Row>
       <Row>
         <Col span={24}>
-          <Form.Item rules={[descriptionRule]}
+          <Form.Item rules={[descriptionRule, noOnlySpacesRule()]}
             name="description"
             label={<Text style={{ color: "white" }}>Description</Text>}
           >

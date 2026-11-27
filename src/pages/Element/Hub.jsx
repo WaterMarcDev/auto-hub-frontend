@@ -13,7 +13,6 @@ import {
   Form,
 } from "antd";
 import {
-  DollarOutlined,
   UserOutlined,
   PrinterOutlined,
 } from "@ant-design/icons";
@@ -23,7 +22,7 @@ import TitleBox from "../../components/TitleBox";
 import PageContentWrapper from "../../components/PageContentWrapper";
 import { useAuth } from "../../hooks/useAuth";
 import { printInvoiceFromApi } from "../../utils/printCheckInInvoice";
-import { weightDecimalsRule } from "../../utils/weightRules";
+import { weightDecimalsRule, MAX_CRM_WEIGHT_LBS } from "../../utils/weightRules";
 import NumericInput from "../../components/NumericInput";
 
 // Same limit as the backend (elementHub.controller.js); the note is printed
@@ -158,9 +157,21 @@ const Hub = () => {
     fetchCustomers();
   };
 
-  const handleSaleValueChange = (value) => {
-    setTotalAmount(value && value > 0 ? Number(value.toFixed(2)) : 0);
-  };
+  // Total = Amount to Sell x Sale Value per lb (like Scrap Purchase:
+  // Weight x Price/lb), worked out as either box changes.
+  const watchedAmount = Form.useWatch("amount", form);
+  const watchedPrice = Form.useWatch("pricePerLb", form);
+  React.useEffect(() => {
+    const amt = Number(watchedAmount);
+    const price = Number(watchedPrice);
+    setTotalAmount(
+      Number.isFinite(amt) && Number.isFinite(price) && amt > 0 && price > 0
+        ? Math.round((Math.round(amt * 100) * Math.round(price * 100)) / 100) / 100 // in whole cents
+        : 0
+    );
+  }, [watchedAmount, watchedPrice]);
+  // Most that can be sold at once: what is in stock, and never above 15,000 lb.
+  const maxSellable = Math.min(Number(selected?.totalWeight) || 0, MAX_CRM_WEIGHT_LBS);
 
   // One click = one sale: ignore clicks while a sale request is running.
   const sellingRef = React.useRef(false);
@@ -172,7 +183,6 @@ const Hub = () => {
     setSelling(true);
     try {
       const values = await form.validateFields();
-      const saleValue = values.saleValue;
       const note = typeof values.note === "string" ? values.note.trim() : values.note;
 
       // No tax fields are sent: the server records the sale with no tax.
@@ -180,7 +190,10 @@ const Hub = () => {
         elementName: selected.elementName,
         amount: values.amount,
         unit: selected.unit,
-        saleValue: saleValue,
+        // The server works out the total (amount x price per lb); saleValue
+        // is sent too for reference.
+        pricePerLb: values.pricePerLb,
+        saleValue: Math.round((Math.round(Number(values.amount) * 100) * Math.round(Number(values.pricePerLb) * 100)) / 100) / 100,
         paymentMethod: values.paymentMethod,
         note: note || undefined,
         customerId: values.customerId,
@@ -609,9 +622,8 @@ const Hub = () => {
                 {
                   type: "number",
                   min: 0.01,
-                  max: selected?.totalWeight,
-                  message: `Amount must be between 0.01 and ${selected?.totalWeight || 0
-                    }`,
+                  max: maxSellable,
+                  message: `Amount must be between 0.01 and ${maxSellable}`,
                 },
                 weightDecimalsRule("Amount to sell"),
               ]}
@@ -619,7 +631,8 @@ const Hub = () => {
               <NumericInput
                 mode="number"
                 min={0.01}
-                max={selected?.totalWeight}
+                max={maxSellable}
+                maxMessage={`Amount can be at most ${maxSellable.toLocaleString("en-US")} lb`}
                 style={{ width: "100%" }}
                 placeholder="Enter amount to sell"
                 errorMessage="Please enter a numeric weight"
@@ -627,28 +640,31 @@ const Hub = () => {
             </Form.Item>
 
             <Form.Item
-              label="Sale Value ($)"
-              name="saleValue"
+              label="Sale Value per lb ($)"
+              name="pricePerLb"
+              tooltip="Price per lb. Total = Amount to Sell x Sale Value per lb."
               rules={[
-                { required: true, message: "Please enter sale value" },
+                { required: true, message: "Please enter sale value per lb" },
                 {
                   type: "number",
                   min: 0.01,
-                  message: "Sale value must be greater than 0",
+                  message: "Sale value per lb must be greater than 0",
                 },
               ]}
             >
-              <InputNumber
+              {/* Numbers only, at most 2 decimals. */}
+              <NumericInput
+                mode="number"
                 min={0.01}
-                style={{ width: "100%" }}
                 precision={2}
-                placeholder="Enter sale value"
-                prefix={<DollarOutlined />}
-                onChange={handleSaleValueChange}
+                style={{ width: "100%" }}
+                placeholder="Enter sale value per lb"
+                className="crm-number-box"
+                errorMessage="Please enter a numeric price"
               />
             </Form.Item>
 
-            {/* No sales tax on Element Hub sales: Total = Sale Value. */}
+            {/* No sales tax on Element Hub sales: Total = Amount x Sale Value per lb. */}
             {totalAmount > 0 && (
               <div
                 style={{
